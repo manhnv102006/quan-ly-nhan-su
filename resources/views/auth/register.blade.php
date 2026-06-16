@@ -1,52 +1,95 @@
 <x-guest-layout>
-    <form method="POST" action="{{ route('register') }}">
+    <div class="mb-6 text-center">
+        <h1 class="text-2xl font-bold text-gray-900">Đăng ký tài khoản</h1>
+        <p class="mt-1 text-sm text-gray-500">Tạo tài khoản mới để sử dụng hệ thống.</p>
+    </div>
+
+    <form method="POST" action="{{ route('register') }}" class="space-y-4">
         @csrf
 
-        <!-- Name -->
         <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
+            <x-input-label for="username" value="Tên đăng nhập" class="text-gray-700 font-medium" />
+            <x-text-input
+                id="username"
+                class="block mt-1.5 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                type="text"
+                name="username"
+                :value="old('username')"
+                required
+                autofocus
+                autocomplete="username"
+                placeholder="Ví dụ: nguyenvana"
+            />
+            <x-input-error :messages="$errors->get('username')" class="mt-2" />
+        </div>
+
+        <div>
+            <x-input-label for="name" value="Họ và tên" class="text-gray-700 font-medium" />
+            <x-text-input
+                id="name"
+                class="block mt-1.5 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                type="text"
+                name="name"
+                :value="old('name')"
+                required
+                autocomplete="name"
+                placeholder="Nhập họ và tên đầy đủ"
+            />
             <x-input-error :messages="$errors->get('name')" class="mt-2" />
         </div>
 
-        <!-- Email Address -->
-        <div class="mt-4">
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
+        <div>
+            <x-input-label for="email" value="Email" class="text-gray-700 font-medium" />
+            <x-text-input
+                id="email"
+                class="block mt-1.5 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                type="email"
+                name="email"
+                :value="old('email')"
+                required
+                autocomplete="email"
+                placeholder="email@example.com"
+            />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="new-password" />
-
+        <div>
+            <x-input-label for="password" value="Mật khẩu" class="text-gray-700 font-medium" />
+            <x-text-input
+                id="password"
+                class="block mt-1.5 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                type="password"
+                name="password"
+                required
+                autocomplete="new-password"
+                placeholder="Tối thiểu 8 ký tự"
+            />
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                            type="password"
-                            name="password_confirmation" required autocomplete="new-password" />
-
+        <div>
+            <x-input-label for="password_confirmation" value="Xác nhận mật khẩu" class="text-gray-700 font-medium" />
+            <x-text-input
+                id="password_confirmation"
+                class="block mt-1.5 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                type="password"
+                name="password_confirmation"
+                required
+                autocomplete="new-password"
+                placeholder="Nhập lại mật khẩu"
+            />
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
-                {{ __('Already registered?') }}
-            </a>
+        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-3 mt-2 bg-gradient-to-r from-indigo-600 to-blue-600 border border-transparent rounded-lg font-semibold text-sm text-white uppercase tracking-wide hover:from-indigo-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition shadow-md hover:shadow-lg">
+            Đăng ký
+        </button>
 
-            <x-primary-button class="ms-4">
-                {{ __('Register') }}
-            </x-primary-button>
-        </div>
+        <p class="text-center text-sm text-gray-600 pt-2">
+            Đã có tài khoản?
+            <a href="{{ route('login') }}" class="text-indigo-600 hover:text-indigo-800 font-semibold transition">
+                Đăng nhập
+            </a>
+        </p>
     </form>
 </x-guest-layout>
