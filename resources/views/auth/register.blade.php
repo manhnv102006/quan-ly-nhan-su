@@ -8,6 +8,24 @@
         @csrf
 
         <div>
+            <x-input-label for="role_id" value="Quyền tài khoản" class="text-gray-700 font-medium" />
+            <select
+                id="role_id"
+                name="role_id"
+                required
+                class="block mt-1.5 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+            >
+                <option value="" disabled {{ old('role_id') ? '' : 'selected' }}>Chọn quyền</option>
+                @foreach ($roles as $role)
+                    <option value="{{ $role->id }}" {{ (string) old('role_id') === (string) $role->id ? 'selected' : '' }}>
+                        {{ $role->label() }}
+                    </option>
+                @endforeach
+            </select>
+            <x-input-error :messages="$errors->get('role_id')" class="mt-2" />
+        </div>
+
+        <div>
             <x-input-label for="username" value="Tên đăng nhập" class="text-gray-700 font-medium" />
             <x-text-input
                 id="username"

@@ -21,6 +21,31 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class);
     }
 
+    public function hasRole(string ...$roles): bool
+    {
+        return $this->role && in_array($this->role->name, $roles, true);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(Role::ADMIN);
+    }
+
+    public function isManager(): bool
+    {
+        return $this->hasRole(Role::MANAGER);
+    }
+
+    public function isEmployee(): bool
+    {
+        return $this->hasRole(Role::EMPLOYEE);
+    }
+
+    public function dashboardRouteName(): string
+    {
+        return $this->role?->dashboardRouteName() ?? 'dashboard';
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active';
