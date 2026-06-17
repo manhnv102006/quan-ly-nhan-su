@@ -1,3 +1,49 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    body.admin-body {
+        @apply text-slate-800 antialiased;
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+}
+
+@layer components {
+    .admin-shell {
+        @apply relative min-h-screen overflow-x-hidden;
+        background:
+            radial-gradient(ellipse 80% 50% at 20% -10%, rgba(139, 92, 246, 0.18), transparent),
+            radial-gradient(ellipse 60% 40% at 90% 10%, rgba(34, 211, 238, 0.15), transparent),
+            radial-gradient(ellipse 50% 30% at 50% 100%, rgba(244, 114, 182, 0.1), transparent),
+            linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    }
+
+    .admin-sidebar {
+        @apply bg-white/80 backdrop-blur-xl border-r border-white/60 shadow-[4px_0_24px_-12px_rgba(15,23,42,0.12)];
+    }
+
+    .admin-header {
+        @apply bg-white/70 backdrop-blur-xl border-b border-white/60;
+    }
+
+    .admin-card {
+        @apply bg-white/80 backdrop-blur-sm rounded-2xl border border-white/80 shadow-sm shadow-slate-200/50;
+    }
+
+    .admin-menu-item {
+        @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200;
+    }
+
+    .admin-menu-item-active {
+        @apply bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/25;
+    }
+
+    .admin-menu-item-inactive {
+        @apply text-slate-600 hover:bg-violet-50 hover:text-violet-700;
+    }
+
+    .admin-stat-card {
+        @apply admin-card p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-200/40;
+    }
+}
