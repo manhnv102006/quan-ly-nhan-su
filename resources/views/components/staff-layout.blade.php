@@ -66,6 +66,8 @@
     </style>
 </head>
 <body class="staff-body staff-shell {{ $theme['shell'] }}" x-data="{ sidebarOpen: false }">
+    @include('partials.page-loader')
+
     <div class="min-h-screen flex relative">
         <div class="pointer-events-none fixed top-20 left-[280px] h-72 w-72 rounded-full {{ $theme['glowOne'] }} blur-3xl"></div>
         <div class="pointer-events-none fixed bottom-10 right-10 h-96 w-96 rounded-full {{ $theme['glowTwo'] }} blur-3xl"></div>

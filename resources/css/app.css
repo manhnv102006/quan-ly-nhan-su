@@ -12,9 +12,35 @@
         @apply text-slate-800 antialiased;
         font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     }
+
+    body.page-loader-active {
+        overflow: hidden;
+    }
 }
 
 @layer components {
+    .page-loader-overlay {
+        @apply fixed inset-0 z-[120] hidden items-center justify-center bg-slate-950/35 px-4 backdrop-blur-md;
+    }
+
+    .page-loader-overlay.is-visible {
+        @apply flex;
+    }
+
+    .page-loader-card {
+        @apply flex w-full max-w-xs items-center gap-4 rounded-[1.75rem] border border-white/70 bg-white/85 px-5 py-4 text-slate-700 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl sm:max-w-sm;
+    }
+
+    .page-loader-spinner {
+        @apply h-11 w-11 shrink-0 rounded-full border-[3px] border-sky-100 border-t-sky-500;
+        animation: page-loader-spin 0.9s linear infinite;
+        box-shadow: 0 0 0 6px rgba(14, 165, 233, 0.08);
+    }
+
+    .page-loader-text {
+        @apply text-sm font-semibold tracking-[0.01em] text-slate-800 sm:text-base;
+    }
+
     .admin-shell {
         @apply relative min-h-screen overflow-x-hidden;
         background:
@@ -102,5 +128,15 @@
 
     .staff-stat-card {
         @apply staff-card p-5 transition-all duration-300 hover:-translate-y-1;
+    }
+}
+
+@keyframes page-loader-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
     }
 }
