@@ -17,6 +17,8 @@
     </style>
 </head>
 <body class="admin-body admin-shell" x-data="{ sidebarOpen: false }">
+    @include('partials.page-loader')
+
     <div class="min-h-screen flex relative">
         {{-- Decorative blobs --}}
         <div class="pointer-events-none fixed top-20 left-[280px] w-72 h-72 bg-violet-400/10 rounded-full blur-3xl"></div>
