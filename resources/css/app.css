@@ -7,6 +7,11 @@
         @apply text-slate-800 antialiased;
         font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     }
+
+    body.staff-body {
+        @apply text-slate-800 antialiased;
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
 }
 
 @layer components {
@@ -45,5 +50,57 @@
 
     .admin-stat-card {
         @apply admin-card p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-200/40;
+    }
+
+    .staff-shell {
+        @apply relative min-h-screen overflow-x-hidden;
+    }
+
+    .staff-shell-manager {
+        background:
+            radial-gradient(ellipse 85% 55% at 15% -10%, rgba(16, 185, 129, 0.16), transparent),
+            radial-gradient(ellipse 60% 45% at 90% 15%, rgba(34, 211, 238, 0.14), transparent),
+            radial-gradient(ellipse 55% 35% at 50% 100%, rgba(14, 165, 233, 0.08), transparent),
+            linear-gradient(180deg, #f8fafc 0%, #eefbf7 100%);
+    }
+
+    .staff-shell-employee {
+        background:
+            radial-gradient(ellipse 85% 55% at 10% -10%, rgba(56, 189, 248, 0.18), transparent),
+            radial-gradient(ellipse 60% 42% at 90% 10%, rgba(99, 102, 241, 0.14), transparent),
+            radial-gradient(ellipse 45% 28% at 50% 100%, rgba(251, 191, 36, 0.08), transparent),
+            linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%);
+    }
+
+    .staff-sidebar {
+        @apply bg-white/80 backdrop-blur-xl border-r border-white/70 shadow-[4px_0_24px_-12px_rgba(15,23,42,0.12)];
+    }
+
+    .staff-header {
+        @apply bg-white/70 backdrop-blur-xl border-b border-white/70;
+    }
+
+    .staff-card {
+        @apply rounded-3xl border border-white/80 bg-white/80 shadow-sm shadow-slate-200/60 backdrop-blur-sm;
+    }
+
+    .staff-menu-item {
+        @apply flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200;
+    }
+
+    .staff-menu-item-inactive {
+        @apply text-slate-600 hover:bg-white hover:text-slate-900;
+    }
+
+    .staff-menu-item-active-manager {
+        @apply bg-gradient-to-r from-emerald-600 to-cyan-600 text-white shadow-lg shadow-emerald-500/20;
+    }
+
+    .staff-menu-item-active-employee {
+        @apply bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-lg shadow-sky-500/20;
+    }
+
+    .staff-stat-card {
+        @apply staff-card p-5 transition-all duration-300 hover:-translate-y-1;
     }
 }

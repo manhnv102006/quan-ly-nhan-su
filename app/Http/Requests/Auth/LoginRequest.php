@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -43,9 +44,27 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         $login = $this->string('login')->toString();
+        $password = $this->string('password')->toString();
         $field = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $remember = $this->boolean('remember');
 
-        if (! Auth::attempt([$field => $login, 'password' => $this->string('password')], $this->boolean('remember'))) {
+        $user = User::query()->where($field, $login)->first();
+
+        if ($user && ! $this->passwordLooksHashed($user->password)) {
+            if (! hash_equals((string) $user->password, $password)) {
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'login' => trans('auth.failed'),
+                ]);
+            }
+
+            // Upgrade legacy plain-text passwords to the configured hash algorithm on first login.
+            $user->password = $password;
+            $user->save();
+
+            Auth::login($user, $remember);
+        } elseif (! Auth::attempt([$field => $login, 'password' => $password], $remember)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -63,6 +82,15 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+    }
+
+    private function passwordLooksHashed(?string $value): bool
+    {
+        if (! is_string($value) || $value === '') {
+            return false;
+        }
+
+        return Str::startsWith($value, ['$2y$', '$2b$', '$2a$', '$argon2i$', '$argon2id$']);
     }
 
     /**
