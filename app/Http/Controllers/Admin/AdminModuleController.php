@@ -24,6 +24,25 @@ class AdminModuleController extends Controller
             'departments' => $departments
         ]);
     }
+    public function departmentDetail($id): View
+    {
+        $department = Department::findOrFail($id);
+
+        return view(
+            'admin.departments.detail',
+            compact('department')
+        );
+    }
+    public function departmentDelete($id)
+{
+    $department = Department::findOrFail($id);
+
+    $department->delete();
+
+    return redirect()
+        ->route('admin.departments')
+        ->with('success', 'Xóa phòng ban thành công');
+}
  
 
     public function positions(): View
