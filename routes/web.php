@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminModuleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -12,8 +13,17 @@ Route::get('/dashboard', [DashboardController::class, 'redirect'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
-    Route::get('/admin/dashboard', [DashboardController::class, 'admin'])->name('admin.dashboard');
+Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+    Route::get('/accounts', [AdminModuleController::class, 'accounts'])->name('accounts');
+    Route::get('/departments', [AdminModuleController::class, 'departments'])->name('departments');
+    Route::get('/positions', [AdminModuleController::class, 'positions'])->name('positions');
+    Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
+    Route::get('/attendances', [AdminModuleController::class, 'attendances'])->name('attendances');
+    Route::get('/kpis', [AdminModuleController::class, 'kpis'])->name('kpis');
+    Route::get('/payrolls', [AdminModuleController::class, 'payrolls'])->name('payrolls');
+    Route::get('/contracts', [AdminModuleController::class, 'contracts'])->name('contracts');
+    Route::get('/recruitment', [AdminModuleController::class, 'recruitment'])->name('recruitment');
 });
 
 Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
