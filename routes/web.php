@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminModuleController;
+use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -15,7 +16,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
     Route::get('/accounts', [AdminModuleController::class, 'accounts'])->name('accounts');
     Route::get('/departments', [AdminModuleController::class, 'departments'])->name('departments');
-    Route::get('/positions', [AdminModuleController::class, 'positions'])->name('positions');
+    Route::get('/positions', [PositionController::class, 'index'])->name('positions');
+    Route::delete('/positions/{position}', [PositionController::class, 'destroy'])->name('positions.destroy');
+    Route::get('/positions/trash', [PositionController::class, 'trash'])->name('positions.trash');
+    Route::post('/positions/{id}/restore', [PositionController::class, 'restore'])->name('positions.restore');
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
     Route::get('/attendances', [AdminModuleController::class, 'attendances'])->name('attendances');
     Route::get('/kpis', [AdminModuleController::class, 'kpis'])->name('kpis');
