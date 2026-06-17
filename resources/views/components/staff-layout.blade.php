@@ -23,8 +23,8 @@
             'glowOne' => 'bg-emerald-400/15',
             'glowTwo' => 'bg-cyan-400/15',
             'roleLabel' => 'Manager',
-            'eyebrow' => 'Khong gian dieu hanh',
-            'helper' => 'Theo doi doi ngu, phe duyet va tien do cua phong ban.',
+            'eyebrow' => 'Không gian điều hành',
+            'helper' => 'Theo dõi đội ngũ, phê duyệt và tiến độ của phòng ban.',
         ]
         : [
             'shell' => 'staff-shell-employee',
@@ -40,8 +40,8 @@
             'glowOne' => 'bg-sky-400/15',
             'glowTwo' => 'bg-indigo-400/15',
             'roleLabel' => 'Employee',
-            'eyebrow' => 'Khong gian ca nhan',
-            'helper' => 'Cham cong, KPI, bang luong va thong bao moi deu tap trung tai day.',
+            'eyebrow' => 'Không gian cá nhân',
+            'helper' => 'Chấm công, KPI, bảng lương và thông báo mới đều tập trung tại đây.',
         ];
     $firstName = collect(explode(' ', trim($user?->name ?? 'User')))->filter()->first() ?? ($user?->name ?? 'User');
     $initial = strtoupper(mb_substr($user?->name ?? 'U', 0, 1));
@@ -90,7 +90,7 @@
             </div>
 
             <div class="mb-2 px-4">
-                <p class="px-3 text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">Dieu huong</p>
+                <p class="px-3 text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">Điều hướng</p>
             </div>
 
             <nav class="flex-1 space-y-1 overflow-y-auto px-3">
@@ -119,11 +119,11 @@
             </nav>
 
             <div class="m-3 rounded-3xl bg-gradient-to-br {{ $theme['support'] }} p-4 text-white">
-                <p class="text-xs font-semibold opacity-90">Xin chao, {{ $firstName }}</p>
+                <p class="text-xs font-semibold opacity-90">Xin chào, {{ $firstName }}</p>
                 <p class="mt-1 text-[11px] leading-relaxed text-white/80">{{ $theme['helper'] }}</p>
                 <div class="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-semibold backdrop-blur">
                     <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
-                    Tai khoan dang hoat dong
+                    Tài khoản đang hoạt động
                 </div>
             </div>
         </aside>
@@ -169,7 +169,7 @@
                                 </svg>
                                 <input
                                     type="text"
-                                    placeholder="Tim kiem nhanh..."
+                                    placeholder="Tìm kiếm nhanh..."
                                     class="w-full rounded-xl border-0 bg-slate-100/90 py-2.5 pl-10 pr-4 text-sm text-slate-600 placeholder:text-slate-400 focus:bg-white {{ $theme['searchFocus'] }}"
                                 >
                             </div>
@@ -178,7 +178,7 @@
 
                     <div class="flex items-center gap-2 sm:gap-3">
                         <div class="hidden rounded-2xl border border-white/70 bg-white/75 px-3 py-2 text-right shadow-sm shadow-slate-200/50 sm:block">
-                            <p class="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Hom nay</p>
+                            <p class="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Hôm nay</p>
                             <p class="text-sm font-semibold text-slate-700">{{ now()->format('d/m/Y') }}</p>
                         </div>
 
@@ -191,7 +191,7 @@
                             href="{{ route('profile.edit') }}"
                             class="hidden rounded-xl px-3 py-2 text-xs font-medium text-slate-500 transition sm:inline-flex {{ $theme['ghost'] }}"
                         >
-                            Ho so
+                            Hồ sơ
                         </a>
 
                         <div class="flex items-center gap-2 border-l border-slate-200/80 pl-2 sm:pl-3">
@@ -201,7 +201,7 @@
                             <form method="POST" action="{{ route('logout') }}" class="hidden sm:block">
                                 @csrf
                                 <button type="submit" class="rounded-xl px-3 py-2 text-xs font-medium text-slate-500 transition hover:bg-rose-50 hover:text-rose-600">
-                                    Dang xuat
+                                    Đăng xuất
                                 </button>
                             </form>
                         </div>
