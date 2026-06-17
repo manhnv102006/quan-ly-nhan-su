@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use Illuminate\View\View;
+
 
 class AdminModuleController extends Controller
 {
@@ -14,8 +17,14 @@ class AdminModuleController extends Controller
 
     public function departments(): View
     {
-        return $this->module('Quản lý phòng ban', 'Tổ chức cơ cấu phòng ban và đơn vị trong công ty.');
+        $departments = Department::all();
+    
+        return view('admin.departments.index', [
+            'title' => 'Quản lý phòng ban',
+            'departments' => $departments
+        ]);
     }
+ 
 
     public function positions(): View
     {
