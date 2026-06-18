@@ -16,6 +16,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
     Route::get('/accounts', [AdminModuleController::class, 'accounts'])->name('accounts');
     Route::get('/departments', [AdminModuleController::class, 'departments'])->name('departments');
+ feature/duc
+    Route::get('/departments/{id}', [AdminModuleController::class, 'departmentDetail'])->name('departments.detail');
+    Route::delete('/departments/{id}', [AdminModuleController::class, 'departmentDelete'])->name('departments.delete');
+    Route::get('/positions', [AdminModuleController::class, 'positions'])->name('positions');
+=======
 
     
     //Chức vụ 
@@ -30,6 +35,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::delete('/positions/{id}/force-delete', [PositionController::class, 'forceDelete'])->name('positions.forceDelete');
 
 
+ main
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
     Route::get('/attendances', [AdminModuleController::class, 'attendances'])->name('attendances');
     Route::get('/kpis', [AdminModuleController::class, 'kpis'])->name('kpis');
@@ -52,4 +58,4 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
