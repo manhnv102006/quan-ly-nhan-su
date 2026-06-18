@@ -5,7 +5,9 @@
                 <h2 class="mb-1 text-2xl font-bold text-slate-800">Danh sách chức vụ đã xóa</h2>
                 <p class="text-sm text-slate-500">Các chức vụ đã bị xóa mềm và có thể khôi phục.</p>
             </div>
-            <a href="{{ route('admin.positions') }}" class="btn btn-outline-secondary">Quay lại danh sách</a>
+            <a href="{{ route('admin.positions') }}" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                Quay lại danh sách
+            </a>
         </div>
 
         <div class="table-responsive">

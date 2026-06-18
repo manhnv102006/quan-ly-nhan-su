@@ -6,10 +6,12 @@
                 <p class="text-sm text-slate-500">Quản lý chức vụ đang hoạt động và xóa mềm.</p>
             </div>
             <div class="d-flex gap-2">
-                <a href="{{ route('admin.positions.create') }}" class="btn btn-primary">
+                <a href="{{ route('admin.positions.create') }}" class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition hover:from-violet-700 hover:to-indigo-700">
                     <i class="bi bi-plus-circle me-2"></i> Thêm mới
                 </a>
-                <a href="{{ route('admin.positions.trash') }}" class="btn btn-outline-secondary">Xem chức vụ đã xóa</a>
+                <a href="{{ route('admin.positions.trash') }}" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                    Xem chức vụ đã xóa
+                </a>
             </div>
         </div>
 
@@ -40,7 +42,7 @@
                                     <a href="{{ route('admin.positions.edit', $position) }}" class="btn btn-sm btn-warning">
                                         <i class="bi bi-pencil me-1"></i> Sửa
                                     </a>
-                                    
+
                                     <form action="{{ route('admin.positions.destroy', $position) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('DELETE')
