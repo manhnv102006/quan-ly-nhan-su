@@ -15,7 +15,7 @@
                 </p>
             </div>
 
-            <a href="#"
+            <a href="{{ route('admin.departments.create') }}"
                class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
 
                 <span>+</span>
