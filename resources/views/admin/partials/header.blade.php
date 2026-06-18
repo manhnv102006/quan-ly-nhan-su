@@ -59,4 +59,13 @@
             </div>
         </div>
     </div>
+
+    @if (session('success') || session('error'))
+        <div class="px-6 sm:px-8 lg:px-10 py-3">
+            <div class="alert alert-{{ session('error') ? 'danger' : 'success' }} alert-dismissible fade show" role="alert">
+                {{ session('error') ?? session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    @endif
 </header>
