@@ -30,9 +30,6 @@ class DatabaseSeeder extends Seeder
             'status' => 'active',
             'role_id' => $adminRoleId,
         ]);
- feature/duc
-        }
-=======
 
         User::factory()->create([
             'username' => 'manager',
@@ -84,5 +81,4 @@ class DatabaseSeeder extends Seeder
             NotificationUserSeeder::class,
         ]);
     }
- main
 }
