@@ -16,10 +16,20 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
     Route::get('/accounts', [AdminModuleController::class, 'accounts'])->name('accounts');
     Route::get('/departments', [AdminModuleController::class, 'departments'])->name('departments');
+
+    
+    //Chức vụ 
     Route::get('/positions', [PositionController::class, 'index'])->name('positions');
+    Route::get('/positions/create', [PositionController::class, 'create'])->name('positions.create');
+    Route::post('/positions', [PositionController::class, 'store'])->name('positions.store');
+    Route::get('/positions/{position}/edit', [PositionController::class, 'edit'])->name('positions.edit');
+    Route::put('/positions/{position}', [PositionController::class, 'update'])->name('positions.update');
     Route::delete('/positions/{position}', [PositionController::class, 'destroy'])->name('positions.destroy');
     Route::get('/positions/trash', [PositionController::class, 'trash'])->name('positions.trash');
     Route::post('/positions/{id}/restore', [PositionController::class, 'restore'])->name('positions.restore');
+    Route::delete('/positions/{id}/force-delete', [PositionController::class, 'forceDelete'])->name('positions.forceDelete');
+
+
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
     Route::get('/attendances', [AdminModuleController::class, 'attendances'])->name('attendances');
     Route::get('/kpis', [AdminModuleController::class, 'kpis'])->name('kpis');
