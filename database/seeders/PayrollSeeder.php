@@ -1,0 +1,54 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
+class PayrollSeeder extends Seeder
+{
+    public function run(): void
+    {
+        DB::table('payrolls')->insert([
+            [
+                'employee_id' => 1,
+                'payroll_period_id' => 1,
+                'generated_by' => 1,
+                'basic_salary' => 50000000,
+                'allowance' => 2000000,
+                'bonus' => 1000000,
+                'deduction' => 500000,
+                'total_salary' => 52500000,
+                'status' => 'paid',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'employee_id' => 2,
+                'payroll_period_id' => 1,
+                'generated_by' => 1,
+                'basic_salary' => 25000000,
+                'allowance' => 1000000,
+                'bonus' => 0,
+                'deduction' => 200000,
+                'total_salary' => 25800000,
+                'status' => 'approved',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'employee_id' => 3,
+                'payroll_period_id' => 1,
+                'generated_by' => 1,
+                'basic_salary' => 18000000,
+                'allowance' => 500000,
+                'bonus' => 500000,
+                'deduction' => 0,
+                'total_salary' => 19000000,
+                'status' => 'draft',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+    }
+}
