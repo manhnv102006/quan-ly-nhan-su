@@ -168,9 +168,18 @@
                                 <div class="flex justify-center gap-2">
 
                                     <a href="{{ route('admin.departments.detail',$dept->id) }}"
-                                       class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200">
+                                       class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200"
+                                       title="Xem chi tiết">
 
                                         👁
+
+                                    </a>
+
+                                    <a href="{{ route('admin.departments.edit', $dept->id) }}"
+                                       class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200"
+                                       title="Sửa">
+
+                                        ✏️
 
                                     </a>
 
