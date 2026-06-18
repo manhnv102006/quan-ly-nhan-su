@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminModuleController;
+use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
@@ -15,9 +16,11 @@ Route::get('/dashboard', [DashboardController::class, 'redirect'])
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
     Route::get('/accounts', [AdminModuleController::class, 'accounts'])->name('accounts');
-    Route::get('/departments', [AdminModuleController::class, 'departments'])->name('departments');
-    Route::get('/departments/{id}', [AdminModuleController::class, 'departmentDetail'])->name('departments.detail');
-    Route::delete('/departments/{id}', [AdminModuleController::class, 'departmentDelete'])->name('departments.delete');
+    Route::get('/departments', [DepartmentController::class, 'index'])->name('departments');
+    Route::get('/departments/create', [DepartmentController::class, 'create'])->name('departments.create');
+    Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
+    Route::get('/departments/{id}', [DepartmentController::class, 'show'])->name('departments.detail');
+    Route::delete('/departments/{id}', [DepartmentController::class, 'destroy'])->name('departments.delete');
     //Chức vụ
     Route::get('/positions', [PositionController::class, 'index'])->name('positions');
     Route::get('/positions/create', [PositionController::class, 'create'])->name('positions.create');
