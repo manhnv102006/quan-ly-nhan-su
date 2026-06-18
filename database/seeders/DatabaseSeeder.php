@@ -29,8 +29,5 @@ class DatabaseSeeder extends Seeder
             'status' => 'active',
             'role_id' => $adminRoleId,
         ]);
-        $this->call([
-            DepartmentSeeder::class,
-        ]);
         }
 }
