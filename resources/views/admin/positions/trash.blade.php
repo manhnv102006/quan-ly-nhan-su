@@ -27,12 +27,21 @@
                             <td>{{ number_format($position->base_salary, 0, ',', '.') }} ₫</td>
                             <td>{{ $position->deleted_at ? $position->deleted_at->format('d/m/Y H:i') : '-' }}</td>
                             <td>
-                                <form action="{{ route('admin.positions.restore', $position->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-success">
-                                        Khôi phục
-                                    </button>
-                                </form>
+                                <div class="d-flex gap-2">
+                                    <form action="{{ route('admin.positions.restore', $position->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i> Khôi phục
+                                        </button>
+                                    </form>
+                                    <form action="{{ route('admin.positions.forceDelete', $position->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Xóa cứng sẽ xóa hoàn toàn dữ liệu và không thể khôi phục. Bạn chắc chắn không?')">
+                                            <i class="bi bi-trash3 me-1"></i> Xóa cứng
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty

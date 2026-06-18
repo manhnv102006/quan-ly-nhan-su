@@ -19,6 +19,60 @@ class PositionController extends Controller
         return view('admin.positions.index', compact('positions'));
     }
 
+    public function create(): View
+    {
+        return view('admin.positions.create');
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'position_name' => 'required|string|max:255|unique:positions,position_name',
+            'base_salary' => 'required|numeric|min:0',
+            'description' => 'nullable|string',
+            'status' => 'required|in:active,inactive',
+        ], [
+            'position_name.required' => 'Tên chức vụ là bắt buộc',
+            'position_name.unique' => 'Tên chức vụ đã tồn tại',
+            'base_salary.required' => 'Lương cơ bản là bắt buộc',
+            'base_salary.numeric' => 'Lương cơ bản phải là số',
+            'status.required' => 'Trạng thái là bắt buộc',
+        ]);
+
+        Position::create($validated);
+
+        return redirect()
+            ->route('admin.positions')
+            ->with('success', 'Thêm chức vụ thành công.');
+    }
+
+    public function edit(Position $position): View
+    {
+        return view('admin.positions.edit', compact('position'));
+    }
+
+    public function update(Request $request, Position $position): RedirectResponse
+    {
+        $validated = $request->validate([
+            'position_name' => 'required|string|max:255|unique:positions,position_name,' . $position->id,
+            'base_salary' => 'required|numeric|min:0',
+            'description' => 'nullable|string',
+            'status' => 'required|in:active,inactive',
+        ], [
+            'position_name.required' => 'Tên chức vụ là bắt buộc',
+            'position_name.unique' => 'Tên chức vụ đã tồn tại',
+            'base_salary.required' => 'Lương cơ bản là bắt buộc',
+            'base_salary.numeric' => 'Lương cơ bản phải là số',
+            'status.required' => 'Trạng thái là bắt buộc',
+        ]);
+
+        $position->update($validated);
+
+        return redirect()
+            ->route('admin.positions')
+            ->with('success', 'Cập nhật chức vụ thành công.');
+    }
+
     public function trash(Request $request): View
     {
         $positions = Position::onlyTrashed()
@@ -28,6 +82,7 @@ class PositionController extends Controller
 
         return view('admin.positions.trash', compact('positions'));
     }
+    // xóa mềm
 
     public function destroy(Position $position): RedirectResponse
     {
@@ -37,7 +92,7 @@ class PositionController extends Controller
             ->route('admin.positions')
             ->with('success', 'Đã xóa mềm chức vụ thành công. Bạn có thể khôi phục từ danh sách đã xóa.');
     }
-
+//Khôi phục
     public function restore(Request $request, int $id): RedirectResponse
     {
         $position = Position::onlyTrashed()->findOrFail($id);
@@ -46,5 +101,16 @@ class PositionController extends Controller
         return redirect()
             ->route('admin.positions.trash')
             ->with('success', 'Đã khôi phục chức vụ thành công.');
+    }
+    // xóa cứng
+
+    public function forceDelete(Request $request, int $id): RedirectResponse
+    {
+        $position = Position::onlyTrashed()->findOrFail($id);
+        $position->forceDelete();
+
+        return redirect()
+            ->route('admin.positions.trash')
+            ->with('success', 'Đã xóa cứng chức vụ khỏi hệ thống.');
     }
 }

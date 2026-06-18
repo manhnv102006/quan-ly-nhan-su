@@ -5,7 +5,12 @@
                 <h2 class="mb-1 text-2xl font-bold text-slate-800">Danh sách chức vụ</h2>
                 <p class="text-sm text-slate-500">Quản lý chức vụ đang hoạt động và xóa mềm.</p>
             </div>
-            <a href="{{ route('admin.positions.trash') }}" class="btn btn-outline-secondary">Xem chức vụ đã xóa</a>
+            <div class="d-flex gap-2">
+                <a href="{{ route('admin.positions.create') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i> Thêm mới
+                </a>
+                <a href="{{ route('admin.positions.trash') }}" class="btn btn-outline-secondary">Xem chức vụ đã xóa</a>
+            </div>
         </div>
 
         <div class="table-responsive">
@@ -31,13 +36,19 @@
                                 </span>
                             </td>
                             <td>
-                                <form action="{{ route('admin.positions.destroy', $position) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc muốn xóa chức vụ này không?')">
-                                        Xóa mềm
-                                    </button>
-                                </form>
+                                <div class="d-flex gap-2">
+                                    <a href="{{ route('admin.positions.edit', $position) }}" class="btn btn-sm btn-warning">
+                                        <i class="bi bi-pencil me-1"></i> Sửa
+                                    </a>
+                                    
+                                    <form action="{{ route('admin.positions.destroy', $position) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc muốn xóa chức vụ này không?')">
+                                            <i class="bi bi-trash me-1"></i> Xóa mềm
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty
