@@ -40,7 +40,7 @@
     ];
     $firstName = collect(explode(' ', trim(Auth::user()->name)))->filter()->first() ?? Auth::user()->name;
     $managerName = $employeeProfile?->full_name ?? Auth::user()->name;
-    $departmentName = $department?->department_name ?? 'Chưa gán phòng ban';
+    $departmentName = $department?->department_name ?? 'Chưa gắn phòng ban';
     $statusClasses = [
         'active' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
         'inactive' => 'bg-slate-100 text-slate-600 border-slate-200',
@@ -78,12 +78,12 @@
 @endphp
 
 <x-staff-layout
-    title="Manager Dashboard"
+    title="Bảng điều khiển quản lý"
     subtitle="Theo dõi đội ngũ, phê duyệt yêu cầu và nhịp độ vận hành của phòng ban."
     role="manager"
     :navigation="$navigation"
 >
-    <section id="overview" class="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-500 p-6 text-white shadow-xl shadow-emerald-500/20 sm:p-8">
+    <section id="overview" class="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-400 p-6 text-white shadow-xl shadow-emerald-400/15 sm:p-8">
         <div class="absolute -right-16 top-0 h-48 w-48 rounded-full bg-white/10 blur-3xl"></div>
         <div class="absolute bottom-0 left-0 h-40 w-40 -translate-x-1/4 translate-y-1/4 rounded-full bg-cyan-300/20 blur-3xl"></div>
 
@@ -264,7 +264,7 @@
 
                     @if ($teamMembers->isEmpty())
                         <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
-                            <p class="text-sm font-semibold text-slate-700">Chưa có thành viên nào được gán vào phòng ban này.</p>
+                            <p class="text-sm font-semibold text-slate-700">Chưa có thành viên nào được gắn vào phòng ban này.</p>
                             <p class="mt-1 text-sm text-slate-500">Khi dữ liệu nhân sự được cập nhật, danh sách đội ngũ sẽ xuất hiện ở đây.</p>
                         </div>
                     @else
@@ -299,7 +299,7 @@
 
             <section id="approvals" class="staff-card overflow-hidden">
                 <div class="border-b border-slate-100 px-6 py-5 sm:px-7">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-amber-600">Approval queue</p>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-amber-600">Hàng đợi phê duyệt</p>
                     <h3 class="mt-2 text-2xl font-bold tracking-tight text-slate-800">Các yêu cầu cần xử lý</h3>
                     <p class="mt-1 text-sm text-slate-500">Ưu tiên duyệt nhanh các đơn nghỉ để đội ngũ không bị gián đoạn lịch làm việc.</p>
                 </div>
@@ -344,7 +344,7 @@
             <section id="kpi" class="staff-card p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-600">KPI pulse</p>
+                        <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-600">Nhịp KPI</p>
                         <h3 class="mt-2 text-xl font-bold text-slate-800">Sức khỏe mục tiêu</h3>
                         <p class="mt-1 text-sm text-slate-500">Tỷ lệ hoàn thành giúp bạn nhìn nhanh nhịp độ đội nhóm.</p>
                     </div>
