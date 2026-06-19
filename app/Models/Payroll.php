@@ -14,6 +14,8 @@ class Payroll extends Model
         'generated_by',
         'approved_by',
         'approved_at',
+        'paid_by',
+        'paid_at',
         'basic_salary',
         'allowance',
         'bonus',
@@ -24,6 +26,7 @@ class Payroll extends Model
 
     protected $casts = [
         'approved_at' => 'datetime',
+        'paid_at' => 'datetime',
     ];
 
     public function employee(): BelongsTo
@@ -39,6 +42,11 @@ class Payroll extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function payer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'paid_by');
     }
 
     public function isDraft(): bool
@@ -64,5 +72,10 @@ class Payroll extends Model
     public function canBeApproved(): bool
     {
         return $this->isPending();
+    }
+
+    public function canBePaid(): bool
+    {
+        return $this->isApproved();
     }
 }
