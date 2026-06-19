@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Employee extends Model
@@ -27,5 +27,25 @@ class Employee extends Model
     public function payrolls(): HasMany
     {
         return $this->hasMany(Payroll::class);
+    }
+
+    public function position(): BelongsTo
+    {
+        return $this->belongsTo(Position::class);
+    }
+
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(Contract::class);
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    public function employeeKpis(): HasMany
+    {
+        return $this->hasMany(EmployeeKPI::class);
     }
 }
