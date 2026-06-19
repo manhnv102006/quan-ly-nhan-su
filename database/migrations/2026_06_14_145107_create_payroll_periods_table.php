@@ -13,9 +13,12 @@ return new class extends Migration
     {
          Schema::create('payroll_periods', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->string('name');
             $table->tinyInteger('month')->unsigned();   // 1 - 12
             $table->year('year');
-            $table->enum('status', ['open', 'closed']);
+            $table->date('start_date');
+            $table->date('end_date');
+            $table->enum('status', ['open', 'closed'])->default('open');
             $table->timestamps();
  
             $table->unique(['month', 'year']);          // Mỗi tháng/năm chỉ có 1 kỳ lương

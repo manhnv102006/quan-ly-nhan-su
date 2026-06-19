@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\AdminModuleController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\PositionController;
+use App\Http\Controllers\Admin\PayrollPeriodController;
+use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -38,12 +40,17 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/positions/{id}/restore', [PositionController::class, 'restore'])->name('positions.restore');
     Route::delete('/positions/{id}/force-delete', [PositionController::class, 'forceDelete'])->name('positions.forceDelete');
 
-
+    // Kỳ lương
+    Route::resource('payroll-periods', PayrollPeriodController::class);
 
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
     Route::get('/attendances', [AdminModuleController::class, 'attendances'])->name('attendances');
     Route::get('/kpis', [AdminModuleController::class, 'kpis'])->name('kpis');
-    Route::get('/payrolls', [AdminModuleController::class, 'payrolls'])->name('payrolls');
+    Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
+    Route::post('/payrolls/generate', [PayrollController::class, 'generate'])->name('payrolls.generate');
+    Route::post('/payrolls/{payroll}/submit', [PayrollController::class, 'submit'])->name('payrolls.submit');
+    Route::post('/payrolls/{payroll}/approve', [PayrollController::class, 'approve'])->name('payrolls.approve');
+    Route::post('/payrolls/{payroll}/pay', [PayrollController::class, 'pay'])->name('payrolls.pay');
     Route::get('/contracts', [AdminModuleController::class, 'contracts'])->name('contracts');
     Route::get('/recruitment', [AdminModuleController::class, 'recruitment'])->name('recruitment');
 });
