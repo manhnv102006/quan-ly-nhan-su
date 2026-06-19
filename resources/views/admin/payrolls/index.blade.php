@@ -28,16 +28,16 @@
             </div>
 
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <p class="text-slate-500 text-sm">Đã thanh toán (Paid)</p>
+                <p class="text-slate-500 text-sm">Tổng thực tế đã chi trả</p>
                 <h3 class="text-3xl font-bold mt-2 text-emerald-600">
                     {{ number_format(\App\Models\Payroll::where('status', 'paid')->sum('total_salary'), 0, ',', '.') }} ₫
                 </h3>
             </div>
 
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <p class="text-slate-500 text-sm">Chờ thanh toán (Approved)</p>
-                <h3 class="text-3xl font-bold mt-2 text-blue-600">
-                    {{ number_format(\App\Models\Payroll::where('status', 'approved')->sum('total_salary'), 0, ',', '.') }} ₫
+                <p class="text-slate-500 text-sm">Tổng chưa chi trả</p>
+                <h3 class="text-3xl font-bold mt-2 text-rose-600">
+                    {{ number_format(\App\Models\Payroll::where('status', '!=', 'paid')->sum('total_salary'), 0, ',', '.') }} ₫
                 </h3>
             </div>
         </div>
@@ -126,29 +126,40 @@
                                     {{ number_format($payroll->total_salary, 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="flex flex-col items-center justify-center text-center">
+                                    <div class="flex flex-col items-center justify-center text-center gap-1">
                                         @if ($payroll->isPaid())
                                             <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                                                Đã trả
+                                                Đã chi trả
                                             </span>
+                                            @if($payroll->approved_by)
+                                                <span class="text-[10px] text-slate-400 block max-w-[150px] truncate"
+                                                      title="Duyệt bởi {{ $payroll->approver?->name }} vào lúc {{ $payroll->approved_at?->format('H:i d/m/Y') }}">
+                                                    Duyệt: {{ $payroll->approver?->name }}
+                                                </span>
+                                            @endif
+                                            @if($payroll->paid_by)
+                                                <span class="text-[10px] text-slate-500 block max-w-[150px] truncate"
+                                                      title="Chi trả bởi {{ $payroll->payer?->name }} vào lúc {{ $payroll->paid_at?->format('H:i d/m/Y') }}">
+                                                    Trả bởi: {{ $payroll->payer?->name }}
+                                                </span>
+                                            @endif
                                         @elseif ($payroll->isApproved())
                                             <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                                                Đã duyệt
+                                                Chưa chi trả (Đã duyệt)
                                             </span>
+                                            @if($payroll->approved_by)
+                                                <span class="text-[10px] text-slate-400 block max-w-[150px] truncate"
+                                                      title="Duyệt bởi {{ $payroll->approver?->name }} vào lúc {{ $payroll->approved_at?->format('H:i d/m/Y') }}">
+                                                    Duyệt: {{ $payroll->approver?->name }}
+                                                </span>
+                                            @endif
                                         @elseif ($payroll->isPending())
                                             <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
-                                                Chờ duyệt
+                                                Chưa chi trả (Chờ duyệt)
                                             </span>
                                         @else
                                             <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
-                                                Bản nháp
-                                            </span>
-                                        @endif
-
-                                        @if ($payroll->approved_by && ($payroll->isApproved() || $payroll->isPaid()))
-                                            <span class="text-[10px] text-slate-400 mt-1 block max-w-[120px] truncate"
-                                                  title="Duyệt bởi {{ $payroll->approver?->name }} vào lúc {{ $payroll->approved_at?->format('H:i d/m/Y') }}">
-                                                By: {{ $payroll->approver?->name }}
+                                                Chưa chi trả (Nháp)
                                             </span>
                                         @endif
                                     </div>
@@ -171,8 +182,22 @@
                                                     Duyệt
                                                 </button>
                                             </form>
+                                        @elseif ($payroll->isApproved())
+                                            <form action="{{ route('admin.payrolls.pay', $payroll) }}" method="POST"
+                                                  onsubmit="return confirm('Xác nhận đã thực hiện chi trả lương cho nhân viên {{ $payroll->employee?->full_name }}?')">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition shadow-sm shadow-emerald-500/10">
+                                                    Chi trả
+                                                </button>
+                                            </form>
                                         @else
-                                            <span class="text-emerald-500 font-medium text-xs">✓ Hoàn thành</span>
+                                            <span class="text-emerald-600 font-semibold text-xs flex items-center gap-1">
+                                                <svg class="w-4 h-4 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                Đã chi trả
+                                            </span>
                                         @endif
                                     </div>
                                 </td>
