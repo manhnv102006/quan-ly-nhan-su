@@ -15,10 +15,17 @@
                 </p>
             </div>
 
-            <a href="{{ route('admin.departments') }}"
-               class="px-5 py-3 rounded-xl bg-slate-200 text-slate-700 font-medium hover:bg-slate-300 transition">
-                ← Quay lại
-            </a>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('admin.departments.edit', $department->id) }}"
+                   class="px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
+                    Sửa phòng ban
+                </a>
+
+                <a href="{{ route('admin.departments') }}"
+                   class="px-5 py-3 rounded-xl bg-slate-200 text-slate-700 font-medium hover:bg-slate-300 transition">
+                    ← Quay lại
+                </a>
+            </div>
 
         </div>
 

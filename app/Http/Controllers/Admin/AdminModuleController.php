@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 
 use App\Http\Controllers\Controller;
-use App\Models\Department;
 use Illuminate\View\View;
 
 
@@ -14,36 +13,6 @@ class AdminModuleController extends Controller
     {
         return $this->module('Quản lý tài khoản', 'Quản lý tài khoản đăng nhập, phân quyền và trạng thái người dùng.');
     }
-
-    public function departments(): View
-    {
-        $departments = Department::all();
-    
-        return view('admin.departments.index', [
-            'title' => 'Quản lý phòng ban',
-            'departments' => $departments
-        ]);
-    }
-    public function departmentDetail($id): View
-    {
-        $department = Department::findOrFail($id);
-
-        return view(
-            'admin.departments.detail',
-            compact('department')
-        );
-    }
-    public function departmentDelete($id)
-{
-    $department = Department::findOrFail($id);
-
-    $department->delete();
-
-    return redirect()
-        ->route('admin.departments')
-        ->with('success', 'Xóa phòng ban thành công');
-}
- 
 
     public function positions(): View
     {
