@@ -39,6 +39,10 @@
                             </td>
                             <td>
                                 <div class="d-flex gap-2">
+                                    <a href="{{ route('admin.positions.show', $position) }}" class="btn btn-sm btn-info text-white">
+                                        <i class="bi bi-eye me-1"></i> Xem
+                                    </a>
+
                                     <a href="{{ route('admin.positions.edit', $position) }}" class="btn btn-sm btn-warning">
                                         <i class="bi bi-pencil me-1"></i> Sửa
                                     </a>
