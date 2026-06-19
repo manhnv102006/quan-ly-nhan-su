@@ -47,6 +47,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/attendances', [AdminModuleController::class, 'attendances'])->name('attendances');
     Route::get('/kpis', [AdminModuleController::class, 'kpis'])->name('kpis');
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
+    Route::post('/payrolls/generate', [PayrollController::class, 'generate'])->name('payrolls.generate');
     Route::get('/contracts', [AdminModuleController::class, 'contracts'])->name('contracts');
     Route::get('/recruitment', [AdminModuleController::class, 'recruitment'])->name('recruitment');
 });
