@@ -15,13 +15,18 @@
                 </p>
             </div>
 
-            <a href="#"
-               class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="{{ route('admin.departments.create') }}"
+                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
+                    <span>+</span>
+                    Thêm phòng ban
+                </a>
 
-                <span>+</span>
-                Thêm phòng ban
-
-            </a>
+                <a href="{{ route('admin.departments.trash') }}"
+                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
+                    Phòng ban đã xóa
+                </a>
+            </div>
 
         </div>
 
@@ -168,9 +173,18 @@
                                 <div class="flex justify-center gap-2">
 
                                     <a href="{{ route('admin.departments.detail',$dept->id) }}"
-                                       class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200">
+                                       class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200"
+                                       title="Xem chi tiết">
 
                                         👁
+
+                                    </a>
+
+                                    <a href="{{ route('admin.departments.edit', $dept->id) }}"
+                                       class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200"
+                                       title="Sửa">
+
+                                        ✏️
 
                                     </a>
 
@@ -252,7 +266,7 @@
             <p class="mt-2 text-sm text-slate-500">
                 Bạn có chắc muốn xóa phòng ban
                 <span id="delete-dept-name" class="font-semibold text-slate-700"></span>?
-                Hành động này không thể hoàn tác.
+                Phòng ban sẽ được chuyển vào danh sách đã xóa và có thể khôi phục sau.
             </p>
 
             <div class="mt-6 flex gap-3">

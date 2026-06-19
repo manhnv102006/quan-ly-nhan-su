@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminModuleController;
+use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
@@ -15,17 +16,25 @@ Route::get('/dashboard', [DashboardController::class, 'redirect'])
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
     Route::get('/accounts', [AdminModuleController::class, 'accounts'])->name('accounts');
-    Route::get('/departments', [AdminModuleController::class, 'departments'])->name('departments');
-    Route::get('/departments/{id}', [AdminModuleController::class, 'departmentDetail'])->name('departments.detail');
-    Route::delete('/departments/{id}', [AdminModuleController::class, 'departmentDelete'])->name('departments.delete');
+    Route::get('/departments', [DepartmentController::class, 'index'])->name('departments');
+    Route::get('/departments/create', [DepartmentController::class, 'create'])->name('departments.create');
+    Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
+    Route::get('/departments/trash', [DepartmentController::class, 'trash'])->name('departments.trash');
+    Route::get('/departments/{id}/edit', [DepartmentController::class, 'edit'])->name('departments.edit');
+    Route::put('/departments/{id}', [DepartmentController::class, 'update'])->name('departments.update');
+    Route::get('/departments/{id}', [DepartmentController::class, 'show'])->name('departments.detail');
+    Route::delete('/departments/{id}', [DepartmentController::class, 'destroy'])->name('departments.delete');
+    Route::post('/departments/{id}/restore', [DepartmentController::class, 'restore'])->name('departments.restore');
+    Route::delete('/departments/{id}/force-delete', [DepartmentController::class, 'forceDelete'])->name('departments.forceDelete');
     //Chức vụ
     Route::get('/positions', [PositionController::class, 'index'])->name('positions');
     Route::get('/positions/create', [PositionController::class, 'create'])->name('positions.create');
     Route::post('/positions', [PositionController::class, 'store'])->name('positions.store');
+    Route::get('/positions/trash', [PositionController::class, 'trash'])->name('positions.trash');
+    Route::get('/positions/{position}', [PositionController::class, 'show'])->name('positions.show');
     Route::get('/positions/{position}/edit', [PositionController::class, 'edit'])->name('positions.edit');
     Route::put('/positions/{position}', [PositionController::class, 'update'])->name('positions.update');
     Route::delete('/positions/{position}', [PositionController::class, 'destroy'])->name('positions.destroy');
-    Route::get('/positions/trash', [PositionController::class, 'trash'])->name('positions.trash');
     Route::post('/positions/{id}/restore', [PositionController::class, 'restore'])->name('positions.restore');
     Route::delete('/positions/{id}/force-delete', [PositionController::class, 'forceDelete'])->name('positions.forceDelete');
 
