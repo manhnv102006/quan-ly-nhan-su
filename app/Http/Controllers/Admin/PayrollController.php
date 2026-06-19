@@ -11,6 +11,8 @@ use App\Models\PayrollPeriod;
 use App\Services\PayrollService;
 use Illuminate\Http\RedirectResponse;
 
+use Illuminate\Support\Facades\Auth;
+
 class PayrollController extends Controller
 {
     protected $payrollService;
@@ -69,5 +71,41 @@ class PayrollController extends Controller
         return redirect()
             ->route('admin.payrolls')
             ->with('success', 'Tính lương tự động cho kỳ lương thành công.');
+    }
+
+    public function submit(Payroll $payroll): RedirectResponse
+    {
+        if (!$payroll->isDraft()) {
+            return redirect()
+                ->back()
+                ->with('error', 'Chỉ bảng lương ở trạng thái Nháp mới có thể gửi duyệt.');
+        }
+
+        $payroll->update([
+            'status' => 'pending',
+        ]);
+
+        return redirect()
+            ->route('admin.payrolls')
+            ->with('success', 'Gửi duyệt bảng lương thành công.');
+    }
+
+    public function approve(Payroll $payroll): RedirectResponse
+    {
+        if (!$payroll->isPending()) {
+            return redirect()
+                ->back()
+                ->with('error', 'Chỉ bảng lương ở trạng thái Chờ duyệt mới có thể phê duyệt.');
+        }
+
+        $payroll->update([
+            'status' => 'approved',
+            'approved_by' => Auth::id() ?? 1,
+            'approved_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('admin.payrolls')
+            ->with('success', 'Phê duyệt bảng lương thành công.');
     }
 }
