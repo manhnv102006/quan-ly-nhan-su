@@ -24,7 +24,7 @@ class PayrollController extends Controller
 
     public function index(Request $request): View
     {
-        $query = Payroll::query()->with(['employee', 'payrollPeriod']);
+        $query = Payroll::query()->with(['employee', 'payrollPeriod', 'approver', 'payer']);
 
         // Tìm kiếm theo tên nhân viên
         if ($request->filled('search')) {
@@ -107,5 +107,24 @@ class PayrollController extends Controller
         return redirect()
             ->route('admin.payrolls')
             ->with('success', 'Phê duyệt bảng lương thành công.');
+    }
+
+    public function pay(Payroll $payroll): RedirectResponse
+    {
+        if (!$payroll->isApproved()) {
+            return redirect()
+                ->back()
+                ->with('error', 'Chỉ bảng lương đã được duyệt mới có thể chi trả.');
+        }
+
+        $payroll->update([
+            'status' => 'paid',
+            'paid_by' => Auth::id() ?? 1,
+            'paid_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('admin.payrolls')
+            ->with('success', 'Đánh dấu đã chi trả lương thành công.');
     }
 }

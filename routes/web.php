@@ -50,6 +50,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/payrolls/generate', [PayrollController::class, 'generate'])->name('payrolls.generate');
     Route::post('/payrolls/{payroll}/submit', [PayrollController::class, 'submit'])->name('payrolls.submit');
     Route::post('/payrolls/{payroll}/approve', [PayrollController::class, 'approve'])->name('payrolls.approve');
+    Route::post('/payrolls/{payroll}/pay', [PayrollController::class, 'pay'])->name('payrolls.pay');
     Route::get('/contracts', [AdminModuleController::class, 'contracts'])->name('contracts');
     Route::get('/recruitment', [AdminModuleController::class, 'recruitment'])->name('recruitment');
 });
