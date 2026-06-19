@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminModuleController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\PositionController;
+use App\Http\Controllers\Admin\PayrollPeriodController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -38,7 +39,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/positions/{id}/restore', [PositionController::class, 'restore'])->name('positions.restore');
     Route::delete('/positions/{id}/force-delete', [PositionController::class, 'forceDelete'])->name('positions.forceDelete');
 
-
+    // Kỳ lương
+    Route::resource('payroll-periods', PayrollPeriodController::class);
 
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
     Route::get('/attendances', [AdminModuleController::class, 'attendances'])->name('attendances');
