@@ -12,11 +12,18 @@ class PositionController extends Controller
 {
     public function index(Request $request): View
     {
-        $positions = Position::orderBy('position_name')
+        $positions = Position::query()
+            ->orderBy('position_name')
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.positions.index', compact('positions'));
+        $stats = [
+            'total' => Position::count(),
+            'active' => Position::where('status', 'active')->count(),
+            'with_employees' => Position::whereHas('employees')->count(),
+        ];
+
+        return view('admin.positions.index', compact('positions', 'stats'));
     }
 
     public function create(): View
