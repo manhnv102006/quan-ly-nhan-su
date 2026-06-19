@@ -30,10 +30,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/positions', [PositionController::class, 'index'])->name('positions');
     Route::get('/positions/create', [PositionController::class, 'create'])->name('positions.create');
     Route::post('/positions', [PositionController::class, 'store'])->name('positions.store');
+    Route::get('/positions/trash', [PositionController::class, 'trash'])->name('positions.trash');
+    Route::get('/positions/{position}', [PositionController::class, 'show'])->name('positions.show');
     Route::get('/positions/{position}/edit', [PositionController::class, 'edit'])->name('positions.edit');
     Route::put('/positions/{position}', [PositionController::class, 'update'])->name('positions.update');
     Route::delete('/positions/{position}', [PositionController::class, 'destroy'])->name('positions.destroy');
-    Route::get('/positions/trash', [PositionController::class, 'trash'])->name('positions.trash');
     Route::post('/positions/{id}/restore', [PositionController::class, 'restore'])->name('positions.restore');
     Route::delete('/positions/{id}/force-delete', [PositionController::class, 'forceDelete'])->name('positions.forceDelete');
 

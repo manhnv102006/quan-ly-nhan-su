@@ -46,6 +46,15 @@ class PositionController extends Controller
             ->with('success', 'Thêm chức vụ thành công.');
     }
 
+    public function show(Position $position): View
+    {
+        $employees = $position->employees()
+            ->orderBy('full_name')
+            ->get();
+
+        return view('admin.positions.show', compact('position', 'employees'));
+    }
+
     public function edit(Position $position): View
     {
         return view('admin.positions.edit', compact('position'));
