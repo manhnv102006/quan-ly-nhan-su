@@ -1,86 +1,99 @@
 <x-admin-layout title="Thêm chức vụ mới">
-    <div class="admin-card p-6">
-        <div class="mb-6">
-            <h2 class="mb-1 text-2xl font-bold text-slate-800">Thêm chức vụ mới</h2>
-            <p class="text-sm text-slate-500">Điền thông tin chức vụ mới bên dưới</p>
+
+    <div class="space-y-6">
+
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Thêm chức vụ mới</h2>
+                <p class="text-sm text-slate-500 mt-1">Điền thông tin chức vụ bên dưới</p>
+            </div>
+
+            <a href="{{ route('admin.positions') }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
+                ← Quay lại
+            </a>
         </div>
 
-        <form action="{{ route('admin.positions.store') }}" method="POST">
-            @csrf
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8 max-w-3xl">
 
-            <div class="mb-4">
-                <label for="position_name" class="form-label fw-bold">Tên chức vụ <span class="text-danger">*</span></label>
-                <input
-                    type="text"
-                    class="form-control @error('position_name') is-invalid @enderror"
-                    id="position_name"
-                    name="position_name"
-                    placeholder="Nhập tên chức vụ"
-                    value="{{ old('position_name') }}"
-                    required
-                >
-                @error('position_name')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
+            @if ($errors->any())
+                <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <p class="font-semibold mb-1">Vui lòng kiểm tra lại thông tin:</p>
+                    <ul class="list-disc list-inside space-y-0.5">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-            <div class="mb-4">
-                <label for="base_salary" class="form-label fw-bold">Lương cơ bản (VND) <span class="text-danger">*</span></label>
-                <input
-                    type="number"
-                    class="form-control @error('base_salary') is-invalid @enderror"
-                    id="base_salary"
-                    name="base_salary"
-                    placeholder="Nhập lương cơ bản"
-                    value="{{ old('base_salary') }}"
-                    min="0"
-                    step="1000"
-                    required
-                >
-                @error('base_salary')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
+            <form action="{{ route('admin.positions.store') }}" method="POST" class="space-y-5">
+                @csrf
 
-            <div class="mb-4">
-                <label for="status" class="form-label fw-bold">Trạng thái <span class="text-danger">*</span></label>
-                <select
-                    class="form-select @error('status') is-invalid @enderror"
-                    id="status"
-                    name="status"
-                    required
-                >
-                    <option value="">-- Chọn trạng thái --</option>
-                    <option value="active" {{ old('status') === 'active' ? 'selected' : '' }}>Hoạt động</option>
-                    <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Không hoạt động</option>
-                </select>
-                @error('status')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
+                <div>
+                    <label for="position_name" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Tên chức vụ <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="position_name" name="position_name"
+                           value="{{ old('position_name') }}"
+                           placeholder="Nhập tên chức vụ" required
+                           class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('position_name') border-red-400 @enderror">
+                    @error('position_name')
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
 
-            <div class="mb-4">
-                <label for="description" class="form-label fw-bold">Mô tả</label>
-                <textarea
-                    class="form-control @error('description') is-invalid @enderror"
-                    id="description"
-                    name="description"
-                    rows="4"
-                    placeholder="Nhập mô tả chức vụ (không bắt buộc)"
-                >{{ old('description') }}</textarea>
-                @error('description')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
+                <div>
+                    <label for="base_salary" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Lương cơ bản (VND) <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" id="base_salary" name="base_salary"
+                           value="{{ old('base_salary') }}"
+                           placeholder="Nhập lương cơ bản" min="0" step="1000" required
+                           class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('base_salary') border-red-400 @enderror">
+                    @error('base_salary')
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
 
-            <div class="d-flex gap-3">
-                <button type="submit" class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition hover:from-violet-700 hover:to-indigo-700">
-                    <i class="bi bi-plus-circle me-2"></i> Thêm mới
-                </button>
-                <a href="{{ route('admin.positions') }}" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
-                    <i class="bi bi-x-circle me-2"></i> Hủy
-                </a>
-            </div>
-        </form>
+                <div>
+                    <label for="status" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Trạng thái <span class="text-red-500">*</span>
+                    </label>
+                    <select id="status" name="status" required
+                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('status') border-red-400 @enderror">
+                        <option value="">-- Chọn trạng thái --</option>
+                        <option value="active" @selected(old('status') === 'active')>Hoạt động</option>
+                        <option value="inactive" @selected(old('status') === 'inactive')>Không hoạt động</option>
+                    </select>
+                    @error('status')
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="description" class="block text-sm font-semibold text-slate-700 mb-2">Mô tả</label>
+                    <textarea id="description" name="description" rows="4"
+                              placeholder="Mô tả chức vụ (không bắt buộc)"
+                              class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition resize-y @error('description') border-red-400 @enderror">{{ old('description') }}</textarea>
+                    @error('description')
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="flex flex-wrap gap-3 pt-2">
+                    <button type="submit"
+                            class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
+                        + Thêm chức vụ
+                    </button>
+                    <a href="{{ route('admin.positions') }}"
+                       class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
+                        Hủy
+                    </a>
+                </div>
+            </form>
+        </div>
+
     </div>
+
 </x-admin-layout>
