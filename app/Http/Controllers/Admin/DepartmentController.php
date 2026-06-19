@@ -119,6 +119,36 @@ class DepartmentController extends Controller
 
         return redirect()
             ->route('admin.departments')
-            ->with('success', 'Xóa phòng ban thành công.');
+            ->with('success', 'Đã xóa mềm phòng ban. Bạn có thể khôi phục từ danh sách đã xóa.');
+    }
+
+    public function trash(): View
+    {
+        $departments = Department::onlyTrashed()
+            ->orderByDesc('deleted_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('admin.departments.trash', compact('departments'));
+    }
+
+    public function restore(int $id): RedirectResponse
+    {
+        $department = Department::onlyTrashed()->findOrFail($id);
+        $department->restore();
+
+        return redirect()
+            ->route('admin.departments.trash')
+            ->with('success', 'Đã khôi phục phòng ban thành công.');
+    }
+
+    public function forceDelete(int $id): RedirectResponse
+    {
+        $department = Department::onlyTrashed()->findOrFail($id);
+        $department->forceDelete();
+
+        return redirect()
+            ->route('admin.departments.trash')
+            ->with('success', 'Đã xóa cứng phòng ban khỏi hệ thống.');
     }
 }

@@ -19,10 +19,13 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/departments', [DepartmentController::class, 'index'])->name('departments');
     Route::get('/departments/create', [DepartmentController::class, 'create'])->name('departments.create');
     Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
+    Route::get('/departments/trash', [DepartmentController::class, 'trash'])->name('departments.trash');
     Route::get('/departments/{id}/edit', [DepartmentController::class, 'edit'])->name('departments.edit');
     Route::put('/departments/{id}', [DepartmentController::class, 'update'])->name('departments.update');
     Route::get('/departments/{id}', [DepartmentController::class, 'show'])->name('departments.detail');
     Route::delete('/departments/{id}', [DepartmentController::class, 'destroy'])->name('departments.delete');
+    Route::post('/departments/{id}/restore', [DepartmentController::class, 'restore'])->name('departments.restore');
+    Route::delete('/departments/{id}/force-delete', [DepartmentController::class, 'forceDelete'])->name('departments.forceDelete');
     //Chức vụ
     Route::get('/positions', [PositionController::class, 'index'])->name('positions');
     Route::get('/positions/create', [PositionController::class, 'create'])->name('positions.create');
