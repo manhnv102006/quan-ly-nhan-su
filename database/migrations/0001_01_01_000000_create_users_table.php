@@ -11,19 +11,34 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-        $table->id();
-        $table->unsignedBigInteger('role_id')->nullable(); // ← thêm dòng này
-        $table->string('username', 50)->unique();          // ← thêm dòng này
-        $table->string('name');
-        $table->string('email')->unique();
-        $table->timestamp('email_verified_at')->nullable();
-        $table->string('password');
-        $table->enum('status', ['active', 'inactive']);    // ← thêm dòng này
-        $table->rememberToken();
-        $table->timestamps();
+            $table->id();
+            $table->unsignedBigInteger('role_id')->nullable(); // ← thêm dòng này
+            $table->string('username', 50)->unique();          // ← thêm dòng này
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->enum('status', ['active', 'inactive']);    // ← thêm dòng này
+            $table->rememberToken();
+            $table->timestamps();
 
-        // KHÔNG thêm FK role_id ở đây vì roles chưa tồn tại
-    });
+            // KHÔNG thêm FK role_id ở đây vì roles chưa tồn tại
+        });
+
+        Schema::create('password_reset_tokens', function (Blueprint $table) {
+            $table->string('email')->primary();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
+        });
+
+        Schema::create('sessions', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->foreignId('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->longText('payload');
+            $table->integer('last_activity')->index();
+        });
     }
 
     /**
