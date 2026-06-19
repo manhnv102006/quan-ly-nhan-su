@@ -98,6 +98,7 @@
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Khấu trừ</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Thực lĩnh</th>
                             <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -124,25 +125,61 @@
                                 <td class="px-6 py-4 font-bold text-violet-600">
                                     {{ number_format($payroll->total_salary, 0, ',', '.') }} ₫
                                 </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col items-center justify-center text-center">
+                                        @if ($payroll->isPaid())
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                                Đã trả
+                                            </span>
+                                        @elseif ($payroll->isApproved())
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                                                Đã duyệt
+                                            </span>
+                                        @elseif ($payroll->isPending())
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                                                Chờ duyệt
+                                            </span>
+                                        @else
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
+                                                Bản nháp
+                                            </span>
+                                        @endif
+
+                                        @if ($payroll->approved_by && ($payroll->isApproved() || $payroll->isPaid()))
+                                            <span class="text-[10px] text-slate-400 mt-1 block max-w-[120px] truncate"
+                                                  title="Duyệt bởi {{ $payroll->approver?->name }} vào lúc {{ $payroll->approved_at?->format('H:i d/m/Y') }}">
+                                                By: {{ $payroll->approver?->name }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
                                 <td class="px-6 py-4 text-center">
-                                    @if ($payroll->status === 'paid')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                                            Đã trả
-                                        </span>
-                                    @elseif ($payroll->status === 'approved')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                                            Đã duyệt
-                                        </span>
-                                    @else
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
-                                            Bản nháp
-                                        </span>
-                                    @endif
+                                    <div class="flex justify-center items-center">
+                                        @if ($payroll->isDraft())
+                                            <form action="{{ route('admin.payrolls.submit', $payroll) }}" method="POST">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition">
+                                                    Gửi duyệt
+                                                </button>
+                                            </form>
+                                        @elseif ($payroll->isPending())
+                                            <form action="{{ route('admin.payrolls.approve', $payroll) }}" method="POST">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold transition">
+                                                    Duyệt
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="text-emerald-500 font-medium text-xs">✓ Hoàn thành</span>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-12 text-slate-400">
+                                <td colspan="9" class="text-center py-12 text-slate-400">
                                     Không tìm thấy dữ liệu bảng lương phù hợp
                                 </td>
                             </tr>
