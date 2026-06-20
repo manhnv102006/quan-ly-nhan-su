@@ -64,13 +64,23 @@ class ContractTypeController extends Controller
             ->with('success', 'Loại hợp đồng đã được xóa mềm. Bạn có thể khôi phục sau.');
     }
 
+    public function trash(): View
+    {
+        $contractTypes = ContractType::onlyTrashed()
+            ->orderByDesc('deleted_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('admin.contract-types.trash', compact('contractTypes'));
+    }
+
     public function restore(int $id): RedirectResponse
     {
         $contractType = ContractType::onlyTrashed()->findOrFail($id);
         $contractType->restore();
 
         return redirect()
-            ->route('admin.contract-types.index')
+            ->route('admin.contract-types.trash')
             ->with('success', 'Loại hợp đồng đã được khôi phục thành công.');
     }
 }

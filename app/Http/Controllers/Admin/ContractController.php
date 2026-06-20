@@ -134,13 +134,24 @@ class ContractController extends Controller
             ->with('success', 'Hợp đồng đã được xóa mềm. Bạn có thể khôi phục sau.');
     }
 
+    public function trash(): View
+    {
+        $contracts = Contract::onlyTrashed()
+            ->with(['employee', 'contractType'])
+            ->orderByDesc('deleted_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('admin.contracts.trash', compact('contracts'));
+    }
+
     public function restore(int $id): RedirectResponse
     {
         $contract = Contract::onlyTrashed()->findOrFail($id);
         $contract->restore();
 
         return redirect()
-            ->route('admin.contracts.index')
+            ->route('admin.contracts.trash')
             ->with('success', 'Hợp đồng đã được khôi phục thành công.');
     }
 
