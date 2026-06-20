@@ -9,6 +9,18 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
+                @if ($user->id !== auth()->id())
+                    <form action="{{ route('admin.accounts.toggle-status', $user) }}" method="POST"
+                          onsubmit="return confirm(@json($user->status === 'active' ? 'Bạn có chắc muốn khóa tài khoản này? Người dùng sẽ không thể đăng nhập.' : 'Bạn có chắc muốn mở khóa tài khoản này?'))">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit"
+                                class="px-5 py-3 rounded-xl font-medium transition {{ $user->status === 'active' ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' }}">
+                            {{ $user->status === 'active' ? '🔒 Khóa tài khoản' : '🔓 Mở khóa tài khoản' }}
+                        </button>
+                    </form>
+                @endif
+
                 <a href="{{ route('admin.accounts.edit', $user) }}"
                    class="px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
                     Sửa tài khoản
@@ -79,7 +91,7 @@
                                     @if ($user->status === 'active')
                                         <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Hoạt động</span>
                                     @else
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-200 text-slate-600">Không hoạt động</span>
+                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Đã khóa</span>
                                     @endif
                                 </div>
                             </div>
@@ -130,7 +142,7 @@
                         @if ($user->status === 'active')
                             <span class="inline-flex items-center px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold">Hoạt động</span>
                         @else
-                            <span class="inline-flex items-center px-4 py-2 rounded-full bg-slate-200 text-slate-600 text-sm font-semibold">Không hoạt động</span>
+                            <span class="inline-flex items-center px-4 py-2 rounded-full bg-red-100 text-red-700 text-sm font-semibold">Đã khóa</span>
                         @endif
                     </div>
 
@@ -210,5 +222,19 @@
         </div>
 
     </div>
+
+    @if (session('success'))
+        <div id="success-toast"
+             class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-emerald-200 shadow-lg rounded-2xl px-5 py-4 max-w-sm">
+            <p class="text-sm font-medium text-slate-700">{{ session('success') }}</p>
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div id="error-toast"
+             class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-red-200 shadow-lg rounded-2xl px-5 py-4 max-w-sm">
+            <p class="text-sm font-medium text-slate-700">{{ session('error') }}</p>
+        </div>
+    @endif
 
 </x-admin-layout>

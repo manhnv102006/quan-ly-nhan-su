@@ -86,7 +86,7 @@
                                     @if ($user->status === 'active')
                                         <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Hoạt động</span>
                                     @else
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Không hoạt động</span>
+                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Đã khóa</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4">
@@ -108,6 +108,21 @@
                                         <a href="{{ route('admin.accounts.edit', $user) }}"
                                            class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200"
                                            title="Sửa">✏️</a>
+
+                                        @if ($user->id !== auth()->id())
+                                            <form action="{{ route('admin.accounts.toggle-status', $user) }}"
+                                                  method="POST"
+                                                  id="toggle-form-{{ $user->id }}">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="button"
+                                                        onclick="openToggleModal('{{ $user->id }}', @json($user->username), {{ $user->status === 'active' ? 'true' : 'false' }})"
+                                                        class="w-9 h-9 rounded-lg flex items-center justify-center {{ $user->status === 'active' ? 'bg-orange-100 text-orange-600 hover:bg-orange-200' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200' }}"
+                                                        title="{{ $user->status === 'active' ? 'Khóa tài khoản' : 'Mở khóa tài khoản' }}">
+                                                    {{ $user->status === 'active' ? '🔒' : '🔓' }}
+                                                </button>
+                                            </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -131,6 +146,32 @@
 
     </div>
 
+    <div id="toggle-modal"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm mx-4 p-6 text-center">
+            <div id="toggle-modal-icon" class="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center"></div>
+            <h3 id="toggle-modal-title" class="mt-5 text-lg font-bold text-slate-800"></h3>
+            <p class="mt-2 text-sm text-slate-500">
+                Bạn có chắc muốn
+                <span id="toggle-modal-action" class="font-semibold text-slate-700"></span>
+                tài khoản
+                <span id="toggle-account-name" class="font-semibold text-slate-700"></span>?
+            </p>
+            <p id="toggle-modal-note" class="mt-2 text-xs text-slate-400"></p>
+            <div class="mt-6 flex gap-3">
+                <button type="button" onclick="closeToggleModal()"
+                        class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
+                    Hủy
+                </button>
+                <button type="button" onclick="confirmToggle()"
+                        id="toggle-modal-confirm"
+                        class="flex-1 px-5 py-3 rounded-xl text-white font-medium transition">
+                    Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+
     @if (session('success'))
         <div id="success-toast"
              class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-emerald-200 shadow-lg rounded-2xl px-5 py-4 max-w-sm">
@@ -143,13 +184,83 @@
         </div>
     @endif
 
+    @if (session('error'))
+        <div id="error-toast"
+             class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-red-200 shadow-lg rounded-2xl px-5 py-4 max-w-sm">
+            <div class="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </div>
+            <p class="text-sm font-medium text-slate-700">{{ session('error') }}</p>
+        </div>
+    @endif
+
     <script>
+        let toggleTargetId = null;
+
+        function openToggleModal(id, username, isActive) {
+            toggleTargetId = id;
+
+            document.getElementById('toggle-account-name').textContent = username;
+            document.getElementById('toggle-modal-action').textContent = isActive ? 'khóa' : 'mở khóa';
+            document.getElementById('toggle-modal-title').textContent = isActive ? 'Khóa tài khoản?' : 'Mở khóa tài khoản?';
+            document.getElementById('toggle-modal-note').textContent = isActive
+                ? 'Người dùng sẽ không thể đăng nhập cho đến khi được mở khóa.'
+                : 'Người dùng có thể đăng nhập lại bình thường.';
+
+            const icon = document.getElementById('toggle-modal-icon');
+            const confirmBtn = document.getElementById('toggle-modal-confirm');
+
+            if (isActive) {
+                icon.className = 'w-16 h-16 mx-auto rounded-2xl bg-orange-100 flex items-center justify-center';
+                icon.textContent = '🔒';
+                confirmBtn.className = 'flex-1 px-5 py-3 rounded-xl bg-orange-600 text-white font-medium hover:bg-orange-700 transition';
+                confirmBtn.textContent = 'Khóa';
+            } else {
+                icon.className = 'w-16 h-16 mx-auto rounded-2xl bg-emerald-100 flex items-center justify-center';
+                icon.textContent = '🔓';
+                confirmBtn.className = 'flex-1 px-5 py-3 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition';
+                confirmBtn.textContent = 'Mở khóa';
+            }
+
+            const modal = document.getElementById('toggle-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeToggleModal() {
+            const modal = document.getElementById('toggle-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            toggleTargetId = null;
+        }
+
+        function confirmToggle() {
+            if (toggleTargetId) {
+                document.getElementById('toggle-form-' + toggleTargetId).submit();
+            }
+        }
+
+        document.getElementById('toggle-modal').addEventListener('click', function (e) {
+            if (e.target === this) closeToggleModal();
+        });
+
         const successToast = document.getElementById('success-toast');
         if (successToast) {
             setTimeout(function () {
                 successToast.style.transition = 'opacity 0.3s ease';
                 successToast.style.opacity = '0';
                 setTimeout(function () { successToast.remove(); }, 300);
+            }, 4000);
+        }
+
+        const errorToast = document.getElementById('error-toast');
+        if (errorToast) {
+            setTimeout(function () {
+                errorToast.style.transition = 'opacity 0.3s ease';
+                errorToast.style.opacity = '0';
+                setTimeout(function () { errorToast.remove(); }, 300);
             }, 4000);
         }
     </script>
