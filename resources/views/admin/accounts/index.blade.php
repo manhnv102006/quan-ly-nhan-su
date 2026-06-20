@@ -100,7 +100,11 @@
                                     {{ $user->created_at?->format('d/m/Y') }}
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="flex justify-center">
+                                    <div class="flex justify-center gap-2">
+                                        <a href="{{ route('admin.accounts.show', $user) }}"
+                                           class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200"
+                                           title="Xem chi tiết">👁</a>
+
                                         <a href="{{ route('admin.accounts.edit', $user) }}"
                                            class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200"
                                            title="Sửa">✏️</a>

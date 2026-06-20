@@ -21,6 +21,11 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class);
     }
 
+    public function employee()
+    {
+        return $this->hasOne(Employee::class);
+    }
+
     public function hasRole(string ...$roles): bool
     {
         return $this->role && in_array($this->role->name, $roles, true);
