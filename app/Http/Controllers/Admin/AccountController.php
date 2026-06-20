@@ -137,4 +137,27 @@ class AccountController extends Controller
             ->route('admin.accounts')
             ->with('success', 'Cập nhật tài khoản thành công.');
     }
+
+    public function toggleStatus(User $user): RedirectResponse
+    {
+        if ($user->id === auth()->id()) {
+            return redirect()
+                ->back()
+                ->with('error', 'Bạn không thể khóa/mở tài khoản đang đăng nhập.');
+        }
+
+        $locking = $user->status === 'active';
+
+        $user->update([
+            'status' => $locking ? 'inactive' : 'active',
+        ]);
+
+        $message = $locking
+            ? 'Đã khóa tài khoản thành công.'
+            : 'Đã mở khóa tài khoản thành công.';
+
+        return redirect()
+            ->back()
+            ->with('success', $message);
+    }
 }
