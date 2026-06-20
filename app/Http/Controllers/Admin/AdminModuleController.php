@@ -9,11 +9,6 @@ use Illuminate\View\View;
 
 class AdminModuleController extends Controller
 {
-    public function accounts(): View
-    {
-        return $this->module('Quản lý tài khoản', 'Quản lý tài khoản đăng nhập, phân quyền và trạng thái người dùng.');
-    }
-
     public function positions(): View
     {
         return $this->module('Quản lý chức vụ', 'Thiết lập và quản lý các chức vụ, vị trí công việc.');
