@@ -9,6 +9,13 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
+                <button type="button"
+                        class="js-reset-password px-5 py-3 rounded-xl bg-violet-100 text-violet-700 font-medium hover:bg-violet-200 transition"
+                        data-reset-url="{{ route('admin.accounts.reset-password', $user) }}"
+                        data-username="{{ $user->username }}">
+                    🔑 Đặt lại mật khẩu
+                </button>
+
                 @if ($user->id !== auth()->id())
                     <form action="{{ route('admin.accounts.toggle-status', $user) }}" method="POST"
                           onsubmit="return confirm(@json($user->status === 'active' ? 'Bạn có chắc muốn khóa tài khoản này? Người dùng sẽ không thể đăng nhập.' : 'Bạn có chắc muốn mở khóa tài khoản này?'))">
@@ -222,6 +229,8 @@
         </div>
 
     </div>
+
+    @include('admin.accounts.partials.reset-password-modal')
 
     @if (session('success'))
         <div id="success-toast"

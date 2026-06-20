@@ -109,6 +109,12 @@
                                            class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200"
                                            title="Sửa">✏️</a>
 
+                                        <button type="button"
+                                                class="js-reset-password w-9 h-9 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center hover:bg-violet-200"
+                                                data-reset-url="{{ route('admin.accounts.reset-password', $user) }}"
+                                                data-username="{{ $user->username }}"
+                                                title="Đặt lại mật khẩu">🔑</button>
+
                                         @if ($user->id !== auth()->id())
                                             <form action="{{ route('admin.accounts.toggle-status', $user) }}"
                                                   method="POST"
@@ -175,6 +181,8 @@
             </div>
         </div>
     </div>
+
+    @include('admin.accounts.partials.reset-password-modal')
 
     @if (session('success'))
         <div id="success-toast"

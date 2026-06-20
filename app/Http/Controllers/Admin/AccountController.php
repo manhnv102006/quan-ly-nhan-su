@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -159,5 +160,32 @@ class AccountController extends Controller
         return redirect()
             ->back()
             ->with('success', $message);
+    }
+
+    public function resetPassword(Request $request, User $user): RedirectResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [
+            'password.required' => 'Mật khẩu mới là bắt buộc',
+            'password.confirmed' => 'Xác nhận mật khẩu không khớp',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors($validator)
+                ->with('open_reset_modal', $user->id)
+                ->with('reset_username', $user->username);
+        }
+
+        $user->update([
+            'password' => Hash::make($validator->validated()['password']),
+        ]);
+
+        return redirect()
+            ->back()
+            ->with('success', "Đã đặt lại mật khẩu cho tài khoản {$user->username} thành công.");
     }
 }
