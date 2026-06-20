@@ -54,9 +54,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/payrolls/{payroll}/approve', [PayrollController::class, 'approve'])->name('payrolls.approve');
     Route::post('/payrolls/{payroll}/pay', [PayrollController::class, 'pay'])->name('payrolls.pay');
     Route::resource('contract-types', ContractTypeController::class)->except(['show']);
+    Route::get('/contract-types/trash', [ContractTypeController::class, 'trash'])->name('contract-types.trash');
     Route::post('/contract-types/{id}/restore', [ContractTypeController::class, 'restore'])->name('contract-types.restore');
 
     Route::resource('contracts', ContractController::class);
+    Route::get('/contracts/trash', [ContractController::class, 'trash'])->name('contracts.trash');
     Route::post('/contracts/{contract}/restore', [ContractController::class, 'restore'])->name('contracts.restore');
     Route::post('/contracts/{contract}/extend', [ContractController::class, 'extend'])->name('contracts.extend');
     Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate');
