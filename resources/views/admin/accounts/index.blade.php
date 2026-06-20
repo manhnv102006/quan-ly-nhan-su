@@ -2,11 +2,19 @@
 
     <div class="space-y-6">
 
-        <div>
-            <h2 class="text-2xl font-bold text-slate-800">Danh sách tài khoản</h2>
-            <p class="text-sm text-slate-500 mt-1">
-                Tổng cộng {{ $stats['total'] }} tài khoản đăng nhập hệ thống
-            </p>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Danh sách tài khoản</h2>
+                <p class="text-sm text-slate-500 mt-1">
+                    Tổng cộng {{ $stats['total'] }} tài khoản đăng nhập hệ thống
+                </p>
+            </div>
+
+            <a href="{{ route('admin.accounts.create') }}"
+               class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
+                <span>+</span>
+                Thêm tài khoản
+            </a>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -110,5 +118,28 @@
         </div>
 
     </div>
+
+    @if (session('success'))
+        <div id="success-toast"
+             class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-emerald-200 shadow-lg rounded-2xl px-5 py-4 max-w-sm">
+            <div class="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+            <p class="text-sm font-medium text-slate-700">{{ session('success') }}</p>
+        </div>
+    @endif
+
+    <script>
+        const successToast = document.getElementById('success-toast');
+        if (successToast) {
+            setTimeout(function () {
+                successToast.style.transition = 'opacity 0.3s ease';
+                successToast.style.opacity = '0';
+                setTimeout(function () { successToast.remove(); }, 300);
+            }, 4000);
+        }
+    </script>
 
 </x-admin-layout>
