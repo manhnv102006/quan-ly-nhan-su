@@ -29,6 +29,10 @@ class DashboardController extends Controller
                 ['label' => 'Chấm công', 'value' => Attendance::count(), 'color' => 'teal', 'route' => 'admin.attendances'],
                 ['label' => 'Bảng lương', 'value' => Payroll::count(), 'color' => 'emerald', 'route' => 'admin.payrolls'],
                 ['label' => 'Hợp đồng', 'value' => Contract::count(), 'color' => 'violet', 'route' => 'admin.contracts'],
+                ['label' => 'Sắp hết hạn', 'value' => Contract::where('status', 'active')
+                    ->whereNotNull('end_date')
+                    ->whereBetween('end_date', [today()->toDateString(), today()->addDays(30)->toDateString()])
+                    ->count(), 'color' => 'rose', 'route' => 'admin.contracts'],
                 ['label' => 'Ứng viên', 'value' => Candidate::count(), 'color' => 'rose', 'route' => 'admin.recruitment'],
             ],
             'recentJobs' => JobPost::query()->latest()->take(5)->get(),
