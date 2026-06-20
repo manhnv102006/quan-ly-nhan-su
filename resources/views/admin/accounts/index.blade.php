@@ -116,8 +116,10 @@
                                                 @csrf
                                                 @method('PATCH')
                                                 <button type="button"
-                                                        onclick="openToggleModal('{{ $user->id }}', @json($user->username), {{ $user->status === 'active' ? 'true' : 'false' }})"
-                                                        class="w-9 h-9 rounded-lg flex items-center justify-center {{ $user->status === 'active' ? 'bg-orange-100 text-orange-600 hover:bg-orange-200' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200' }}"
+                                                        class="js-toggle-status w-9 h-9 rounded-lg flex items-center justify-center {{ $user->status === 'active' ? 'bg-orange-100 text-orange-600 hover:bg-orange-200' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200' }}"
+                                                        data-user-id="{{ $user->id }}"
+                                                        data-username="{{ $user->username }}"
+                                                        data-is-active="{{ $user->status === 'active' ? '1' : '0' }}"
                                                         title="{{ $user->status === 'active' ? 'Khóa tài khoản' : 'Mở khóa tài khoản' }}">
                                                     {{ $user->status === 'active' ? '🔒' : '🔓' }}
                                                 </button>
@@ -147,7 +149,8 @@
     </div>
 
     <div id="toggle-modal"
-         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+         class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm"
+         style="display: none;">
         <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm mx-4 p-6 text-center">
             <div id="toggle-modal-icon" class="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center"></div>
             <h3 id="toggle-modal-title" class="mt-5 text-lg font-bold text-slate-800"></h3>
@@ -227,12 +230,14 @@
             const modal = document.getElementById('toggle-modal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            modal.style.display = 'flex';
         }
 
         function closeToggleModal() {
             const modal = document.getElementById('toggle-modal');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+            modal.style.display = 'none';
             toggleTargetId = null;
         }
 
@@ -241,6 +246,16 @@
                 document.getElementById('toggle-form-' + toggleTargetId).submit();
             }
         }
+
+        document.querySelectorAll('.js-toggle-status').forEach(function (button) {
+            button.addEventListener('click', function () {
+                openToggleModal(
+                    this.dataset.userId,
+                    this.dataset.username,
+                    this.dataset.isActive === '1'
+                );
+            });
+        });
 
         document.getElementById('toggle-modal').addEventListener('click', function (e) {
             if (e.target === this) closeToggleModal();
