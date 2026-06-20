@@ -51,6 +51,7 @@
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Trạng thái</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Xác thực email</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Ngày tạo</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -98,10 +99,17 @@
                                 <td class="px-6 py-4 text-slate-500">
                                     {{ $user->created_at?->format('d/m/Y') }}
                                 </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex justify-center">
+                                        <a href="{{ route('admin.accounts.edit', $user) }}"
+                                           class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200"
+                                           title="Sửa">✏️</a>
+                                    </div>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-12 text-slate-400">
+                                <td colspan="9" class="text-center py-12 text-slate-400">
                                     Chưa có tài khoản nào
                                 </td>
                             </tr>
