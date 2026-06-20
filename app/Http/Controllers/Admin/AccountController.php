@@ -76,6 +76,13 @@ class AccountController extends Controller
             ->with('success', 'Thêm tài khoản thành công.');
     }
 
+    public function show(User $user): View
+    {
+        $user->load(['role', 'employee.department', 'employee.position']);
+
+        return view('admin.accounts.show', compact('user'));
+    }
+
     public function edit(User $user): View
     {
         $roles = Role::query()->orderBy('id')->get();
