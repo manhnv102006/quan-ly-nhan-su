@@ -152,7 +152,8 @@
          class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm"
          style="display: none;">
         <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm mx-4 p-6 text-center">
-            <div id="toggle-modal-icon" class="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center"></div>
+            <div id="toggle-modal-icon-lock" style="display: none;" class="w-16 h-16 mx-auto rounded-2xl bg-orange-100 flex items-center justify-center text-3xl">🔒</div>
+            <div id="toggle-modal-icon-unlock" style="display: none;" class="w-16 h-16 mx-auto rounded-2xl bg-emerald-100 flex items-center justify-center text-3xl">🔓</div>
             <h3 id="toggle-modal-title" class="mt-5 text-lg font-bold text-slate-800"></h3>
             <p class="mt-2 text-sm text-slate-500">
                 Bạn có chắc muốn
@@ -166,10 +167,10 @@
                         class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
                     Hủy
                 </button>
-                <button type="button" onclick="confirmToggle()"
-                        id="toggle-modal-confirm"
-                        class="flex-1 px-5 py-3 rounded-xl text-white font-medium transition">
-                    Xác nhận
+                <button type="button" onclick="confirmToggle()" id="toggle-modal-confirm"
+                        class="flex-1 px-5 py-3 rounded-xl text-white font-medium transition"
+                        style="background-color: #ea580c;">
+                    Khóa
                 </button>
             </div>
         </div>
@@ -212,19 +213,16 @@
                 ? 'Người dùng sẽ không thể đăng nhập cho đến khi được mở khóa.'
                 : 'Người dùng có thể đăng nhập lại bình thường.';
 
-            const icon = document.getElementById('toggle-modal-icon');
-            const confirmBtn = document.getElementById('toggle-modal-confirm');
+            document.getElementById('toggle-modal-icon-lock').style.display = isActive ? 'flex' : 'none';
+            document.getElementById('toggle-modal-icon-unlock').style.display = isActive ? 'none' : 'flex';
 
+            const confirmBtn = document.getElementById('toggle-modal-confirm');
             if (isActive) {
-                icon.className = 'w-16 h-16 mx-auto rounded-2xl bg-orange-100 flex items-center justify-center';
-                icon.textContent = '🔒';
-                confirmBtn.className = 'flex-1 px-5 py-3 rounded-xl bg-orange-600 text-white font-medium hover:bg-orange-700 transition';
                 confirmBtn.textContent = 'Khóa';
+                confirmBtn.style.backgroundColor = '#ea580c';
             } else {
-                icon.className = 'w-16 h-16 mx-auto rounded-2xl bg-emerald-100 flex items-center justify-center';
-                icon.textContent = '🔓';
-                confirmBtn.className = 'flex-1 px-5 py-3 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition';
                 confirmBtn.textContent = 'Mở khóa';
+                confirmBtn.style.backgroundColor = '#059669';
             }
 
             const modal = document.getElementById('toggle-modal');
