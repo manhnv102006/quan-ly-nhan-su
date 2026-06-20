@@ -90,6 +90,39 @@
                     @enderror
                 </div>
 
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-700">Xác thực email</p>
+                            <div class="mt-2">
+                                @if ($user->email_verified_at)
+                                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                        Đã xác thực
+                                    </span>
+                                    <p class="mt-2 text-xs text-slate-500">
+                                        Thời gian: {{ $user->email_verified_at->format('d/m/Y H:i') }}
+                                    </p>
+                                @else
+                                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                                        Chưa xác thực
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+
+                        <label class="inline-flex items-center gap-3 cursor-pointer select-none">
+                            <input type="hidden" name="email_verified" value="0">
+                            <input type="checkbox" id="email_verified" name="email_verified" value="1"
+                                   @checked((string) old('email_verified', $user->email_verified_at ? '1' : '0') === '1')
+                                   class="w-5 h-5 rounded border-slate-300 text-violet-600 focus:ring-violet-500/30">
+                            <span class="text-sm font-medium text-slate-700">Đánh dấu đã xác thực</span>
+                        </label>
+                    </div>
+                    <p class="mt-3 text-xs text-slate-500">
+                        Bỏ chọn nếu muốn thu hồi trạng thái xác thực. Khi đổi email, hãy bỏ chọn trước nếu email mới chưa được xác minh.
+                    </p>
+                </div>
+
                 <div>
                     <label for="status" class="block text-sm font-semibold text-slate-700 mb-2">
                         Trạng thái <span class="text-red-500">*</span>
