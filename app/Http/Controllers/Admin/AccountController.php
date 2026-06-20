@@ -100,6 +100,7 @@ class AccountController extends Controller
             'role_id' => ['required', 'exists:roles,id'],
             'status' => ['required', 'in:active,inactive'],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+            'email_verified' => ['nullable', 'boolean'],
         ], [
             'username.required' => 'Tên đăng nhập là bắt buộc',
             'username.alpha_dash' => 'Tên đăng nhập chỉ được chứa chữ, số, gạch ngang và gạch dưới',
@@ -127,6 +128,15 @@ class AccountController extends Controller
             'role_id' => $validated['role_id'],
             'status' => $validated['status'],
         ];
+
+        $emailChanged = $validated['email'] !== $user->email;
+        $markVerified = $request->boolean('email_verified');
+
+        if ($markVerified) {
+            $data['email_verified_at'] = ($emailChanged || ! $user->email_verified_at) ? now() : $user->email_verified_at;
+        } else {
+            $data['email_verified_at'] = null;
+        }
 
         if (! empty($validated['password'])) {
             $data['password'] = Hash::make($validated['password']);
