@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\PayrollPeriodController;
 use App\Http\Controllers\Admin\PayrollController;
+use App\Http\Controllers\Admin\ContractController;
+use App\Http\Controllers\Admin\ContractTypeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -51,7 +53,14 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/payrolls/{payroll}/submit', [PayrollController::class, 'submit'])->name('payrolls.submit');
     Route::post('/payrolls/{payroll}/approve', [PayrollController::class, 'approve'])->name('payrolls.approve');
     Route::post('/payrolls/{payroll}/pay', [PayrollController::class, 'pay'])->name('payrolls.pay');
-    Route::get('/contracts', [AdminModuleController::class, 'contracts'])->name('contracts');
+    Route::resource('contract-types', ContractTypeController::class)->except(['show']);
+    Route::post('/contract-types/{id}/restore', [ContractTypeController::class, 'restore'])->name('contract-types.restore');
+
+    Route::resource('contracts', ContractController::class);
+    Route::post('/contracts/{contract}/restore', [ContractController::class, 'restore'])->name('contracts.restore');
+    Route::post('/contracts/{contract}/extend', [ContractController::class, 'extend'])->name('contracts.extend');
+    Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate');
+
     Route::get('/recruitment', [AdminModuleController::class, 'recruitment'])->name('recruitment');
 });
 
