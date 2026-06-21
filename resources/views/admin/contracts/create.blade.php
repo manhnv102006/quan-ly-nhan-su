@@ -76,10 +76,16 @@
                         @error('status') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="file" class="block text-sm font-semibold text-slate-700">Tệp hợp đồng</label>
-                        <input id="file" name="file" type="file" class="mt-2 w-full text-sm text-slate-700">
-                        @error('file') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        <label for="contract_file" class="block text-sm font-semibold text-slate-700">Tệp hợp đồng</label>
+                        <input id="contract_file" name="contract_file" type="file" class="mt-2 w-full text-sm text-slate-700">
+                        @error('contract_file') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
+                </div>
+
+                <div>
+                    <label for="note" class="block text-sm font-semibold text-slate-700">Ghi chú</label>
+                    <textarea id="note" name="note" rows="4" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">{{ old('note') }}</textarea>
+                    @error('note') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="flex justify-end gap-3">

@@ -29,8 +29,9 @@ class ContractRequest extends FormRequest
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'salary' => ['required', 'numeric', 'min:0'],
             'status' => ['required', Rule::in(['active', 'expired', 'terminated'])],
-            'file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
             'signed_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'contract_file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
+            'note' => ['nullable', 'string', 'max:1000'],
         ];
     }
 
@@ -53,9 +54,9 @@ class ContractRequest extends FormRequest
             'salary.min' => 'Lương phải lớn hơn hoặc bằng 0.',
             'status.required' => 'Trạng thái hợp đồng là bắt buộc.',
             'status.in' => 'Trạng thái hợp đồng không hợp lệ.',
-            'file.file' => 'Tệp hợp đồng không hợp lệ.',
-            'file.mimes' => 'Tệp hợp đồng phải là PDF, DOC hoặc DOCX.',
-            'file.max' => 'Tệp hợp đồng không được vượt quá 10MB.',
+            'contract_file.file' => 'Tệp hợp đồng không hợp lệ.',
+            'contract_file.mimes' => 'Tệp hợp đồng phải là PDF, DOC hoặc DOCX.',
+            'contract_file.max' => 'Tệp hợp đồng không được vượt quá 10MB.',
             'signed_date.date' => 'Ngày ký không hợp lệ.',
             'signed_date.after_or_equal' => 'Ngày ký phải bằng hoặc sau ngày bắt đầu.',
         ];
