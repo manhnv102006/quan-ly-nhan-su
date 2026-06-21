@@ -21,6 +21,7 @@ class Contract extends Model
         'status',
         'file_path',
         'signed_date',
+        'note',
     ];
 
     protected $casts = [

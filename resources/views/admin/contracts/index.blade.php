@@ -7,7 +7,7 @@
             </div>
             <div class="flex flex-wrap items-center gap-3">
                 <a href="{{ route('admin.contracts.create') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">+ Tạo hợp đồng</a>
-                <a href="{{ route('admin.contracts.trash') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">Hợp đồng đã xóa</a>
+                <a href="{{ route('admin.contracts.trashed') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">Hợp đồng đã xóa</a>
             </div>
         </div>
 

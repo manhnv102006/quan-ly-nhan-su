@@ -78,13 +78,19 @@
                         @error('status') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="file" class="block text-sm font-semibold text-slate-700">Tệp hợp đồng</label>
-                        <input id="file" name="file" type="file" class="mt-2 w-full text-sm text-slate-700">
+                        <label for="contract_file" class="block text-sm font-semibold text-slate-700">Tệp hợp đồng</label>
+                        <input id="contract_file" name="contract_file" type="file" class="mt-2 w-full text-sm text-slate-700">
                         @if($contract->file_path)
                             <p class="mt-2 text-sm text-slate-500">Tệp hiện tại: <a href="{{ asset('storage/'.$contract->file_path) }}" target="_blank" class="text-violet-600 hover:underline">Xem</a></p>
                         @endif
-                        @error('file') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        @error('contract_file') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
+                </div>
+
+                <div>
+                    <label for="note" class="block text-sm font-semibold text-slate-700">Ghi chú</label>
+                    <textarea id="note" name="note" rows="4" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">{{ old('note', $contract->note) }}</textarea>
+                    @error('note') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="flex justify-end gap-3">
