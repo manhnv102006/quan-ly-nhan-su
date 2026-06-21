@@ -80,7 +80,7 @@
                                     <div class="flex items-center justify-center gap-2">
                                         <a href="{{ route('admin.contracts.show', $contract) }}" class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200" title="Xem chi tiết">👁</a>
                                         <a href="{{ route('admin.contracts.edit', $contract) }}" class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200" title="Sửa">✏️</a>
-                                        <form action="{{ route('admin.contracts.destroy', $contract) }}" method="POST" id="delete-form-{{ $contract->id }}">
+                                        <form action="{{ route('admin.contracts.destroy', $contract) }}" method="POST" id="delete-form-{{ $contract->id }}" onsubmit="return confirm('Bạn có chắc muốn xóa hợp đồng này?')">
                                             @csrf
                                             @method('DELETE')
                                             <button type="button" onclick="openDeleteModal('{{ $contract->id }}', @json($contract->contract_code))" class="w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200" title="Xóa mềm">🗑</button>
@@ -147,7 +147,14 @@
         }
         function confirmDelete() {
             if (deleteTargetId) {
-                document.getElementById('delete-form-' + deleteTargetId).submit();
+                const form = document.getElementById('delete-form-' + deleteTargetId);
+                if (!form) return closeDeleteModal();
+                // Use requestSubmit if available so onsubmit handlers run; fallback to submit()
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
             }
         }
         document.getElementById('delete-modal').addEventListener('click', function (e) {
