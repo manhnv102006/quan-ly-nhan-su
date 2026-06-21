@@ -57,12 +57,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/contract-types/trash', [ContractTypeController::class, 'trash'])->name('contract-types.trash');
     Route::post('/contract-types/{id}/restore', [ContractTypeController::class, 'restore'])->name('contract-types.restore');
 
-    Route::resource('contracts', ContractController::class);
     Route::get('/contracts/trash', [ContractController::class, 'trash'])->name('contracts.trashed');
     Route::post('/contracts/{contract}/restore', [ContractController::class, 'restore'])->name('contracts.restore');
     Route::delete('/contracts/{contract}/force-delete', [ContractController::class, 'forceDelete'])->name('contracts.forceDelete');
     Route::post('/contracts/{contract}/extend', [ContractController::class, 'extend'])->name('contracts.extend');
     Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate');
+    Route::resource('contracts', ContractController::class);
 
     Route::get('/recruitment', [AdminModuleController::class, 'recruitment'])->name('recruitment');
 });
