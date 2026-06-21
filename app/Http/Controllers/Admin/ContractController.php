@@ -86,10 +86,14 @@ class ContractController extends Controller
             ->with('success', 'Hợp đồng đã được tạo thành công.');
     }
 
-    public function show(Contract $contract): View
+    public function show(int $id): View
     {
+        $contract = Contract::withTrashed()
+            ->with(['employee', 'contractType', 'extensions', 'terminations'])
+            ->findOrFail($id);
+
         return view('admin.contracts.show', [
-            'contract' => $contract->load(['employee', 'contractType', 'extensions', 'terminations']),
+            'contract' => $contract,
         ]);
     }
 
@@ -134,10 +138,21 @@ class ContractController extends Controller
             ->with('success', 'Hợp đồng đã được xóa mềm. Bạn có thể khôi phục sau.');
     }
 
-    public function trash(): View
+    public function trash(Request $request): View
     {
-        $contracts = Contract::onlyTrashed()
-            ->with(['employee', 'contractType'])
+        $query = Contract::onlyTrashed()->with(['employee', 'contractType']);
+
+        if ($request->filled('search')) {
+            $query->where(function ($query) use ($request) {
+                $query->where('contract_code', 'like', '%'.$request->search.'%')
+                    ->orWhereHas('employee', function ($query) use ($request) {
+                        $query->where('full_name', 'like', '%'.$request->search.'%')
+                            ->orWhere('employee_code', 'like', '%'.$request->search.'%');
+                    });
+            });
+        }
+
+        $contracts = $query
             ->orderByDesc('deleted_at')
             ->paginate(10)
             ->withQueryString();
@@ -153,6 +168,21 @@ class ContractController extends Controller
         return redirect()
             ->route('admin.contracts.trash')
             ->with('success', 'Hợp đồng đã được khôi phục thành công.');
+    }
+
+    public function forceDelete(int $id): RedirectResponse
+    {
+        $contract = Contract::onlyTrashed()->findOrFail($id);
+
+        if ($contract->file_path) {
+            Storage::disk('public')->delete($contract->file_path);
+        }
+
+        $contract->forceDelete();
+
+        return redirect()
+            ->route('admin.contracts.trash')
+            ->with('success', 'Hợp đồng đã được xóa vĩnh viễn.');
     }
 
     public function extend(Request $request, Contract $contract): RedirectResponse
