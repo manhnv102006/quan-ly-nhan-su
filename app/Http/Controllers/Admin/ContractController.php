@@ -21,10 +21,13 @@ class ContractController extends Controller
         $query = Contract::with(['employee', 'contractType']);
 
         if ($request->filled('search')) {
-            $query->whereHas('employee', function ($query) use ($request) {
-                $query->where('full_name', 'like', '%'.$request->search.'%')
-                    ->orWhere('employee_code', 'like', '%'.$request->search.'%');
-            })->orWhere('contract_code', 'like', '%'.$request->search.'%');
+            $query->where(function ($query) use ($request) {
+                $query->where('contract_code', 'like', '%'.$request->search.'%')
+                    ->orWhereHas('employee', function ($query) use ($request) {
+                        $query->where('full_name', 'like', '%'.$request->search.'%')
+                            ->orWhere('employee_code', 'like', '%'.$request->search.'%');
+                    });
+            });
         }
 
         if ($request->filled('status')) {
@@ -75,8 +78,8 @@ class ContractController extends Controller
     {
         $data = $request->validated();
 
-        if ($request->hasFile('file')) {
-            $data['file_path'] = $request->file('file')->store('contracts', 'public');
+        if ($request->hasFile('contract_file')) {
+            $data['file_path'] = $request->file('contract_file')->store('contracts', 'public');
         }
 
         Contract::create($data);
@@ -115,11 +118,11 @@ class ContractController extends Controller
     {
         $data = $request->validated();
 
-        if ($request->hasFile('file')) {
+        if ($request->hasFile('contract_file')) {
             if ($contract->file_path) {
                 Storage::disk('public')->delete($contract->file_path);
             }
-            $data['file_path'] = $request->file('file')->store('contracts', 'public');
+            $data['file_path'] = $request->file('contract_file')->store('contracts', 'public');
         }
 
         $contract->update($data);
