@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 
 use App\Http\Controllers\Controller;
+use App\Models\Employee;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 
@@ -14,9 +16,30 @@ class AdminModuleController extends Controller
         return $this->module('Quản lý chức vụ', 'Thiết lập và quản lý các chức vụ, vị trí công việc.');
     }
 
-    public function employees(): View
+    public function employees(Request $request): View
     {
-        return $this->module('Quản lý nhân viên', 'Hồ sơ nhân viên, thông tin cá nhân và liên kết tài khoản.');
+        $search = $request->string('search')->trim();
+
+        $employees = Employee::query()
+            ->with(['department', 'position'])
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
+                $query->where('employee_code', 'like', "%{$search}%")
+                    ->orWhere('full_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            }))
+            ->orderBy('employee_code')
+            ->paginate(12)
+            ->withQueryString();
+
+        $stats = [
+            'total' => Employee::count(),
+            'active' => Employee::where('status', 'active')->count(),
+            'inactive' => Employee::where('status', 'inactive')->count(),
+            'resigned' => Employee::where('status', 'resigned')->count(),
+        ];
+
+        return view('admin.employees.index', compact('employees', 'stats', 'search'));
     }
 
     public function attendances(): View
