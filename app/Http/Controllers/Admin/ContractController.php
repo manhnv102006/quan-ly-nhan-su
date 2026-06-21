@@ -169,7 +169,7 @@ class ContractController extends Controller
         $contract->restore();
 
         return redirect()
-            ->route('admin.contracts.trash')
+            ->route('admin.contracts.trashed')
             ->with('success', 'Hợp đồng đã được khôi phục thành công.');
     }
 
@@ -184,7 +184,7 @@ class ContractController extends Controller
         $contract->forceDelete();
 
         return redirect()
-            ->route('admin.contracts.trash')
+            ->route('admin.contracts.trashed')
             ->with('success', 'Hợp đồng đã được xóa vĩnh viễn.');
     }
 
