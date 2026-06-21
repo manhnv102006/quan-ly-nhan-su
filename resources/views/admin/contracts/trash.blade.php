@@ -9,6 +9,18 @@
         </div>
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100">
+                <form action="{{ route('admin.contracts.trashed') }}" method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="search" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Tìm kiếm</label>
+                        <input id="search" name="search" type="text" value="{{ request('search') }}" placeholder="Mã hợp đồng hoặc nhân viên"
+                               class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
+                    </div>
+                    <div class="md:col-span-2 flex items-end justify-end">
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">Tìm kiếm</button>
+                    </div>
+                </form>
+            </div>
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[900px]">
                     <thead>
@@ -27,10 +39,15 @@
                                 <td class="px-6 py-4 text-slate-800">{{ $contract->employee->full_name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-slate-500">{{ $contract->contractType->contract_name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-slate-500">{{ $contract->deleted_at?->format('d/m/Y') }}</td>
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-6 py-4 text-center space-y-2">
                                     <form action="{{ route('admin.contracts.restore', $contract->id) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition">Khôi phục</button>
+                                    </form>
+                                    <form action="{{ route('admin.contracts.forceDelete', $contract->id) }}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition">Xóa vĩnh viễn</button>
                                     </form>
                                 </td>
                             </tr>
