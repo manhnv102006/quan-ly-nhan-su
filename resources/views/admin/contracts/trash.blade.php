@@ -1,11 +1,14 @@
 <x-admin-layout title="Hợp đồng đã xóa">
     <div class="space-y-6">
-        <div class="flex items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-800">Hợp đồng đã xóa</h2>
                 <p class="text-sm text-slate-500 mt-1">Khôi phục hợp đồng đã xóa mềm.</p>
             </div>
-            <a href="{{ route('admin.contracts.index') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">Quay lại danh sách</a>
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="{{ route('admin.contracts.index') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">Quay lại danh sách</a>
+                <a href="{{ route('admin.contracts.create') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">Tạo hợp đồng</a>
+            </div>
         </div>
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
@@ -40,6 +43,7 @@
                                 <td class="px-6 py-4 text-slate-500">{{ $contract->contractType->contract_name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-slate-500">{{ $contract->deleted_at?->format('d/m/Y') }}</td>
                                 <td class="px-6 py-4 text-center space-y-2">
+                                    <a href="{{ route('admin.contracts.show', $contract->id) }}" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition">Xem</a>
                                     <form action="{{ route('admin.contracts.restore', $contract->id) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition">Khôi phục</button>
