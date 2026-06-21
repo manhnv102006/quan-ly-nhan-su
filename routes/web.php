@@ -54,6 +54,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
     Route::get('/employees/create', [\App\Http\Controllers\Admin\EmployeeController::class, 'create'])->name('employees.create');
     Route::post('/employees', [\App\Http\Controllers\Admin\EmployeeController::class, 'store'])->name('employees.store');
+    Route::get('/employees/{employee}', [\App\Http\Controllers\Admin\EmployeeController::class, 'show'])->name('employees.show');
+    Route::get('/employees/{employee}/edit', [\App\Http\Controllers\Admin\EmployeeController::class, 'edit'])->name('employees.edit');
+    Route::put('/employees/{employee}', [\App\Http\Controllers\Admin\EmployeeController::class, 'update'])->name('employees.update');
     Route::get('/attendances', [AdminModuleController::class, 'attendances'])->name('attendances');
     Route::get('/kpis', [AdminModuleController::class, 'kpis'])->name('kpis');
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');

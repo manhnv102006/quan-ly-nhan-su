@@ -105,13 +105,8 @@
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex items-center justify-center gap-2">
-                                        <a href="#" class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200" title="Xem">👁</a>
-                                        <a href="#" class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200" title="Sửa">✏️</a>
-                                        <form action="#" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="button" onclick="if(confirm('Xác nhận xóa nhân viên {{ $employee->full_name }}?')) { this.form.submit(); }" class="w-9 h-9 rounded-lg bg-red-100 text-red-600 hover:bg-red-200">🗑</button>
-                                        </form>
+                                        <a href="{{ route('admin.employees.show', $employee->id) }}" class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200" title="Xem">👁</a>
+                                        <a href="{{ route('admin.employees.edit', $employee->id) }}" class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200" title="Sửa">✏️</a>
                                     </div>
                                 </td>
                             </tr>
