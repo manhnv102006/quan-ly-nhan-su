@@ -53,10 +53,16 @@ class AdminModuleController extends Controller
         ])
         ->latest()
         ->paginate(10);
+        $stats = [
+            'total' => Attendance::count(),
+            'present' => Attendance::where('status', 'present')->count(),
+            'late' => Attendance::where('status', 'late')->count(),
+            'leave' => Attendance::where('status', 'leave')->count(),
+        ];
 
     return view(
         'admin.attendances.index',
-        compact('attendances')
+        compact('attendances','stats')
     );
     }
 
