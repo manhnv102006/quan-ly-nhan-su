@@ -15,6 +15,15 @@ class Attendance extends Model
             'check_out' => 'datetime',
         ];
     }
+    protected $fillable = [
+        'employee_id',
+        'shift_id',
+        'attendance_date',
+        'check_in',
+        'check_out',
+        'status',
+        'work_hours',
+    ];
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);

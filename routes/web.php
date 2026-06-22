@@ -64,6 +64,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::delete('/employees/{employee}', [\App\Http\Controllers\Admin\EmployeeController::class, 'destroy'])->name('employees.destroy');
     Route::get( '/attendances', [AttendanceController::class, 'index'])->name('attendances');
     Route::get('/attendances/{attendance}', [AttendanceController::class, 'show'])->name('attendances.show');
+    Route::get('/attendances/{attendance}/edit', [AttendanceController::class, 'edit']  )->name('attendances.edit'); 
+    Route::put( '/attendances/{attendance}', [AttendanceController::class, 'update'])->name('attendances.update');
     Route::get('/kpis', [AdminModuleController::class, 'kpis'])->name('kpis');
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
     Route::post('/payrolls/generate', [PayrollController::class, 'generate'])->name('payrolls.generate');
