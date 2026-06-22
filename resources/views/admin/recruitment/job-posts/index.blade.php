@@ -16,10 +16,24 @@
                 </p>
             </div>
 
-            <a href="{{ route('admin.recruitment') }}"
-               class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
-                Quay lại tuyển dụng
-            </a>
+            <div class="flex flex-wrap gap-3">
+                @if ($showCreateForm ?? false)
+                    <a href="{{ route('admin.recruitment.job-posts') }}"
+                       class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
+                        Quay lại danh sách
+                    </a>
+                @else
+                    <a href="{{ route('admin.recruitment.job-posts.create') }}"
+                       class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
+                        + Thêm tin tuyển dụng
+                    </a>
+                @endif
+
+                <a href="{{ route('admin.recruitment') }}"
+                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
+                    Quay lại tuyển dụng
+                </a>
+            </div>
         </div>
 
         @if (session('success'))
@@ -50,6 +64,135 @@
                 <h3 class="text-3xl font-bold mt-2 text-rose-600">{{ $stats['closed'] }}</h3>
             </div>
         </div>
+
+        @if ($showCreateForm ?? false)
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-slate-800">Thêm tin tuyển dụng mới</h3>
+                    <p class="text-sm text-slate-500 mt-1">Điền thông tin theo đúng dữ liệu hiện có của hệ thống.</p>
+                </div>
+
+                @if ($errors->any())
+                    <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        <p class="font-semibold mb-1">Vui lòng kiểm tra lại thông tin:</p>
+                        <ul class="list-disc list-inside space-y-0.5">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <form action="{{ route('admin.recruitment.job-posts.store') }}" method="POST" class="space-y-5 max-w-3xl">
+                    @csrf
+
+                    <div>
+                        <label for="title" class="block text-sm font-semibold text-slate-700 mb-2">
+                            Tiêu đề tin tuyển dụng <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="title"
+                            name="title"
+                            value="{{ old('title') }}"
+                            placeholder="Ví dụ: Nhân viên tuyển dụng, Lập trình viên PHP"
+                            maxlength="255"
+                            required
+                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('title') border-red-400 @enderror"
+                        >
+                        @error('title')
+                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="department_id" class="block text-sm font-semibold text-slate-700 mb-2">
+                            Phòng ban
+                        </label>
+                        <select
+                            id="department_id"
+                            name="department_id"
+                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('department_id') border-red-400 @enderror"
+                        >
+                            <option value="">-- Chưa gán phòng ban --</option>
+                            @foreach (($departments ?? collect()) as $department)
+                                <option value="{{ $department->id }}" @selected((string) old('department_id') === (string) $department->id)>
+                                    {{ $department->department_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('department_id')
+                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="quantity" class="block text-sm font-semibold text-slate-700 mb-2">
+                            Số lượng tuyển <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="number"
+                            id="quantity"
+                            name="quantity"
+                            value="{{ old('quantity') }}"
+                            placeholder="Nhập số lượng cần tuyển"
+                            min="1"
+                            required
+                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('quantity') border-red-400 @enderror"
+                        >
+                        @error('quantity')
+                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="status" class="block text-sm font-semibold text-slate-700 mb-2">
+                            Trạng thái <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            id="status"
+                            name="status"
+                            required
+                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('status') border-red-400 @enderror"
+                        >
+                            <option value="">-- Chọn trạng thái --</option>
+                            <option value="open" @selected(old('status') === 'open')>Đang mở</option>
+                            <option value="closed" @selected(old('status') === 'closed')>Đã đóng</option>
+                        </select>
+                        @error('status')
+                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="description" class="block text-sm font-semibold text-slate-700 mb-2">
+                            Mô tả
+                        </label>
+                        <textarea
+                            id="description"
+                            name="description"
+                            rows="5"
+                            placeholder="Mô tả công việc, yêu cầu hoặc ghi chú tuyển dụng"
+                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition resize-y @error('description') border-red-400 @enderror"
+                        >{{ old('description') }}</textarea>
+                        @error('description')
+                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex flex-wrap gap-3 pt-2">
+                        <button type="submit"
+                                class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
+                            + Lưu tin tuyển dụng
+                        </button>
+                        <a href="{{ route('admin.recruitment.job-posts') }}"
+                           class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
+                            Hủy
+                        </a>
+                    </div>
+                </form>
+            </div>
+        @endif
 
         <div class="admin-card p-6">
             <form method="GET" action="{{ route('admin.recruitment.job-posts') }}" class="flex flex-col gap-4 lg:flex-row lg:items-end">
