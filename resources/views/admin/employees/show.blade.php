@@ -34,6 +34,18 @@
             </div>
         </div>
 
+        @if (session('error'))
+            <div class="flex items-center gap-3 bg-white border border-red-200 shadow-sm rounded-2xl px-5 py-4">
+                <p class="text-sm font-medium text-red-700">{{ session('error') }}</p>
+            </div>
+        @endif
+
+        @if (session('success'))
+            <div class="flex items-center gap-3 bg-white border border-emerald-200 shadow-sm rounded-2xl px-5 py-4">
+                <p class="text-sm font-medium text-emerald-700">{{ session('success') }}</p>
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <div class="lg:col-span-2 space-y-6">
@@ -490,30 +502,37 @@
                                 <th class="py-3 px-4 font-medium">Tên tài liệu</th>
                                 <th class="py-3 px-4 font-medium">Loại</th>
                                 <th class="py-3 px-4 font-medium">Ngày tải lên</th>
+                                <th class="py-3 px-4 font-medium text-center">Tải xuống</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($documents as $document)
                                 <tr class="border-b border-slate-50 hover:bg-slate-50">
                                     <td class="py-3 px-4 font-medium text-slate-800">{{ $document->document_name }}</td>
-                                    <td class="py-3 px-4 text-slate-700">
-                                        @php
-                                            $docType = match ($document->document_type) {
-                                                'cccd' => 'CCCD/CMND',
-                                                'cv' => 'CV',
-                                                'certificate' => 'Chứng chỉ',
-                                                'degree' => 'Bằng cấp',
-                                                'contract' => 'Hợp đồng',
-                                                default => $document->document_type,
-                                            };
-                                        @endphp
-                                        {{ $docType }}
-                                    </td>
+                                    <td class="py-3 px-4 text-slate-700">{{ $document->typeLabel() }}</td>
                                     <td class="py-3 px-4 text-slate-700">{{ $document->created_at?->format('d/m/Y') ?? '—' }}</td>
+                                    <td class="py-3 px-4 text-center">
+                                        @if ($document->existsOnDisk())
+                                            <a href="{{ route('admin.employees.documents.download', [$employee, $document]) }}"
+                                               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-100 text-violet-700 text-xs font-semibold hover:bg-violet-200 transition"
+                                               title="Tải xuống {{ $document->document_name }}">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                                                </svg>
+                                                Tải xuống
+                                            </a>
+                                        @else
+                                            <span class="inline-flex px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-xs font-medium"
+                                                  title="File không tồn tại trên hệ thống">
+                                                Không có file
+                                            </span>
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="3" class="py-8 text-center text-slate-400">Chưa có tài liệu nào</td>
+                                    <td colspan="4" class="py-8 text-center text-slate-400">Chưa có tài liệu nào</td>
                                 </tr>
                             @endforelse
                         </tbody>
