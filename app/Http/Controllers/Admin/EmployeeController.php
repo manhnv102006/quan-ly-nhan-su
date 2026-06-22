@@ -12,8 +12,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use ZipArchive;
 
 class EmployeeController extends Controller
 {
@@ -157,6 +160,58 @@ class EmployeeController extends Controller
         }
 
         return response()->download($absolutePath, $document->downloadFileName());
+    }
+
+    public function downloadAllDocuments(Employee $employee): BinaryFileResponse|RedirectResponse
+    {
+        $documents = $employee->documents()
+            ->get()
+            ->filter(fn (EmployeeDocument $document) => $document->existsOnDisk());
+
+        if ($documents->isEmpty()) {
+            return redirect()
+                ->route('admin.employees.show', $employee)
+                ->with('error', 'Không có tài liệu nào để tải xuống.');
+        }
+
+        $zipDirectory = storage_path('app/temp');
+        if (! is_dir($zipDirectory)) {
+            mkdir($zipDirectory, 0755, true);
+        }
+
+        $tempZipPath = $zipDirectory.'/'.uniqid('employee-docs-', true).'.zip';
+        $zip = new ZipArchive;
+
+        if ($zip->open($tempZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            return redirect()
+                ->route('admin.employees.show', $employee)
+                ->with('error', 'Không thể tạo file nén tài liệu.');
+        }
+
+        $usedNames = [];
+
+        foreach ($documents as $document) {
+            $entryName = $document->downloadFileName();
+
+            if (isset($usedNames[$entryName])) {
+                $usedNames[$entryName]++;
+                $baseName = pathinfo($entryName, PATHINFO_FILENAME);
+                $extension = pathinfo($entryName, PATHINFO_EXTENSION);
+                $entryName = $extension !== ''
+                    ? "{$baseName}-{$usedNames[$entryName]}.{$extension}"
+                    : "{$baseName}-{$usedNames[$entryName]}";
+            } else {
+                $usedNames[$entryName] = 1;
+            }
+
+            $zip->addFile($document->absolutePath(), $entryName);
+        }
+
+        $zip->close();
+
+        $zipFileName = Str::slug($employee->employee_code.'-'.$employee->full_name).'-ho-so.zip';
+
+        return response()->download($tempZipPath, $zipFileName)->deleteFileAfterSend(true);
     }
 
     public function destroy(Employee $employee): RedirectResponse
