@@ -64,6 +64,85 @@
             </div>
 
         </div>
+        <div class="bg-white rounded-2xl border shadow-sm p-5">
+
+            <form method="GET">
+        
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        
+                    <div>
+                        <input
+                            type="text"
+                            name="search"
+                            value="{{ request('search') }}"
+                            placeholder="Tìm nhân viên..."
+                            class="w-full border rounded-xl px-4 py-2">
+                    </div>
+        
+                    <div>
+                        <input
+                            type="date"
+                            name="date"
+                            value="{{ request('date') }}"
+                            class="w-full border rounded-xl px-4 py-2">
+                    </div>
+        
+                    <div>
+                        <select
+                            name="status"
+                            class="w-full border rounded-xl px-4 py-2">
+        
+                            <option value="">
+                                Tất cả trạng thái
+                            </option>
+        
+                            <option value="present"
+                                @selected(request('status')=='present')>
+                                Đi làm
+                            </option>
+        
+                            <option value="late"
+                                @selected(request('status')=='late')>
+                                Đi muộn
+                            </option>
+        
+                            <option value="leave"
+                                @selected(request('status')=='leave')>
+                                Nghỉ phép
+                            </option>
+        
+                            <option value="absent"
+                                @selected(request('status')=='absent')>
+                                Vắng mặt
+                            </option>
+        
+                        </select>
+                    </div>
+        
+                    <div class="flex gap-2">
+        
+                        <button
+                            class="px-4 py-2 bg-violet-600 text-white rounded-xl">
+        
+                            Tìm kiếm
+        
+                        </button>
+        
+                        <a
+                            href="{{ route('admin.attendances') }}"
+                            class="px-4 py-2 bg-slate-500 text-white rounded-xl">
+        
+                            Làm mới
+        
+                        </a>
+        
+                    </div>
+        
+                </div>
+        
+            </form>
+        
+        </div>
 
         {{-- Danh sách --}}
         <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
