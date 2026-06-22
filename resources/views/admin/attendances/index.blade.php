@@ -13,11 +13,6 @@
                     Theo dõi và quản lý dữ liệu chấm công của nhân viên
                 </p>
             </div>
-
-            <a href="#"
-                class="px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700">
-                + Thêm chấm công
-            </a>
         </div>
 
         {{-- Thống kê --}}
