@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\AdminModuleController;
 use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\LeaveRequestController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\PayrollPeriodController;
 use App\Http\Controllers\Admin\PositionController;
@@ -73,6 +74,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/shifts/{shift}/edit', [ShiftController::class, 'edit'])->name('shifts.edit');
     Route::put('/shifts/{shift}', [ShiftController::class, 'update'])->name('shifts.update');
     Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy'])->name('shifts.destroy');
+    Route::get('/leave-requests', [LeaveRequestController::class, 'index'])->name('leave-requests.index');
+    Route::get('/leave-requests/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('leave-requests.show');
+    Route::patch('/leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('leave-requests.approve');
+    Route::patch('/leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('leave-requests.reject');
     Route::get('/kpis', [AdminModuleController::class, 'kpis'])->name('kpis');
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
     Route::post('/payrolls/generate', [PayrollController::class, 'generate'])->name('payrolls.generate');
