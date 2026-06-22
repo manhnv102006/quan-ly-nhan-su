@@ -5,14 +5,27 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\EmployeeDocument;
 use App\Models\Position;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EmployeeController extends Controller
 {
+    private const DOCUMENT_RULES = [
+        'documents' => ['nullable', 'array'],
+        'documents.*.document_name' => ['nullable', 'string', 'max:255'],
+        'documents.*.document_type' => ['nullable', 'in:cccd,cv,certificate,degree,contract'],
+        'documents.*.file' => ['nullable', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,doc,docx'],
+        'remove_documents' => ['nullable', 'array'],
+        'remove_documents.*' => ['integer', 'exists:employee_documents,id'],
+    ];
+
     public function create(): View
     {
         $departments = Department::query()->orderBy('department_name')->get(['id', 'department_name']);
@@ -23,7 +36,7 @@ class EmployeeController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'employee_code' => ['required', 'string', 'max:20', 'unique:employees,employee_code'],
             'full_name' => ['required', 'string', 'max:100'],
             'gender' => ['required', 'in:male,female,other'],
@@ -35,13 +48,15 @@ class EmployeeController extends Controller
             'position_id' => ['nullable', 'exists:positions,id'],
             'hire_date' => ['required', 'date'],
             'status' => ['required', 'in:active,inactive,resigned'],
-        ]);
+        ], self::DOCUMENT_RULES));
 
         $validated['employee_code'] = strtoupper($validated['employee_code']);
 
-        Employee::create($validated);
+        $employee = Employee::create(collect($validated)->except(['documents', 'remove_documents'])->all());
 
-        return redirect()->route('admin.employees')->with('success', 'Thêm nhân viên thành công.');
+        $this->storeUploadedDocuments($employee, $request);
+
+        return redirect()->route('admin.employees.show', $employee)->with('success', 'Thêm nhân viên thành công.');
     }
 
     public function show(Employee $employee): View
@@ -90,13 +105,14 @@ class EmployeeController extends Controller
     {
         $departments = Department::query()->orderBy('department_name')->get(['id', 'department_name']);
         $positions = Position::query()->orderBy('position_name')->get(['id', 'position_name']);
+        $documents = $employee->documents()->latest()->get();
 
-        return view('admin.employees.edit', compact('employee', 'departments', 'positions'));
+        return view('admin.employees.edit', compact('employee', 'departments', 'positions', 'documents'));
     }
 
     public function update(Request $request, Employee $employee): RedirectResponse
     {
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'employee_code' => ['required', 'string', 'max:20', 'unique:employees,employee_code,'.$employee->id],
             'full_name' => ['required', 'string', 'max:100'],
             'gender' => ['required', 'in:male,female,other'],
@@ -108,19 +124,47 @@ class EmployeeController extends Controller
             'position_id' => ['nullable', 'exists:positions,id'],
             'hire_date' => ['required', 'date'],
             'status' => ['required', 'in:active,inactive,resigned'],
-        ]);
+        ], self::DOCUMENT_RULES));
 
         $validated['employee_code'] = strtoupper($validated['employee_code']);
 
-        $employee->update($validated);
+        $employee->update(collect($validated)->except(['documents', 'remove_documents'])->all());
 
-        return redirect()->route('admin.employees')->with('success', 'Cập nhật nhân viên thành công.');
+        $this->removeDocuments($employee, $request->input('remove_documents', []));
+        $this->storeUploadedDocuments($employee, $request);
+
+        return redirect()->route('admin.employees.show', $employee)->with('success', 'Cập nhật nhân viên thành công.');
+    }
+
+    public function downloadDocument(Employee $employee, EmployeeDocument $document): StreamedResponse|RedirectResponse
+    {
+        if ($document->employee_id !== $employee->id) {
+            abort(404);
+        }
+
+        $absolutePath = $document->absolutePath();
+
+        if ($absolutePath === null) {
+            return redirect()
+                ->route('admin.employees.show', $employee)
+                ->with('error', 'Không tìm thấy file tài liệu trên hệ thống.');
+        }
+
+        $path = ltrim($document->file_path, '/');
+
+        if (Storage::disk('public')->exists($path)) {
+            return Storage::disk('public')->download($path, $document->downloadFileName());
+        }
+
+        return response()->download($absolutePath, $document->downloadFileName());
     }
 
     public function destroy(Employee $employee): RedirectResponse
     {
         try {
             Department::where('manager_id', $employee->id)->update(['manager_id' => null]);
+
+            $employee->documents()->get()->each(fn (EmployeeDocument $document) => $document->deleteFile());
 
             $employee->delete();
         } catch (QueryException) {
@@ -132,5 +176,55 @@ class EmployeeController extends Controller
         return redirect()
             ->route('admin.employees')
             ->with('success', 'Đã xóa nhân viên thành công.');
+    }
+
+    private function storeUploadedDocuments(Employee $employee, Request $request): void
+    {
+        $documents = $request->input('documents', []);
+
+        foreach ($documents as $index => $document) {
+            $file = $request->file("documents.{$index}.file");
+
+            if (! $file instanceof UploadedFile) {
+                continue;
+            }
+
+            $documentName = trim($document['document_name'] ?? '');
+            $documentType = $document['document_type'] ?? 'cv';
+
+            if ($documentName === '') {
+                $documentName = match ($documentType) {
+                    'cccd' => 'CCCD/CMND',
+                    'cv' => 'CV',
+                    'certificate' => 'Chứng chỉ',
+                    'degree' => 'Bằng cấp',
+                    'contract' => 'Hợp đồng',
+                    default => 'Tài liệu',
+                };
+            }
+
+            $filePath = $file->store('employee-documents', 'public');
+
+            $employee->documents()->create([
+                'document_name' => $documentName,
+                'document_type' => $documentType,
+                'file_path' => $filePath,
+            ]);
+        }
+    }
+
+    private function removeDocuments(Employee $employee, array $documentIds): void
+    {
+        if ($documentIds === []) {
+            return;
+        }
+
+        $employee->documents()
+            ->whereIn('id', $documentIds)
+            ->get()
+            ->each(function (EmployeeDocument $document) {
+                $document->deleteFile();
+                $document->delete();
+            });
     }
 }
