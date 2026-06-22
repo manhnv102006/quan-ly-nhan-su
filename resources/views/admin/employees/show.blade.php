@@ -2,130 +2,670 @@
 
     <div class="space-y-6">
 
-        <div class="flex items-center justify-between">
+        <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-800">Chi tiết nhân viên</h2>
-                <p class="text-sm text-slate-500 mt-1">{{ $employee->full_name }}</p>
+                <p class="text-slate-500 mt-1">Xem thông tin chi tiết của nhân viên</p>
             </div>
-            <div class="flex gap-3">
-                <a href="{{ route('admin.employees.edit', $employee->id) }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-100 text-amber-600 text-sm font-medium hover:bg-amber-200">✏️ Sửa</a>
-                <a href="{{ route('admin.employees') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm">← Quay lại</a>
+
+            <div class="flex flex-wrap items-center gap-3">
+                @if ($departments->where('id', '!=', $employee->department_id)->isNotEmpty())
+                    <button type="button"
+                            id="open-transfer-modal"
+                            class="px-5 py-3 rounded-xl bg-blue-100 text-blue-700 font-medium hover:bg-blue-200 transition">
+                        Điều chuyển phòng ban
+                    </button>
+                @endif
+
+                <a href="{{ route('admin.employees.edit', $employee) }}"
+                   class="px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
+                    Sửa nhân viên
+                </a>
+
+                <form action="{{ route('admin.employees.destroy', $employee) }}"
+                      method="POST"
+                      id="delete-form-show">
+                    @csrf
+                    @method('DELETE')
+                    <button type="button"
+                            id="open-delete-modal-show"
+                            data-employee-name="{{ $employee->full_name }}"
+                            class="px-5 py-3 rounded-xl bg-red-100 text-red-700 font-medium hover:bg-red-200 transition">
+                        Xóa nhân viên
+                    </button>
+                </form>
+
+                <a href="{{ route('admin.employees') }}"
+                   class="px-5 py-3 rounded-xl bg-slate-200 text-slate-700 font-medium hover:bg-slate-300 transition">
+                    ← Quay lại
+                </a>
             </div>
         </div>
 
+        @if (session('error'))
+            <div class="flex items-center gap-3 bg-white border border-red-200 shadow-sm rounded-2xl px-5 py-4">
+                <p class="text-sm font-medium text-red-700">{{ session('error') }}</p>
+            </div>
+        @endif
+
+        @if (session('success'))
+            <div class="flex items-center gap-3 bg-white border border-emerald-200 shadow-sm rounded-2xl px-5 py-4">
+                <p class="text-sm font-medium text-emerald-700">{{ session('success') }}</p>
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <!-- Main Info Card -->
-            <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-100 p-6 space-y-6">
+            <div class="lg:col-span-2 space-y-6">
 
-                <div>
-                    <h3 class="text-lg font-semibold text-slate-800 mb-4">Thông tin cơ bản</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-500">Mã nhân viên</label>
-                            <p class="mt-1 text-slate-800 font-medium">{{ $employee->employee_code }}</p>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-500">Họ và tên</label>
-                            <p class="mt-1 text-slate-800 font-medium">{{ $employee->full_name }}</p>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-500">Giới tính</label>
-                            <p class="mt-1 text-slate-800">
-                                @if($employee->gender === 'male') Nam
-                                @elseif($employee->gender === 'female') Nữ
-                                @else Khác
-                                @endif
-                            </p>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-500">Ngày sinh</label>
-                            <p class="mt-1 text-slate-800">{{ $employee->date_of_birth?->format('d/m/Y') }}</p>
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
+                    <div class="px-6 py-5 border-b border-slate-100">
+                        <h3 class="text-lg font-semibold text-slate-800">Thông tin cơ bản</h3>
+                    </div>
+
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Mã nhân viên</label>
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-semibold text-slate-800">
+                                    {{ $employee->employee_code }}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Họ và tên</label>
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-semibold text-slate-800">
+                                    {{ $employee->full_name }}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Giới tính</label>
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    @if ($employee->gender === 'male')
+                                        Nam
+                                    @elseif ($employee->gender === 'female')
+                                        Nữ
+                                    @else
+                                        Khác
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Ngày sinh</label>
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    {{ $employee->date_of_birth?->format('d/m/Y') ?? '—' }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <hr class="border-slate-100">
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
+                    <div class="px-6 py-5 border-b border-slate-100">
+                        <h3 class="text-lg font-semibold text-slate-800">Thông tin liên hệ</h3>
+                    </div>
 
-                <div>
-                    <h3 class="text-lg font-semibold text-slate-800 mb-4">Thông tin liên hệ</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-500">Email</label>
-                            <p class="mt-1 text-slate-800">{{ $employee->email }}</p>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-500">Số điện thoại</label>
-                            <p class="mt-1 text-slate-800">{{ $employee->phone }}</p>
-                        </div>
-                        <div class="col-span-2">
-                            <label class="text-xs font-bold uppercase text-slate-500">Địa chỉ</label>
-                            <p class="mt-1 text-slate-800">{{ $employee->address ?? 'Chưa cập nhật' }}</p>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Email</label>
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    {{ $employee->email }}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Số điện thoại</label>
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    {{ $employee->phone }}
+                                </div>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Địa chỉ</label>
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    {{ $employee->address ?: 'Chưa cập nhật' }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <hr class="border-slate-100">
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
+                    <div class="px-6 py-5 border-b border-slate-100">
+                        <h3 class="text-lg font-semibold text-slate-800">Thông tin công việc</h3>
+                    </div>
 
-                <div>
-                    <h3 class="text-lg font-semibold text-slate-800 mb-4">Thông tin công việc</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-500">Phòng ban</label>
-                            <p class="mt-1 text-slate-800">{{ $employee->department?->department_name ?? 'Chưa gán' }}</p>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Phòng ban</label>
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    @if ($employee->department)
+                                        <a href="{{ route('admin.departments.detail', $employee->department_id) }}"
+                                           class="text-violet-600 hover:text-violet-700 font-medium">
+                                            {{ $employee->department->department_name }}
+                                        </a>
+                                    @else
+                                        <span class="text-slate-400">Chưa gán</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Chức vụ</label>
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    @if ($employee->position)
+                                        <a href="{{ route('admin.positions.show', $employee->position_id) }}"
+                                           class="text-violet-600 hover:text-violet-700 font-medium">
+                                            {{ $employee->position->position_name }}
+                                        </a>
+                                    @else
+                                        <span class="text-slate-400">Chưa gán</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Ngày vào làm</label>
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    {{ $employee->hire_date?->format('d/m/Y') ?? '—' }}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Trạng thái</label>
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    @if ($employee->status === 'active')
+                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Đang làm việc</span>
+                                    @elseif ($employee->status === 'inactive')
+                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Tạm khóa</span>
+                                    @else
+                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">Đã nghỉ</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Ngày tạo hồ sơ</label>
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    {{ $employee->created_at?->format('d/m/Y H:i') ?? '—' }}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Cập nhật lần cuối</label>
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    {{ $employee->updated_at?->format('d/m/Y H:i') ?? '—' }}
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-500">Chức vụ</label>
-                            <p class="mt-1 text-slate-800">{{ $employee->position?->position_name ?? 'Chưa gán' }}</p>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-500">Ngày vào làm</label>
-                            <p class="mt-1 text-slate-800">{{ $employee->hire_date?->format('d/m/Y') }}</p>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-500">Trạng thái</label>
-                            <p class="mt-1">
-                                @if($employee->status === 'active')
-                                    <span class="inline-flex px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">Hoạt động</span>
-                                @elseif($employee->status === 'inactive')
-                                    <span class="inline-flex px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">Tạm khóa</span>
-                                @else
-                                    <span class="inline-flex px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold">Đã nghỉ</span>
-                                @endif
-                            </p>
-                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
+                    <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-800">Lịch sử điều chuyển phòng ban</h3>
+                        <span class="text-sm text-slate-500">{{ $transferHistory->count() }} bản ghi</span>
+                    </div>
+
+                    <div class="p-6 overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="text-sm text-slate-500 border-b border-slate-100">
+                                    <th class="py-3 px-4 font-medium">Từ phòng ban</th>
+                                    <th class="py-3 px-4 font-medium">Đến phòng ban</th>
+                                    <th class="py-3 px-4 font-medium">Ngày hiệu lực</th>
+                                    <th class="py-3 px-4 font-medium">Người thực hiện</th>
+                                    <th class="py-3 px-4 font-medium">Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($transferHistory as $transfer)
+                                    <tr class="border-b border-slate-50 hover:bg-slate-50">
+                                        <td class="py-3 px-4 text-slate-700">{{ $transfer->fromDepartment?->department_name ?? 'Chưa gán' }}</td>
+                                        <td class="py-3 px-4 font-medium text-slate-800">{{ $transfer->toDepartment?->department_name ?? '—' }}</td>
+                                        <td class="py-3 px-4 text-slate-700">{{ $transfer->effective_date?->format('d/m/Y') ?? '—' }}</td>
+                                        <td class="py-3 px-4 text-slate-700">{{ $transfer->transferredBy?->name ?? '—' }}</td>
+                                        <td class="py-3 px-4 text-slate-600">{{ $transfer->note ?: '—' }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="py-8 text-center text-slate-400">Chưa có lịch sử điều chuyển</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
             </div>
 
-            <!-- Sidebar -->
-            <div class="space-y-6">
-
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
-                    <h3 class="text-lg font-semibold text-slate-800 mb-4">Avatar</h3>
-                    <div class="w-full aspect-square rounded-2xl bg-slate-100 flex items-center justify-center text-6xl">
-                        @if($employee->avatar)
-                            <img src="{{ asset('storage/' . $employee->avatar) }}" alt="avatar" class="w-full h-full object-cover rounded-2xl"/>
+            <div>
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 text-center">
+                    <div class="w-28 h-28 mx-auto rounded-3xl bg-violet-100 flex items-center justify-center overflow-hidden">
+                        @if ($employee->avatar)
+                            <img src="{{ asset('storage/' . $employee->avatar) }}"
+                                 alt="{{ $employee->full_name }}"
+                                 class="w-full h-full object-cover">
                         @else
-                            {{ strtoupper(substr($employee->full_name, 0, 1)) }}
+                            <span class="text-4xl font-bold text-violet-600">
+                                {{ strtoupper(substr($employee->full_name, 0, 1)) }}
+                            </span>
                         @endif
                     </div>
-                </div>
 
-                <div class="bg-slate-50 rounded-3xl border border-slate-200 p-6">
-                    <h3 class="text-lg font-semibold text-slate-800 mb-4">Hành động</h3>
-                    <div class="space-y-3">
-                        <a href="{{ route('admin.employees.edit', $employee->id) }}" class="w-full block text-center px-4 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
-                            Sửa thông tin
+                    <h3 class="mt-5 text-xl font-bold text-slate-800">{{ $employee->full_name }}</h3>
+                    <p class="text-slate-500 mt-2">{{ $employee->employee_code }}</p>
+
+                    <div class="mt-4">
+                        @if ($employee->status === 'active')
+                            <span class="inline-flex items-center px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold">Đang làm việc</span>
+                        @elseif ($employee->status === 'inactive')
+                            <span class="inline-flex items-center px-4 py-2 rounded-full bg-amber-100 text-amber-700 text-sm font-semibold">Tạm khóa</span>
+                        @else
+                            <span class="inline-flex items-center px-4 py-2 rounded-full bg-rose-100 text-rose-700 text-sm font-semibold">Đã nghỉ</span>
+                        @endif
+                    </div>
+
+                    @if ($employee->department)
+                        <p class="mt-4 text-sm text-slate-500">
+                            Phòng ban: <span class="font-semibold text-slate-800">{{ $employee->department->department_name }}</span>
+                        </p>
+                    @endif
+
+                    @if ($employee->position)
+                        <p class="mt-2 text-sm text-slate-500">
+                            Chức vụ: <span class="font-semibold text-slate-800">{{ $employee->position->position_name }}</span>
+                        </p>
+                    @endif
+                </div>
+            </div>
+
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
+            <div class="px-6 py-5 border-b border-slate-100">
+                <h3 class="text-lg font-semibold text-slate-800">Tài khoản hệ thống liên kết</h3>
+            </div>
+
+            <div class="p-6">
+                @if ($employee->user)
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-500 mb-2">Tên đăng nhập</label>
+                            <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-medium text-slate-800">
+                                {{ $employee->user->username }}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-500 mb-2">Vai trò</label>
+                            <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                @if ($employee->user->role)
+                                    @php
+                                        $roleClass = match ($employee->user->role->name) {
+                                            'admin' => 'bg-violet-100 text-violet-700',
+                                            'manager' => 'bg-blue-100 text-blue-700',
+                                            'employee' => 'bg-cyan-100 text-cyan-700',
+                                            default => 'bg-slate-100 text-slate-600',
+                                        };
+                                    @endphp
+                                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold {{ $roleClass }}">
+                                        {{ $employee->user->role->label() }}
+                                    </span>
+                                @else
+                                    <span class="text-slate-400">Chưa phân quyền</span>
+                                @endif
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-500 mb-2">Trạng thái tài khoản</label>
+                            <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                @if ($employee->user->status === 'active')
+                                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Hoạt động</span>
+                                @else
+                                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Đã khóa</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5">
+                        <a href="{{ route('admin.accounts.show', $employee->user) }}"
+                           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-100 text-violet-700 text-sm font-medium hover:bg-violet-200 transition">
+                            Xem chi tiết tài khoản →
                         </a>
                     </div>
+                @else
+                    <div class="py-12 text-center">
+                        <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center">
+                            <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                        <p class="mt-4 text-slate-500 font-medium">Chưa liên kết tài khoản hệ thống</p>
+                        <p class="mt-1 text-sm text-slate-400">Nhân viên này chưa được gán với tài khoản đăng nhập</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
+            <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-slate-800">Hợp đồng lao động</h3>
+                <span class="text-sm text-slate-500">{{ $contracts->count() }} hợp đồng gần đây</span>
+            </div>
+
+            <div class="p-6 overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-sm text-slate-500 border-b border-slate-100">
+                            <th class="py-3 px-4 font-medium">Mã HĐ</th>
+                            <th class="py-3 px-4 font-medium">Loại</th>
+                            <th class="py-3 px-4 font-medium">Ngày bắt đầu</th>
+                            <th class="py-3 px-4 font-medium">Ngày kết thúc</th>
+                            <th class="py-3 px-4 font-medium">Lương</th>
+                            <th class="py-3 px-4 font-medium">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($contracts as $contract)
+                            <tr class="border-b border-slate-50 hover:bg-slate-50">
+                                <td class="py-3 px-4 font-medium text-slate-800">{{ $contract->contract_code }}</td>
+                                <td class="py-3 px-4 text-slate-700">{{ $contract->contractType?->contract_name ?? '—' }}</td>
+                                <td class="py-3 px-4 text-slate-700">{{ $contract->start_date?->format('d/m/Y') ?? '—' }}</td>
+                                <td class="py-3 px-4 text-slate-700">{{ $contract->end_date?->format('d/m/Y') ?? 'Không xác định' }}</td>
+                                <td class="py-3 px-4 text-slate-700">{{ number_format($contract->salary, 0, ',', '.') }} ₫</td>
+                                <td class="py-3 px-4">
+                                    @if ($contract->status === 'active')
+                                        <span class="inline-flex px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">Hiệu lực</span>
+                                    @elseif ($contract->status === 'expired')
+                                        <span class="inline-flex px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">Hết hạn</span>
+                                    @else
+                                        <span class="inline-flex px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold">Chấm dứt</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="py-8 text-center text-slate-400">Chưa có hợp đồng nào</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
+                <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-slate-800">Chấm công gần đây</h3>
+                    <span class="text-sm text-slate-500">{{ $attendances->count() }} bản ghi</span>
                 </div>
 
+                <div class="p-6 overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-sm text-slate-500 border-b border-slate-100">
+                                <th class="py-3 px-4 font-medium">Ngày</th>
+                                <th class="py-3 px-4 font-medium">Giờ vào</th>
+                                <th class="py-3 px-4 font-medium">Giờ ra</th>
+                                <th class="py-3 px-4 font-medium">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($attendances as $attendance)
+                                <tr class="border-b border-slate-50 hover:bg-slate-50">
+                                    <td class="py-3 px-4 text-slate-700">{{ $attendance->attendance_date?->format('d/m/Y') ?? '—' }}</td>
+                                    <td class="py-3 px-4 text-slate-700">{{ $attendance->check_in?->format('H:i') ?? '—' }}</td>
+                                    <td class="py-3 px-4 text-slate-700">{{ $attendance->check_out?->format('H:i') ?? '—' }}</td>
+                                    <td class="py-3 px-4">
+                                        @if ($attendance->status === 'present')
+                                            <span class="inline-flex px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">Có mặt</span>
+                                        @elseif ($attendance->status === 'late')
+                                            <span class="inline-flex px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">Đi muộn</span>
+                                        @elseif ($attendance->status === 'leave')
+                                            <span class="inline-flex px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Nghỉ phép</span>
+                                        @else
+                                            <span class="inline-flex px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold">Vắng</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="py-8 text-center text-slate-400">Chưa có dữ liệu chấm công</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
+                <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-slate-800">KPI được giao</h3>
+                    <span class="text-sm text-slate-500">{{ $employeeKpis->count() }} KPI</span>
+                </div>
+
+                <div class="p-6 overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-sm text-slate-500 border-b border-slate-100">
+                                <th class="py-3 px-4 font-medium">Tên KPI</th>
+                                <th class="py-3 px-4 font-medium">Tiến độ</th>
+                                <th class="py-3 px-4 font-medium">Điểm</th>
+                                <th class="py-3 px-4 font-medium">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($employeeKpis as $employeeKpi)
+                                <tr class="border-b border-slate-50 hover:bg-slate-50">
+                                    <td class="py-3 px-4 font-medium text-slate-800">{{ $employeeKpi->kpi?->title ?? '—' }}</td>
+                                    <td class="py-3 px-4 text-slate-700">{{ $employeeKpi->progress }}%</td>
+                                    <td class="py-3 px-4 text-slate-700">{{ $employeeKpi->score !== null ? number_format($employeeKpi->score, 1) : '—' }}</td>
+                                    <td class="py-3 px-4">
+                                        @if ($employeeKpi->status === 'completed')
+                                            <span class="inline-flex px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">Hoàn thành</span>
+                                        @elseif ($employeeKpi->status === 'in_progress')
+                                            <span class="inline-flex px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Đang thực hiện</span>
+                                        @else
+                                            <span class="inline-flex px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">Chờ xử lý</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="py-8 text-center text-slate-400">Chưa có KPI nào</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
+                <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-slate-800">Bảng lương gần đây</h3>
+                    <span class="text-sm text-slate-500">{{ $payrolls->count() }} kỳ lương</span>
+                </div>
+
+                <div class="p-6 overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-sm text-slate-500 border-b border-slate-100">
+                                <th class="py-3 px-4 font-medium">Kỳ lương</th>
+                                <th class="py-3 px-4 font-medium">Tổng lương</th>
+                                <th class="py-3 px-4 font-medium">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($payrolls as $payroll)
+                                <tr class="border-b border-slate-50 hover:bg-slate-50">
+                                    <td class="py-3 px-4 text-slate-700">{{ $payroll->payrollPeriod?->name ?? '—' }}</td>
+                                    <td class="py-3 px-4 font-medium text-slate-800">{{ number_format($payroll->total_salary, 0, ',', '.') }} ₫</td>
+                                    <td class="py-3 px-4">
+                                        @if ($payroll->status === 'paid')
+                                            <span class="inline-flex px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">Đã thanh toán</span>
+                                        @elseif ($payroll->status === 'approved')
+                                            <span class="inline-flex px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Đã duyệt</span>
+                                        @elseif ($payroll->status === 'pending')
+                                            <span class="inline-flex px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">Chờ duyệt</span>
+                                        @else
+                                            <span class="inline-flex px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">Nháp</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="py-8 text-center text-slate-400">Chưa có bảng lương nào</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
+                <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-800">Tài liệu hồ sơ</h3>
+                        <span class="text-sm text-slate-500">{{ $documents->count() }} tài liệu</span>
+                    </div>
+                    @php
+                        $downloadableDocuments = $documents->filter(fn ($document) => $document->existsOnDisk());
+                    @endphp
+                    @if ($downloadableDocuments->isNotEmpty())
+                        <a href="{{ route('admin.employees.documents.download-all', $employee) }}"
+                           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                            </svg>
+                            Tải tất cả tài liệu ({{ $downloadableDocuments->count() }})
+                        </a>
+                    @endif
+                </div>
+
+                <div class="p-6 overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-sm text-slate-500 border-b border-slate-100">
+                                <th class="py-3 px-4 font-medium">Tên tài liệu</th>
+                                <th class="py-3 px-4 font-medium">Loại</th>
+                                <th class="py-3 px-4 font-medium">Ngày tải lên</th>
+                                <th class="py-3 px-4 font-medium text-center">Tải xuống</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($documents as $document)
+                                <tr class="border-b border-slate-50 hover:bg-slate-50">
+                                    <td class="py-3 px-4 font-medium text-slate-800">{{ $document->document_name }}</td>
+                                    <td class="py-3 px-4 text-slate-700">{{ $document->typeLabel() }}</td>
+                                    <td class="py-3 px-4 text-slate-700">{{ $document->created_at?->format('d/m/Y') ?? '—' }}</td>
+                                    <td class="py-3 px-4 text-center">
+                                        @if ($document->existsOnDisk())
+                                            <a href="{{ route('admin.employees.documents.download', [$employee, $document]) }}"
+                                               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-100 text-violet-700 text-xs font-semibold hover:bg-violet-200 transition"
+                                               title="Tải xuống {{ $document->document_name }}">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                                                </svg>
+                                                Tải xuống
+                                            </a>
+                                        @else
+                                            <span class="inline-flex px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-xs font-medium"
+                                                  title="File không tồn tại trên hệ thống">
+                                                Không có file
+                                            </span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="py-8 text-center text-slate-400">Chưa có tài liệu nào</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </div>
 
     </div>
+
+    @include('admin.employees.partials.transfer-department-modal')
+
+    <div id="delete-confirm-modal"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-red-100 flex items-center justify-center">
+                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+
+            <h3 class="mt-5 text-lg font-bold text-slate-800 text-center">Xác nhận xóa nhân viên</h3>
+            <p class="mt-2 text-sm text-slate-500 text-center">
+                Bạn có chắc muốn xóa vĩnh viễn nhân viên
+                <span id="delete-employee-name" class="font-semibold text-slate-800">{{ $employee->full_name }}</span>?
+            </p>
+            <p class="mt-2 text-xs text-red-600 text-center font-medium">
+                Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan sẽ bị xóa.
+            </p>
+
+            <div class="mt-6 flex gap-3">
+                <button type="button" id="cancel-delete-btn"
+                        class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
+                    Hủy
+                </button>
+                <button type="button" id="confirm-delete-btn"
+                        class="flex-1 px-5 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition">
+                    Xác nhận xóa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const modal = document.getElementById('delete-confirm-modal');
+            const openBtn = document.getElementById('open-delete-modal-show');
+            const cancelBtn = document.getElementById('cancel-delete-btn');
+            const confirmBtn = document.getElementById('confirm-delete-btn');
+            const form = document.getElementById('delete-form-show');
+
+            function openModal() {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            function closeModal() {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+
+            openBtn.addEventListener('click', openModal);
+            cancelBtn.addEventListener('click', closeModal);
+
+            confirmBtn.addEventListener('click', function () {
+                if (form) form.submit();
+            });
+
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) closeModal();
+            });
+        })();
+    </script>
 
 </x-admin-layout>
