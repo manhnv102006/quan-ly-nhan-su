@@ -9,17 +9,38 @@ use Illuminate\View\View;
 
 class AttendanceController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $attendances = Attendance::query()
+        $search = $request->search;
+        $status = $request->status;
+        $date = $request->date;
+
+        $attendances = Attendance::
+            query()
             ->with([
                 'employee.department',
                 'employee.position',
                 'shift'
             ])
+            ->when($search, function ($query) use ($search) {
+                $query->whereHas('employee', function ($employee) use ($search) {
+                    $employee->where('employee_code', 'like', "%{$search}%")
+                        ->orWhere('full_name', 'like', "%{$search}%");
+                });
+            })
+    
+            ->when($status, function ($query) use ($status) {
+                $query->where('status', $status);
+            })
+    
+            ->when($date, function ($query) use ($date) {
+                $query->whereDate('attendance_date', $date);
+            })
+    
             ->latest()
-            ->paginate(10);
-
+            ->paginate(10)
+            ->withQueryString();
+            
         $stats = [
             'total' => Attendance::count(),
             'present' => Attendance::where('status', 'present')->count(),
@@ -42,7 +63,13 @@ class AttendanceController extends Controller
 
         return view(
             'admin.attendances.show',
-            compact('attendance')
+            compact(
+                'attendances',
+                'stats',
+                'search',
+                'status',
+                'date'
+            )
         );
     }
 
