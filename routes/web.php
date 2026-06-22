@@ -57,6 +57,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/employees/{employee}', [\App\Http\Controllers\Admin\EmployeeController::class, 'show'])->name('employees.show');
     Route::get('/employees/{employee}/documents/download-all', [\App\Http\Controllers\Admin\EmployeeController::class, 'downloadAllDocuments'])->name('employees.documents.download-all');
     Route::get('/employees/{employee}/documents/{document}/download', [\App\Http\Controllers\Admin\EmployeeController::class, 'downloadDocument'])->name('employees.documents.download');
+    Route::patch('/employees/{employee}/transfer-department', [\App\Http\Controllers\Admin\EmployeeController::class, 'transferDepartment'])->name('employees.transfer-department');
     Route::get('/employees/{employee}/edit', [\App\Http\Controllers\Admin\EmployeeController::class, 'edit'])->name('employees.edit');
     Route::put('/employees/{employee}', [\App\Http\Controllers\Admin\EmployeeController::class, 'update'])->name('employees.update');
     Route::delete('/employees/{employee}', [\App\Http\Controllers\Admin\EmployeeController::class, 'destroy'])->name('employees.destroy');

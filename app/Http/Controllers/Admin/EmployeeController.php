@@ -94,6 +94,17 @@ class EmployeeController extends Controller
             ->latest()
             ->get();
 
+        $departments = Department::query()
+            ->where('status', 'active')
+            ->orderBy('department_name')
+            ->get(['id', 'department_name']);
+
+        $transferHistory = $employee->departmentTransfers()
+            ->with(['fromDepartment', 'toDepartment', 'transferredBy'])
+            ->latest()
+            ->limit(10)
+            ->get();
+
         return view('admin.employees.show', compact(
             'employee',
             'contracts',
@@ -101,6 +112,8 @@ class EmployeeController extends Controller
             'employeeKpis',
             'payrolls',
             'documents',
+            'departments',
+            'transferHistory',
         ));
     }
 
@@ -137,6 +150,55 @@ class EmployeeController extends Controller
         $this->storeUploadedDocuments($employee, $request);
 
         return redirect()->route('admin.employees.show', $employee)->with('success', 'Cập nhật nhân viên thành công.');
+    }
+
+    public function transferDepartment(Request $request, Employee $employee): RedirectResponse
+    {
+        $validated = $request->validate([
+            'to_department_id' => ['required', 'exists:departments,id'],
+            'effective_date' => ['required', 'date'],
+            'note' => ['nullable', 'string', 'max:500'],
+        ], [
+            'to_department_id.required' => 'Vui lòng chọn phòng ban đích.',
+            'to_department_id.exists' => 'Phòng ban không hợp lệ.',
+            'effective_date.required' => 'Vui lòng chọn ngày hiệu lực.',
+            'effective_date.date' => 'Ngày hiệu lực không hợp lệ.',
+        ]);
+
+        $toDepartment = Department::query()
+            ->where('id', $validated['to_department_id'])
+            ->where('status', 'active')
+            ->first();
+
+        if (! $toDepartment) {
+            return redirect()
+                ->route('admin.employees.show', $employee)
+                ->with('error', 'Phòng ban đích không tồn tại hoặc không hoạt động.');
+        }
+
+        if ((int) $employee->department_id === (int) $validated['to_department_id']) {
+            return redirect()
+                ->route('admin.employees.show', $employee)
+                ->with('error', 'Phòng ban đích phải khác phòng ban hiện tại.');
+        }
+
+        $fromDepartmentName = $employee->department?->department_name ?? 'Chưa gán';
+
+        $employee->departmentTransfers()->create([
+            'from_department_id' => $employee->department_id,
+            'to_department_id' => $validated['to_department_id'],
+            'transferred_by' => $request->user()->id,
+            'effective_date' => $validated['effective_date'],
+            'note' => $validated['note'] ?? null,
+        ]);
+
+        Department::where('manager_id', $employee->id)->update(['manager_id' => null]);
+
+        $employee->update(['department_id' => $validated['to_department_id']]);
+
+        return redirect()
+            ->route('admin.employees.show', $employee)
+            ->with('success', "Đã điều chuyển nhân viên từ {$fromDepartmentName} sang {$toDepartment->department_name}.");
     }
 
     public function downloadDocument(Employee $employee, EmployeeDocument $document): StreamedResponse|RedirectResponse
