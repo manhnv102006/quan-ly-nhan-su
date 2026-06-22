@@ -56,6 +56,42 @@
             </div>
         </div>
 
+        <div class="admin-card p-6">
+            <form method="GET" action="{{ route('admin.recruitment.candidates') }}" class="flex flex-col gap-4 lg:flex-row lg:items-end">
+                <div class="flex-1">
+                    <label for="search" class="block text-sm font-medium text-slate-700 mb-2">
+                        Tìm kiếm ứng viên
+                    </label>
+                    <input
+                        type="text"
+                        id="search"
+                        name="search"
+                        value="{{ $search }}"
+                        placeholder="Nhập họ tên, điện thoại, email, địa chỉ hoặc tin tuyển dụng"
+                        class="w-full rounded-xl border-slate-200 focus:border-violet-500 focus:ring-violet-500"
+                    >
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                    <button
+                        type="submit"
+                        class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition"
+                    >
+                        Tìm kiếm
+                    </button>
+
+                    @if ($search !== '')
+                        <a
+                            href="{{ route('admin.recruitment.candidates') }}"
+                            class="inline-flex items-center justify-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition"
+                        >
+                            Xóa bộ lọc
+                        </a>
+                    @endif
+                </div>
+            </form>
+        </div>
+
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h3 class="font-semibold text-slate-800">Danh sách ứng viên</h3>
@@ -119,7 +155,7 @@
                         @empty
                             <tr>
                                 <td colspan="7" class="text-center py-12 text-slate-400">
-                                    Chưa có ứng viên nào trong hệ thống.
+                                    {{ $search !== '' ? 'Không tìm thấy ứng viên phù hợp.' : 'Chưa có ứng viên nào trong hệ thống.' }}
                                 </td>
                             </tr>
                         @endforelse
