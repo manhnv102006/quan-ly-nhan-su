@@ -5,7 +5,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-2xl font-bold text-slate-800">Quản lý nhân viên</h2>
-                <p class="text-sm text-slate-500 mt-1">Xem chi tiết Quản lý nhân viên</p>
+                <p class="text-sm text-slate-500 mt-1">Danh sách và quản lý hồ sơ nhân viên</p>
             </div>
             <a href="{{ route('admin.employees.create') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
                 + Thêm nhân viên
@@ -37,7 +37,7 @@
                 <table class="w-full">
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200">
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Mã NV</th>
                             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Tên nhân viên</th>
                             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Phòng ban</th>
                             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Chức vụ</th>
@@ -50,8 +50,13 @@
                     <tbody>
                         @forelse ($employees as $employee)
                             <tr class="border-b border-slate-200 hover:bg-slate-50 transition">
-                                <td class="px-6 py-4 text-slate-700">{{ $employee->id }}</td>
-                                <td class="px-6 py-4 text-slate-700 font-medium">{{ $employee->full_name }}</td>
+                                <td class="px-6 py-4 text-slate-700 font-mono text-sm">{{ $employee->employee_code }}</td>
+                                <td class="px-6 py-4">
+                                    <a href="{{ route('admin.employees.show', $employee) }}"
+                                       class="text-slate-800 font-medium hover:text-violet-600 transition">
+                                        {{ $employee->full_name }}
+                                    </a>
+                                </td>
                                 <td class="px-6 py-4 text-slate-600">{{ $employee->department?->department_name ?? '-' }}</td>
                                 <td class="px-6 py-4 text-slate-600">{{ $employee->position?->position_name ?? '-' }}</td>
                                 <td class="px-6 py-4 text-slate-600">{{ $employee->email }}</td>
