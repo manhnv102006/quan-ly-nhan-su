@@ -3,9 +3,11 @@
 use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\AdminModuleController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\JobPostController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\PayrollPeriodController;
 use App\Http\Controllers\Admin\PayrollController;
+use App\Http\Controllers\Admin\RecruitmentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -69,7 +71,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/payrolls/{payroll}/approve', [PayrollController::class, 'approve'])->name('payrolls.approve');
     Route::post('/payrolls/{payroll}/pay', [PayrollController::class, 'pay'])->name('payrolls.pay');
     Route::get('/contracts', [AdminModuleController::class, 'contracts'])->name('contracts');
-    Route::get('/recruitment', [AdminModuleController::class, 'recruitment'])->name('recruitment');
+    Route::get('/recruitment', [RecruitmentController::class, 'index'])->name('recruitment');
+    Route::get('/recruitment/job-posts', [JobPostController::class, 'index'])->name('recruitment.job-posts');
 });
 
 Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
