@@ -45,9 +45,44 @@ class EmployeeController extends Controller
 
     public function show(Employee $employee): View
     {
-        $employee->load(['department', 'position']);
+        $employee->load(['department', 'position', 'user.role']);
 
-        return view('admin.employees.show', compact('employee'));
+        $contracts = $employee->contracts()
+            ->with('contractType')
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $attendances = $employee->attendances()
+            ->with('shift')
+            ->latest('attendance_date')
+            ->limit(5)
+            ->get();
+
+        $employeeKpis = $employee->employeeKpis()
+            ->with('kpi')
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $payrolls = $employee->payrolls()
+            ->with('payrollPeriod')
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $documents = $employee->documents()
+            ->latest()
+            ->get();
+
+        return view('admin.employees.show', compact(
+            'employee',
+            'contracts',
+            'attendances',
+            'employeeKpis',
+            'payrolls',
+            'documents',
+        ));
     }
 
     public function edit(Employee $employee): View
