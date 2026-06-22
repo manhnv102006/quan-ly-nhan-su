@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class KPI extends Model
 {
-    //
+    protected $table = 'kpis';
 }
