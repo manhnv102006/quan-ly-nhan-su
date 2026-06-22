@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\JobPost;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -71,6 +72,21 @@ class JobPostController extends Controller
         return redirect()
             ->route('admin.recruitment.job-posts')
             ->with('success', 'Cập nhật tin tuyển dụng thành công.');
+    }
+
+    public function destroy(JobPost $jobPost): RedirectResponse
+    {
+        try {
+            $jobPost->delete();
+        } catch (QueryException) {
+            return redirect()
+                ->route('admin.recruitment.job-posts')
+                ->with('error', 'Không thể xóa tin tuyển dụng vì vẫn còn dữ liệu liên quan trong hệ thống.');
+        }
+
+        return redirect()
+            ->route('admin.recruitment.job-posts')
+            ->with('success', 'Xóa tin tuyển dụng thành công.');
     }
 
     private function jobPostListData(string $search): array
