@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 
 use App\Http\Controllers\Controller;
+use App\Models\Attendance;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -44,7 +45,19 @@ class AdminModuleController extends Controller
 
     public function attendances(): View
     {
-        return $this->module('Quản lý chấm công', 'Theo dõi giờ vào ra, ca làm việc và báo cáo chấm công.');
+        $attendances = Attendance::query()
+        ->with([
+            'employee.department',
+            'employee.position',
+            'shift'
+        ])
+        ->latest()
+        ->paginate(10);
+
+    return view(
+        'admin.attendances.index',
+        compact('attendances')
+    );
     }
 
     public function kpis(): View
