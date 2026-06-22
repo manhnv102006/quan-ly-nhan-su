@@ -14,6 +14,19 @@
                     Sửa nhân viên
                 </a>
 
+                <form action="{{ route('admin.employees.destroy', $employee) }}"
+                      method="POST"
+                      id="delete-form-show">
+                    @csrf
+                    @method('DELETE')
+                    <button type="button"
+                            id="open-delete-modal-show"
+                            data-employee-name="{{ $employee->full_name }}"
+                            class="px-5 py-3 rounded-xl bg-red-100 text-red-700 font-medium hover:bg-red-200 transition">
+                        Xóa nhân viên
+                    </button>
+                </form>
+
                 <a href="{{ route('admin.employees') }}"
                    class="px-5 py-3 rounded-xl bg-slate-200 text-slate-700 font-medium hover:bg-slate-300 transition">
                     ← Quay lại
@@ -511,5 +524,68 @@
         </div>
 
     </div>
+
+    <div id="delete-confirm-modal"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-red-100 flex items-center justify-center">
+                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+
+            <h3 class="mt-5 text-lg font-bold text-slate-800 text-center">Xác nhận xóa nhân viên</h3>
+            <p class="mt-2 text-sm text-slate-500 text-center">
+                Bạn có chắc muốn xóa vĩnh viễn nhân viên
+                <span id="delete-employee-name" class="font-semibold text-slate-800">{{ $employee->full_name }}</span>?
+            </p>
+            <p class="mt-2 text-xs text-red-600 text-center font-medium">
+                Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan sẽ bị xóa.
+            </p>
+
+            <div class="mt-6 flex gap-3">
+                <button type="button" id="cancel-delete-btn"
+                        class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
+                    Hủy
+                </button>
+                <button type="button" id="confirm-delete-btn"
+                        class="flex-1 px-5 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition">
+                    Xác nhận xóa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const modal = document.getElementById('delete-confirm-modal');
+            const openBtn = document.getElementById('open-delete-modal-show');
+            const cancelBtn = document.getElementById('cancel-delete-btn');
+            const confirmBtn = document.getElementById('confirm-delete-btn');
+            const form = document.getElementById('delete-form-show');
+
+            function openModal() {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            function closeModal() {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+
+            openBtn.addEventListener('click', openModal);
+            cancelBtn.addEventListener('click', closeModal);
+
+            confirmBtn.addEventListener('click', function () {
+                if (form) form.submit();
+            });
+
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) closeModal();
+            });
+        })();
+    </script>
 
 </x-admin-layout>
