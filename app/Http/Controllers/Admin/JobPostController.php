@@ -15,14 +15,11 @@ class JobPostController extends Controller
     {
         $search = '';
         $data = $this->jobPostListData($search);
-        $departments = Department::query()
-            ->where('status', 'active')
-            ->orderBy('department_name')
-            ->get(['id', 'department_name']);
 
         return view('admin.recruitment.job-posts.index', array_merge($data, [
-            'departments' => $departments,
+            'departments' => $this->activeDepartments(),
             'showCreateForm' => true,
+            'showEditForm' => false,
         ]));
     }
 
@@ -33,27 +30,13 @@ class JobPostController extends Controller
 
         return view('admin.recruitment.job-posts.index', array_merge($data, [
             'showCreateForm' => false,
+            'showEditForm' => false,
         ]));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'department_id' => ['nullable', 'exists:departments,id'],
-            'title' => ['required', 'string', 'max:255'],
-            'quantity' => ['required', 'integer', 'min:1'],
-            'description' => ['nullable', 'string'],
-            'status' => ['required', 'in:open,closed'],
-        ], [
-            'department_id.exists' => 'Phòng ban được chọn không hợp lệ.',
-            'title.required' => 'Tiêu đề tin tuyển dụng là bắt buộc.',
-            'title.max' => 'Tiêu đề tin tuyển dụng không được vượt quá 255 ký tự.',
-            'quantity.required' => 'Số lượng tuyển là bắt buộc.',
-            'quantity.integer' => 'Số lượng tuyển phải là số nguyên.',
-            'quantity.min' => 'Số lượng tuyển phải lớn hơn 0.',
-            'status.required' => 'Trạng thái là bắt buộc.',
-            'status.in' => 'Trạng thái tin tuyển dụng không hợp lệ.',
-        ]);
+        $validated = $this->validateJobPost($request);
 
         $validated['department_id'] = $validated['department_id'] ?: null;
 
@@ -62,6 +45,32 @@ class JobPostController extends Controller
         return redirect()
             ->route('admin.recruitment.job-posts')
             ->with('success', 'Thêm tin tuyển dụng thành công.');
+    }
+
+    public function edit(JobPost $jobPost): View
+    {
+        $search = '';
+        $data = $this->jobPostListData($search);
+
+        return view('admin.recruitment.job-posts.index', array_merge($data, [
+            'departments' => $this->activeDepartments(),
+            'showCreateForm' => false,
+            'showEditForm' => true,
+            'editingJobPost' => $jobPost->load('department'),
+        ]));
+    }
+
+    public function update(Request $request, JobPost $jobPost): RedirectResponse
+    {
+        $validated = $this->validateJobPost($request);
+
+        $validated['department_id'] = $validated['department_id'] ?: null;
+
+        $jobPost->update($validated);
+
+        return redirect()
+            ->route('admin.recruitment.job-posts')
+            ->with('success', 'Cập nhật tin tuyển dụng thành công.');
     }
 
     private function jobPostListData(string $search): array
@@ -88,5 +97,33 @@ class JobPostController extends Controller
         ];
 
         return compact('jobPosts', 'search', 'stats');
+    }
+
+    private function activeDepartments()
+    {
+        return Department::query()
+            ->where('status', 'active')
+            ->orderBy('department_name')
+            ->get(['id', 'department_name']);
+    }
+
+    private function validateJobPost(Request $request): array
+    {
+        return $request->validate([
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'title' => ['required', 'string', 'max:255'],
+            'quantity' => ['required', 'integer', 'min:1'],
+            'description' => ['nullable', 'string'],
+            'status' => ['required', 'in:open,closed'],
+        ], [
+            'department_id.exists' => 'Phòng ban được chọn không hợp lệ.',
+            'title.required' => 'Tiêu đề tin tuyển dụng là bắt buộc.',
+            'title.max' => 'Tiêu đề tin tuyển dụng không được vượt quá 255 ký tự.',
+            'quantity.required' => 'Số lượng tuyển là bắt buộc.',
+            'quantity.integer' => 'Số lượng tuyển phải là số nguyên.',
+            'quantity.min' => 'Số lượng tuyển phải lớn hơn 0.',
+            'status.required' => 'Trạng thái là bắt buộc.',
+            'status.in' => 'Trạng thái tin tuyển dụng không hợp lệ.',
+        ]);
     }
 }
