@@ -14,7 +14,7 @@
 
                 <h2 class="mt-2 text-2xl font-bold text-slate-800">Thêm ứng viên mới</h2>
                 <p class="text-sm text-slate-500 mt-1">
-                    Tạo hồ sơ ứng viên cơ bản trước. Phần tải CV sẽ được bổ sung ở bước tiếp theo.
+                    Tạo hồ sơ ứng viên cơ bản và tải CV ngay trong bước khởi tạo hồ sơ.
                 </p>
             </div>
 
@@ -37,7 +37,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('admin.recruitment.candidates.store') }}" method="POST" class="space-y-5">
+            <form action="{{ route('admin.recruitment.candidates.store') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
                 @csrf
 
                 <div>
@@ -125,6 +125,18 @@
                               placeholder="Nhập địa chỉ hiện tại"
                               class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition @error('address') border-red-400 @enderror">{{ old('address') }}</textarea>
                     @error('address')
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="cv_file" class="block text-sm font-semibold text-slate-700 mb-2">
+                        CV ứng viên
+                    </label>
+                    <input type="file" id="cv_file" name="cv_file" accept=".pdf,.doc,.docx"
+                           class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-slate-800 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-cyan-100 file:text-cyan-700 file:text-sm file:font-medium @error('cv_file') border-red-400 @enderror">
+                    <p class="mt-2 text-sm text-slate-500">Hỗ trợ PDF, DOC, DOCX. Dung lượng tối đa 10MB.</p>
+                    @error('cv_file')
                         <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
