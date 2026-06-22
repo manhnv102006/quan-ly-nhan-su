@@ -71,4 +71,9 @@ class Employee extends Model
     {
         return $this->hasMany(EmployeeDocument::class);
     }
+
+    public function departmentTransfers(): HasMany
+    {
+        return $this->hasMany(DepartmentTransfer::class);
+    }
 }

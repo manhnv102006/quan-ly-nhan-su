@@ -86,6 +86,9 @@
                                     <div class="flex items-center justify-center gap-2">
                                         <a href="{{ route('admin.employees.show', $employee) }}" class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition" title="Xem">👁</a>
                                         <a href="{{ route('admin.employees.edit', $employee) }}" class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200 transition" title="Sửa">✏️</a>
+                                        <a href="{{ route('admin.employees.show', $employee) }}?open=transfer"
+                                           class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition"
+                                           title="Điều chuyển phòng ban">↔</a>
                                         <form action="{{ route('admin.employees.destroy', $employee) }}"
                                               method="POST"
                                               id="delete-form-{{ $employee->id }}"
