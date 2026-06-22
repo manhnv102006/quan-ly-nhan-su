@@ -213,12 +213,12 @@
 
                                 <td class="px-6 py-4 text-center">
 
-                                    <a href="#"
+                                    <a href="{{ route('admin.attendances.show', $attendance) }}"
                                         class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
 
                                         Chi tiết
 
-                                    </a>
+                                    </>
 
                                 </td>
 
