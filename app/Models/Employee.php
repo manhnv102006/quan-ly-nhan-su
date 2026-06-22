@@ -8,6 +8,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Employee extends Model
 {
+    protected function casts(): array
+    {
+        return [
+            'date_of_birth' => 'date',
+            'hire_date' => 'date',
+        ];
+    }
+
     protected $fillable = [
         'user_id',
         'department_id',
@@ -52,5 +60,20 @@ class Employee extends Model
     public function employeeKpis(): HasMany
     {
         return $this->hasMany(EmployeeKPI::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(EmployeeDocument::class);
+    }
+
+    public function departmentTransfers(): HasMany
+    {
+        return $this->hasMany(DepartmentTransfer::class);
     }
 }
