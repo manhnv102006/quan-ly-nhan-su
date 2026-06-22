@@ -490,9 +490,24 @@
             </div>
 
             <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
-                <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-slate-800">Tài liệu hồ sơ</h3>
-                    <span class="text-sm text-slate-500">{{ $documents->count() }} tài liệu</span>
+                <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-800">Tài liệu hồ sơ</h3>
+                        <span class="text-sm text-slate-500">{{ $documents->count() }} tài liệu</span>
+                    </div>
+                    @php
+                        $downloadableDocuments = $documents->filter(fn ($document) => $document->existsOnDisk());
+                    @endphp
+                    @if ($downloadableDocuments->isNotEmpty())
+                        <a href="{{ route('admin.employees.documents.download-all', $employee) }}"
+                           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                            </svg>
+                            Tải tất cả tài liệu ({{ $downloadableDocuments->count() }})
+                        </a>
+                    @endif
                 </div>
 
                 <div class="p-6 overflow-x-auto">
