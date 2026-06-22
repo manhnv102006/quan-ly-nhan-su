@@ -9,6 +9,14 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
+                @if ($departments->where('id', '!=', $employee->department_id)->isNotEmpty())
+                    <button type="button"
+                            id="open-transfer-modal"
+                            class="px-5 py-3 rounded-xl bg-blue-100 text-blue-700 font-medium hover:bg-blue-200 transition">
+                        Điều chuyển phòng ban
+                    </button>
+                @endif
+
                 <a href="{{ route('admin.employees.edit', $employee) }}"
                    class="px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
                     Sửa nhân viên
@@ -194,6 +202,42 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
+                    <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-800">Lịch sử điều chuyển phòng ban</h3>
+                        <span class="text-sm text-slate-500">{{ $transferHistory->count() }} bản ghi</span>
+                    </div>
+
+                    <div class="p-6 overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="text-sm text-slate-500 border-b border-slate-100">
+                                    <th class="py-3 px-4 font-medium">Từ phòng ban</th>
+                                    <th class="py-3 px-4 font-medium">Đến phòng ban</th>
+                                    <th class="py-3 px-4 font-medium">Ngày hiệu lực</th>
+                                    <th class="py-3 px-4 font-medium">Người thực hiện</th>
+                                    <th class="py-3 px-4 font-medium">Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($transferHistory as $transfer)
+                                    <tr class="border-b border-slate-50 hover:bg-slate-50">
+                                        <td class="py-3 px-4 text-slate-700">{{ $transfer->fromDepartment?->department_name ?? 'Chưa gán' }}</td>
+                                        <td class="py-3 px-4 font-medium text-slate-800">{{ $transfer->toDepartment?->department_name ?? '—' }}</td>
+                                        <td class="py-3 px-4 text-slate-700">{{ $transfer->effective_date?->format('d/m/Y') ?? '—' }}</td>
+                                        <td class="py-3 px-4 text-slate-700">{{ $transfer->transferredBy?->name ?? '—' }}</td>
+                                        <td class="py-3 px-4 text-slate-600">{{ $transfer->note ?: '—' }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="py-8 text-center text-slate-400">Chưa có lịch sử điều chuyển</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -558,6 +602,8 @@
         </div>
 
     </div>
+
+    @include('admin.employees.partials.transfer-department-modal')
 
     <div id="delete-confirm-modal"
          class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
