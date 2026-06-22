@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Position;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -114,5 +115,22 @@ class EmployeeController extends Controller
         $employee->update($validated);
 
         return redirect()->route('admin.employees')->with('success', 'Cập nhật nhân viên thành công.');
+    }
+
+    public function destroy(Employee $employee): RedirectResponse
+    {
+        try {
+            Department::where('manager_id', $employee->id)->update(['manager_id' => null]);
+
+            $employee->delete();
+        } catch (QueryException) {
+            return redirect()
+                ->back()
+                ->with('error', 'Không thể xóa nhân viên vì còn dữ liệu liên quan trong hệ thống.');
+        }
+
+        return redirect()
+            ->route('admin.employees')
+            ->with('success', 'Đã xóa nhân viên thành công.');
     }
 }
