@@ -16,10 +16,17 @@
                 </p>
             </div>
 
-            <a href="{{ route('admin.recruitment') }}"
-               class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
-                Quay lại tuyển dụng
-            </a>
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="{{ route('admin.recruitment.candidates.create') }}"
+                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-cyan-600 text-white font-medium hover:bg-cyan-700 transition shadow-lg shadow-cyan-500/20">
+                    + Thêm ứng viên
+                </a>
+
+                <a href="{{ route('admin.recruitment') }}"
+                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
+                    Quay lại tuyển dụng
+                </a>
+            </div>
         </div>
 
         @if (session('success'))
