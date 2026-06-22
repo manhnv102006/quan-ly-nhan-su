@@ -16,13 +16,11 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <a href="{{ route('admin.departments.edit', $department->id) }}"
-                   class="px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
+                <a href="{{ route('admin.departments.edit', $department->id) }}" class="px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
                     Sửa phòng ban
                 </a>
 
-                <a href="{{ route('admin.departments') }}"
-                   class="px-5 py-3 rounded-xl bg-slate-200 text-slate-700 font-medium hover:bg-slate-300 transition">
+                <a href="{{ route('admin.departments') }}" class="px-5 py-3 rounded-xl bg-slate-200 text-slate-700 font-medium hover:bg-slate-300 transition">
                     ← Quay lại
                 </a>
             </div>
@@ -115,15 +113,9 @@
 
                     <div class="w-24 h-24 mx-auto rounded-3xl bg-violet-100 flex items-center justify-center">
 
-                        <svg class="w-12 h-12 text-violet-600"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24">
+                        <svg class="w-12 h-12 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
-                            <path stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M3 21h18M5 21V7l7-4 7 4v14" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M5 21V7l7-4 7 4v14" />
 
                         </svg>
 
@@ -175,56 +167,22 @@
 
                         <thead>
                             <tr class="text-sm text-slate-500 border-b border-slate-100">
-                                <th class="py-3 px-4 font-medium">Mã NV</th>            {{-- employee_code --}}
-                                <th class="py-3 px-4 font-medium">Họ tên</th>           {{-- full_name --}}
-                                <th class="py-3 px-4 font-medium">Giới tính</th>        {{-- gender --}}
-                                <th class="py-3 px-4 font-medium">Ngày sinh</th>        {{-- date_of_birth --}}
-                                <th class="py-3 px-4 font-medium">Chức vụ</th>          {{-- position_id -> positions.position_name --}}
-                                <th class="py-3 px-4 font-medium">Email</th>            {{-- email --}}
-                                <th class="py-3 px-4 font-medium">Số điện thoại</th>    {{-- phone --}}
-                                <th class="py-3 px-4 font-medium">Ngày vào làm</th>     {{-- hire_date --}}
-                                <th class="py-3 px-4 font-medium">Trạng thái</th>       {{-- status --}}
+                                <th class="py-3 px-4 font-medium">Mã NV</th>
+                                <th class="py-3 px-4 font-medium">Họ tên</th>
+                                <th class="py-3 px-4 font-medium">Giới tính</th>
+                                <th class="py-3 px-4 font-medium">Ngày sinh</th>
+                                <th class="py-3 px-4 font-medium">Chức vụ</th>
+                                <th class="py-3 px-4 font-medium">Email</th>
+                                <th class="py-3 px-4 font-medium">Số điện thoại</th>
+                                <th class="py-3 px-4 font-medium">Ngày vào làm</th>
+                                <th class="py-3 px-4 font-medium">Trạng thái</th>
                             </tr>
                         </thead>
 
                         <tbody>
 
-                            {{-- Khi chưa có nhân viên --}}
-                            <tr>
-                                <td colspan="9" class="py-12 text-center">
 
-                                    <div class="flex flex-col items-center justify-center">
-
-                                        <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
-
-                                            <svg class="w-8 h-8 text-slate-400"
-                                                 fill="none"
-                                                 stroke="currentColor"
-                                                 viewBox="0 0 24 24">
-
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      stroke-width="2"
-                                                      d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-4-4" />
-
-                                            </svg>
-
-                                        </div>
-
-                                        <p class="mt-4 text-slate-500 font-medium">
-                                            Chưa có nhân viên nào
-                                        </p>
-
-                                        <p class="mt-1 text-sm text-slate-400">
-                                            Phòng ban này hiện chưa có nhân viên được phân công
-                                        </p>
-
-                                    </div>
-
-                                </td>
-                            </tr>
-
-                            {{-- Mẫu hàng khi có dữ liệu (tham khảo)
+                            @forelse($department->employees as $employee)
                             <tr class="border-b border-slate-50 hover:bg-slate-50">
                                 <td class="py-3 px-4 text-slate-700">{{ $employee->employee_code }}</td>
                                 <td class="py-3 px-4 text-slate-700">{{ $employee->full_name }}</td>
@@ -240,7 +198,13 @@
                                     </span>
                                 </td>
                             </tr>
-                            --}}
+                            @empty
+                            <tr>
+                                <td colspan="9" class="text-center py-6">
+                                    Chưa có nhân viên nào
+                                </td>
+                            </tr>
+                            @endforelse
 
                         </tbody>
 
@@ -254,4 +218,4 @@
 
     </div>
 
-    </x-admin-layout>
+</x-admin-layout>
