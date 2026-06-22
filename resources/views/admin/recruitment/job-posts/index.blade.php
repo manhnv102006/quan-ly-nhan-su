@@ -1,5 +1,21 @@
 <x-admin-layout title="Tin tuyển dụng">
 
+    @php
+        $showCreateForm = $showCreateForm ?? false;
+        $showEditForm = $showEditForm ?? false;
+        $editingJobPost = $editingJobPost ?? null;
+        $formVisible = $showCreateForm || $showEditForm;
+        $isEditMode = $showEditForm && $editingJobPost;
+        $formAction = $isEditMode
+            ? route('admin.recruitment.job-posts.update', $editingJobPost)
+            : route('admin.recruitment.job-posts.store');
+        $formTitle = $isEditMode ? 'Sửa tin tuyển dụng' : 'Thêm tin tuyển dụng mới';
+        $formDescription = $isEditMode
+            ? 'Cập nhật thông tin tin tuyển dụng: ' . $editingJobPost->title
+            : 'Điền thông tin theo đúng dữ liệu hiện có của hệ thống.';
+        $submitLabel = $isEditMode ? 'Lưu thay đổi' : '+ Lưu tin tuyển dụng';
+    @endphp
+
     <div class="space-y-6">
 
         <div class="flex flex-wrap items-center justify-between gap-4">
@@ -17,7 +33,7 @@
             </div>
 
             <div class="flex flex-wrap gap-3">
-                @if ($showCreateForm ?? false)
+                @if ($formVisible)
                     <a href="{{ route('admin.recruitment.job-posts') }}"
                        class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
                         Quay lại danh sách
@@ -65,11 +81,11 @@
             </div>
         </div>
 
-        @if ($showCreateForm ?? false)
+        @if ($formVisible)
             <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
                 <div class="mb-6">
-                    <h3 class="text-xl font-bold text-slate-800">Thêm tin tuyển dụng mới</h3>
-                    <p class="text-sm text-slate-500 mt-1">Điền thông tin theo đúng dữ liệu hiện có của hệ thống.</p>
+                    <h3 class="text-xl font-bold text-slate-800">{{ $formTitle }}</h3>
+                    <p class="text-sm text-slate-500 mt-1">{{ $formDescription }}</p>
                 </div>
 
                 @if ($errors->any())
@@ -83,8 +99,11 @@
                     </div>
                 @endif
 
-                <form action="{{ route('admin.recruitment.job-posts.store') }}" method="POST" class="space-y-5 max-w-3xl">
+                <form action="{{ $formAction }}" method="POST" class="space-y-5 max-w-3xl">
                     @csrf
+                    @if ($isEditMode)
+                        @method('PUT')
+                    @endif
 
                     <div>
                         <label for="title" class="block text-sm font-semibold text-slate-700 mb-2">
@@ -94,7 +113,7 @@
                             type="text"
                             id="title"
                             name="title"
-                            value="{{ old('title') }}"
+                            value="{{ old('title', $editingJobPost?->title) }}"
                             placeholder="Ví dụ: Nhân viên tuyển dụng, Lập trình viên PHP"
                             maxlength="255"
                             required
@@ -116,7 +135,7 @@
                         >
                             <option value="">-- Chưa gán phòng ban --</option>
                             @foreach (($departments ?? collect()) as $department)
-                                <option value="{{ $department->id }}" @selected((string) old('department_id') === (string) $department->id)>
+                                <option value="{{ $department->id }}" @selected((string) old('department_id', $editingJobPost?->department_id) === (string) $department->id)>
                                     {{ $department->department_name }}
                                 </option>
                             @endforeach
@@ -134,7 +153,7 @@
                             type="number"
                             id="quantity"
                             name="quantity"
-                            value="{{ old('quantity') }}"
+                            value="{{ old('quantity', $editingJobPost?->quantity) }}"
                             placeholder="Nhập số lượng cần tuyển"
                             min="1"
                             required
@@ -156,8 +175,8 @@
                             class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('status') border-red-400 @enderror"
                         >
                             <option value="">-- Chọn trạng thái --</option>
-                            <option value="open" @selected(old('status') === 'open')>Đang mở</option>
-                            <option value="closed" @selected(old('status') === 'closed')>Đã đóng</option>
+                            <option value="open" @selected(old('status', $editingJobPost?->status) === 'open')>Đang mở</option>
+                            <option value="closed" @selected(old('status', $editingJobPost?->status) === 'closed')>Đã đóng</option>
                         </select>
                         @error('status')
                             <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
@@ -174,7 +193,7 @@
                             rows="5"
                             placeholder="Mô tả công việc, yêu cầu hoặc ghi chú tuyển dụng"
                             class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition resize-y @error('description') border-red-400 @enderror"
-                        >{{ old('description') }}</textarea>
+                        >{{ old('description', $editingJobPost?->description) }}</textarea>
                         @error('description')
                             <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -183,7 +202,7 @@
                     <div class="flex flex-wrap gap-3 pt-2">
                         <button type="submit"
                                 class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
-                            + Lưu tin tuyển dụng
+                            {{ $submitLabel }}
                         </button>
                         <a href="{{ route('admin.recruitment.job-posts') }}"
                            class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
@@ -250,6 +269,7 @@
                             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Số lượng</th>
                             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
                             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Ngày tạo</th>
+                            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -282,10 +302,17 @@
                                 <td class="px-6 py-4 text-center text-slate-600">
                                     {{ $jobPost->created_at?->format('d/m/Y') ?? '-' }}
                                 </td>
+                                <td class="px-6 py-4 text-center">
+                                    <a href="{{ route('admin.recruitment.job-posts.edit', $jobPost) }}"
+                                       class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-amber-100 text-amber-600 hover:bg-amber-200 transition"
+                                       title="Sửa tin tuyển dụng">
+                                        ✏️
+                                    </a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-12 text-slate-400">
+                                <td colspan="7" class="text-center py-12 text-slate-400">
                                     Không tìm thấy tin tuyển dụng phù hợp.
                                 </td>
                             </tr>
