@@ -15,6 +15,10 @@ class Attendance extends Model
             'check_out' => 'datetime',
         ];
     }
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
+    }
 
     public function shift(): BelongsTo
     {
