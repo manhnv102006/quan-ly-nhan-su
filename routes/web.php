@@ -2,10 +2,11 @@
 
 use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\AdminModuleController;
+use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\DepartmentController;
-use App\Http\Controllers\Admin\PositionController;
-use App\Http\Controllers\Admin\PayrollPeriodController;
 use App\Http\Controllers\Admin\PayrollController;
+use App\Http\Controllers\Admin\PayrollPeriodController;
+use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -61,7 +62,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/employees/{employee}/edit', [\App\Http\Controllers\Admin\EmployeeController::class, 'edit'])->name('employees.edit');
     Route::put('/employees/{employee}', [\App\Http\Controllers\Admin\EmployeeController::class, 'update'])->name('employees.update');
     Route::delete('/employees/{employee}', [\App\Http\Controllers\Admin\EmployeeController::class, 'destroy'])->name('employees.destroy');
-    Route::get('/attendances', [AdminModuleController::class, 'attendances'])->name('attendances');
+    Route::get( '/attendances', [AttendanceController::class, 'index'])->name('attendances');
+    Route::get('/attendances/{attendance}', [AttendanceController::class, 'show'])->name('attendances.show');
     Route::get('/kpis', [AdminModuleController::class, 'kpis'])->name('kpis');
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
     Route::post('/payrolls/generate', [PayrollController::class, 'generate'])->name('payrolls.generate');
