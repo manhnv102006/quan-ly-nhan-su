@@ -16,7 +16,7 @@
                         </h2>
                         <p class="mt-1.5 text-sm text-slate-500 max-w-2xl">
                             Quản lý các nghiệp vụ tuyển dụng theo từng phần nhỏ để đảm bảo an toàn cho hệ thống hiện tại.
-                            Chức năng đang hoạt động ở giai đoạn này là danh sách và tìm kiếm tin tuyển dụng.
+                            Hiện đã có danh sách tin tuyển dụng và danh sách ứng viên, các bước sẽ tiếp tục được mở rộng theo từng chức năng.
                         </p>
                     </div>
 
@@ -35,7 +35,7 @@
             </div>
 
             <div class="px-6 sm:px-8 py-6 sm:py-8">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                     <a href="{{ route('admin.recruitment.job-posts') }}"
                        class="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:border-violet-200 hover:shadow-md hover:shadow-violet-100 transition">
                         <div class="flex items-center justify-between gap-4">
@@ -54,10 +54,39 @@
                         </h3>
 
                         <p class="mt-2 text-sm text-slate-500 leading-relaxed">
-                            Xem danh sách và tìm kiếm tin tuyển dụng theo tiêu đề, mô tả và phòng ban mà không ảnh hưởng các module khác.
+                            Xem danh sách và quản lý các tin tuyển dụng theo phòng ban, trạng thái và nhu cầu tuyển thực tế.
                         </p>
 
                         <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-violet-600">
+                            Truy cập chức năng
+                            <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                            </svg>
+                        </div>
+                    </a>
+
+                    <a href="{{ route('admin.recruitment.candidates') }}"
+                       class="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:border-cyan-200 hover:shadow-md hover:shadow-cyan-100 transition">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </div>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                                Đang hoạt động
+                            </span>
+                        </div>
+
+                        <h3 class="mt-5 text-lg font-bold text-slate-800 group-hover:text-cyan-700 transition">
+                            Danh sách ứng viên
+                        </h3>
+
+                        <p class="mt-2 text-sm text-slate-500 leading-relaxed">
+                            Theo dõi hồ sơ ứng viên, tin tuyển dụng đang ứng tuyển và trạng thái xử lý hiện tại trong quy trình tuyển dụng.
+                        </p>
+
+                        <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-cyan-600">
                             Truy cập chức năng
                             <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
@@ -73,8 +102,8 @@
                             Triển khai theo từng bước nhỏ
                         </h3>
                         <p class="mt-2 text-sm text-slate-500 leading-relaxed">
-                            Các phần ứng viên, phỏng vấn và dashboard tuyển dụng sẽ được bổ sung ở các bước tiếp theo
-                            sau khi hoàn thành và xác nhận xong chức năng hiện tại.
+                            Các phần phỏng vấn và dashboard tuyển dụng sẽ được bổ sung ở các bước tiếp theo
+                            sau khi hoàn thành và xác nhận xong từng chức năng hiện tại.
                         </p>
                     </div>
                 </div>

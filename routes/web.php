@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\AdminModuleController;
+use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\JobPostController;
 use App\Http\Controllers\Admin\PositionController;
@@ -78,6 +79,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/recruitment/job-posts/{jobPost}/edit', [JobPostController::class, 'edit'])->name('recruitment.job-posts.edit');
     Route::put('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'update'])->name('recruitment.job-posts.update');
     Route::delete('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'destroy'])->name('recruitment.job-posts.destroy');
+    Route::get('/recruitment/candidates', [CandidateController::class, 'index'])->name('recruitment.candidates');
 });
 
 Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
