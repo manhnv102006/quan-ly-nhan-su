@@ -11,6 +11,7 @@ use App\Models\JobPost;
 use App\Models\Payroll;
 use App\Models\Position;
 use App\Models\User;
+use App\Models\LeaveRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -28,11 +29,15 @@ class DashboardController extends Controller
                 ['label' => 'Nhân viên', 'value' => Employee::count(), 'color' => 'sky', 'route' => 'admin.employees'],
                 ['label' => 'Chấm công', 'value' => Attendance::count(), 'color' => 'teal', 'route' => 'admin.attendances'],
                 ['label' => 'Bảng lương', 'value' => Payroll::count(), 'color' => 'emerald', 'route' => 'admin.payrolls'],
+
                 ['label' => 'Hợp đồng', 'value' => Contract::count(), 'color' => 'violet', 'route' => 'admin.contracts.index'],
                 ['label' => 'Sắp hết hạn', 'value' => Contract::where('status', 'active')
                     ->whereNotNull('end_date')
                     ->whereBetween('end_date', [today()->toDateString(), today()->addDays(30)->toDateString()])
                     ->count(), 'color' => 'rose', 'route' => 'admin.contracts.index'],
+
+                ['label' => 'Đơn nghỉ phép', 'value' => LeaveRequest::count(), 'color' => 'amber', 'route' => 'admin.leave-requests'],
+                ['label' => 'Hợp đồng', 'value' => Contract::count(), 'color' => 'violet', 'route' => 'admin.contracts'],
                 ['label' => 'Ứng viên', 'value' => Candidate::count(), 'color' => 'rose', 'route' => 'admin.recruitment'],
             ],
             'recentJobs' => JobPost::query()->latest()->take(5)->get(),
@@ -50,6 +55,7 @@ class DashboardController extends Controller
         $teamCount = 0;
         $activeCount = 0;
         $pendingLeaves = 0;
+        $totalLeaves = 0;
         $kpiInProgress = 0;
         $openJobs = 0;
         $todayCheckIns = 0;
@@ -77,6 +83,11 @@ class DashboardController extends Controller
                 ->join('employees', 'employees.id', '=', 'leave_requests.employee_id')
                 ->where('employees.department_id', $department->id)
                 ->where('leave_requests.status', 'pending')
+                ->count();
+
+            $totalLeaves = DB::table('leave_requests')
+                ->join('employees', 'employees.id', '=', 'leave_requests.employee_id')
+                ->where('employees.department_id', $department->id)
                 ->count();
 
             $kpiInProgress = DB::table('employee_kpis')
@@ -162,6 +173,7 @@ class DashboardController extends Controller
             'teamCount' => $teamCount,
             'activeCount' => $activeCount,
             'pendingLeaves' => $pendingLeaves,
+            'totalLeaves' => $totalLeaves,
             'kpiInProgress' => $kpiInProgress,
             'openJobs' => $openJobs,
             'todayCheckIns' => $todayCheckIns,
