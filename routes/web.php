@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\AdminModuleController;
 use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\InterviewController;
 use App\Http\Controllers\Admin\JobPostController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\PayrollPeriodController;
@@ -86,6 +87,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/recruitment/candidates', [CandidateController::class, 'store'])->name('recruitment.candidates.store');
     Route::put('/recruitment/candidates/{candidate}', [CandidateController::class, 'update'])->name('recruitment.candidates.update');
     Route::delete('/recruitment/candidates/{candidate}', [CandidateController::class, 'destroy'])->name('recruitment.candidates.destroy');
+    Route::get('/recruitment/interviews', [InterviewController::class, 'index'])->name('recruitment.interviews');
 });
 
 Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
