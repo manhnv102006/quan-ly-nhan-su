@@ -85,8 +85,8 @@ class ContractController extends Controller
         Contract::create($data);
 
         return redirect()
-            ->route('admin.contracts.index')
-            ->with('success', 'Hợp đồng đã được tạo thành công.');
+->route('admin.contracts.index')
+            ->with('success', 'Tạo hợp đồng thành công');
     }
 
     public function show(int $id): View
@@ -128,8 +128,8 @@ class ContractController extends Controller
         $contract->update($data);
 
         return redirect()
-            ->route('admin.contracts.index')
-            ->with('success', 'Hợp đồng đã được cập nhật thành công.');
+->route('admin.contracts.index')
+            ->with('success', 'Cập nhật hợp đồng thành công');
     }
 
     public function destroy(Contract $contract): RedirectResponse
@@ -137,8 +137,8 @@ class ContractController extends Controller
         $contract->delete();
 
         return redirect()
-            ->route('admin.contracts.index')
-            ->with('success', 'Hợp đồng đã được xóa mềm. Bạn có thể khôi phục sau.');
+->route('admin.contracts.index')
+            ->with('success', 'Xóa hợp đồng thành công');
     }
 
     public function trash(Request $request): View
@@ -184,8 +184,8 @@ class ContractController extends Controller
         $contract->forceDelete();
 
         return redirect()
-            ->route('admin.contracts.trashed')
-            ->with('success', 'Hợp đồng đã được xóa vĩnh viễn.');
+->route('admin.contracts.trashed')
+            ->with('success', 'Xóa vĩnh viễn thành công');
     }
 
     public function extend(Request $request, Contract $contract): RedirectResponse
