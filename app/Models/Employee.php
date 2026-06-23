@@ -57,22 +57,15 @@ class Employee extends Model
     {
         return $this->hasMany(Attendance::class);
     }
-    public function leaveRequests()
-{
-    return $this->hasMany(
-        LeaveRequest::class
-    );
-}
-
     public function employeeKpis(): HasMany
     {
         return $this->hasMany(EmployeeKPI::class);
     }
 
 
-    public function leaveRequests(): HasMany
-    {
+    public function leaveRequests(): HasMany {
         return $this->hasMany(LeaveRequest::class);
+    }
 
     public function user(): BelongsTo
     {
@@ -90,3 +83,8 @@ class Employee extends Model
 
     }
 }
+
+    
+
+
+    
