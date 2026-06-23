@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\LeaveRequest;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -56,11 +57,22 @@ class Employee extends Model
     {
         return $this->hasMany(Attendance::class);
     }
+    public function leaveRequests()
+{
+    return $this->hasMany(
+        LeaveRequest::class
+    );
+}
 
     public function employeeKpis(): HasMany
     {
         return $this->hasMany(EmployeeKPI::class);
     }
+
+
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class);
 
     public function user(): BelongsTo
     {
@@ -75,5 +87,6 @@ class Employee extends Model
     public function departmentTransfers(): HasMany
     {
         return $this->hasMany(DepartmentTransfer::class);
+
     }
 }
