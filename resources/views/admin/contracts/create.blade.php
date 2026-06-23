@@ -11,6 +11,7 @@
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
             <form action="{{ route('admin.contracts.store') }}" method="POST" enctype="multipart/form-data" class="grid gap-6">
                 @csrf
+
                 <div class="grid gap-6 sm:grid-cols-2">
                     <div>
                         <label for="employee_id" class="block text-sm font-semibold text-slate-700">Nhân viên</label>
@@ -20,8 +21,11 @@
                                 <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
                             @endforeach
                         </select>
-                        @error('employee_id') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        @error('employee_id')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
+
                     <div>
                         <label for="contract_type_id" class="block text-sm font-semibold text-slate-700">Loại hợp đồng</label>
                         <select id="contract_type_id" name="contract_type_id" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none" required>
@@ -30,7 +34,9 @@
                                 <option value="{{ $type->id }}" {{ old('contract_type_id') == $type->id ? 'selected' : '' }}>{{ $type->contract_name }}</option>
                             @endforeach
                         </select>
-                        @error('contract_type_id') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        @error('contract_type_id')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 
@@ -38,12 +44,17 @@
                     <div>
                         <label for="contract_code" class="block text-sm font-semibold text-slate-700">Mã hợp đồng</label>
                         <input id="contract_code" name="contract_code" type="text" value="{{ old('contract_code') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none" required>
-                        @error('contract_code') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        @error('contract_code')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
+
                     <div>
                         <label for="salary" class="block text-sm font-semibold text-slate-700">Lương</label>
                         <input id="salary" name="salary" type="number" value="{{ old('salary') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none" min="0" required>
-                        @error('salary') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        @error('salary')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 
@@ -51,17 +62,25 @@
                     <div>
                         <label for="start_date" class="block text-sm font-semibold text-slate-700">Ngày bắt đầu</label>
                         <input id="start_date" name="start_date" type="date" value="{{ old('start_date') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none" required>
-                        @error('start_date') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        @error('start_date')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
+
                     <div>
                         <label for="end_date" class="block text-sm font-semibold text-slate-700">Ngày kết thúc</label>
                         <input id="end_date" name="end_date" type="date" value="{{ old('end_date') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
-                        @error('end_date') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        @error('end_date')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
+
                     <div>
                         <label for="signed_date" class="block text-sm font-semibold text-slate-700">Ngày ký</label>
                         <input id="signed_date" name="signed_date" type="date" value="{{ old('signed_date') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
-                        @error('signed_date') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        @error('signed_date')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 
@@ -73,26 +92,34 @@
                                 <option value="{{ $value }}" {{ old('status') == $value ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
-                        @error('status') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        @error('status')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
+
                     <div>
                         <label for="contract_file" class="block text-sm font-semibold text-slate-700">Tệp hợp đồng</label>
                         <input id="contract_file" name="contract_file" type="file" class="mt-2 w-full text-sm text-slate-700">
-                        @error('contract_file') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        @error('contract_file')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 
                 <div>
                     <label for="note" class="block text-sm font-semibold text-slate-700">Ghi chú</label>
                     <textarea id="note" name="note" rows="4" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">{{ old('note') }}</textarea>
-                    @error('note') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                    @error('note')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div class="flex justify-end gap-3">
                     <a href="{{ route('admin.contracts.index') }}" class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">Hủy</a>
-                    <button type="submit" class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">Lưu hợp đồng</button>
+                    <button type="submit" class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">Tạo hợp đồng</button>
                 </div>
             </form>
         </div>
     </div>
 </x-admin-layout>
+
