@@ -14,6 +14,10 @@ use App\Http\Controllers\Admin\OvertimeRequestController;
 use App\Http\Controllers\Admin\PayrollController;
 
 use App\Http\Controllers\Admin\KPIAssignmentController;
+use App\Http\Controllers\Admin\ContractController;
+use App\Http\Controllers\Admin\ContractTypeController;
+
+
 use App\Http\Controllers\Admin\KPIController;
 
 use App\Http\Controllers\Admin\PayrollPeriodController;
@@ -127,6 +131,20 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/payrolls/{payroll}/submit', [PayrollController::class, 'submit'])->name('payrolls.submit');
     Route::post('/payrolls/{payroll}/approve', [PayrollController::class, 'approve'])->name('payrolls.approve');
     Route::post('/payrolls/{payroll}/pay', [PayrollController::class, 'pay'])->name('payrolls.pay');
+
+    Route::resource('contract-types', ContractTypeController::class)->except(['show']);
+    Route::get('/contract-types/trash', [ContractTypeController::class, 'trash'])->name('contract-types.trash');
+    Route::post('/contract-types/{id}/restore', [ContractTypeController::class, 'restore'])->name('contract-types.restore');
+
+    Route::get('/contracts/trash', [ContractController::class, 'trash'])->name('contracts.trashed');
+    Route::post('/contracts/{contract}/restore', [ContractController::class, 'restore'])->name('contracts.restore');
+    Route::delete('/contracts/{contract}/force-delete', [ContractController::class, 'forceDelete'])->name('contracts.forceDelete');
+    Route::post('/contracts/{contract}/extend', [ContractController::class, 'extend'])->name('contracts.extend');
+    Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate');
+    Route::resource('contracts', ContractController::class);
+
+    Route::get('/recruitment', [AdminModuleController::class, 'recruitment'])->name('recruitment');
+
     Route::get('/payrolls/{payroll}/pdf', [PayrollController::class, 'exportPdf'])->name('payrolls.pdf');
     Route::get('/contracts', [AdminModuleController::class, 'contracts'])->name('contracts');
     Route::get('/recruitment', [RecruitmentController::class, 'index'])->name('recruitment');
@@ -147,6 +165,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/recruitment/interviews/create', [InterviewController::class, 'create'])->name('recruitment.interviews.create');
     Route::post('/recruitment/interviews', [InterviewController::class, 'store'])->name('recruitment.interviews.store');
     Route::put('/recruitment/interviews/{interview}', [InterviewController::class, 'update'])->name('recruitment.interviews.update');
+
 });
 
 Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
