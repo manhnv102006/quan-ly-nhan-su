@@ -73,7 +73,7 @@ class LoginRequest extends FormRequest
         }
 
         $user = Auth::user();
-        if ($user && property_exists($user, 'status') && $user->status !== 'active') {
+        if ($user && $user->status !== 'active') {
             Auth::logout();
 
             throw ValidationException::withMessages([

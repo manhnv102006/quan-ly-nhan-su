@@ -33,6 +33,16 @@ class Contract extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+
+class Contract extends Model
+{
+    protected function casts(): array
+    {
+        return [
+            'start_date' => 'date',
+            'end_date' => 'date',
+            'signed_date' => 'date',
+        ];
     }
 
     public function contractType(): BelongsTo
@@ -59,4 +69,5 @@ class Contract extends Model
             default => 'Chưa xác định',
         };
     }
+
 }

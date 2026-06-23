@@ -127,4 +127,21 @@ class PayrollController extends Controller
             ->route('admin.payrolls')
             ->with('success', 'Đánh dấu đã chi trả lương thành công.');
     }
+
+    public function exportPdf(Payroll $payroll)
+    {
+        $payroll->load([
+            'employee.department',
+            'employee.position',
+            'payrollPeriod',
+            'approver',
+            'payer'
+        ]);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.payrolls.pdf', compact('payroll'));
+
+        $filename = 'phieu_luong_' . ($payroll->employee?->employee_code ?: 'NV') . '_' . $payroll->payrollPeriod?->month . '_' . $payroll->payrollPeriod?->year . '.pdf';
+
+        return $pdf->download($filename);
+    }
 }
