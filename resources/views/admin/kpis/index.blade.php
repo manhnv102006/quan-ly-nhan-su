@@ -25,6 +25,56 @@
 
         </div>
 
+        {{-- Filter Form --}}
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+
+            <form method="GET" action="{{ route('admin.kpis.index') }}" class="space-y-4">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Tìm kiếm</label>
+                        <input type="text" name="search" placeholder="Mã KPI, tên KPI, mô tả..."
+                            value="{{ request('search') }}"
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Trạng thái</label>
+                        <select name="status" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent">
+                            <option value="">Tất cả</option>
+                            <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Hoạt động</option>
+                            <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Tạm ngưng</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Phòng ban</label>
+                        <select name="department_id" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent">
+                            <option value="">Tất cả</option>
+                            @foreach($departments as $dept)
+                                <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>
+                                    {{ $dept->department_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition">
+                        Tìm kiếm
+                    </button>
+                    <a href="{{ route('admin.kpis.index') }}" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">
+                        Xóa lọc
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+
         {{-- Stats --}}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
@@ -78,6 +128,10 @@
                             </th>
 
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">
+                                Mã KPI
+                            </th>
+
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">
                                 Tên KPI
                             </th>
 
@@ -91,6 +145,14 @@
 
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">
                                 Phòng ban
+                            </th>
+
+                            <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">
+                                Trạng thái
+                            </th>
+
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">
+                                Ngày tạo
                             </th>
 
                             <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">
@@ -109,6 +171,10 @@
 
                             <td class="px-6 py-4 font-semibold text-slate-800">
                                 {{ ($kpis->currentPage() - 1) * $kpis->perPage() + $key + 1 }}
+                            </td>
+
+                            <td class="px-6 py-4 font-mono text-sm font-semibold text-slate-800">
+                                {{ $kpi->code }}
                             </td>
 
                             <td class="px-6 py-4 font-semibold text-slate-800">
@@ -131,9 +197,19 @@
                                 </span>
                             </td>
 
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-block px-3 py-1 rounded-lg text-xs font-medium {{ $kpi->status == 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                    {{ $kpi->status_label }}
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4 text-slate-600 text-sm">
+                                {{ $kpi->created_at->format('d/m/Y H:i') }}
+                            </td>
+
                             <td class="px-6 py-4">
 
-                                <div class="flex justify-center gap-2">
+                                <div class="flex justify-center gap-1">
 
                                     <a href="{{ route('admin.kpis.edit', $kpi->id) }}"
                                         class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200 transition"
@@ -143,7 +219,8 @@
 
                                     <form action="{{ route('admin.kpis.destroy', $kpi->id) }}"
                                         method="POST"
-                                        id="delete-form-{{ $kpi->id }}">
+                                        id="delete-form-{{ $kpi->id }}"
+                                        style="display: inline;">
 
                                         @csrf
                                         @method('DELETE')
@@ -167,7 +244,7 @@
 
                         <tr>
 
-                            <td colspan="6"
+                            <td colspan="9"
                                 class="text-center py-12 text-slate-400">
                                 Chưa có KPI nào
                             </td>
