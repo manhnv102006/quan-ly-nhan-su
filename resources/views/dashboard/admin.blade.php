@@ -87,7 +87,7 @@
                         ['route' => 'admin.employees', 'label' => 'Nhân viên', 'emoji' => '👥', 'color' => 'from-violet-500 to-purple-600'],
                         ['route' => 'admin.attendances', 'label' => 'Chấm công', 'emoji' => '⏰', 'color' => 'from-cyan-500 to-blue-600'],
                         ['route' => 'admin.payrolls', 'label' => 'Lương', 'emoji' => '💰', 'color' => 'from-emerald-500 to-teal-600'],
-                        ['route' => 'admin.kpis', 'label' => 'KPI', 'emoji' => '📊', 'color' => 'from-amber-500 to-orange-600'],
+                        ['route' => 'admin.kpis.index', 'label' => 'KPI', 'emoji' => '📊', 'color' => 'from-amber-500 to-orange-600'],
                         ['route' => 'admin.contracts', 'label' => 'Hợp đồng', 'emoji' => '📄', 'color' => 'from-rose-500 to-pink-600'],
                         ['route' => 'admin.recruitment', 'label' => 'Tuyển dụng', 'emoji' => '🎯', 'color' => 'from-indigo-500 to-violet-600'],
                     ];
