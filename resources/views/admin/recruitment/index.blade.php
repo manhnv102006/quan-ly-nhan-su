@@ -12,11 +12,10 @@
                             Module tuyển dụng
                         </span>
                         <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">
-                            Quản lý tuyển dụng
+                            Dashboard tuyển dụng
                         </h2>
                         <p class="mt-1.5 text-sm text-slate-500 max-w-2xl">
-                            Quản lý các nghiệp vụ tuyển dụng theo từng phần nhỏ để đảm bảo an toàn cho hệ thống hiện tại.
-                            Hiện đã có danh sách tin tuyển dụng, ứng viên và lịch phỏng vấn; các bước tiếp theo sẽ tiếp tục mở rộng theo từng chức năng.
+                            Theo dõi nhanh hiệu quả tuyển dụng của PeopleHub qua các chỉ số trọng tâm và truy cập nhanh tới từng nghiệp vụ chính.
                         </p>
                     </div>
 
@@ -28,13 +27,39 @@
 
                         <a href="{{ route('admin.dashboard') }}"
                            class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
-                            Về dashboard
+                            Về dashboard tổng
                         </a>
                     </div>
                 </div>
             </div>
 
-            <div class="px-6 sm:px-8 py-6 sm:py-8">
+            <div class="px-6 sm:px-8 py-6 sm:py-8 space-y-8">
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                    <div class="rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-6 shadow-sm">
+                        <p class="text-sm font-medium text-violet-600">Tổng tin tuyển dụng</p>
+                        <h3 class="mt-3 text-4xl font-black tracking-tight text-slate-900">{{ $stats['job_posts'] }}</h3>
+                        <p class="mt-2 text-sm text-slate-500">Số lượng tin đang được quản lý trong hệ thống.</p>
+                    </div>
+
+                    <div class="rounded-3xl border border-cyan-100 bg-gradient-to-br from-cyan-50 to-white p-6 shadow-sm">
+                        <p class="text-sm font-medium text-cyan-600">Tổng ứng viên</p>
+                        <h3 class="mt-3 text-4xl font-black tracking-tight text-slate-900">{{ $stats['candidates'] }}</h3>
+                        <p class="mt-2 text-sm text-slate-500">Toàn bộ hồ sơ ứng viên đã tiếp nhận.</p>
+                    </div>
+
+                    <div class="rounded-3xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-6 shadow-sm">
+                        <p class="text-sm font-medium text-amber-600">Tổng lịch phỏng vấn</p>
+                        <h3 class="mt-3 text-4xl font-black tracking-tight text-slate-900">{{ $stats['interviews'] }}</h3>
+                        <p class="mt-2 text-sm text-slate-500">Số buổi phỏng vấn đã được tạo trong hệ thống.</p>
+                    </div>
+
+                    <div class="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-6 shadow-sm">
+                        <p class="text-sm font-medium text-emerald-600">Tổng ứng viên đạt</p>
+                        <h3 class="mt-3 text-4xl font-black tracking-tight text-slate-900">{{ $stats['passed_candidates'] }}</h3>
+                        <p class="mt-2 text-sm text-slate-500">Ứng viên đã được đánh dấu đạt sau quá trình tuyển dụng.</p>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                     <a href="{{ route('admin.recruitment.job-posts') }}"
                        class="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:border-violet-200 hover:shadow-md hover:shadow-violet-100 transition">
@@ -44,8 +69,8 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                 </svg>
                             </div>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
-                                Đang hoạt động
+                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-semibold">
+                                {{ $stats['job_posts'] }} tin
                             </span>
                         </div>
 
@@ -54,7 +79,7 @@
                         </h3>
 
                         <p class="mt-2 text-sm text-slate-500 leading-relaxed">
-                            Xem danh sách và quản lý các tin tuyển dụng theo phòng ban, trạng thái và nhu cầu tuyển thực tế.
+                            Xem danh sách, tìm kiếm và quản lý các tin tuyển dụng theo phòng ban, trạng thái và nhu cầu thực tế.
                         </p>
 
                         <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-violet-600">
@@ -73,17 +98,17 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </div>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
-                                Đang hoạt động
+                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-cyan-100 text-cyan-700 text-xs font-semibold">
+                                {{ $stats['candidates'] }} hồ sơ
                             </span>
                         </div>
 
                         <h3 class="mt-5 text-lg font-bold text-slate-800 group-hover:text-cyan-700 transition">
-                            Danh sách ứng viên
+                            Quản lý ứng viên
                         </h3>
 
                         <p class="mt-2 text-sm text-slate-500 leading-relaxed">
-                            Theo dõi hồ sơ ứng viên, tin tuyển dụng đang ứng tuyển và trạng thái xử lý hiện tại trong quy trình tuyển dụng.
+                            Theo dõi hồ sơ ứng viên, trạng thái xử lý và chi tiết CV trong toàn bộ quy trình tuyển dụng.
                         </p>
 
                         <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-cyan-600">
@@ -102,17 +127,17 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
-                                Đang hoạt động
+                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+                                {{ $stats['interviews'] }} lịch
                             </span>
                         </div>
 
                         <h3 class="mt-5 text-lg font-bold text-slate-800 group-hover:text-amber-700 transition">
-                            Danh sách lịch phỏng vấn
+                            Quản lý phỏng vấn
                         </h3>
 
                         <p class="mt-2 text-sm text-slate-500 leading-relaxed">
-                            Theo dõi các lịch phỏng vấn đã có trong hệ thống, kết quả hiện tại và người phụ trách phỏng vấn.
+                            Theo dõi lịch phỏng vấn, người phụ trách và cập nhật kết quả phỏng vấn ngay trong cùng một luồng làm việc.
                         </p>
 
                         <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-amber-600">
