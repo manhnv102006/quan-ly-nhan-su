@@ -81,6 +81,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::delete('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'destroy'])->name('recruitment.job-posts.destroy');
     Route::get('/recruitment/candidates', [CandidateController::class, 'index'])->name('recruitment.candidates');
     Route::get('/recruitment/candidates/create', [CandidateController::class, 'create'])->name('recruitment.candidates.create');
+    Route::get('/recruitment/candidates/{candidate}', [CandidateController::class, 'show'])->name('recruitment.candidates.show');
     Route::post('/recruitment/candidates', [CandidateController::class, 'store'])->name('recruitment.candidates.store');
 });
 
