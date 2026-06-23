@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\PayrollPeriodController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Employee\EmployeeLeaveController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [DashboardController::class, 'redirect']);
@@ -68,9 +69,12 @@ Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
-    Route::get('/employee/leave-requests', [\App\Http\Controllers\Employee\EmployeeLeaveController::class, 'index'])->name('employee.leave-requests');
-    Route::get('/employee/leave-requests/create', [\App\Http\Controllers\Employee\EmployeeLeaveController::class, 'create'])->name('employee.leave-requests.create');
-    Route::post('/employee/leave-requests', [\App\Http\Controllers\Employee\EmployeeLeaveController::class, 'store'])->name('employee.leave-requests.store');
+});
+
+Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(function () {
+    Route::get('/employee/leave-requests', [EmployeeLeaveController::class, 'index'])->name('employee.leave-requests');
+    Route::get('/employee/leave-requests/create', [EmployeeLeaveController::class, 'create'])->name('employee.leave-requests.create');
+    Route::post('/employee/leave-requests', [EmployeeLeaveController::class, 'store'])->name('employee.leave-requests.store');
 });
 
 Route::middleware('auth')->group(function () {
