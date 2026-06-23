@@ -119,13 +119,17 @@
                             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">CV</th>
                             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
                             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Ngày tạo</th>
+                            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($candidates as $candidate)
                             <tr class="border-b border-slate-200 hover:bg-slate-50 transition">
                                 <td class="px-6 py-4">
-                                    <div class="font-medium text-slate-800">{{ $candidate->full_name }}</div>
+                                    <a href="{{ route('admin.recruitment.candidates.show', $candidate) }}"
+                                       class="font-medium text-slate-800 hover:text-cyan-700 transition">
+                                        {{ $candidate->full_name }}
+                                    </a>
                                     <p class="mt-1 text-sm text-slate-500">{{ $candidate->address }}</p>
                                 </td>
                                 <td class="px-6 py-4 text-slate-600">
@@ -158,10 +162,16 @@
                                 <td class="px-6 py-4 text-center text-slate-600">
                                     {{ $candidate->created_at?->format('d/m/Y') ?? '-' }}
                                 </td>
+                                <td class="px-6 py-4 text-center">
+                                    <a href="{{ route('admin.recruitment.candidates.show', $candidate) }}"
+                                       class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-cyan-200 bg-cyan-50 text-cyan-700 text-sm font-medium hover:bg-cyan-100 transition">
+                                        Chi tiết
+                                    </a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-12 text-slate-400">
+                                <td colspan="8" class="text-center py-12 text-slate-400">
                                     {{ $search !== '' ? 'Không tìm thấy ứng viên phù hợp.' : 'Chưa có ứng viên nào trong hệ thống.' }}
                                 </td>
                             </tr>
