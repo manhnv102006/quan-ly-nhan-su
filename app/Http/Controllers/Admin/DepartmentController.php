@@ -107,8 +107,11 @@ class DepartmentController extends Controller
 
     public function show(int $id): View
     {
-        $department = Department::findOrFail($id);
-
+        $department = Department::with([
+            'employees',
+            'employees.position'
+        ])->findOrFail($id);
+    
         return view('admin.departments.detail', compact('department'));
     }
 
