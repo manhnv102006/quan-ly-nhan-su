@@ -2,30 +2,23 @@
 
 use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\AdminModuleController;
-
-use App\Http\Controllers\Admin\CandidateController;
-use App\Http\Controllers\Admin\DepartmentController;
-use App\Http\Controllers\Admin\InterviewController;
-use App\Http\Controllers\Admin\JobPostController;
-use App\Http\Controllers\Admin\PositionController;
-use App\Http\Controllers\Admin\PayrollPeriodController;
-use App\Http\Controllers\Admin\PayrollController;
-use App\Http\Controllers\Admin\RecruitmentController;
-
 use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\AttendanceReportController;
+use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\InterviewController;
+use App\Http\Controllers\Admin\JobPostController;
 use App\Http\Controllers\Admin\LeaveRequestController;
 use App\Http\Controllers\Admin\OvertimeRequestController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\PayrollPeriodController;
 use App\Http\Controllers\Admin\PositionController;
+use App\Http\Controllers\Admin\RecruitmentController;
 use App\Http\Controllers\Admin\ShiftController;
-
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-
 
 Route::get('/', [DashboardController::class, 'redirect']);
 
@@ -69,15 +62,15 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::resource('payroll-periods', PayrollPeriodController::class);
 
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
-    Route::get('/employees/create', [\App\Http\Controllers\Admin\EmployeeController::class, 'create'])->name('employees.create');
-    Route::post('/employees', [\App\Http\Controllers\Admin\EmployeeController::class, 'store'])->name('employees.store');
-    Route::get('/employees/{employee}', [\App\Http\Controllers\Admin\EmployeeController::class, 'show'])->name('employees.show');
-    Route::get('/employees/{employee}/documents/download-all', [\App\Http\Controllers\Admin\EmployeeController::class, 'downloadAllDocuments'])->name('employees.documents.download-all');
-    Route::get('/employees/{employee}/documents/{document}/download', [\App\Http\Controllers\Admin\EmployeeController::class, 'downloadDocument'])->name('employees.documents.download');
-    Route::patch('/employees/{employee}/transfer-department', [\App\Http\Controllers\Admin\EmployeeController::class, 'transferDepartment'])->name('employees.transfer-department');
-    Route::get('/employees/{employee}/edit', [\App\Http\Controllers\Admin\EmployeeController::class, 'edit'])->name('employees.edit');
-    Route::put('/employees/{employee}', [\App\Http\Controllers\Admin\EmployeeController::class, 'update'])->name('employees.update');
-    Route::delete('/employees/{employee}', [\App\Http\Controllers\Admin\EmployeeController::class, 'destroy'])->name('employees.destroy');
+    Route::get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create');
+    Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
+    Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
+    Route::get('/employees/{employee}/documents/download-all', [EmployeeController::class, 'downloadAllDocuments'])->name('employees.documents.download-all');
+    Route::get('/employees/{employee}/documents/{document}/download', [EmployeeController::class, 'downloadDocument'])->name('employees.documents.download');
+    Route::patch('/employees/{employee}/transfer-department', [EmployeeController::class, 'transferDepartment'])->name('employees.transfer-department');
+    Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
+    Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
+    Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
     Route::get('/attendances', [AttendanceController::class, 'index'])->name('attendances');
     Route::get('/attendances/{attendance}', [AttendanceController::class, 'show'])->name('attendances.show');
     Route::get('/attendances/{attendance}/edit', [AttendanceController::class, 'edit'])->name('attendances.edit');
