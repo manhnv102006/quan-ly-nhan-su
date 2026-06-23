@@ -69,29 +69,20 @@
                     <label for="search" class="block text-sm font-medium text-slate-700 mb-2">
                         Tìm kiếm ứng viên
                     </label>
-                    <input
-                        type="text"
-                        id="search"
-                        name="search"
-                        value="{{ $search }}"
+                    <input type="text" id="search" name="search" value="{{ $search }}"
                         placeholder="Nhập họ tên, điện thoại, email, địa chỉ hoặc tin tuyển dụng"
-                        class="w-full rounded-xl border-slate-200 focus:border-violet-500 focus:ring-violet-500"
-                    >
+                        class="w-full rounded-xl border-slate-200 focus:border-violet-500 focus:ring-violet-500">
                 </div>
 
                 <div class="flex flex-wrap gap-3">
-                    <button
-                        type="submit"
-                        class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition"
-                    >
+                    <button type="submit"
+                        class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
                         Tìm kiếm
                     </button>
 
                     @if ($search !== '')
-                        <a
-                            href="{{ route('admin.recruitment.candidates') }}"
-                            class="inline-flex items-center justify-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition"
-                        >
+                        <a href="{{ route('admin.recruitment.candidates') }}"
+                            class="inline-flex items-center justify-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
                             Xóa bộ lọc
                         </a>
                     @endif
@@ -102,10 +93,7 @@
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h3 class="font-semibold text-slate-800">Danh sách ứng viên</h3>
-
-                <p class="text-sm text-slate-500">
-                    Hiển thị {{ $candidates->count() }} / {{ $candidates->total() }} bản ghi
-                </p>
+                <p class="text-sm text-slate-500">Hiển thị {{ $candidates->count() }} / {{ $candidates->total() }} bản ghi</p>
             </div>
 
             <div class="overflow-x-auto">
@@ -126,26 +114,19 @@
                         @forelse ($candidates as $candidate)
                             <tr class="border-b border-slate-200 hover:bg-slate-50 transition">
                                 <td class="px-6 py-4">
-                                    <a href="{{ route('admin.recruitment.candidates.show', $candidate) }}"
-                                       class="font-medium text-slate-800 hover:text-cyan-700 transition">
+                                    <a href="{{ route('admin.recruitment.candidates.show', $candidate) }}" class="font-medium text-slate-800 hover:text-cyan-700 transition">
                                         {{ $candidate->full_name }}
                                     </a>
                                     <p class="mt-1 text-sm text-slate-500">{{ $candidate->address }}</p>
                                 </td>
-                                <td class="px-6 py-4 text-slate-600">
-                                    {{ $candidate->jobPost?->title ?? 'Chưa gắn tin tuyển dụng' }}
-                                </td>
+                                <td class="px-6 py-4 text-slate-600">{{ $candidate->jobPost?->title ?? 'Chưa gắn tin tuyển dụng' }}</td>
                                 <td class="px-6 py-4 text-slate-600">{{ $candidate->phone }}</td>
                                 <td class="px-6 py-4 text-slate-600">{{ $candidate->email }}</td>
                                 <td class="px-6 py-4 text-center">
                                     @if ($candidate->cv_file)
-                                        <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                                            Đã có CV
-                                        </span>
+                                        <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Đã có CV</span>
                                     @else
-                                        <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                                            Chưa có CV
-                                        </span>
+                                        <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Chưa có CV</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
@@ -159,14 +140,17 @@
                                         <span class="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">Không đạt</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-center text-slate-600">
-                                    {{ $candidate->created_at?->format('d/m/Y') ?? '-' }}
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <a href="{{ route('admin.recruitment.candidates.show', $candidate) }}"
-                                       class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-cyan-200 bg-cyan-50 text-cyan-700 text-sm font-medium hover:bg-cyan-100 transition">
-                                        Chi tiết
-                                    </a>
+                                <td class="px-6 py-4 text-center text-slate-600">{{ $candidate->created_at?->format('d/m/Y') ?? '-' }}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <a href="{{ route('admin.recruitment.candidates.show', $candidate) }}" class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200" title="Chi tiết">👁</a>
+                                        <a href="{{ route('admin.recruitment.candidates.edit', $candidate) }}" class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200" title="Sửa">✏️</a>
+                                        <form action="{{ route('admin.recruitment.candidates.destroy', $candidate) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn xóa ứng viên này? Các lịch phỏng vấn liên quan cũng sẽ bị xóa.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200" title="Xóa">🗑</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -181,9 +165,7 @@
             </div>
 
             @if ($candidates->hasPages())
-                <div class="px-6 py-4 border-t border-slate-200">
-                    {{ $candidates->links() }}
-                </div>
+                <div class="px-6 py-4 border-t border-slate-200">{{ $candidates->links() }}</div>
             @endif
         </div>
 
