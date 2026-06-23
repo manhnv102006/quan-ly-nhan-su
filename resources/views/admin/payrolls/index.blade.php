@@ -165,7 +165,7 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <div class="flex justify-center items-center">
+                                    <div class="flex justify-center items-center gap-2">
                                         @if ($payroll->isDraft())
                                             <form action="{{ route('admin.payrolls.submit', $payroll) }}" method="POST">
                                                 @csrf
@@ -199,6 +199,11 @@
                                                 Đã chi trả
                                             </span>
                                         @endif
+                                        <a href="{{ route('admin.payrolls.pdf', $payroll) }}"
+                                           class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1"
+                                           title="Xuất PDF">
+                                            📄 PDF
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
