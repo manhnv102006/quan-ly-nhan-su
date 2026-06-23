@@ -1,10 +1,21 @@
 <?php
 
+use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\AdminModuleController;
+use App\Http\Controllers\Admin\AttendanceController;
+use App\Http\Controllers\Admin\AttendanceReportController;
+use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\DepartmentController;
-use App\Http\Controllers\Admin\PositionController;
-use App\Http\Controllers\Admin\PayrollPeriodController;
+use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\InterviewController;
+use App\Http\Controllers\Admin\JobPostController;
+use App\Http\Controllers\Admin\LeaveRequestController;
+use App\Http\Controllers\Admin\OvertimeRequestController;
 use App\Http\Controllers\Admin\PayrollController;
+use App\Http\Controllers\Admin\PayrollPeriodController;
+use App\Http\Controllers\Admin\PositionController;
+use App\Http\Controllers\Admin\RecruitmentController;
+use App\Http\Controllers\Admin\ShiftController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
@@ -18,7 +29,14 @@ Route::get('/dashboard', [DashboardController::class, 'redirect'])
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
-    Route::get('/accounts', [AdminModuleController::class, 'accounts'])->name('accounts');
+    Route::get('/accounts', [AccountController::class, 'index'])->name('accounts');
+    Route::get('/accounts/create', [AccountController::class, 'create'])->name('accounts.create');
+    Route::post('/accounts', [AccountController::class, 'store'])->name('accounts.store');
+    Route::get('/accounts/{user}', [AccountController::class, 'show'])->name('accounts.show');
+    Route::get('/accounts/{user}/edit', [AccountController::class, 'edit'])->name('accounts.edit');
+    Route::put('/accounts/{user}', [AccountController::class, 'update'])->name('accounts.update');
+    Route::patch('/accounts/{user}/toggle-status', [AccountController::class, 'toggleStatus'])->name('accounts.toggle-status');
+    Route::patch('/accounts/{user}/reset-password', [AccountController::class, 'resetPassword'])->name('accounts.reset-password');
     Route::get('/departments', [DepartmentController::class, 'index'])->name('departments');
     Route::get('/departments/create', [DepartmentController::class, 'create'])->name('departments.create');
     Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
@@ -45,7 +63,34 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::resource('payroll-periods', PayrollPeriodController::class);
 
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
-    Route::get('/attendances', [AdminModuleController::class, 'attendances'])->name('attendances');
+    Route::get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create');
+    Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
+    Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
+    Route::get('/employees/{employee}/documents/download-all', [EmployeeController::class, 'downloadAllDocuments'])->name('employees.documents.download-all');
+    Route::get('/employees/{employee}/documents/{document}/download', [EmployeeController::class, 'downloadDocument'])->name('employees.documents.download');
+    Route::patch('/employees/{employee}/transfer-department', [EmployeeController::class, 'transferDepartment'])->name('employees.transfer-department');
+    Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
+    Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
+    Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
+    Route::get('/attendances', [AttendanceController::class, 'index'])->name('attendances');
+    Route::get('/attendances/{attendance}', [AttendanceController::class, 'show'])->name('attendances.show');
+    Route::get('/attendances/{attendance}/edit', [AttendanceController::class, 'edit'])->name('attendances.edit');
+    Route::put('/attendances/{attendance}', [AttendanceController::class, 'update'])->name('attendances.update');
+    Route::get('/shifts', [ShiftController::class, 'index'])->name('shifts.index');
+    Route::get('/shifts/create', [ShiftController::class, 'create'])->name('shifts.create');
+    Route::post('/shifts', [ShiftController::class, 'store'])->name('shifts.store');
+    Route::get('/shifts/{shift}/edit', [ShiftController::class, 'edit'])->name('shifts.edit');
+    Route::put('/shifts/{shift}', [ShiftController::class, 'update'])->name('shifts.update');
+    Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy'])->name('shifts.destroy');
+    Route::get('/leave-requests', [LeaveRequestController::class, 'index'])->name('leave-requests.index');
+    Route::get('/leave-requests/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('leave-requests.show');
+    Route::patch('/leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('leave-requests.approve');
+    Route::patch('/leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('leave-requests.reject');
+    Route::get('/overtime-requests', [OvertimeRequestController::class, 'index'])->name('overtime-requests.index');
+    Route::get('/overtime-requests/{overtimeRequest}', [OvertimeRequestController::class, 'show'])->name('overtime-requests.show');
+    Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeRequestController::class, 'approve'])->name('overtime-requests.approve');
+    Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeRequestController::class, 'reject'])->name('overtime-requests.reject');
+    Route::get('/attendance-reports', [AttendanceReportController::class, 'index'] )->name('attendance-reports.index');
     Route::get('/kpis', [AdminModuleController::class, 'kpis'])->name('kpis');
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
     Route::get('/leave-requests', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'index'])->name('leave-requests');
@@ -57,7 +102,24 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/payrolls/{payroll}/pay', [PayrollController::class, 'pay'])->name('payrolls.pay');
     Route::get('/payrolls/{payroll}/pdf', [PayrollController::class, 'exportPdf'])->name('payrolls.pdf');
     Route::get('/contracts', [AdminModuleController::class, 'contracts'])->name('contracts');
-    Route::get('/recruitment', [AdminModuleController::class, 'recruitment'])->name('recruitment');
+    Route::get('/recruitment', [RecruitmentController::class, 'index'])->name('recruitment');
+    Route::get('/recruitment/job-posts', [JobPostController::class, 'index'])->name('recruitment.job-posts');
+    Route::get('/recruitment/job-posts/create', [JobPostController::class, 'create'])->name('recruitment.job-posts.create');
+    Route::post('/recruitment/job-posts', [JobPostController::class, 'store'])->name('recruitment.job-posts.store');
+    Route::get('/recruitment/job-posts/{jobPost}/edit', [JobPostController::class, 'edit'])->name('recruitment.job-posts.edit');
+    Route::put('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'update'])->name('recruitment.job-posts.update');
+    Route::delete('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'destroy'])->name('recruitment.job-posts.destroy');
+    Route::get('/recruitment/candidates', [CandidateController::class, 'index'])->name('recruitment.candidates');
+    Route::get('/recruitment/candidates/create', [CandidateController::class, 'create'])->name('recruitment.candidates.create');
+    Route::get('/recruitment/candidates/{candidate}', [CandidateController::class, 'show'])->name('recruitment.candidates.show');
+    Route::get('/recruitment/candidates/{candidate}/edit', [CandidateController::class, 'edit'])->name('recruitment.candidates.edit');
+    Route::post('/recruitment/candidates', [CandidateController::class, 'store'])->name('recruitment.candidates.store');
+    Route::put('/recruitment/candidates/{candidate}', [CandidateController::class, 'update'])->name('recruitment.candidates.update');
+    Route::delete('/recruitment/candidates/{candidate}', [CandidateController::class, 'destroy'])->name('recruitment.candidates.destroy');
+    Route::get('/recruitment/interviews', [InterviewController::class, 'index'])->name('recruitment.interviews');
+    Route::get('/recruitment/interviews/create', [InterviewController::class, 'create'])->name('recruitment.interviews.create');
+    Route::post('/recruitment/interviews', [InterviewController::class, 'store'])->name('recruitment.interviews.store');
+    Route::put('/recruitment/interviews/{interview}', [InterviewController::class, 'update'])->name('recruitment.interviews.update');
 });
 
 Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
