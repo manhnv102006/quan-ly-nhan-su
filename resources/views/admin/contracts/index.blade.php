@@ -13,41 +13,44 @@
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div class="px-6 py-5 border-b border-slate-100">
-                <form action="{{ route('admin.contracts.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label for="search" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Tìm kiếm</label>
-                        <input id="search" name="search" type="text" value="{{ request('search') }}" placeholder="Mã hợp đồng hoặc nhân viên"
-                               class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
+                <form action="{{ route('admin.contracts.index') }}" method="GET" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label for="search" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Tìm kiếm</label>
+                            <input id="search" name="search" type="text" value="{{ request('search') }}" placeholder="Mã hợp đồng hoặc nhân viên"
+                                   class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
+                        </div>
+                        <div>
+                            <label for="status" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Trạng thái</label>
+                            <select id="status" name="status" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
+                                <option value="">Tất cả</option>
+                                @foreach($statuses as $value => $label)
+                                    <option value="{{ $value }}" {{ request('status') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label for="contract_type_id" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Loại hợp đồng</label>
+                            <select id="contract_type_id" name="contract_type_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
+                                <option value="">Tất cả</option>
+                                @foreach($contractTypes as $type)
+                                    <option value="{{ $type->id }}" {{ request('contract_type_id') == $type->id ? 'selected' : '' }}>{{ $type->contract_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label for="employee_id" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Nhân viên</label>
+                            <select id="employee_id" name="employee_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
+                                <option value="">Tất cả</option>
+                                @foreach($employees as $employee)
+                                    <option value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label for="status" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Trạng thái</label>
-                        <select id="status" name="status" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
-                            <option value="">Tất cả</option>
-                            @foreach($statuses as $value => $label)
-                                <option value="{{ $value }}" {{ request('status') === $value ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label for="contract_type_id" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Loại hợp đồng</label>
-                        <select id="contract_type_id" name="contract_type_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
-                            <option value="">Tất cả</option>
-                            @foreach($contractTypes as $type)
-                                <option value="{{ $type->id }}" {{ request('contract_type_id') == $type->id ? 'selected' : '' }}>{{ $type->contract_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label for="employee_id" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Nhân viên</label>
-                        <select id="employee_id" name="employee_id" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
-                            <option value="">Tất cả</option>
-                            @foreach($employees as $employee)
-                                <option value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="md:col-span-4 text-right">
-                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">Lọc</button>
+                    <div class="flex gap-3">
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">🔍 Tìm kiếm</button>
+                        <a href="{{ route('admin.contracts.index') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">Xóa bộ lọc</a>
                     </div>
                 </form>
             </div>
