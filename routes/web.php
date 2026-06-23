@@ -90,6 +90,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/recruitment/interviews', [InterviewController::class, 'index'])->name('recruitment.interviews');
     Route::get('/recruitment/interviews/create', [InterviewController::class, 'create'])->name('recruitment.interviews.create');
     Route::post('/recruitment/interviews', [InterviewController::class, 'store'])->name('recruitment.interviews.store');
+    Route::put('/recruitment/interviews/{interview}', [InterviewController::class, 'update'])->name('recruitment.interviews.update');
 });
 
 Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
