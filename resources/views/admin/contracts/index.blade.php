@@ -91,9 +91,9 @@
                                     </div>
                                 </td>
                             </tr>
-                        @empty
+@empty
                             <tr>
-                                <td colspan="7" class="text-center py-12 text-slate-400">Không có hợp đồng nào.</td>
+                                <td colspan="7" class="text-center py-12 text-slate-400">Không tìm thấy hợp đồng phù hợp</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -133,8 +133,9 @@
         </div>
     @endif
 
-    <script>
+<script>
         let deleteTargetId = null;
+        const successToast = document.getElementById('success-toast');
         function openDeleteModal(id, code) {
             deleteTargetId = id;
             document.getElementById('delete-contract-code').textContent = code;
@@ -163,7 +164,6 @@
         document.getElementById('delete-modal').addEventListener('click', function (e) {
             if (e.target === this) closeDeleteModal();
         });
-        const successToast = document.getElementById('success-toast');
         if (successToast) {
             setTimeout(function () {
                 successToast.style.transition = 'opacity 0.3s ease';
