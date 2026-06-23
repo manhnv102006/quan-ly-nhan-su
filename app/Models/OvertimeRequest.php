@@ -5,36 +5,26 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class LeaveRequest extends Model
+class OvertimeRequest extends Model
 {
     protected $fillable = [
         'employee_id',
-        'leave_type',
-        'start_date',
-        'end_date',
+        'overtime_date',
+        'start_time',
+        'end_time',
         'reason',
         'status',
-        'approved_by',
     ];
 
     protected function casts(): array
     {
         return [
-            'start_date' => 'date',
-            'end_date' => 'date',
+            'overtime_date' => 'date',
         ];
     }
 
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
-    }
-
-    public function approver(): BelongsTo
-    {
-        return $this->belongsTo(
-            Employee::class,
-            'approved_by'
-        );
     }
 }
