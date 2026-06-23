@@ -16,7 +16,7 @@
                         </h2>
                         <p class="mt-1.5 text-sm text-slate-500 max-w-2xl">
                             Quản lý các nghiệp vụ tuyển dụng theo từng phần nhỏ để đảm bảo an toàn cho hệ thống hiện tại.
-                            Hiện đã có danh sách tin tuyển dụng và danh sách ứng viên, các bước sẽ tiếp tục được mở rộng theo từng chức năng.
+                            Hiện đã có danh sách tin tuyển dụng, ứng viên và lịch phỏng vấn; các bước tiếp theo sẽ tiếp tục mở rộng theo từng chức năng.
                         </p>
                     </div>
 
@@ -94,18 +94,34 @@
                         </div>
                     </a>
 
-                    <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-6">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-slate-200 text-slate-600 text-xs font-semibold">
-                            Phạm vi hiện tại
-                        </span>
-                        <h3 class="mt-5 text-lg font-bold text-slate-800">
-                            Triển khai theo từng bước nhỏ
+                    <a href="{{ route('admin.recruitment.interviews') }}"
+                       class="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:border-amber-200 hover:shadow-md hover:shadow-amber-100 transition">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                                Đang hoạt động
+                            </span>
+                        </div>
+
+                        <h3 class="mt-5 text-lg font-bold text-slate-800 group-hover:text-amber-700 transition">
+                            Danh sách lịch phỏng vấn
                         </h3>
+
                         <p class="mt-2 text-sm text-slate-500 leading-relaxed">
-                            Các phần phỏng vấn và dashboard tuyển dụng sẽ được bổ sung ở các bước tiếp theo
-                            sau khi hoàn thành và xác nhận xong từng chức năng hiện tại.
+                            Theo dõi các lịch phỏng vấn đã có trong hệ thống, kết quả hiện tại và người phụ trách phỏng vấn.
                         </p>
-                    </div>
+
+                        <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-amber-600">
+                            Truy cập chức năng
+                            <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                            </svg>
+                        </div>
+                    </a>
                 </div>
             </div>
         </div>
