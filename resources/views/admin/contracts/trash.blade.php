@@ -42,17 +42,10 @@
                                 <td class="px-6 py-4 text-slate-800">{{ $contract->employee->full_name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-slate-500">{{ $contract->contractType->contract_name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-slate-500">{{ $contract->deleted_at?->format('d/m/Y') }}</td>
-                                <td class="px-6 py-4 text-center space-y-2">
+                                <td class="px-6 py-4 text-center space-x-2 flex items-center justify-center">
                                     <a href="{{ route('admin.contracts.show', $contract->id) }}" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition">Xem</a>
-                                    <form action="{{ route('admin.contracts.restore', $contract->id) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition">Khôi phục</button>
-                                    </form>
-                                    <form action="{{ route('admin.contracts.forceDelete', $contract->id) }}" method="POST">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition">Xóa vĩnh viễn</button>
-                                    </form>
+                                    <button type="button" onclick="openRestoreModal('{{ $contract->id }}', @json($contract->contract_code))" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition">Khôi phục</button>
+                                    <button type="button" onclick="openForceDeleteModal('{{ $contract->id }}', @json($contract->contract_code))" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition">Xóa vĩnh viễn</button>
                                 </td>
                             </tr>
                         @empty

@@ -69,8 +69,8 @@
                             @error('new_end_date') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="note" class="block text-sm font-semibold text-slate-700">Ghi chú</label>
-                            <textarea id="note" name="note" rows="3" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">{{ old('note') }}</textarea>
+                            <label for="extend_note" class="block text-sm font-semibold text-slate-700">Ghi chú</label>
+                            <textarea id="extend_note" name="note" rows="3" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">{{ old('note') }}</textarea>
                             @error('note') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <button type="submit" class="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition">Gia hạn hợp đồng</button>
@@ -82,18 +82,18 @@
                     <form action="{{ route('admin.contracts.terminate', $contract) }}" method="POST" enctype="multipart/form-data" class="space-y-4 mt-4">
                         @csrf
                         <div>
-                            <label for="end_date" class="block text-sm font-semibold text-slate-700">Ngày thanh lý</label>
-                            <input id="end_date" name="end_date" type="date" value="{{ old('end_date') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none" required>
+                            <label for="terminate_end_date" class="block text-sm font-semibold text-slate-700">Ngày thanh lý</label>
+                            <input id="terminate_end_date" name="end_date" type="date" value="{{ old('end_date') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none" required>
                             @error('end_date') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="file" class="block text-sm font-semibold text-slate-700">Biên bản thanh lý</label>
-                            <input id="file" name="file" type="file" class="mt-2 w-full text-sm text-slate-700">
+                            <label for="terminate_file" class="block text-sm font-semibold text-slate-700">Biên bản thanh lý</label>
+                            <input id="terminate_file" name="file" type="file" class="mt-2 w-full text-sm text-slate-700">
                             @error('file') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="note" class="block text-sm font-semibold text-slate-700">Ghi chú</label>
-                            <textarea id="note" name="note" rows="3" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">{{ old('note') }}</textarea>
+                            <label for="terminate_note" class="block text-sm font-semibold text-slate-700">Ghi chú</label>
+                            <textarea id="terminate_note" name="note" rows="3" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">{{ old('note') }}</textarea>
                             @error('note') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <button type="submit" class="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition">Thanh lý hợp đồng</button>
