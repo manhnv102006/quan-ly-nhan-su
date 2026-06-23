@@ -91,5 +91,14 @@ class KPIController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+      public function destroy($id)
+    {
+        $kpi = KPI::findOrFail($id);
+        $kpi->delete();
+
+        return redirect()
+            ->route('admin.kpis.index')
+            ->with('success', 'Xóa KPI thành công');
+    }
   
 }
