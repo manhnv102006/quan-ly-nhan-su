@@ -23,30 +23,30 @@ class KPIController extends Controller
      * Show the form for creating a new resource.
      */
     public function create()
-{
-    $departments = Department::all();
+    {
+        $departments = Department::all();
 
-    return view('admin.kpis.create', compact('departments'));
-}
+        return view('admin.kpis.create', compact('departments'));
+    }
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-{
-    $request->validate([
-        'title' => 'required|max:255',
-        'description' => 'nullable',
-        'weight' => 'required|numeric|min:1|max:100',
-        'department_id' => 'required|exists:departments,id',
-    ]);
+    {
+        $request->validate([
+            'title' => 'required|max:255',
+            'description' => 'nullable',
+            'weight' => 'required|numeric|min:1|max:100',
+            'department_id' => 'required|exists:departments,id',
+        ]);
 
-    KPI::create($request->all());
+        KPI::create($request->all());
 
-    return redirect()
-        ->route('admin.kpis.index')
-        ->with('success', 'Thêm KPI thành công');
-}
+        return redirect()
+            ->route('admin.kpis.index')
+            ->with('success', 'Thêm KPI thành công');
+    }
 
     /**
      * Display the specified resource.
@@ -59,44 +59,37 @@ class KPIController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-   public function edit($id)
-{
-    $kpi = KPI::findOrFail($id);
+    public function edit($id)
+    {
+        $kpi = KPI::findOrFail($id);
+        $departments = Department::all();
 
-    return view('admin.kpis.edit', compact('kpi'));
-}
+        return view('admin.kpis.edit', compact('kpi', 'departments'));
+    }
 
     /**
      * Update the specified resource in storage.
      */
-   public function update(Request $request, $id)
-{
-    $request->validate([
-        'name' => 'required|max:255',
-        'target_value' => 'required|numeric',
-        'weight' => 'required|numeric|min:1|max:100',
-        'description' => 'nullable'
-    ]);
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'title' => 'required|max:255',
+            'description' => 'nullable',
+            'weight' => 'required|numeric|min:1|max:100',
+            'department_id' => 'required|exists:departments,id',
+        ]);
 
-    $kpi = KPI::findOrFail($id);
+        $kpi = KPI::findOrFail($id);
 
-    $kpi->update([
-        'name' => $request->name,
-        'target_value' => $request->target_value,
-        'weight' => $request->weight,
-        'description' => $request->description,
-    ]);
+        $kpi->update($request->all());
 
-    return redirect()
-        ->route('admin.kpis.index')
-        ->with('success', 'Cập nhật KPI thành công');
-}
+        return redirect()
+            ->route('admin.kpis.index')
+            ->with('success', 'Cập nhật KPI thành công');
+    }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
-    {
-        //
-    }
+  
 }

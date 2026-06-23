@@ -136,22 +136,22 @@
                                 <div class="flex justify-center gap-2">
 
                                     <a href="{{ route('admin.kpis.edit', $kpi->id) }}"
-                                       class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200 transition"
-                                       title="Sửa">
+                                        class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200 transition"
+                                        title="Sửa">
                                         ✏️
                                     </a>
 
                                     <form action="{{ route('admin.kpis.destroy', $kpi->id) }}"
-                                          method="POST"
-                                          id="delete-form-{{ $kpi->id }}">
+                                        method="POST"
+                                        id="delete-form-{{ $kpi->id }}">
 
                                         @csrf
                                         @method('DELETE')
 
                                         <button type="button"
-                                                onclick="openDeleteModal('{{ $kpi->id }}', '{{ $kpi->title }}')"
-                                                class="w-9 h-9 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition"
-                                                title="Xóa">
+                                            onclick="openDeleteModal('{{ $kpi->id }}', '{{ $kpi->title }}')"
+                                            class="w-9 h-9 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition"
+                                            title="Xóa">
                                             🗑
                                         </button>
 
@@ -194,40 +194,40 @@
 
                     {{-- Previous Page Link --}}
                     @if ($kpis->onFirstPage())
-                        <span class="px-3 py-2 rounded-lg text-slate-400 bg-slate-100">
-                            ← Trước
-                        </span>
+                    <span class="px-3 py-2 rounded-lg text-slate-400 bg-slate-100">
+                        ← Trước
+                    </span>
                     @else
-                        <a href="{{ $kpis->previousPageUrl() }}"
-                           class="px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-200 transition">
-                            ← Trước
-                        </a>
+                    <a href="{{ $kpis->previousPageUrl() }}"
+                        class="px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-200 transition">
+                        ← Trước
+                    </a>
                     @endif
 
                     {{-- Pagination Elements --}}
                     @foreach ($kpis->getUrlRange(1, $kpis->lastPage()) as $page => $url)
-                        @if ($page == $kpis->currentPage())
-                            <span class="px-3 py-2 rounded-lg bg-violet-600 text-white font-semibold">
-                                {{ $page }}
-                            </span>
-                        @else
-                            <a href="{{ $url }}"
-                               class="px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-200 transition">
-                                {{ $page }}
-                            </a>
-                        @endif
+                    @if ($page == $kpis->currentPage())
+                    <span class="px-3 py-2 rounded-lg bg-violet-600 text-white font-semibold">
+                        {{ $page }}
+                    </span>
+                    @else
+                    <a href="{{ $url }}"
+                        class="px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-200 transition">
+                        {{ $page }}
+                    </a>
+                    @endif
                     @endforeach
 
                     {{-- Next Page Link --}}
                     @if ($kpis->hasMorePages())
-                        <a href="{{ $kpis->nextPageUrl() }}"
-                           class="px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-200 transition">
-                            Sau →
-                        </a>
+                    <a href="{{ $kpis->nextPageUrl() }}"
+                        class="px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-200 transition">
+                        Sau →
+                    </a>
                     @else
-                        <span class="px-3 py-2 rounded-lg text-slate-400 bg-slate-100">
-                            Sau →
-                        </span>
+                    <span class="px-3 py-2 rounded-lg text-slate-400 bg-slate-100">
+                        Sau →
+                    </span>
                     @endif
 
                 </nav>
@@ -241,21 +241,21 @@
 
     {{-- Modal xác nhận xóa --}}
     <div id="delete-modal"
-         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
 
         <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm mx-4 p-6 text-center">
 
             <div class="w-16 h-16 mx-auto rounded-2xl bg-red-100 flex items-center justify-center">
 
                 <svg class="w-8 h-8 text-red-600"
-                     fill="none"
-                     stroke="currentColor"
-                     viewBox="0 0 24 24">
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
 
                     <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
 
                 </svg>
 
@@ -273,14 +273,14 @@
             <div class="mt-6 flex gap-3">
 
                 <button type="button"
-                        onclick="closeDeleteModal()"
-                        class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
+                    onclick="closeDeleteModal()"
+                    class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
                     Hủy
                 </button>
 
                 <button type="button"
-                        onclick="confirmDelete()"
-                        class="flex-1 px-5 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition">
+                    onclick="confirmDelete()"
+                    class="flex-1 px-5 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition">
                     Xóa
                 </button>
 
@@ -294,19 +294,19 @@
     @if (session('success'))
 
     <div id="success-toast"
-         class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-emerald-200 shadow-lg rounded-2xl px-5 py-4 max-w-sm">
+        class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-emerald-200 shadow-lg rounded-2xl px-5 py-4 max-w-sm">
 
         <div class="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
 
             <svg class="w-5 h-5 text-emerald-600"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
 
                 <path stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7" />
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7" />
 
             </svg>
 
@@ -321,7 +321,6 @@
     @endif
 
     <script>
-
         let deleteTargetId = null;
 
         function openDeleteModal(id, name) {
@@ -359,7 +358,7 @@
         }
 
         // Đóng modal khi bấm ra ngoài
-        document.getElementById('delete-modal').addEventListener('click', function (e) {
+        document.getElementById('delete-modal').addEventListener('click', function(e) {
 
             if (e.target === this) {
 
@@ -374,19 +373,18 @@
 
         if (successToast) {
 
-            setTimeout(function () {
+            setTimeout(function() {
 
                 successToast.style.transition = 'opacity 0.3s ease';
                 successToast.style.opacity = '0';
 
-                setTimeout(function () {
+                setTimeout(function() {
                     successToast.remove();
                 }, 300);
 
             }, 4000);
 
         }
-
     </script>
 
 </x-admin-layout>
