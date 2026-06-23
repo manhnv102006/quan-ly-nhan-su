@@ -1,22 +1,23 @@
-<x-admin-layout title="Thêm KPI">
+<x-admin-layout title="Chỉnh sửa KPI">
 
     <div class="max-w-4xl mx-auto">
 
         <div class="mb-6">
             <h2 class="text-2xl font-bold text-slate-800">
-                Thêm KPI mới
+                Chỉnh sửa KPI
             </h2>
 
             <p class="text-sm text-slate-500 mt-1">
-                Tạo một KPI mới cho hệ thống
+                Cập nhật thông tin KPI
             </p>
         </div>
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
 
-            <form action="{{ route('admin.kpis.store') }}" method="POST">
+            <form action="{{ route('admin.kpis.update', $kpi->id) }}" method="POST">
 
                 @csrf
+                @method('PUT')
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -29,7 +30,7 @@
                         <input
                             type="text"
                             name="title"
-                            value="{{ old('title') }}"
+                            value="{{ old('title', $kpi->title) }}"
                             class="w-full rounded-xl border border-slate-300 focus:border-violet-500 focus:ring-violet-500"
                             placeholder="Nhập tên KPI">
 
@@ -50,7 +51,7 @@
                             name="description"
                             rows="4"
                             class="w-full rounded-xl border border-slate-300 focus:border-violet-500 focus:ring-violet-500"
-                            placeholder="Nhập mô tả KPI">{{ old('description') }}</textarea>
+                            placeholder="Nhập mô tả KPI">{{ old('description', $kpi->description) }}</textarea>
 
                         @error('description')
                             <p class="text-red-500 text-sm mt-1">
@@ -68,7 +69,7 @@
                         <input
                             type="number"
                             name="weight"
-                            value="{{ old('weight') }}"
+                            value="{{ old('weight', $kpi->weight) }}"
                             min="1"
                             max="100"
                             class="w-full rounded-xl border border-slate-300 focus:border-violet-500 focus:ring-violet-500"
@@ -97,7 +98,7 @@
 
                             @foreach($departments as $department)
                                 <option value="{{ $department->id }}"
-                                    {{ old('department_id') == $department->id ? 'selected' : '' }}>
+                                    {{ old('department_id', $kpi->department_id) == $department->id ? 'selected' : '' }}>
                                     {{ $department->department_name }}
                                 </option>
                             @endforeach
@@ -122,7 +123,7 @@
 
                     <button type="submit"
                             class="px-6 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
-                        Thêm KPI
+                        Cập nhật KPI
                     </button>
 
                 </div>
