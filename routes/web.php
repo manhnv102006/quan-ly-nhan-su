@@ -82,7 +82,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/recruitment/candidates', [CandidateController::class, 'index'])->name('recruitment.candidates');
     Route::get('/recruitment/candidates/create', [CandidateController::class, 'create'])->name('recruitment.candidates.create');
     Route::get('/recruitment/candidates/{candidate}', [CandidateController::class, 'show'])->name('recruitment.candidates.show');
+    Route::get('/recruitment/candidates/{candidate}/edit', [CandidateController::class, 'edit'])->name('recruitment.candidates.edit');
     Route::post('/recruitment/candidates', [CandidateController::class, 'store'])->name('recruitment.candidates.store');
+    Route::put('/recruitment/candidates/{candidate}', [CandidateController::class, 'update'])->name('recruitment.candidates.update');
+    Route::delete('/recruitment/candidates/{candidate}', [CandidateController::class, 'destroy'])->name('recruitment.candidates.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
