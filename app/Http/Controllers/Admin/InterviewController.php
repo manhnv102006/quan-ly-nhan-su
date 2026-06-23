@@ -77,4 +77,37 @@ class InterviewController extends Controller
             ->route('admin.recruitment.interviews')
             ->with('success', 'Tạo lịch phỏng vấn thành công.');
     }
+
+    public function update(Request $request, Interview $interview): RedirectResponse
+    {
+        $validated = $request->validate([
+            'result' => ['required', 'in:pending,passed,failed'],
+            'note' => ['nullable', 'string'],
+        ], [
+            'result.required' => 'Kết quả phỏng vấn là bắt buộc.',
+            'result.in' => 'Kết quả phỏng vấn không hợp lệ.',
+            'note.string' => 'Ghi chú không hợp lệ.',
+        ]);
+
+        DB::transaction(function () use ($interview, $validated) {
+            $interview->update([
+                'result' => $validated['result'],
+                'note' => $validated['note'] ?? null,
+            ]);
+
+            $candidateStatus = match ($validated['result']) {
+                'passed' => 'passed',
+                'failed' => 'failed',
+                default => 'interview',
+            };
+
+            $interview->candidate()->update([
+                'status' => $candidateStatus,
+            ]);
+        });
+
+        return redirect()
+            ->route('admin.recruitment.interviews')
+            ->with('success', 'Cập nhật kết quả phỏng vấn thành công.');
+    }
 }
