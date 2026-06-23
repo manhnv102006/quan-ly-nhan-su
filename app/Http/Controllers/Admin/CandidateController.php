@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Candidate;
 use App\Models\JobPost;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -18,6 +19,17 @@ class CandidateController extends Controller
         $jobPosts = $this->availableJobPosts();
 
         return view('admin.recruitment.candidates.create', compact('jobPosts'));
+    }
+
+    public function edit(Candidate $candidate): View
+    {
+        $jobPosts = $this->availableJobPosts();
+        $cvData = $this->candidateCvData($candidate);
+
+        return view('admin.recruitment.candidates.edit', array_merge([
+            'candidate' => $candidate,
+            'jobPosts' => $jobPosts,
+        ], $cvData));
     }
 
     public function index(Request $request): View
@@ -54,16 +66,99 @@ class CandidateController extends Controller
     public function show(Candidate $candidate): View
     {
         $candidate->load('jobPost.department');
+        $cvData = $this->candidateCvData($candidate);
 
-        $hasCvFile = filled($candidate->cv_file) && Storage::disk('public')->exists($candidate->cv_file);
-        $cvUrl = $hasCvFile ? Storage::disk('public')->url($candidate->cv_file) : null;
-
-        return view('admin.recruitment.candidates.show', compact('candidate', 'hasCvFile', 'cvUrl'));
+        return view('admin.recruitment.candidates.show', array_merge([
+            'candidate' => $candidate,
+        ], $cvData));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
+        $validated = $this->validateCandidate($request);
+
+        $validated['job_post_id'] = $validated['job_post_id'] ?: null;
+        $validated['cv_file'] = $this->storeCvFile($request->file('cv_file'));
+
+        Candidate::create($validated);
+
+        return redirect()
+            ->route('admin.recruitment.candidates')
+            ->with('success', 'Thêm ứng viên thành công.');
+    }
+
+    public function update(Request $request, Candidate $candidate): RedirectResponse
+    {
+        $validated = $this->validateCandidate($request);
+
+        $validated['job_post_id'] = $validated['job_post_id'] ?: null;
+
+        $oldCvPath = $candidate->cv_file;
+        $newCvPath = $this->storeCvFile($request->file('cv_file'));
+
+        if ($newCvPath !== null) {
+            $validated['cv_file'] = $newCvPath;
+        } else {
+            unset($validated['cv_file']);
+        }
+
+        try {
+            $candidate->update($validated);
+        } catch (\Throwable $exception) {
+            if ($newCvPath !== null) {
+                $this->deleteCvFile($newCvPath);
+            }
+
+            throw $exception;
+        }
+
+        if ($newCvPath !== null && $oldCvPath !== null && $oldCvPath !== $newCvPath) {
+            $this->deleteCvFile($oldCvPath);
+        }
+
+        return redirect()
+            ->route('admin.recruitment.candidates.show', $candidate)
+            ->with('success', 'Cập nhật ứng viên thành công.');
+    }
+
+    public function destroy(Candidate $candidate): RedirectResponse
+    {
+        $cvPath = $candidate->cv_file;
+
+        try {
+            $candidate->delete();
+        } catch (QueryException) {
+            return redirect()
+                ->route('admin.recruitment.candidates')
+                ->with('error', 'Không thể xóa ứng viên vì vẫn còn dữ liệu liên quan trong hệ thống.');
+        }
+
+        $this->deleteCvFile($cvPath);
+
+        return redirect()
+            ->route('admin.recruitment.candidates')
+            ->with('success', 'Xóa ứng viên thành công.');
+    }
+
+    private function availableJobPosts()
+    {
+        return JobPost::query()
+            ->with('department')
+            ->orderBy('title')
+            ->get(['id', 'department_id', 'title', 'status']);
+    }
+
+    private function candidateCvData(Candidate $candidate): array
+    {
+        $hasCvFile = filled($candidate->cv_file) && Storage::disk('public')->exists($candidate->cv_file);
+        $cvUrl = $hasCvFile ? Storage::disk('public')->url($candidate->cv_file) : null;
+
+        return compact('hasCvFile', 'cvUrl');
+    }
+
+    private function validateCandidate(Request $request): array
+    {
+        return $request->validate([
             'job_post_id' => ['nullable', 'exists:job_posts,id'],
             'full_name' => ['required', 'string', 'max:100'],
             'phone' => ['required', 'string', 'max:20'],
@@ -90,23 +185,6 @@ class CandidateController extends Controller
             'status.required' => 'Trạng thái ứng viên là bắt buộc.',
             'status.in' => 'Trạng thái ứng viên không hợp lệ.',
         ]);
-
-        $validated['job_post_id'] = $validated['job_post_id'] ?: null;
-        $validated['cv_file'] = $this->storeCvFile($request->file('cv_file'));
-
-        Candidate::create($validated);
-
-        return redirect()
-            ->route('admin.recruitment.candidates')
-            ->with('success', 'Thêm ứng viên thành công.');
-    }
-
-    private function availableJobPosts()
-    {
-        return JobPost::query()
-            ->with('department')
-            ->orderBy('title')
-            ->get(['id', 'department_id', 'title', 'status']);
     }
 
     private function storeCvFile(?UploadedFile $file): ?string
@@ -116,5 +194,14 @@ class CandidateController extends Controller
         }
 
         return $file->store('candidate-cvs', 'public');
+    }
+
+    private function deleteCvFile(?string $path): void
+    {
+        if (! filled($path)) {
+            return;
+        }
+
+        Storage::disk('public')->delete($path);
     }
 }
