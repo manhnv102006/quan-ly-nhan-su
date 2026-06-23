@@ -63,8 +63,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::put('/employees/{employee}', [\App\Http\Controllers\Admin\EmployeeController::class, 'update'])->name('employees.update');
     Route::delete('/employees/{employee}', [\App\Http\Controllers\Admin\EmployeeController::class, 'destroy'])->name('employees.destroy');
     Route::get('/attendances', [AdminModuleController::class, 'attendances'])->name('attendances');
+    
     //KPI
     Route::resource('kpis', KPIController::class);
+
+    
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
     Route::post('/payrolls/generate', [PayrollController::class, 'generate'])->name('payrolls.generate');
     Route::post('/payrolls/{payroll}/submit', [PayrollController::class, 'submit'])->name('payrolls.submit');
