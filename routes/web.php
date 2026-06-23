@@ -2,6 +2,16 @@
 
 use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\AdminModuleController;
+
+use App\Http\Controllers\Admin\CandidateController;
+use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\InterviewController;
+use App\Http\Controllers\Admin\JobPostController;
+use App\Http\Controllers\Admin\PositionController;
+use App\Http\Controllers\Admin\PayrollPeriodController;
+use App\Http\Controllers\Admin\PayrollController;
+use App\Http\Controllers\Admin\RecruitmentController;
+
 use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\AttendanceReportController;
 use App\Http\Controllers\Admin\DepartmentController;
@@ -11,6 +21,7 @@ use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\PayrollPeriodController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\ShiftController;
+
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -93,7 +104,24 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/payrolls/{payroll}/approve', [PayrollController::class, 'approve'])->name('payrolls.approve');
     Route::post('/payrolls/{payroll}/pay', [PayrollController::class, 'pay'])->name('payrolls.pay');
     Route::get('/contracts', [AdminModuleController::class, 'contracts'])->name('contracts');
-    Route::get('/recruitment', [AdminModuleController::class, 'recruitment'])->name('recruitment');
+    Route::get('/recruitment', [RecruitmentController::class, 'index'])->name('recruitment');
+    Route::get('/recruitment/job-posts', [JobPostController::class, 'index'])->name('recruitment.job-posts');
+    Route::get('/recruitment/job-posts/create', [JobPostController::class, 'create'])->name('recruitment.job-posts.create');
+    Route::post('/recruitment/job-posts', [JobPostController::class, 'store'])->name('recruitment.job-posts.store');
+    Route::get('/recruitment/job-posts/{jobPost}/edit', [JobPostController::class, 'edit'])->name('recruitment.job-posts.edit');
+    Route::put('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'update'])->name('recruitment.job-posts.update');
+    Route::delete('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'destroy'])->name('recruitment.job-posts.destroy');
+    Route::get('/recruitment/candidates', [CandidateController::class, 'index'])->name('recruitment.candidates');
+    Route::get('/recruitment/candidates/create', [CandidateController::class, 'create'])->name('recruitment.candidates.create');
+    Route::get('/recruitment/candidates/{candidate}', [CandidateController::class, 'show'])->name('recruitment.candidates.show');
+    Route::get('/recruitment/candidates/{candidate}/edit', [CandidateController::class, 'edit'])->name('recruitment.candidates.edit');
+    Route::post('/recruitment/candidates', [CandidateController::class, 'store'])->name('recruitment.candidates.store');
+    Route::put('/recruitment/candidates/{candidate}', [CandidateController::class, 'update'])->name('recruitment.candidates.update');
+    Route::delete('/recruitment/candidates/{candidate}', [CandidateController::class, 'destroy'])->name('recruitment.candidates.destroy');
+    Route::get('/recruitment/interviews', [InterviewController::class, 'index'])->name('recruitment.interviews');
+    Route::get('/recruitment/interviews/create', [InterviewController::class, 'create'])->name('recruitment.interviews.create');
+    Route::post('/recruitment/interviews', [InterviewController::class, 'store'])->name('recruitment.interviews.store');
+    Route::put('/recruitment/interviews/{interview}', [InterviewController::class, 'update'])->name('recruitment.interviews.update');
 });
 
 Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
