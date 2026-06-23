@@ -8,6 +8,7 @@ use App\Models\JobPost;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class CandidateController extends Controller
@@ -48,6 +49,16 @@ class CandidateController extends Controller
         ];
 
         return view('admin.recruitment.candidates.index', compact('candidates', 'stats', 'search'));
+    }
+
+    public function show(Candidate $candidate): View
+    {
+        $candidate->load('jobPost.department');
+
+        $hasCvFile = filled($candidate->cv_file) && Storage::disk('public')->exists($candidate->cv_file);
+        $cvUrl = $hasCvFile ? Storage::disk('public')->url($candidate->cv_file) : null;
+
+        return view('admin.recruitment.candidates.show', compact('candidate', 'hasCvFile', 'cvUrl'));
     }
 
     public function store(Request $request): RedirectResponse
