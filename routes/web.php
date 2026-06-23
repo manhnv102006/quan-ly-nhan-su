@@ -48,6 +48,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/kpis', [AdminModuleController::class, 'kpis'])->name('kpis');
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
     Route::get('/leave-requests', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'index'])->name('leave-requests');
+    Route::post('/leave-requests/{leaveRequest}/approve', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'approve'])->name('leave-requests.approve');
+    Route::post('/leave-requests/{leaveRequest}/reject', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'reject'])->name('leave-requests.reject');
     Route::post('/payrolls/generate', [PayrollController::class, 'generate'])->name('payrolls.generate');
     Route::post('/payrolls/{payroll}/submit', [PayrollController::class, 'submit'])->name('payrolls.submit');
     Route::post('/payrolls/{payroll}/approve', [PayrollController::class, 'approve'])->name('payrolls.approve');
@@ -60,6 +62,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
     Route::get('/manager/dashboard', [DashboardController::class, 'manager'])->name('manager.dashboard');
     Route::get('/manager/leave-requests', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'index'])->name('manager.leave-requests');
+    Route::post('/manager/leave-requests/{leaveRequest}/approve', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'approve'])->name('manager.leave-requests.approve');
+    Route::post('/manager/leave-requests/{leaveRequest}/reject', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'reject'])->name('manager.leave-requests.reject');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {

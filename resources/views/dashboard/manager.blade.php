@@ -124,8 +124,8 @@
                     <p class="mt-1 text-sm text-emerald-50/85">{{ $employeeProfile?->position_name ?? 'Manager' }}</p>
                 </div>
                 <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-100">Đơn đang chờ</p>
-                    <p class="mt-2 text-lg font-bold">{{ number_format($pendingLeaves) }}</p>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-100">Đơn đang chờ / Tổng đơn</p>
+                    <p class="mt-2 text-lg font-bold">{{ number_format($pendingLeaves) }} / {{ number_format($totalLeaves) }}</p>
                     <p class="mt-1 text-sm text-emerald-50/85">Cần ưu tiên xử lý trong hôm nay</p>
                 </div>
                 <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur">
@@ -187,10 +187,10 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zM12 16.5h.008v.008H12V16.5z" />
                     </svg>
                 </div>
-                <span class="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-amber-700">Pending</span>
+                <span class="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-amber-700">Leave</span>
             </div>
-            <p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format($pendingLeaves) }}</p>
-            <p class="mt-1 text-sm font-medium text-slate-500">Đơn nghỉ đang chờ duyệt</p>
+            <p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format($pendingLeaves) }} / {{ number_format($totalLeaves) }}</p>
+            <p class="mt-1 text-sm font-medium text-slate-500">Đơn chờ duyệt / Tổng đơn</p>
         </div>
 
         <div class="staff-stat-card border border-sky-100/80 bg-white/90">

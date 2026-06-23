@@ -77,6 +77,8 @@
     ];
 
     $filterRoute = $isAdmin ? route('admin.leave-requests') : route('manager.leave-requests');
+    $approveRouteName = $isAdmin ? 'admin.leave-requests.approve' : 'manager.leave-requests.approve';
+    $rejectRouteName = $isAdmin ? 'admin.leave-requests.reject' : 'manager.leave-requests.reject';
 @endphp
 
 <x-dynamic-component :component="$layout" :attributes="new \Illuminate\View\ComponentAttributeBag($layoutParams)">
@@ -87,8 +89,39 @@
             <div>
                 <h2 class="text-2xl font-bold text-slate-800">Danh sách đơn nghỉ phép</h2>
                 <p class="text-sm text-slate-500 mt-1">
-                    Xem và quản lý tất cả các yêu cầu nghỉ phép của nhân sự trong hệ thống.
+                    Xem, tìm kiếm và phê duyệt/từ chối yêu cầu nghỉ phép của nhân sự.
                 </p>
+            </div>
+        </div>
+
+        <!-- Thống kê tổng quan -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-sm">Tổng đơn nghỉ phép</p>
+                <h3 class="text-3xl font-bold mt-2 text-slate-800">
+                    {{ number_format($stats['total']) }}
+                </h3>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-sm">Đang chờ duyệt</p>
+                <h3 class="text-3xl font-bold mt-2 text-amber-600">
+                    {{ number_format($stats['pending']) }}
+                </h3>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-sm">Đã phê duyệt</p>
+                <h3 class="text-3xl font-bold mt-2 text-emerald-600">
+                    {{ number_format($stats['approved']) }}
+                </h3>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-sm">Đã từ chối</p>
+                <h3 class="text-3xl font-bold mt-2 text-rose-600">
+                    {{ number_format($stats['rejected']) }}
+                </h3>
             </div>
         </div>
 
@@ -148,6 +181,7 @@
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Lý do</th>
                             <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Chi tiết phê duyệt</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -170,7 +204,7 @@
                                 <td class="px-6 py-4 text-center text-slate-800 font-bold text-xs">
                                     {{ $request->total_days }} ngày
                                 </td>
-                                <td class="px-6 py-4 text-slate-500 text-xs max-w-[200px] truncate" title="{{ $request->reason }}">
+                                <td class="px-6 py-4 text-slate-500 text-xs max-w-[160px] truncate" title="{{ $request->reason }}">
                                     {{ $request->reason }}
                                 </td>
                                 <td class="px-6 py-4 text-center">
@@ -186,17 +220,38 @@
                                         </div>
                                         @if ($request->status === 'rejected' && $request->reject_reason)
                                             <div class="mt-1 bg-red-50 text-red-700 border border-red-100 rounded-lg p-1.5 text-[10px] max-w-[200px] break-words" title="Lý do từ chối: {{ $request->reject_reason }}">
-                                                <strong>Lý do từ chối:</strong> {{ $request->reject_reason }}
+                                                <strong>Lý do:</strong> {{ $request->reject_reason }}
                                             </div>
                                         @endif
                                     @else
                                         <span class="text-slate-400">—</span>
                                     @endif
                                 </td>
+                                <td class="px-6 py-4 text-center">
+                                    <div class="flex justify-center items-center gap-2">
+                                        @if ($request->status === 'pending')
+                                            <form action="{{ route($approveRouteName, $request) }}" method="POST"
+                                                  onsubmit="return confirm('Bạn có chắc chắn muốn phê duyệt đơn nghỉ phép của nhân viên {{ $request->employee?->full_name }}?')">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition shadow-sm">
+                                                    Duyệt
+                                                </button>
+                                            </form>
+                                            <button type="button"
+                                                    onclick="openRejectModal('{{ route($rejectRouteName, $request) }}', '{{ $request->employee?->full_name }}')"
+                                                    class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition shadow-sm">
+                                                Từ chối
+                                            </button>
+                                        @else
+                                            <span class="text-slate-400 text-xs">Đã xử lý</span>
+                                        @endif
+                                    </div>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-12 text-slate-400 text-sm">
+                                <td colspan="9" class="text-center py-12 text-slate-400 text-sm">
                                     Không tìm thấy dữ liệu đơn nghỉ phép phù hợp.
                                 </td>
                             </tr>
@@ -213,5 +268,105 @@
         </div>
 
     </div>
+
+    <!-- Modal Từ Chối -->
+    <div id="reject-modal"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-xl w-full max-w-md mx-4 p-6">
+            <h3 class="text-lg font-bold text-slate-800 mb-2">Từ chối đơn nghỉ phép</h3>
+            <p class="text-sm text-slate-500 mb-4">
+                Nhập lý do từ chối cho nhân viên <strong id="reject-employee-name" class="text-slate-800"></strong>:
+            </p>
+            <form id="reject-form" action="" method="POST">
+                @csrf
+                <div class="mb-5">
+                    <label for="reject_reason" class="block text-sm font-semibold text-slate-700 mb-2">Lý do từ chối</label>
+                    <textarea id="reject_reason" name="reject_reason" required rows="3"
+                              placeholder="Nhập lý do từ chối..."
+                              class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition text-sm"></textarea>
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeRejectModal()"
+                            class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition text-sm">
+                        Hủy
+                    </button>
+                    <button type="submit"
+                            class="flex-1 px-5 py-3 rounded-xl bg-rose-600 text-white font-medium hover:bg-rose-700 transition text-sm">
+                        Xác nhận từ chối
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Thông báo Success -->
+    @if (session('success'))
+        <div id="success-toast"
+             class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-emerald-200 shadow-lg rounded-2xl px-5 py-4 max-w-sm">
+            <div class="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+            <p class="text-sm font-medium text-slate-700">{{ session('success') }}</p>
+        </div>
+    @endif
+
+    <!-- Thông báo Error -->
+    @if (session('error'))
+        <div id="error-toast"
+             class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-red-200 shadow-lg rounded-2xl px-5 py-4 max-w-sm">
+            <div class="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </div>
+            <p class="text-sm font-medium text-slate-700">{{ session('error') }}</p>
+        </div>
+    @endif
+
+    <script>
+        function openRejectModal(actionUrl, employeeName) {
+            const modal = document.getElementById('reject-modal');
+            const form = document.getElementById('reject-form');
+            const nameSpan = document.getElementById('reject-employee-name');
+            
+            form.action = actionUrl;
+            nameSpan.textContent = employeeName;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeRejectModal() {
+            const modal = document.getElementById('reject-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('reject_reason').value = '';
+        }
+
+        document.getElementById('reject-modal').addEventListener('click', function (e) {
+            if (e.target === this) closeRejectModal();
+        });
+
+        // Tự tắt Toast thông báo sau 4 giây
+        const successToast = document.getElementById('success-toast');
+        if (successToast) {
+            setTimeout(function () {
+                successToast.style.transition = 'opacity 0.3s ease';
+                successToast.style.opacity = '0';
+                setTimeout(function () { successToast.remove(); }, 300);
+            }, 4000);
+        }
+
+        const errorToast = document.getElementById('error-toast');
+        if (errorToast) {
+            setTimeout(function () {
+                errorToast.style.transition = 'opacity 0.3s ease';
+                errorToast.style.opacity = '0';
+                setTimeout(function () { errorToast.remove(); }, 300);
+            }, 4000);
+        }
+    </script>
 
 </x-dynamic-component>
