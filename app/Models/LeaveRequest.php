@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -13,6 +14,7 @@ class LeaveRequest extends Model
         'leave_type',
         'start_date',
         'end_date',
+
         'total_days',
         'reason',
         'status',
@@ -27,6 +29,20 @@ class LeaveRequest extends Model
         'approved_at' => 'datetime',
     ];
 
+        'reason',
+        'status',
+        'approved_by',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'start_date' => 'date',
+            'end_date' => 'date',
+        ];
+    }
+
+
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
@@ -34,6 +50,15 @@ class LeaveRequest extends Model
 
     public function approver(): BelongsTo
     {
+
         return $this->belongsTo(User::class, 'approved_by');
     }
 }
+
+        return $this->belongsTo(
+            Employee::class,
+            'approved_by'
+        );
+    }
+}
+
