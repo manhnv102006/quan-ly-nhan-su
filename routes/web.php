@@ -78,6 +78,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::resource('payroll-periods', PayrollPeriodController::class);
 
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
+    Route::get('/employees/trash', [EmployeeController::class, 'trash'])->name('employees.trash');
     Route::get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create');
     Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
     Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');

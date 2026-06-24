@@ -7,9 +7,14 @@
                 <h2 class="text-2xl font-bold text-slate-800">Quản lý nhân viên</h2>
                 <p class="text-sm text-slate-500 mt-1">Danh sách và quản lý hồ sơ nhân viên</p>
             </div>
-            <a href="{{ route('admin.employees.create') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
-                + Thêm nhân viên
-            </a>
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="{{ route('admin.employees.create') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
+                    + Thêm nhân viên
+                </a>
+                <a href="{{ route('admin.employees.trash') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
+                    Nhân viên đã xóa
+                </a>
+            </div>
         </div>
 
         @if (session('success'))

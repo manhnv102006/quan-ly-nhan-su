@@ -350,6 +350,25 @@ class EmployeeController extends Controller
         return response()->download($tempZipPath, $zipFileName)->deleteFileAfterSend(true);
     }
 
+    public function trash(Request $request): View
+    {
+        $search = $request->string('search')->trim();
+
+        $employees = Employee::onlyTrashed()
+            ->with(['department', 'position'])
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
+                $query->where('employee_code', 'like', "%{$search}%")
+                    ->orWhere('full_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            }))
+            ->orderByDesc('deleted_at')
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('admin.employees.trash', compact('employees', 'search'));
+    }
+
     public function destroy(Employee $employee): RedirectResponse
     {
         try {
