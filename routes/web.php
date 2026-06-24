@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\LeaveRequestController;
 use App\Http\Controllers\Admin\OvertimeRequestController;
 use App\Http\Controllers\Admin\PayrollController;
 
+use App\Http\Controllers\Admin\KPIAssignmentController;
 use App\Http\Controllers\Admin\ContractController;
 use App\Http\Controllers\Admin\ContractTypeController;
 
@@ -85,6 +86,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     
     //KPI
     Route::resource('kpis', KPIController::class);
+    Route::resource('kpi-assignments', KPIAssignmentController::class)->parameters(['kpi-assignments' => 'assignment']);
+    Route::patch('/kpi-assignments/{assignment}/approve', [KPIAssignmentController::class, 'approve'])->name('kpi-assignments.approve');
+    Route::patch('/kpi-assignments/{assignment}/reject', [KPIAssignmentController::class, 'reject'])->name('kpi-assignments.reject');
+    Route::patch('/kpi-assignments/{assignment}/complete', [KPIAssignmentController::class, 'complete'])->name('kpi-assignments.complete');
+    
 
     
 
@@ -116,7 +122,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeRequestController::class, 'approve'])->name('overtime-requests.approve');
     Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeRequestController::class, 'reject'])->name('overtime-requests.reject');
     Route::get('/attendance-reports', [AttendanceReportController::class, 'index'] )->name('attendance-reports.index');
-    Route::get('/kpis', [AdminModuleController::class, 'kpis'])->name('kpis');
 
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
     Route::get('/leave-requests', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'index'])->name('leave-requests');
