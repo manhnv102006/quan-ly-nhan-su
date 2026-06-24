@@ -96,7 +96,7 @@
                             id="open-delete-modal-show"
                             data-employee-name="{{ $employee->full_name }}"
                             class="px-5 py-3 rounded-xl bg-red-100 text-red-700 font-medium hover:bg-red-200 transition">
-                        Xóa nhân viên
+                        Xóa mềm
                     </button>
                 </form>
 
@@ -673,13 +673,13 @@
                 </svg>
             </div>
 
-            <h3 class="mt-5 text-lg font-bold text-slate-800 text-center">Xác nhận xóa nhân viên</h3>
+            <h3 class="mt-5 text-lg font-bold text-slate-800 text-center">Chuyển nhân viên vào thùng rác?</h3>
             <p class="mt-2 text-sm text-slate-500 text-center">
-                Bạn có chắc muốn xóa vĩnh viễn nhân viên
+                Bạn có chắc muốn xóa mềm nhân viên
                 <span id="delete-employee-name" class="font-semibold text-slate-800">{{ $employee->full_name }}</span>?
             </p>
-            <p class="mt-2 text-xs text-red-600 text-center font-medium">
-                Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan sẽ bị xóa.
+            <p class="mt-2 text-xs text-amber-600 text-center font-medium">
+                Nhân viên sẽ được ẩn khỏi danh sách và có thể khôi phục từ mục「Nhân viên đã xóa」.
             </p>
 
             <div class="mt-6 flex gap-3">
@@ -688,8 +688,8 @@
                     Hủy
                 </button>
                 <button type="button" id="confirm-delete-btn"
-                        class="flex-1 px-5 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition">
-                    Xác nhận xóa
+                        class="flex-1 px-5 py-3 rounded-xl bg-orange-600 text-white font-medium hover:bg-orange-700 transition">
+                    Chuyển vào thùng rác
                 </button>
             </div>
         </div>

@@ -8,7 +8,6 @@ use App\Models\Employee;
 use App\Models\EmployeeDocument;
 use App\Models\Position;
 use App\Models\User;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -371,21 +370,17 @@ class EmployeeController extends Controller
 
     public function destroy(Employee $employee): RedirectResponse
     {
-        try {
-            Department::where('manager_id', $employee->id)->update(['manager_id' => null]);
+        Department::where('manager_id', $employee->id)->update(['manager_id' => null]);
 
-            $employee->documents()->get()->each(fn (EmployeeDocument $document) => $document->deleteFile());
-
-            $employee->delete();
-        } catch (QueryException) {
-            return redirect()
-                ->back()
-                ->with('error', 'Không thể xóa nhân viên vì còn dữ liệu liên quan trong hệ thống.');
+        if ($employee->user_id !== null) {
+            $employee->update(['user_id' => null]);
         }
+
+        $employee->delete();
 
         return redirect()
             ->route('admin.employees')
-            ->with('success', 'Đã xóa nhân viên thành công.');
+            ->with('success', "Đã chuyển nhân viên {$employee->full_name} vào thùng rác.");
     }
 
     private function storeUploadedDocuments(Employee $employee, Request $request): void

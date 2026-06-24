@@ -16,11 +16,10 @@
             </a>
         </div>
 
-        <div class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
-            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 text-sm font-bold">i</span>
-            <p class="text-sm text-amber-800">
-                Đây là <strong>bước 1</strong> của tính năng xóa mềm: trang thùng rác để xem nhân viên đã xóa.
-                Chức năng <strong>xóa mềm từ danh sách</strong>, <strong>khôi phục</strong> và <strong>xóa vĩnh viễn</strong> sẽ được thêm ở bước tiếp theo.
+        <div class="flex items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4">
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-700 text-sm font-bold">i</span>
+            <p class="text-sm text-sky-800">
+                Nhân viên xóa mềm từ danh sách sẽ hiển thị tại đây. Chức năng <strong>khôi phục</strong> và <strong>xóa vĩnh viễn</strong> sẽ được thêm ở bước tiếp theo.
             </p>
         </div>
 
