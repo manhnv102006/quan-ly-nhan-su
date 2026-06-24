@@ -9,8 +9,9 @@ use App\Models\Employee;
 use App\Models\Department;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class LeaveRequestController extends Controller
 {
@@ -79,6 +80,23 @@ class LeaveRequestController extends Controller
         $leaveRequests = $query->latest()->paginate(10)->withQueryString();
 
         return view('admin.leave-requests.index', compact('leaveRequests', 'stats'));
+    }
+
+    public function show(LeaveRequest $leaveRequest): View
+    {
+        $user = Auth::user();
+
+        if ($user->role->name === 'manager') {
+            $this->checkAccess($user, $leaveRequest);
+        }
+
+        $leaveRequest->load([
+            'employee.department',
+            'employee.position',
+            'approver',
+        ]);
+
+        return view('admin.leave-requests.show', compact('leaveRequest'));
     }
 
     public function approve(LeaveRequest $leaveRequest): RedirectResponse
@@ -153,5 +171,3 @@ class LeaveRequestController extends Controller
         }
     }
 }
-
-

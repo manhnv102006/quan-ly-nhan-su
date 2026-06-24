@@ -76,11 +76,7 @@ class ContractController extends Controller
 
     public function store(ContractRequest $request): RedirectResponse
     {
-        $data = $request->validated();
-
-        if ($request->hasFile('contract_file')) {
-            $data['file_path'] = $request->file('contract_file')->store('contracts', 'public');
-        }
+        $data = $this->prepareContractData($request);
 
         Contract::create($data);
 
@@ -89,11 +85,11 @@ class ContractController extends Controller
             ->with('success', 'Hợp đồng đã được tạo thành công.');
     }
 
-    public function show(int $id): View
+    public function show(int $contract): View
     {
         $contract = Contract::withTrashed()
             ->with(['employee', 'contractType', 'extensions', 'terminations'])
-            ->findOrFail($id);
+            ->findOrFail($contract);
 
         return view('admin.contracts.show', [
             'contract' => $contract,
@@ -116,14 +112,7 @@ class ContractController extends Controller
 
     public function update(ContractRequest $request, Contract $contract): RedirectResponse
     {
-        $data = $request->validated();
-
-        if ($request->hasFile('contract_file')) {
-            if ($contract->file_path) {
-                Storage::disk('public')->delete($contract->file_path);
-            }
-            $data['file_path'] = $request->file('contract_file')->store('contracts', 'public');
-        }
+        $data = $this->prepareContractData($request, $contract);
 
         $contract->update($data);
 
@@ -250,5 +239,21 @@ class ContractController extends Controller
         return redirect()
             ->route('admin.contracts.show', $contract)
             ->with('success', 'Hợp đồng đã được thanh lý thành công.');
+    }
+
+    private function prepareContractData(ContractRequest $request, ?Contract $contract = null): array
+    {
+        $data = $request->validated();
+        unset($data['contract_file']);
+
+        if ($request->hasFile('contract_file')) {
+            if ($contract?->file_path) {
+                Storage::disk('public')->delete($contract->file_path);
+            }
+
+            $data['file_path'] = $request->file('contract_file')->store('contracts', 'public');
+        }
+
+        return $data;
     }
 }
