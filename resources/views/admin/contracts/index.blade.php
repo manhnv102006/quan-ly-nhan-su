@@ -83,10 +83,16 @@
                                     <div class="flex items-center justify-center gap-2">
                                         <a href="{{ route('admin.contracts.show', $contract) }}" class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200" title="Xem chi tiết">👁</a>
                                         <a href="{{ route('admin.contracts.edit', $contract) }}" class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200" title="Sửa">✏️</a>
-                                        <form action="{{ route('admin.contracts.destroy', $contract) }}" method="POST" id="delete-form-{{ $contract->id }}" onsubmit="return confirm('Bạn có chắc muốn xóa hợp đồng này?')">
+                                        <form action="{{ route('admin.contracts.destroy', $contract) }}"
+                                              method="POST"
+                                              id="delete-form-{{ $contract->id }}">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="button" onclick="openDeleteModal('{{ $contract->id }}', @json($contract->contract_code))" class="w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200" title="Xóa mềm">🗑</button>
+                                            <button type="button"
+                                                    class="js-delete-contract w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200"
+                                                    data-contract-id="{{ $contract->id }}"
+                                                    data-contract-code="{{ $contract->contract_code }}"
+                                                    title="Xóa mềm">🗑</button>
                                         </form>
                                     </div>
                                 </td>
@@ -108,7 +114,9 @@
         </div>
     </div>
 
-    <div id="delete-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+    <div id="delete-modal"
+         class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm"
+         style="display: none;">
         <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm mx-4 p-6 text-center">
             <div class="w-16 h-16 mx-auto rounded-2xl bg-red-100 flex items-center justify-center">
                 <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,10 +124,21 @@
                 </svg>
             </div>
             <h3 class="mt-5 text-lg font-bold text-slate-800">Xóa hợp đồng?</h3>
-            <p class="mt-2 text-sm text-slate-500">Bạn có chắc muốn xóa hợp đồng <span id="delete-contract-code" class="font-semibold text-slate-700"></span>? Hợp đồng sẽ được chuyển vào thùng rác.</p>
+            <p class="mt-2 text-sm text-slate-500">
+                Bạn có chắc muốn xóa hợp đồng
+                <span id="delete-contract-code" class="font-semibold text-slate-700"></span>?
+                Hợp đồng sẽ được chuyển vào thùng rác.
+            </p>
             <div class="mt-6 flex gap-3">
-                <button type="button" onclick="closeDeleteModal()" class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">Hủy</button>
-                <button type="button" onclick="confirmDelete()" class="flex-1 px-5 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition">Xóa</button>
+                <button type="button" onclick="closeDeleteModal()"
+                        class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
+                    Hủy
+                </button>
+                <button type="button" onclick="confirmDelete()"
+                        class="flex-1 px-5 py-3 rounded-xl text-white font-medium transition"
+                        style="background-color: #dc2626;">
+                    Xóa
+                </button>
             </div>
         </div>
     </div>
@@ -135,34 +154,50 @@
 
     <script>
         let deleteTargetId = null;
+
         function openDeleteModal(id, code) {
-            deleteTargetId = id;
+            deleteTargetId = String(id);
             document.getElementById('delete-contract-code').textContent = code;
+
             const modal = document.getElementById('delete-modal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            modal.style.display = 'flex';
         }
+
         function closeDeleteModal() {
             const modal = document.getElementById('delete-modal');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+            modal.style.display = 'none';
             deleteTargetId = null;
         }
+
         function confirmDelete() {
-            if (deleteTargetId) {
-                const form = document.getElementById('delete-form-' + deleteTargetId);
-                if (!form) return closeDeleteModal();
-                // Use requestSubmit if available so onsubmit handlers run; fallback to submit()
-                if (typeof form.requestSubmit === 'function') {
-                    form.requestSubmit();
-                } else {
-                    form.submit();
-                }
+            if (!deleteTargetId) {
+                return;
+            }
+
+            const form = document.getElementById('delete-form-' + deleteTargetId);
+            if (form) {
+                form.submit();
+            } else {
+                closeDeleteModal();
             }
         }
-        document.getElementById('delete-modal').addEventListener('click', function (e) {
-            if (e.target === this) closeDeleteModal();
+
+        document.querySelectorAll('.js-delete-contract').forEach(function (button) {
+            button.addEventListener('click', function () {
+                openDeleteModal(this.dataset.contractId, this.dataset.contractCode);
+            });
         });
+
+        document.getElementById('delete-modal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+
         const successToast = document.getElementById('success-toast');
         if (successToast) {
             setTimeout(function () {

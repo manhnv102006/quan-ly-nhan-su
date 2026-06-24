@@ -70,7 +70,7 @@
                         <label for="status" class="block text-sm font-semibold text-slate-700">Trạng thái</label>
                         <select id="status" name="status" required class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
                             @foreach($statuses as $value => $label)
-                                <option value="{{ $value }}" {{ old('status') == $value ? 'selected' : '' }}>{{ $label }}</option>
+                                <option value="{{ $value }}" {{ old('status', 'active') === $value ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
                         @error('status') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
