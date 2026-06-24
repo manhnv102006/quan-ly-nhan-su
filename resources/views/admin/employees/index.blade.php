@@ -54,6 +54,7 @@
                             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Phòng ban</th>
                             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Chức vụ</th>
                             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Email</th>
+                            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Tài khoản</th>
                             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
                             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Ngày tạo</th>
                             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
@@ -72,6 +73,20 @@
                                 <td class="px-6 py-4 text-slate-600">{{ $employee->department?->department_name ?? '-' }}</td>
                                 <td class="px-6 py-4 text-slate-600">{{ $employee->position?->position_name ?? '-' }}</td>
                                 <td class="px-6 py-4 text-slate-600">{{ $employee->email }}</td>
+                                <td class="px-6 py-4 text-center">
+                                    @if ($employee->user)
+                                        <a href="{{ route('admin.accounts.show', $employee->user) }}"
+                                           class="inline-flex rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-200 transition"
+                                           title="{{ $employee->user->name }}">
+                                            {{ $employee->user->username }}
+                                        </a>
+                                    @else
+                                        <a href="{{ route('admin.employees.show', $employee) }}?open=link-account"
+                                           class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 hover:bg-violet-100 hover:text-violet-700 transition">
+                                            Chưa liên kết
+                                        </a>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 text-center">
                                     @if ($employee->status === 'active')
                                         <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Hoạt động</span>
@@ -106,7 +121,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-12 text-slate-400">Không có nhân viên nào</td>
+                                <td colspan="9" class="text-center py-12 text-slate-400">Không có nhân viên nào</td>
                             </tr>
                         @endforelse
                     </tbody>

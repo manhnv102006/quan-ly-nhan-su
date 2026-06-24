@@ -163,8 +163,27 @@
         </div>
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
-            <div class="px-6 py-5 border-b border-slate-100">
+            <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <h3 class="text-lg font-semibold text-slate-800">Hồ sơ nhân viên liên kết</h3>
+                @if ($user->employee)
+                    <form action="{{ route('admin.accounts.unlink-employee', $user) }}"
+                          method="POST"
+                          id="unlink-employee-form">
+                        @csrf
+                        @method('PATCH')
+                        <button type="button"
+                                id="open-unlink-employee-modal"
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-100 text-orange-700 text-sm font-medium hover:bg-orange-200 transition">
+                            Gỡ liên kết
+                        </button>
+                    </form>
+                @elseif ($availableEmployees->isNotEmpty())
+                    <button type="button"
+                            id="open-link-employee-modal"
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition">
+                        + Liên kết nhân viên
+                    </button>
+                @endif
             </div>
 
             <div class="p-6">
@@ -213,6 +232,13 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="mt-5">
+                        <a href="{{ route('admin.employees.show', $user->employee) }}"
+                           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-100 text-violet-700 text-sm font-medium hover:bg-violet-200 transition">
+                            Xem chi tiết nhân viên →
+                        </a>
+                    </div>
                 @else
                     <div class="py-12 text-center">
                         <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center">
@@ -223,6 +249,15 @@
                         </div>
                         <p class="mt-4 text-slate-500 font-medium">Chưa liên kết hồ sơ nhân viên</p>
                         <p class="mt-1 text-sm text-slate-400">Tài khoản này chưa được gán với nhân viên trong hệ thống</p>
+                        @if ($availableEmployees->isNotEmpty())
+                            <button type="button"
+                                    onclick="document.getElementById('open-link-employee-modal')?.click()"
+                                    class="mt-5 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition">
+                                Liên kết nhân viên ngay
+                            </button>
+                        @else
+                            <p class="mt-4 text-sm text-amber-600">Tất cả nhân viên đã có tài khoản liên kết.</p>
+                        @endif
                     </div>
                 @endif
             </div>
@@ -231,6 +266,35 @@
     </div>
 
     @include('admin.accounts.partials.reset-password-modal')
+    @include('admin.accounts.partials.link-employee-modal')
+
+    <div id="unlink-employee-modal"
+         class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm"
+         style="display: none;">
+        <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm mx-4 p-6 text-center">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-orange-100 flex items-center justify-center">
+                <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+            </div>
+            <h3 class="mt-5 text-lg font-bold text-slate-800">Gỡ liên kết nhân viên?</h3>
+            <p class="mt-2 text-sm text-slate-500">
+                Hồ sơ <span class="font-semibold text-slate-700">{{ $user->employee?->full_name }}</span>
+                sẽ không còn liên kết với tài khoản này.
+            </p>
+            <div class="mt-6 flex gap-3">
+                <button type="button" id="close-unlink-employee-modal"
+                        class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
+                    Hủy
+                </button>
+                <button type="button" id="confirm-unlink-employee"
+                        class="flex-1 px-5 py-3 rounded-xl text-white font-medium transition"
+                        style="background-color: #ea580c;">
+                    Gỡ liên kết
+                </button>
+            </div>
+        </div>
+    </div>
 
     @if (session('success'))
         <div id="success-toast"
@@ -245,5 +309,38 @@
             <p class="text-sm font-medium text-slate-700">{{ session('error') }}</p>
         </div>
     @endif
+
+    <script>
+        (function () {
+            const unlinkModal = document.getElementById('unlink-employee-modal');
+            const openUnlinkBtn = document.getElementById('open-unlink-employee-modal');
+            const closeUnlinkBtn = document.getElementById('close-unlink-employee-modal');
+            const confirmUnlinkBtn = document.getElementById('confirm-unlink-employee');
+            const unlinkForm = document.getElementById('unlink-employee-form');
+
+            if (!openUnlinkBtn || !unlinkModal) return;
+
+            function openUnlinkModal() {
+                unlinkModal.classList.remove('hidden');
+                unlinkModal.classList.add('flex');
+                unlinkModal.style.display = 'flex';
+            }
+
+            function closeUnlinkModal() {
+                unlinkModal.classList.add('hidden');
+                unlinkModal.classList.remove('flex');
+                unlinkModal.style.display = 'none';
+            }
+
+            openUnlinkBtn.addEventListener('click', openUnlinkModal);
+            closeUnlinkBtn?.addEventListener('click', closeUnlinkModal);
+            confirmUnlinkBtn?.addEventListener('click', function () {
+                if (unlinkForm) unlinkForm.submit();
+            });
+            unlinkModal.addEventListener('click', function (event) {
+                if (event.target === unlinkModal) closeUnlinkModal();
+            });
+        })();
+    </script>
 
 </x-admin-layout>

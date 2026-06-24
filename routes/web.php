@@ -50,6 +50,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::delete('/accounts/{id}/force-delete', [AccountController::class, 'forceDelete'])->name('accounts.forceDelete');
     Route::patch('/accounts/{user}/toggle-status', [AccountController::class, 'toggleStatus'])->name('accounts.toggle-status');
     Route::patch('/accounts/{user}/reset-password', [AccountController::class, 'resetPassword'])->name('accounts.reset-password');
+    Route::patch('/accounts/{user}/link-employee', [AccountController::class, 'linkEmployee'])->name('accounts.link-employee');
+    Route::patch('/accounts/{user}/unlink-employee', [AccountController::class, 'unlinkEmployee'])->name('accounts.unlink-employee');
     Route::get('/departments', [DepartmentController::class, 'index'])->name('departments');
     Route::get('/departments/create', [DepartmentController::class, 'create'])->name('departments.create');
     Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
@@ -82,6 +84,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/employees/{employee}/documents/download-all', [EmployeeController::class, 'downloadAllDocuments'])->name('employees.documents.download-all');
     Route::get('/employees/{employee}/documents/{document}/download', [EmployeeController::class, 'downloadDocument'])->name('employees.documents.download');
     Route::patch('/employees/{employee}/transfer-department', [EmployeeController::class, 'transferDepartment'])->name('employees.transfer-department');
+    Route::patch('/employees/{employee}/link-account', [EmployeeController::class, 'linkAccount'])->name('employees.link-account');
+    Route::patch('/employees/{employee}/unlink-account', [EmployeeController::class, 'unlinkAccount'])->name('employees.unlink-account');
     Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
     Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
     Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
