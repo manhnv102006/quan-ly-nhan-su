@@ -8,6 +8,7 @@ use App\Models\Employee;
 use App\Models\EmployeeDocument;
 use App\Models\Position;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -381,6 +382,58 @@ class EmployeeController extends Controller
         return redirect()
             ->route('admin.employees')
             ->with('success', "Đã chuyển nhân viên {$employee->full_name} vào thùng rác.");
+    }
+
+    public function restore(int $id): RedirectResponse
+    {
+        $employee = Employee::onlyTrashed()->findOrFail($id);
+
+        if ($error = $this->restoreConflictMessage($employee)) {
+            return redirect()
+                ->back()
+                ->with('error', $error);
+        }
+
+        $employee->restore();
+
+        return redirect()
+            ->route('admin.employees.trash')
+            ->with('success', "Đã khôi phục nhân viên {$employee->full_name}.");
+    }
+
+    public function forceDelete(int $id): RedirectResponse
+    {
+        $employee = Employee::onlyTrashed()->findOrFail($id);
+        $employeeName = $employee->full_name;
+
+        try {
+            Department::where('manager_id', $employee->id)->update(['manager_id' => null]);
+
+            $employee->documents()->get()->each(fn (EmployeeDocument $document) => $document->deleteFile());
+
+            $employee->forceDelete();
+        } catch (QueryException) {
+            return redirect()
+                ->back()
+                ->with('error', 'Không thể xóa vĩnh viễn nhân viên vì còn dữ liệu liên quan trong hệ thống.');
+        }
+
+        return redirect()
+            ->route('admin.employees.trash')
+            ->with('success', "Đã xóa vĩnh viễn nhân viên {$employeeName}.");
+    }
+
+    private function restoreConflictMessage(Employee $employee): ?string
+    {
+        if (Employee::where('employee_code', $employee->employee_code)->where('id', '!=', $employee->id)->exists()) {
+            return 'Không thể khôi phục vì mã nhân viên đã được sử dụng bởi hồ sơ khác.';
+        }
+
+        if (Employee::where('email', $employee->email)->where('id', '!=', $employee->id)->exists()) {
+            return 'Không thể khôi phục vì email đã được sử dụng bởi hồ sơ khác.';
+        }
+
+        return null;
     }
 
     private function storeUploadedDocuments(Employee $employee, Request $request): void
