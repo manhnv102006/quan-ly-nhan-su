@@ -43,10 +43,23 @@
                     </div>
                 </div>
 
-                <div class="mt-6 rounded-3xl bg-slate-50 p-5 border border-slate-100">
-                    <p class="text-xs uppercase tracking-widest text-slate-400">Lương</p>
-                    <p class="mt-3 text-lg font-semibold text-slate-800">{{ number_format($contract->salary, 0, ',', '.') }} ₫</p>
+                <div class="mt-6 grid gap-6 sm:grid-cols-2">
+                    <div class="rounded-3xl bg-slate-50 p-5 border border-slate-100">
+                        <p class="text-xs uppercase tracking-widest text-slate-400">Ngày ký</p>
+                        <p class="mt-3 text-lg font-semibold text-slate-800">{{ optional($contract->signed_date)->format('d/m/Y') ?? '—' }}</p>
+                    </div>
+                    <div class="rounded-3xl bg-slate-50 p-5 border border-slate-100">
+                        <p class="text-xs uppercase tracking-widest text-slate-400">Lương</p>
+                        <p class="mt-3 text-lg font-semibold text-slate-800">{{ number_format($contract->salary, 0, ',', '.') }} ₫</p>
+                    </div>
                 </div>
+
+                @if($contract->note)
+                    <div class="mt-6 rounded-3xl bg-slate-50 p-5 border border-slate-100">
+                        <p class="text-xs uppercase tracking-widest text-slate-400">Ghi chú</p>
+                        <p class="mt-3 text-sm text-slate-700 whitespace-pre-line">{{ $contract->note }}</p>
+                    </div>
+                @endif
 
                 <div class="mt-6 rounded-3xl bg-slate-50 p-5 border border-slate-100">
                     <p class="text-xs uppercase tracking-widest text-slate-400">Tệp hợp đồng</p>
@@ -135,4 +148,16 @@
             </div>
         </div>
     </div>
+
+    @if(session('success'))
+        <div id="success-toast" class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-emerald-200 shadow-lg rounded-2xl px-5 py-4 max-w-sm">
+            <p class="text-sm font-medium text-slate-700">{{ session('success') }}</p>
+        </div>
+        <script>
+            setTimeout(function () {
+                const toast = document.getElementById('success-toast');
+                if (toast) toast.remove();
+            }, 4000);
+        </script>
+    @endif
 </x-admin-layout>
