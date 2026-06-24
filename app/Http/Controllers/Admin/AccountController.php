@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Employee;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -10,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -83,7 +85,12 @@ class AccountController extends Controller
     {
         $user->load(['role', 'employee.department', 'employee.position']);
 
-        return view('admin.accounts.show', compact('user'));
+        $availableEmployees = Employee::query()
+            ->whereNull('user_id')
+            ->orderBy('full_name')
+            ->get(['id', 'employee_code', 'full_name', 'email']);
+
+        return view('admin.accounts.show', compact('user', 'availableEmployees'));
     }
 
     public function edit(User $user): View
@@ -284,6 +291,57 @@ class AccountController extends Controller
         }
 
         return null;
+    }
+
+    public function linkEmployee(Request $request, User $user): RedirectResponse
+    {
+        if ($user->employee) {
+            return redirect()
+                ->route('admin.accounts.show', $user)
+                ->with('error', 'Tài khoản này đã được liên kết với một nhân viên.');
+        }
+
+        $validated = $request->validate([
+            'employee_id' => [
+                'required',
+                'integer',
+                Rule::exists('employees', 'id'),
+            ],
+        ], [
+            'employee_id.required' => 'Vui lòng chọn nhân viên để liên kết.',
+            'employee_id.exists' => 'Nhân viên không tồn tại.',
+        ]);
+
+        $employee = Employee::query()->findOrFail($validated['employee_id']);
+
+        if ($employee->user_id) {
+            return redirect()
+                ->route('admin.accounts.show', $user)
+                ->with('error', 'Nhân viên này đã được liên kết với tài khoản khác.');
+        }
+
+        $employee->update(['user_id' => $user->id]);
+
+        return redirect()
+            ->route('admin.accounts.show', $user)
+            ->with('success', "Đã liên kết tài khoản {$user->username} với nhân viên {$employee->full_name}.");
+    }
+
+    public function unlinkEmployee(User $user): RedirectResponse
+    {
+        $employee = $user->employee;
+
+        if (! $employee) {
+            return redirect()
+                ->route('admin.accounts.show', $user)
+                ->with('error', 'Tài khoản này chưa liên kết nhân viên nào.');
+        }
+
+        $employee->update(['user_id' => null]);
+
+        return redirect()
+            ->route('admin.accounts.show', $user)
+            ->with('success', "Đã gỡ liên kết nhân viên {$employee->full_name} khỏi tài khoản {$user->username}.");
     }
 
     private function releaseUniqueFields(User $user): void
