@@ -289,7 +289,7 @@
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
             <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <h3 class="text-lg font-semibold text-slate-800">Tài khoản hệ thống liên kết</h3>
-                @if ($employee->user)
+                @if ($employee->hasLinkedAccount())
                     <form action="{{ route('admin.employees.unlink-account', $employee) }}"
                           method="POST"
                           id="unlink-account-form">
@@ -311,7 +311,7 @@
             </div>
 
             <div class="p-6">
-                @if ($employee->user)
+                @if ($employee->hasLinkedAccount())
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         <div>
                             <label class="block text-sm font-medium text-slate-500 mb-2">Tên đăng nhập</label>

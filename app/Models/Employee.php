@@ -73,6 +73,31 @@ class Employee extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function linkedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class)->withTrashed();
+    }
+
+    public function hasLinkedAccount(): bool
+    {
+        return $this->user_id !== null && $this->user !== null;
+    }
+
+    public function clearStaleUserLink(): bool
+    {
+        if ($this->user_id === null) {
+            return false;
+        }
+
+        if (User::query()->whereKey($this->user_id)->exists()) {
+            return false;
+        }
+
+        $this->forceFill(['user_id' => null])->save();
+
+        return true;
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(EmployeeDocument::class);
