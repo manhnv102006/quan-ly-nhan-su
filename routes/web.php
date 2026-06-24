@@ -39,11 +39,15 @@ Route::get('/dashboard', [DashboardController::class, 'redirect'])
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
     Route::get('/accounts', [AccountController::class, 'index'])->name('accounts');
+    Route::get('/accounts/trash', [AccountController::class, 'trash'])->name('accounts.trash');
     Route::get('/accounts/create', [AccountController::class, 'create'])->name('accounts.create');
     Route::post('/accounts', [AccountController::class, 'store'])->name('accounts.store');
     Route::get('/accounts/{user}', [AccountController::class, 'show'])->name('accounts.show');
     Route::get('/accounts/{user}/edit', [AccountController::class, 'edit'])->name('accounts.edit');
     Route::put('/accounts/{user}', [AccountController::class, 'update'])->name('accounts.update');
+    Route::delete('/accounts/{user}', [AccountController::class, 'destroy'])->name('accounts.destroy');
+    Route::post('/accounts/{id}/restore', [AccountController::class, 'restore'])->name('accounts.restore');
+    Route::delete('/accounts/{id}/force-delete', [AccountController::class, 'forceDelete'])->name('accounts.forceDelete');
     Route::patch('/accounts/{user}/toggle-status', [AccountController::class, 'toggleStatus'])->name('accounts.toggle-status');
     Route::patch('/accounts/{user}/reset-password', [AccountController::class, 'resetPassword'])->name('accounts.reset-password');
     Route::get('/departments', [DepartmentController::class, 'index'])->name('departments');
