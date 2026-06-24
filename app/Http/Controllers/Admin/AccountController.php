@@ -86,7 +86,10 @@ class AccountController extends Controller
         $user->load(['role', 'employee.department', 'employee.position']);
 
         $availableEmployees = Employee::query()
-            ->whereNull('user_id')
+            ->where(function ($query) {
+                $query->whereNull('user_id')
+                    ->orWhereNotIn('user_id', User::query()->select('id'));
+            })
             ->orderBy('full_name')
             ->get(['id', 'employee_code', 'full_name', 'email']);
 
@@ -215,6 +218,11 @@ class AccountController extends Controller
         }
 
         $this->releaseUniqueFields($user);
+
+        Employee::query()
+            ->where('user_id', $user->id)
+            ->update(['user_id' => null]);
+
         $user->delete();
 
         return redirect()
@@ -266,6 +274,11 @@ class AccountController extends Controller
         }
 
         $username = $user->username;
+
+        Employee::query()
+            ->where('user_id', $user->id)
+            ->update(['user_id' => null]);
+
         $user->forceDelete();
 
         return redirect()
@@ -295,7 +308,7 @@ class AccountController extends Controller
 
     public function linkEmployee(Request $request, User $user): RedirectResponse
     {
-        if ($user->employee) {
+        if ($user->employee && $user->employee->hasLinkedAccount()) {
             return redirect()
                 ->route('admin.accounts.show', $user)
                 ->with('error', 'Tài khoản này đã được liên kết với một nhân viên.');
@@ -313,8 +326,10 @@ class AccountController extends Controller
         ]);
 
         $employee = Employee::query()->findOrFail($validated['employee_id']);
+        $employee->clearStaleUserLink();
+        $employee->refresh();
 
-        if ($employee->user_id) {
+        if ($employee->hasLinkedAccount()) {
             return redirect()
                 ->route('admin.accounts.show', $user)
                 ->with('error', 'Nhân viên này đã được liên kết với tài khoản khác.');

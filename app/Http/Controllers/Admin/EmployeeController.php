@@ -66,6 +66,10 @@ class EmployeeController extends Controller
 
     public function show(Employee $employee): View
     {
+        if ($employee->clearStaleUserLink()) {
+            $employee->refresh();
+        }
+
         $employee->load(['department', 'position', 'user.role']);
 
         $contracts = $employee->contracts()
@@ -107,9 +111,14 @@ class EmployeeController extends Controller
             ->limit(10)
             ->get();
 
+        $linkedUserIds = Employee::query()
+            ->whereNotNull('user_id')
+            ->whereIn('user_id', User::query()->select('id'))
+            ->pluck('user_id');
+
         $availableAccounts = User::query()
             ->with('role')
-            ->whereDoesntHave('employee')
+            ->whereNotIn('id', $linkedUserIds)
             ->orderBy('username')
             ->get(['id', 'username', 'name', 'email', 'role_id', 'status']);
 
@@ -212,7 +221,10 @@ class EmployeeController extends Controller
 
     public function linkAccount(Request $request, Employee $employee): RedirectResponse
     {
-        if ($employee->user_id) {
+        $employee->clearStaleUserLink();
+        $employee->refresh();
+
+        if ($employee->hasLinkedAccount()) {
             return redirect()
                 ->route('admin.employees.show', $employee)
                 ->with('error', 'Nhân viên này đã được liên kết với một tài khoản.');
@@ -223,7 +235,7 @@ class EmployeeController extends Controller
                 'required',
                 'integer',
                 Rule::exists('users', 'id'),
-                Rule::unique('employees', 'user_id'),
+                Rule::unique('employees', 'user_id')->ignore($employee->id),
             ],
         ], [
             'user_id.required' => 'Vui lòng chọn tài khoản để liên kết.',
@@ -233,7 +245,7 @@ class EmployeeController extends Controller
 
         $user = User::query()->findOrFail($validated['user_id']);
 
-        if ($user->employee) {
+        if ($user->employee && $user->employee->id !== $employee->id) {
             return redirect()
                 ->route('admin.employees.show', $employee)
                 ->with('error', 'Tài khoản này đã được liên kết với nhân viên khác.');
@@ -254,7 +266,7 @@ class EmployeeController extends Controller
                 ->with('error', 'Nhân viên này chưa liên kết tài khoản nào.');
         }
 
-        $username = $employee->user?->username ?? 'tài khoản';
+        $username = $employee->linkedUser?->username ?? 'tài khoản';
 
         $employee->update(['user_id' => null]);
 
