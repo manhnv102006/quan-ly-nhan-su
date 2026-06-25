@@ -15,8 +15,10 @@
         ];
     @endphp
 
-    <div class="max-w-full overflow-hidden space-y-6">
-        <section class="rounded-[2rem] border border-white/80 bg-white/90 p-5 shadow-sm shadow-slate-200/60 sm:p-6">
+    @include('admin.recruitment.partials.ui-contrast')
+
+    <div class="recruitment-ui max-w-full overflow-hidden space-y-6">
+        <section class="recruitment-hero rounded-[2rem] border border-white/80 bg-white/90 p-5 shadow-sm shadow-slate-200/60 sm:p-6">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
@@ -31,7 +33,7 @@
                 </div>
 
                 <a href="{{ route('admin.recruitment.job-posts.create') }}"
-                   class="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
+                   class="recruitment-btn-primary inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
                     Tạo tin tuyển dụng
                 </a>
             </div>
@@ -56,7 +58,7 @@
             </div>
         @endif
 
-        <section class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <section class="recruitment-stats grid grid-cols-1 gap-4 md:grid-cols-3">
             <div class="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-sm">
                 <p class="text-sm font-bold text-slate-500">Tổng tin</p>
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ $stats['total'] ?? 0 }}</p>
@@ -72,7 +74,7 @@
         </section>
 
         @if ($showForm)
-            <section class="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
+            <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
                 <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
@@ -89,9 +91,15 @@
                         @method('PUT')
                     @endif
 
+                    <div class="rounded-2xl bg-cyan-50 px-4 py-3 lg:col-span-2">
+                        <h4 class="text-sm font-black text-cyan-950">Thông tin công việc</h4>
+                        <p class="mt-1 text-sm text-cyan-700">Nhập vị trí, phòng ban, người phụ trách và số lượng cần tuyển.</p>
+                    </div>
+
                     <div class="lg:col-span-2">
                         <label class="mb-2 block text-sm font-bold text-slate-700">Tiêu đề <span class="text-red-500">*</span></label>
                         <input type="text" name="title" value="{{ old('title', $formJobPost?->title) }}" required class="{{ $inputClass }}">
+                        @error('title')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
@@ -104,6 +112,7 @@
                                 </option>
                             @endforeach
                         </select>
+                        @error('department_id')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
@@ -116,34 +125,45 @@
                                 </option>
                             @endforeach
                         </select>
+                        @error('recruiter_id')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Số lượng <span class="text-red-500">*</span></label>
                         <input type="number" min="1" name="quantity" value="{{ old('quantity', $formJobPost?->quantity ?? 1) }}" required class="{{ $inputClass }}">
+                        @error('quantity')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Trạng thái <span class="text-red-500">*</span></label>
                         <select name="status" required class="{{ $inputClass }}">
-                            <option value="open" @selected(old('status', $formJobPost?->status ?? 'open') === 'open')>Đang mở</option>
+                            <option value="open" @selected(old('status', $formJobPost?->status ?? 'open') === 'open')>Đang tuyển</option>
                             <option value="closed" @selected(old('status', $formJobPost?->status) === 'closed')>Đã đóng</option>
                         </select>
+                        @error('status')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div class="rounded-2xl bg-slate-50 px-4 py-3 lg:col-span-2">
+                        <h4 class="text-sm font-black text-slate-900">Lương, hình thức và thời hạn</h4>
+                        <p class="mt-1 text-sm text-slate-500">Các thông tin này giúp ứng viên hiểu nhanh điều kiện tuyển dụng.</p>
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Lương tối thiểu</label>
                         <input type="number" min="0" step="100000" name="salary_min" value="{{ old('salary_min', $formJobPost?->salary_min) }}" class="{{ $inputClass }}">
+                        @error('salary_min')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Lương tối đa</label>
                         <input type="number" min="0" step="100000" name="salary_max" value="{{ old('salary_max', $formJobPost?->salary_max) }}" class="{{ $inputClass }}">
+                        @error('salary_max')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Địa điểm</label>
                         <input type="text" name="work_location" value="{{ old('work_location', $formJobPost?->work_location) }}" class="{{ $inputClass }}">
+                        @error('work_location')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
@@ -154,26 +174,36 @@
                                 <option value="{{ $value }}" @selected(old('work_type', $formJobPost?->work_type) === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
+                        @error('work_type')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Hạn nộp hồ sơ</label>
                         <input type="date" name="application_deadline" value="{{ old('application_deadline', $formJobPost?->application_deadline?->format('Y-m-d')) }}" class="{{ $inputClass }}">
+                        @error('application_deadline')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div class="rounded-2xl bg-amber-50 px-4 py-3 lg:col-span-2">
+                        <h4 class="text-sm font-black text-amber-950">Nội dung tuyển dụng</h4>
+                        <p class="mt-1 text-sm text-amber-700">Tách rõ mô tả, yêu cầu và quyền lợi để tin tuyển dụng dễ đọc hơn.</p>
                     </div>
 
                     <div class="lg:col-span-2">
                         <label class="mb-2 block text-sm font-bold text-slate-700">Mô tả công việc</label>
                         <textarea name="description" rows="4" class="{{ $inputClass }} resize-y">{{ old('description', $formJobPost?->description) }}</textarea>
+                        @error('description')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Yêu cầu</label>
                         <textarea name="requirements" rows="4" class="{{ $inputClass }} resize-y">{{ old('requirements', $formJobPost?->requirements) }}</textarea>
+                        @error('requirements')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Quyền lợi</label>
                         <textarea name="benefits" rows="4" class="{{ $inputClass }} resize-y">{{ old('benefits', $formJobPost?->benefits) }}</textarea>
+                        @error('benefits')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div class="flex flex-col-reverse gap-3 lg:col-span-2 sm:flex-row sm:items-center">
@@ -186,16 +216,46 @@
             </section>
         @endif
 
-        <section class="rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm shadow-slate-200/60">
-            <form method="GET" action="{{ route('admin.recruitment.job-posts') }}" class="flex flex-col gap-3 md:flex-row">
-                <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Tìm theo tiêu đề, phòng ban, người phụ trách..."
-                       class="min-w-0 flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10">
-                <button type="submit" class="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800">Tìm kiếm</button>
-                <a href="{{ route('admin.recruitment.job-posts') }}" class="rounded-2xl bg-slate-100 px-5 py-3 text-center text-sm font-bold text-slate-700 transition hover:bg-slate-200">Xóa lọc</a>
+        <section class="recruitment-panel rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm shadow-slate-200/60">
+            <form method="GET" action="{{ route('admin.recruitment.job-posts') }}" class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+                <div class="lg:col-span-5">
+                    <label class="mb-2 block text-sm font-bold text-slate-700">Tìm kiếm</label>
+                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Tìm theo tiêu đề, phòng ban, người phụ trách..."
+                           class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10">
+                </div>
+
+                <div class="lg:col-span-3">
+                    <label class="mb-2 block text-sm font-bold text-slate-700">Trạng thái</label>
+                    <select name="status" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="open" @selected(($filters['status'] ?? '') === 'open')>Đang tuyển</option>
+                        <option value="closed" @selected(($filters['status'] ?? '') === 'closed')>Đã đóng</option>
+                    </select>
+                </div>
+
+                <div class="lg:col-span-3">
+                    <label class="mb-2 block text-sm font-bold text-slate-700">Phòng ban</label>
+                    <select name="department_id" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10">
+                        <option value="">Tất cả phòng ban</option>
+                        @foreach (($departments ?? collect()) as $department)
+                            <option value="{{ $department->id }}" @selected((string) ($filters['department_id'] ?? '') === (string) $department->id)>
+                                {{ $department->department_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-3 lg:col-span-1 lg:justify-end">
+                    <button type="submit" class="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800">Lọc</button>
+                </div>
+
+                <div class="lg:col-span-12">
+                    <a href="{{ route('admin.recruitment.job-posts') }}" class="inline-flex rounded-2xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200">Xóa bộ lọc</a>
+                </div>
             </form>
         </section>
 
-        <section class="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
+        <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
             <div class="overflow-x-auto">
                 <table class="min-w-[1050px] divide-y divide-slate-100">
                     <thead class="bg-slate-50">
@@ -220,6 +280,23 @@
                                             - {{ $workTypes[$jobPost->work_type] ?? $jobPost->work_type }}
                                         @endif
                                     </p>
+                                    <details class="mt-3 max-w-md rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                                        <summary class="cursor-pointer text-sm font-bold text-cyan-700">Xem chi tiết nhanh</summary>
+                                        <div class="mt-3 space-y-3 text-sm leading-6 text-slate-600">
+                                            <div>
+                                                <p class="font-bold text-slate-800">Mô tả</p>
+                                                <p class="break-words">{{ $jobPost->description ?: 'Chưa có mô tả.' }}</p>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-slate-800">Yêu cầu</p>
+                                                <p class="break-words">{{ $jobPost->requirements ?: 'Chưa có yêu cầu.' }}</p>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-slate-800">Quyền lợi</p>
+                                                <p class="break-words">{{ $jobPost->benefits ?: 'Chưa có quyền lợi.' }}</p>
+                                            </div>
+                                        </div>
+                                    </details>
                                 </td>
                                 <td class="px-5 py-4 text-sm text-slate-600">{{ $jobPost->department?->department_name ?? 'Chưa gắn' }}</td>
                                 <td class="px-5 py-4 text-sm text-slate-600">{{ $jobPost->recruiter?->full_name ?? 'Chưa gắn' }}</td>
@@ -233,7 +310,7 @@
                                 </td>
                                 <td class="px-5 py-4">
                                     @if ($jobPost->status === 'open')
-                                        <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">Đang mở</span>
+                                        <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">Đang tuyển</span>
                                     @else
                                         <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Đã đóng</span>
                                     @endif

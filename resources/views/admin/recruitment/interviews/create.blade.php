@@ -3,8 +3,10 @@
         $inputClass = 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10';
     @endphp
 
-    <div class="max-w-5xl space-y-6">
-        <section class="rounded-[2rem] border border-white/80 bg-white/90 p-5 shadow-sm shadow-slate-200/60 sm:p-6">
+    @include('admin.recruitment.partials.ui-contrast')
+
+    <div class="recruitment-ui max-w-5xl space-y-6">
+        <section class="recruitment-hero rounded-[2rem] border border-white/80 bg-white/90 p-5 shadow-sm shadow-slate-200/60 sm:p-6">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
@@ -27,7 +29,7 @@
             </div>
         </section>
 
-        <section class="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
+        <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
             <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
                 <h3 class="text-base font-black text-slate-900">Thông tin lịch phỏng vấn</h3>
                 <p class="mt-1 text-sm text-slate-500">Các trường có dấu * là bắt buộc.</p>

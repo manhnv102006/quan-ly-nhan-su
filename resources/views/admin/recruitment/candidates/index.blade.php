@@ -31,8 +31,10 @@
         ];
     @endphp
 
-    <div class="max-w-full overflow-hidden space-y-6">
-        <section class="rounded-[2rem] border border-white/80 bg-white/90 p-5 shadow-sm shadow-slate-200/60 sm:p-6">
+    @include('admin.recruitment.partials.ui-contrast')
+
+    <div class="recruitment-ui max-w-full overflow-hidden space-y-6">
+        <section class="recruitment-hero rounded-[2rem] border border-white/80 bg-white/90 p-5 shadow-sm shadow-slate-200/60 sm:p-6">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
@@ -47,7 +49,7 @@
                 </div>
 
                 <a href="{{ route('admin.recruitment.candidates.create') }}"
-                   class="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
+                   class="recruitment-btn-primary inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
                     Thêm ứng viên
                 </a>
             </div>
@@ -61,7 +63,7 @@
             <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">{{ session('error') }}</div>
         @endif
 
-        <section class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+        <section class="recruitment-stats grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
             @foreach ($statsCards as $card)
                 <div class="rounded-[1.5rem] border border-white/80 {{ $card['class'] }} p-4 shadow-sm">
                     <p class="truncate text-xs font-bold uppercase tracking-wide opacity-80">{{ $card['label'] }}</p>
@@ -70,7 +72,7 @@
             @endforeach
         </section>
 
-        <section class="rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm shadow-slate-200/60">
+        <section class="recruitment-panel rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm shadow-slate-200/60">
             <form method="GET" action="{{ route('admin.recruitment.candidates') }}" class="grid grid-cols-1 gap-4 lg:grid-cols-12">
                 <div class="lg:col-span-4">
                     <label class="mb-2 block text-sm font-bold text-slate-700">Tìm kiếm</label>
@@ -133,7 +135,7 @@
             </form>
         </section>
 
-        <section class="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
+        <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
             <div class="overflow-x-auto">
                 <table class="min-w-[980px] divide-y divide-slate-100">
                     <thead class="bg-slate-50">
@@ -183,9 +185,37 @@
                                     @endif
                                 </td>
                                 <td class="px-5 py-4">
-                                    <div class="flex justify-end gap-2">
-                                        <a href="{{ route('admin.recruitment.candidates.show', $candidate) }}" class="rounded-xl bg-cyan-50 px-3 py-2 text-sm font-bold text-cyan-700 transition hover:bg-cyan-100">Xem</a>
-                                        <a href="{{ route('admin.recruitment.candidates.edit', $candidate) }}" class="rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700 transition hover:bg-amber-100">Sửa</a>
+                                    <div class="flex flex-wrap justify-end gap-2">
+                                        <a href="{{ route('admin.recruitment.candidates.show', $candidate) }}" class="rounded-xl bg-cyan-50 px-3 py-2 text-sm font-bold text-cyan-700 transition hover:bg-cyan-100">Xem hồ sơ</a>
+                                        <a href="{{ route('admin.recruitment.candidates.edit', $candidate) }}" class="rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700 transition hover:bg-amber-100">Cập nhật</a>
+                                        @if ($candidate->status !== 'passed')
+                                            <form action="{{ route('admin.recruitment.candidates.update', $candidate) }}" method="POST" onsubmit="return confirm('Chấp nhận ứng viên này?')">
+                                                @csrf
+                                                @method('PUT')
+                                                <input type="hidden" name="job_post_id" value="{{ $candidate->job_post_id }}">
+                                                <input type="hidden" name="full_name" value="{{ $candidate->full_name }}">
+                                                <input type="hidden" name="phone" value="{{ $candidate->phone }}">
+                                                <input type="hidden" name="email" value="{{ $candidate->email }}">
+                                                <input type="hidden" name="address" value="{{ $candidate->address }}">
+                                                <input type="hidden" name="birth_date" value="{{ $candidate->birth_date?->format('Y-m-d') }}">
+                                                <input type="hidden" name="status" value="passed">
+                                                <button type="submit" class="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100">Chấp nhận</button>
+                                            </form>
+                                        @endif
+                                        @if ($candidate->status !== 'failed')
+                                            <form action="{{ route('admin.recruitment.candidates.update', $candidate) }}" method="POST" onsubmit="return confirm('Từ chối ứng viên này?')">
+                                                @csrf
+                                                @method('PUT')
+                                                <input type="hidden" name="job_post_id" value="{{ $candidate->job_post_id }}">
+                                                <input type="hidden" name="full_name" value="{{ $candidate->full_name }}">
+                                                <input type="hidden" name="phone" value="{{ $candidate->phone }}">
+                                                <input type="hidden" name="email" value="{{ $candidate->email }}">
+                                                <input type="hidden" name="address" value="{{ $candidate->address }}">
+                                                <input type="hidden" name="birth_date" value="{{ $candidate->birth_date?->format('Y-m-d') }}">
+                                                <input type="hidden" name="status" value="failed">
+                                                <button type="submit" class="rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-100">Từ chối</button>
+                                            </form>
+                                        @endif
                                         <form action="{{ route('admin.recruitment.candidates.destroy', $candidate) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn xóa ứng viên này?')">
                                             @csrf
                                             @method('DELETE')
@@ -196,7 +226,18 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-5 py-14 text-center text-sm text-slate-500">Chưa có ứng viên phù hợp.</td>
+                                <td colspan="7" class="px-5 py-14 text-center">
+                                    <div class="mx-auto max-w-sm">
+                                        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
+                                            <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128A12.318 12.318 0 0 1 8.624 21a12.318 12.318 0 0 1-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.965-3.07M12 7.875a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Z" />
+                                            </svg>
+                                        </div>
+                                        <h3 class="mt-4 text-base font-black text-slate-900">Chưa có ứng viên nào</h3>
+                                        <p class="mt-2 text-sm leading-6 text-slate-500">Hãy thêm ứng viên mới hoặc thay đổi bộ lọc để xem thêm hồ sơ phù hợp.</p>
+                                        <a href="{{ route('admin.recruitment.candidates.create') }}" class="mt-4 inline-flex rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-cyan-700">Thêm ứng viên</a>
+                                    </div>
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

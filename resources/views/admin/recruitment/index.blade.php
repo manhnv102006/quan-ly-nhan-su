@@ -2,28 +2,46 @@
     @php
         $cards = [
             [
-                'label' => 'Tin tuyển dụng',
+                'label' => 'Tổng tin tuyển dụng',
                 'value' => $stats['job_posts'] ?? 0,
-                'hint' => 'Tất cả nhu cầu tuyển dụng đang quản lý',
-                'tone' => 'from-sky-500 to-cyan-600',
+                'hint' => 'Nhu cầu tuyển dụng đang được quản lý',
+                'tone' => 'bg-cyan-50 text-cyan-700 ring-cyan-100',
+                'icon' => 'briefcase',
             ],
             [
-                'label' => 'Ứng viên',
+                'label' => 'Tổng ứng viên',
                 'value' => $stats['candidates'] ?? 0,
                 'hint' => 'Hồ sơ ứng viên đã tiếp nhận',
-                'tone' => 'from-indigo-500 to-sky-600',
+                'tone' => 'bg-sky-50 text-sky-700 ring-sky-100',
+                'icon' => 'users',
+            ],
+            [
+                'label' => 'Chờ duyệt',
+                'value' => $stats['pending_candidates'] ?? 0,
+                'hint' => 'Ứng viên mới cần sàng lọc',
+                'tone' => 'bg-amber-50 text-amber-700 ring-amber-100',
+                'icon' => 'clock',
             ],
             [
                 'label' => 'Phỏng vấn',
-                'value' => $stats['interviews'] ?? 0,
-                'hint' => 'Lịch phỏng vấn đã được tạo',
-                'tone' => 'from-amber-500 to-orange-500',
+                'value' => $stats['interview_candidates'] ?? 0,
+                'hint' => 'Ứng viên đang ở vòng phỏng vấn',
+                'tone' => 'bg-indigo-50 text-indigo-700 ring-indigo-100',
+                'icon' => 'calendar',
             ],
             [
-                'label' => 'Ứng viên đạt',
+                'label' => 'Đã nhận',
                 'value' => $stats['passed_candidates'] ?? 0,
-                'hint' => 'Sẵn sàng chuyển thành nhân viên',
-                'tone' => 'from-emerald-500 to-teal-600',
+                'hint' => 'Ứng viên có kết quả đạt',
+                'tone' => 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+                'icon' => 'check',
+            ],
+            [
+                'label' => 'Đã từ chối',
+                'value' => $stats['failed_candidates'] ?? 0,
+                'hint' => 'Ứng viên không phù hợp',
+                'tone' => 'bg-rose-50 text-rose-700 ring-rose-100',
+                'icon' => 'xmark',
             ],
         ];
 
@@ -55,7 +73,9 @@
         ];
     @endphp
 
-    <div class="max-w-full overflow-hidden space-y-6">
+    @include('admin.recruitment.partials.ui-contrast')
+
+    <div class="recruitment-ui max-w-full overflow-hidden space-y-6">
         <section class="relative overflow-hidden rounded-[2rem] bg-slate-950 px-5 py-6 text-white shadow-sm sm:px-7 sm:py-8">
             <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.38),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.28),transparent_34%)]"></div>
             <div class="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -82,7 +102,7 @@
             </div>
         </section>
 
-        <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section class="recruitment-stats grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             @foreach ($cards as $card)
                 <div class="overflow-hidden rounded-[1.75rem] border border-white/80 bg-white p-5 shadow-sm shadow-slate-200/60">
                     <div class="flex items-start justify-between gap-4">
@@ -90,7 +110,21 @@
                             <p class="truncate text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
                             <p class="mt-3 text-3xl font-black tracking-tight text-slate-900">{{ $card['value'] }}</p>
                         </div>
-                        <div class="h-12 w-12 shrink-0 rounded-2xl bg-gradient-to-br {{ $card['tone'] }} shadow-lg shadow-slate-200"></div>
+                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 {{ $card['tone'] }}">
+                            @if ($card['icon'] === 'briefcase')
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.1A2.25 2.25 0 0 1 18 20.5H6a2.25 2.25 0 0 1-2.25-2.25v-4.1m16.5 0A2.25 2.25 0 0 0 18 11.9H6a2.25 2.25 0 0 0-2.25 2.25m16.5 0v-2.4A2.25 2.25 0 0 0 18 9.5H6a2.25 2.25 0 0 0-2.25 2.25v2.4M9 9.5V6.75A2.25 2.25 0 0 1 11.25 4.5h1.5A2.25 2.25 0 0 1 15 6.75V9.5" /></svg>
+                            @elseif ($card['icon'] === 'users')
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.965-3.07M12 7.875a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
+                            @elseif ($card['icon'] === 'clock')
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m5-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                            @elseif ($card['icon'] === 'calendar')
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3.75 8.25h16.5M4.5 6.75A2.25 2.25 0 0 1 6.75 4.5h10.5a2.25 2.25 0 0 1 2.25 2.25v10.5a2.25 2.25 0 0 1-2.25 2.25H6.75a2.25 2.25 0 0 1-2.25-2.25V6.75Z" /></svg>
+                            @elseif ($card['icon'] === 'check')
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                            @else
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                            @endif
+                        </div>
                     </div>
                     <p class="mt-4 text-sm leading-6 text-slate-500">{{ $card['hint'] }}</p>
                 </div>
