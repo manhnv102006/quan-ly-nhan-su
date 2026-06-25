@@ -19,20 +19,35 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <p class="text-slate-500 text-sm">Tổng kỳ lương</p>
-                <h3 class="text-3xl font-bold mt-2">{{ $stats['total'] }}</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-xs font-medium">Tổng kỳ lương</p>
+                <h3 class="text-2xl font-bold mt-1">{{ $stats['total'] }}</h3>
             </div>
 
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <p class="text-slate-500 text-sm">Đang mở (Open)</p>
-                <h3 class="text-3xl font-bold mt-2 text-emerald-600">{{ $stats['open'] }}</h3>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-xs font-medium">Chưa tính (Open)</p>
+                <h3 class="text-2xl font-bold mt-1 text-sky-600">{{ $stats['open'] }}</h3>
             </div>
 
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <p class="text-slate-500 text-sm">Đã đóng (Closed)</p>
-                <h3 class="text-3xl font-bold mt-2 text-slate-600">{{ $stats['closed'] }}</h3>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-xs font-medium">Đã tính (Calculated)</p>
+                <h3 class="text-2xl font-bold mt-1 text-amber-600">{{ $stats['calculated'] }}</h3>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-xs font-medium">Đã duyệt (Approved)</p>
+                <h3 class="text-2xl font-bold mt-1 text-violet-600">{{ $stats['approved'] }}</h3>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-xs font-medium">Đã chi trả (Paid)</p>
+                <h3 class="text-2xl font-bold mt-1 text-emerald-600">{{ $stats['paid'] }}</h3>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-xs font-medium">Đã đóng (Closed)</p>
+                <h3 class="text-2xl font-bold mt-1 text-slate-500">{{ $stats['closed'] }}</h3>
             </div>
         </div>
 
@@ -70,9 +85,15 @@
                                 <td class="px-6 py-4 text-slate-600">{{ $period->end_date?->format('d/m/Y') }}</td>
                                 <td class="px-6 py-4">
                                     @if ($period->status === 'open')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Đang mở</span>
+                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">Chưa tính lương</span>
+                                    @elseif ($period->status === 'calculated')
+                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Đã tính lương</span>
+                                    @elseif ($period->status === 'approved')
+                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-700">Đã duyệt</span>
+                                    @elseif ($period->status === 'paid')
+                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Đã chi trả</span>
                                     @else
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Đã khóa</span>
+                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Đã đóng</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4">
