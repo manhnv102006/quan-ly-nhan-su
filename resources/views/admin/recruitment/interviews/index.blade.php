@@ -42,8 +42,10 @@
         ];
     @endphp
 
-    <div class="max-w-full overflow-hidden space-y-6">
-        <div class="rounded-[2rem] border border-white/80 bg-white/85 p-5 shadow-sm shadow-slate-200/60 backdrop-blur sm:p-6">
+    @include('admin.recruitment.partials.ui-contrast')
+
+    <div class="recruitment-ui max-w-full overflow-hidden space-y-6">
+        <div class="recruitment-hero rounded-[2rem] border border-white/80 bg-white/85 p-5 shadow-sm shadow-slate-200/60 backdrop-blur sm:p-6">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
@@ -58,7 +60,7 @@
                 </div>
 
                 <a href="{{ route('admin.recruitment.interviews.create') }}"
-                   class="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700 sm:w-auto">
+                   class="recruitment-btn-primary inline-flex w-full items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700 sm:w-auto">
                     Tạo lịch phỏng vấn
                 </a>
             </div>
@@ -81,7 +83,7 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="recruitment-stats grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             @foreach ($summaryStats as $item)
                 <div class="overflow-hidden rounded-[1.75rem] bg-gradient-to-br {{ $item['class'] }} p-5 shadow-sm">
                     <p class="text-sm font-semibold opacity-85">{{ $item['label'] }}</p>
@@ -90,7 +92,7 @@
             @endforeach
         </div>
 
-        <div class="rounded-[1.75rem] border border-slate-100 bg-white/85 p-4 shadow-sm">
+        <div class="recruitment-panel rounded-[1.75rem] border border-slate-100 bg-white/85 p-4 shadow-sm">
             <div class="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
                 <div class="min-w-0 rounded-2xl bg-slate-50 px-4 py-3">
                     <p class="truncate font-semibold text-slate-700">Đã lên lịch</p>
@@ -118,7 +120,7 @@
                     $resultClass = $resultClasses[$interview->result] ?? 'bg-slate-100 text-slate-700 ring-slate-200';
                 @endphp
 
-                <article class="max-w-full overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/50">
+                <article class="recruitment-panel max-w-full overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/50">
                     <div class="grid grid-cols-1 xl:grid-cols-12">
                         <div class="min-w-0 border-b border-slate-100 bg-slate-50/80 p-5 xl:col-span-4 xl:border-b-0 xl:border-r">
                             <div class="flex min-w-0 flex-col gap-4">
@@ -246,13 +248,13 @@
                     </div>
                 </article>
             @empty
-                <div class="rounded-[1.75rem] border border-dashed border-slate-200 bg-white/80 px-5 py-14 text-center text-sm text-slate-500 shadow-sm">
+                <div class="recruitment-panel rounded-[1.75rem] border border-dashed border-slate-200 bg-white/80 px-5 py-14 text-center text-sm text-slate-500 shadow-sm">
                     Chưa có lịch phỏng vấn nào.
                 </div>
             @endforelse
         </div>
 
-        <div class="max-w-full overflow-x-auto rounded-[1.75rem] border border-slate-100 bg-white p-4 shadow-sm">
+        <div class="recruitment-panel max-w-full overflow-x-auto rounded-[1.75rem] border border-slate-100 bg-white p-4 shadow-sm">
             {{ $interviews->links() }}
         </div>
     </div>

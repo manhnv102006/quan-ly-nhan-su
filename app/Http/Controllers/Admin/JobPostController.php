@@ -15,8 +15,8 @@ class JobPostController extends Controller
 {
     public function create(): View
     {
-        $search = '';
-        $data = $this->jobPostListData($search);
+        $filters = $this->defaultFilters();
+        $data = $this->jobPostListData($filters);
 
         return view('admin.recruitment.job-posts.index', array_merge($data, [
             'departments' => $this->activeDepartments(),
@@ -28,10 +28,11 @@ class JobPostController extends Controller
 
     public function index(Request $request): View
     {
-        $search = (string) $request->string('search')->trim();
-        $data = $this->jobPostListData($search);
+        $filters = $this->jobPostFilters($request);
+        $data = $this->jobPostListData($filters);
 
         return view('admin.recruitment.job-posts.index', array_merge($data, [
+            'departments' => $this->activeDepartments(),
             'showCreateForm' => false,
             'showEditForm' => false,
         ]));
@@ -53,8 +54,8 @@ class JobPostController extends Controller
 
     public function edit(JobPost $jobPost): View
     {
-        $search = '';
-        $data = $this->jobPostListData($search);
+        $filters = $this->defaultFilters();
+        $data = $this->jobPostListData($filters);
 
         return view('admin.recruitment.job-posts.index', array_merge($data, [
             'departments' => $this->activeDepartments(),
@@ -94,8 +95,10 @@ class JobPostController extends Controller
             ->with('success', 'Xóa tin tuyển dụng thành công.');
     }
 
-    private function jobPostListData(string $search): array
+    private function jobPostListData(array $filters): array
     {
+        $search = $filters['search'];
+
         $jobPosts = JobPost::query()
             ->with(['department', 'recruiter'])
             ->when($search !== '', function ($query) use ($search) {
@@ -113,6 +116,8 @@ class JobPostController extends Controller
                         });
                 });
             })
+            ->when($filters['status'] !== '', fn ($query) => $query->where('status', $filters['status']))
+            ->when($filters['department_id'] !== '', fn ($query) => $query->where('department_id', $filters['department_id']))
             ->latest()
             ->paginate(12)
             ->withQueryString();
@@ -123,7 +128,27 @@ class JobPostController extends Controller
             'closed' => JobPost::where('status', 'closed')->count(),
         ];
 
-        return compact('jobPosts', 'search', 'stats');
+        return compact('jobPosts', 'search', 'stats', 'filters');
+    }
+
+    private function defaultFilters(): array
+    {
+        return [
+            'search' => '',
+            'status' => '',
+            'department_id' => '',
+        ];
+    }
+
+    private function jobPostFilters(Request $request): array
+    {
+        $status = (string) $request->string('status');
+
+        return [
+            'search' => (string) $request->string('search')->trim(),
+            'status' => in_array($status, ['open', 'closed'], true) ? $status : '',
+            'department_id' => (string) $request->input('department_id', ''),
+        ];
     }
 
     private function activeDepartments()

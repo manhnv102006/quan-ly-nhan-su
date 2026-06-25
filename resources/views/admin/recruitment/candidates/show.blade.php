@@ -17,14 +17,21 @@
             'passed' => 'Đạt',
             'failed' => 'Không đạt',
         ];
+        $recommendationLabels = [
+            'hire' => 'Nên tuyển',
+            'consider' => 'Cần cân nhắc',
+            'reject' => 'Từ chối',
+        ];
         $statusClass = $statusClasses[$candidate->status] ?? 'bg-slate-100 text-slate-700 ring-slate-200';
         $parts = collect(preg_split('/\s+/', trim($candidate->full_name)))->filter();
         $initial = $parts->isNotEmpty() ? \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr((string) $parts->last(), 0, 1)) : 'UV';
         $fieldClass = 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10';
     @endphp
 
-    <div class="max-w-full overflow-hidden space-y-6">
-        <section class="rounded-[2rem] border border-white/80 bg-white/90 p-5 shadow-sm shadow-slate-200/60 sm:p-6">
+    @include('admin.recruitment.partials.ui-contrast')
+
+    <div class="recruitment-ui max-w-full overflow-hidden space-y-6">
+        <section class="recruitment-hero rounded-[2rem] border border-white/80 bg-white/90 p-5 shadow-sm shadow-slate-200/60 sm:p-6">
             <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                 <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
@@ -100,7 +107,7 @@
 
         <div class="grid grid-cols-1 gap-6 xl:grid-cols-12">
             <div class="space-y-6 xl:col-span-8">
-                <section class="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
+                <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
                     <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
                         <h3 class="text-base font-black text-slate-900">Thông tin ứng viên</h3>
                     </div>
@@ -128,7 +135,7 @@
                     </div>
                 </section>
 
-                <section class="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
+                <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
                     <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
                         <h3 class="text-base font-black text-slate-900">Tin tuyển dụng liên kết</h3>
                     </div>
@@ -156,7 +163,7 @@
                     </div>
                 </section>
 
-                <section class="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
+                <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
                     <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
                         <h3 class="text-base font-black text-slate-900">Lịch sử phỏng vấn</h3>
                     </div>
@@ -168,6 +175,21 @@
                                     <p class="mt-1 break-words text-sm text-slate-500">{{ $interview->interviewer?->full_name ?? 'Chưa gắn người phỏng vấn' }}</p>
                                     @if ($interview->note)
                                         <p class="mt-2 break-words text-sm leading-6 text-slate-600">{{ $interview->note }}</p>
+                                    @endif
+                                    <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500 sm:grid-cols-4">
+                                        <span class="rounded-xl bg-slate-50 px-3 py-2">Tổng quan: <strong class="text-slate-800">{{ $interview->overall_score ?? '-' }}/10</strong></span>
+                                        <span class="rounded-xl bg-slate-50 px-3 py-2">Kỹ thuật: <strong class="text-slate-800">{{ $interview->technical_score ?? '-' }}/10</strong></span>
+                                        <span class="rounded-xl bg-slate-50 px-3 py-2">Thái độ: <strong class="text-slate-800">{{ $interview->attitude_score ?? '-' }}/10</strong></span>
+                                        <span class="rounded-xl bg-slate-50 px-3 py-2">Đề xuất: <strong class="text-slate-800">{{ $recommendationLabels[$interview->recommendation] ?? 'Chưa có' }}</strong></span>
+                                    </div>
+                                    @if ($interview->strengths || $interview->weaknesses)
+                                        <details class="mt-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm">
+                                            <summary class="cursor-pointer font-bold text-slate-700">Xem đánh giá chi tiết</summary>
+                                            <div class="mt-3 space-y-2 leading-6 text-slate-600">
+                                                <p><strong class="text-slate-800">Điểm mạnh:</strong> {{ $interview->strengths ?: 'Chưa ghi nhận.' }}</p>
+                                                <p><strong class="text-slate-800">Cần cải thiện:</strong> {{ $interview->weaknesses ?: 'Chưa ghi nhận.' }}</p>
+                                            </div>
+                                        </details>
                                     @endif
                                 </div>
                                 <span class="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
@@ -182,7 +204,7 @@
             </div>
 
             <aside class="space-y-6 xl:col-span-4">
-                <section class="rounded-[2rem] border border-slate-100 bg-white p-6 text-center shadow-sm shadow-slate-200/60">
+                <section class="recruitment-panel rounded-[2rem] border border-slate-100 bg-white p-6 text-center shadow-sm shadow-slate-200/60">
                     <div class="mx-auto flex h-24 w-24 items-center justify-center rounded-[1.75rem] bg-cyan-50 text-3xl font-black text-cyan-700">
                         {{ $initial }}
                     </div>
@@ -196,7 +218,7 @@
                     @endif
                 </section>
 
-                <section class="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
+                <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
                     <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-4">
                         <h3 class="text-base font-black text-slate-900">Tình trạng CV</h3>
                     </div>
@@ -223,8 +245,41 @@
                     </div>
                 </section>
 
+                <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-cyan-100 bg-white shadow-sm shadow-cyan-100/60">
+                    <div class="border-b border-cyan-100 bg-cyan-50 px-5 py-4">
+                        <h3 class="text-base font-black text-cyan-950">Cập nhật trạng thái</h3>
+                        <p class="mt-1 text-sm leading-6 text-cyan-700">
+                            Khi chuyển sang Đạt hoặc Không đạt, hệ thống sẽ gửi email kết quả nếu email đang được cấu hình.
+                        </p>
+                    </div>
+                    <form action="{{ route('admin.recruitment.candidates.update', $candidate) }}" method="POST" class="space-y-4 p-5">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="job_post_id" value="{{ $candidate->job_post_id }}">
+                        <input type="hidden" name="full_name" value="{{ $candidate->full_name }}">
+                        <input type="hidden" name="phone" value="{{ $candidate->phone }}">
+                        <input type="hidden" name="email" value="{{ $candidate->email }}">
+                        <input type="hidden" name="address" value="{{ $candidate->address }}">
+                        <input type="hidden" name="birth_date" value="{{ $candidate->birth_date?->format('Y-m-d') }}">
+
+                        <div>
+                            <label class="mb-2 block text-sm font-bold text-slate-700">Trạng thái tuyển dụng</label>
+                            <select name="status" class="{{ $fieldClass }}">
+                                <option value="new" @selected($candidate->status === 'new')>Mới</option>
+                                <option value="interview" @selected($candidate->status === 'interview')>Phỏng vấn</option>
+                                <option value="passed" @selected($candidate->status === 'passed')>Đạt</option>
+                                <option value="failed" @selected($candidate->status === 'failed')>Không đạt</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-cyan-700">
+                            Lưu trạng thái
+                        </button>
+                    </form>
+                </section>
+
                 @if ($candidate->status === 'passed' && $candidate->employee_id === null)
-                    <section class="overflow-hidden rounded-[2rem] border border-emerald-100 bg-white shadow-sm shadow-emerald-100/60">
+                    <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-emerald-100 bg-white shadow-sm shadow-emerald-100/60">
                         <div class="border-b border-emerald-100 bg-emerald-50 px-5 py-4">
                             <h3 class="text-base font-black text-emerald-950">Chuyển thành nhân viên</h3>
                             <p class="mt-1 text-sm text-emerald-700">Chỉ áp dụng cho ứng viên đã đạt.</p>
@@ -278,7 +333,7 @@
                     </section>
                 @endif
 
-                <section class="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
+                <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
                     <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-4">
                         <h3 class="text-base font-black text-slate-900">Lịch sử email</h3>
                     </div>
