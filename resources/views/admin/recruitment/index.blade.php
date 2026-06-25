@@ -1,55 +1,55 @@
-<x-admin-layout title="Tuyen dung">
+<x-admin-layout title="Tuyển dụng">
     @php
         $cards = [
             [
-                'label' => 'Tin tuyen dung',
+                'label' => 'Tin tuyển dụng',
                 'value' => $stats['job_posts'] ?? 0,
-                'hint' => 'Tat ca nhu cau tuyen dung dang quan ly',
+                'hint' => 'Tất cả nhu cầu tuyển dụng đang quản lý',
                 'tone' => 'from-sky-500 to-cyan-600',
             ],
             [
-                'label' => 'Ung vien',
+                'label' => 'Ứng viên',
                 'value' => $stats['candidates'] ?? 0,
-                'hint' => 'Ho so ung vien da tiep nhan',
+                'hint' => 'Hồ sơ ứng viên đã tiếp nhận',
                 'tone' => 'from-indigo-500 to-sky-600',
             ],
             [
-                'label' => 'Phong van',
+                'label' => 'Phỏng vấn',
                 'value' => $stats['interviews'] ?? 0,
-                'hint' => 'Lich phong van da duoc tao',
+                'hint' => 'Lịch phỏng vấn đã được tạo',
                 'tone' => 'from-amber-500 to-orange-500',
             ],
             [
-                'label' => 'Ung vien dat',
+                'label' => 'Ứng viên đạt',
                 'value' => $stats['passed_candidates'] ?? 0,
-                'hint' => 'San sang chuyen thanh nhan vien',
+                'hint' => 'Sẵn sàng chuyển thành nhân viên',
                 'tone' => 'from-emerald-500 to-teal-600',
             ],
         ];
 
         $modules = [
             [
-                'title' => 'Tin tuyen dung',
-                'description' => 'Tao va quan ly nhu cau tuyen dung theo phong ban, nguoi phu trach, muc luong va han nop ho so.',
+                'title' => 'Tin tuyển dụng',
+                'description' => 'Tạo và quản lý nhu cầu tuyển dụng theo phòng ban, người phụ trách, mức lương và hạn nộp hồ sơ.',
                 'route' => route('admin.recruitment.job-posts'),
-                'cta' => 'Quan ly tin tuyen dung',
+                'cta' => 'Quản lý tin tuyển dụng',
                 'badge' => ($stats['job_posts'] ?? 0).' tin',
                 'tone' => 'cyan',
             ],
             [
-                'title' => 'Ung vien',
-                'description' => 'Theo doi ho so, CV, trang thai tuyen dung va chuyen ung vien dat thanh nhan vien.',
+                'title' => 'Ứng viên',
+                'description' => 'Theo dõi hồ sơ, CV, trạng thái tuyển dụng và chuyển ứng viên đạt thành nhân viên.',
                 'route' => route('admin.recruitment.candidates'),
-                'cta' => 'Quan ly ung vien',
-                'badge' => ($stats['candidates'] ?? 0).' ho so',
+                'cta' => 'Quản lý ứng viên',
+                'badge' => ($stats['candidates'] ?? 0).' hồ sơ',
                 'tone' => 'sky',
             ],
             [
-                'title' => 'Phong van',
-                'description' => 'Len lich phong van, ghi nhan diem danh gia, de xuat tuyen va cap nhat ket qua.',
+                'title' => 'Phỏng vấn',
+                'description' => 'Lên lịch phỏng vấn, ghi nhận điểm đánh giá, đề xuất tuyển và cập nhật kết quả.',
                 'route' => route('admin.recruitment.interviews'),
-                'cta' => 'Quan ly phong van',
-                'badge' => ($stats['interviews'] ?? 0).' lich',
+                'cta' => 'Quản lý phỏng vấn',
+                'badge' => ($stats['interviews'] ?? 0).' lịch',
                 'tone' => 'amber',
             ],
         ];
@@ -61,22 +61,22 @@
             <div class="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div class="min-w-0">
                     <span class="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-cyan-100 ring-1 ring-white/15">
-                        Recruitment Center
+                        Trung tâm tuyển dụng
                     </span>
-                    <h2 class="mt-4 text-3xl font-black tracking-tight sm:text-4xl">Dashboard tuyen dung</h2>
+                    <h2 class="mt-4 text-3xl font-black tracking-tight sm:text-4xl">Bảng điều khiển tuyển dụng</h2>
                     <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-200">
-                        Tong quan nhanh quy trinh tuyen dung: tin dang tuyen, ho so ung vien, phong van va ung vien da dat.
+                        Tổng quan nhanh quy trình tuyển dụng: tin đang tuyển, hồ sơ ứng viên, phỏng vấn và ứng viên đã đạt.
                     </p>
                 </div>
 
                 <div class="flex flex-col gap-3 sm:flex-row">
                     <a href="{{ route('admin.recruitment.job-posts.create') }}"
                        class="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-900 transition hover:bg-cyan-50">
-                        Tao tin tuyen dung
+                        Tạo tin tuyển dụng
                     </a>
                     <a href="{{ route('admin.recruitment.candidates.create') }}"
                        class="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-cyan-400">
-                        Them ung vien
+                        Thêm ứng viên
                     </a>
                 </div>
             </div>

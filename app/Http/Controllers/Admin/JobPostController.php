@@ -48,7 +48,7 @@ class JobPostController extends Controller
 
         return redirect()
             ->route('admin.recruitment.job-posts')
-            ->with('success', 'Them tin tuyen dung thanh cong.');
+            ->with('success', 'Thêm tin tuyển dụng thành công.');
     }
 
     public function edit(JobPost $jobPost): View
@@ -76,7 +76,7 @@ class JobPostController extends Controller
 
         return redirect()
             ->route('admin.recruitment.job-posts')
-            ->with('success', 'Cap nhat tin tuyen dung thanh cong.');
+            ->with('success', 'Cập nhật tin tuyển dụng thành công.');
     }
 
     public function destroy(JobPost $jobPost): RedirectResponse
@@ -86,12 +86,12 @@ class JobPostController extends Controller
         } catch (QueryException) {
             return redirect()
                 ->route('admin.recruitment.job-posts')
-                ->with('error', 'Khong the xoa tin tuyen dung vi van con du lieu lien quan trong he thong.');
+                ->with('error', 'Không thể xóa tin tuyển dụng vì vẫn còn dữ liệu liên quan trong hệ thống.');
         }
 
         return redirect()
             ->route('admin.recruitment.job-posts')
-            ->with('success', 'Xoa tin tuyen dung thanh cong.');
+            ->with('success', 'Xóa tin tuyển dụng thành công.');
     }
 
     private function jobPostListData(string $search): array
@@ -159,20 +159,20 @@ class JobPostController extends Controller
             'benefits' => ['nullable', 'string'],
             'status' => ['required', 'in:open,closed'],
         ], [
-            'department_id.exists' => 'Phong ban duoc chon khong hop le.',
-            'recruiter_id.exists' => 'Nguoi phu trach tuyen dung khong hop le.',
-            'title.required' => 'Tieu de tin tuyen dung la bat buoc.',
-            'title.max' => 'Tieu de tin tuyen dung khong duoc vuot qua 255 ky tu.',
-            'quantity.required' => 'So luong tuyen la bat buoc.',
-            'quantity.integer' => 'So luong tuyen phai la so nguyen.',
-            'quantity.min' => 'So luong tuyen phai lon hon 0.',
-            'salary_min.numeric' => 'Luong toi thieu phai la so.',
-            'salary_max.numeric' => 'Luong toi da phai la so.',
-            'salary_max.gte' => 'Luong toi da phai lon hon hoac bang luong toi thieu.',
-            'work_type.in' => 'Hinh thuc lam viec khong hop le.',
-            'application_deadline.date' => 'Han nop ho so khong hop le.',
-            'status.required' => 'Trang thai la bat buoc.',
-            'status.in' => 'Trang thai tin tuyen dung khong hop le.',
+            'department_id.exists' => 'Phòng ban được chọn không hợp lệ.',
+            'recruiter_id.exists' => 'Người phụ trách tuyển dụng không hợp lệ.',
+            'title.required' => 'Tiêu đề tin tuyển dụng là bắt buộc.',
+            'title.max' => 'Tiêu đề tin tuyển dụng không được vượt quá 255 ký tự.',
+            'quantity.required' => 'Số lượng tuyển là bắt buộc.',
+            'quantity.integer' => 'Số lượng tuyển phải là số nguyên.',
+            'quantity.min' => 'Số lượng tuyển phải lớn hơn 0.',
+            'salary_min.numeric' => 'Lương tối thiểu phải là số.',
+            'salary_max.numeric' => 'Lương tối đa phải là số.',
+            'salary_max.gte' => 'Lương tối đa phải lớn hơn hoặc bằng lương tối thiểu.',
+            'work_type.in' => 'Hình thức làm việc không hợp lệ.',
+            'application_deadline.date' => 'Hạn nộp hồ sơ không hợp lệ.',
+            'status.required' => 'Trạng thái là bắt buộc.',
+            'status.in' => 'Trạng thái tin tuyển dụng không hợp lệ.',
         ]);
     }
 }
