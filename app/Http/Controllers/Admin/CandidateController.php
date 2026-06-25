@@ -112,7 +112,7 @@ class CandidateController extends Controller
 
         return redirect()
             ->route('admin.recruitment.candidates')
-            ->with('success', 'Them ung vien thanh cong.');
+            ->with('success', 'Thêm ứng viên thành công.');
     }
 
     public function update(Request $request, Candidate $candidate): RedirectResponse
@@ -146,7 +146,7 @@ class CandidateController extends Controller
 
         return redirect()
             ->route('admin.recruitment.candidates.show', $candidate)
-            ->with('success', 'Cap nhat ung vien thanh cong.');
+            ->with('success', 'Cập nhật ứng viên thành công.');
     }
 
     public function convertToEmployee(Request $request, Candidate $candidate): RedirectResponse
@@ -154,19 +154,19 @@ class CandidateController extends Controller
         if ($candidate->status !== 'passed') {
             return redirect()
                 ->route('admin.recruitment.candidates.show', $candidate)
-                ->with('error', 'Chi ung vien da dat moi co the chuyen thanh nhan vien.');
+                ->with('error', 'Chỉ ứng viên đã đạt mới có thể chuyển thành nhân viên.');
         }
 
         if ($candidate->employee_id !== null) {
             return redirect()
                 ->route('admin.recruitment.candidates.show', $candidate)
-                ->with('error', 'Ung vien nay da duoc chuyen thanh nhan vien.');
+                ->with('error', 'Ứng viên này đã được chuyển thành nhân viên.');
         }
 
         if (Employee::where('email', $candidate->email)->exists()) {
             return redirect()
                 ->route('admin.recruitment.candidates.show', $candidate)
-                ->with('error', 'Email cua ung vien da ton tai trong danh sach nhan vien.');
+                ->with('error', 'Email của ứng viên đã tồn tại trong danh sách nhân viên.');
         }
 
         $validated = $request->validate([
@@ -178,10 +178,10 @@ class CandidateController extends Controller
             'hire_date' => ['required', 'date'],
             'status' => ['required', 'in:active,inactive,resigned'],
         ], [
-            'employee_code.required' => 'Ma nhan vien la bat buoc.',
-            'employee_code.unique' => 'Ma nhan vien da ton tai.',
-            'date_of_birth.required' => 'Ngay sinh la bat buoc de tao ho so nhan vien.',
-            'hire_date.required' => 'Ngay vao lam la bat buoc.',
+            'employee_code.required' => 'Mã nhân viên là bắt buộc.',
+            'employee_code.unique' => 'Mã nhân viên đã tồn tại.',
+            'date_of_birth.required' => 'Ngày sinh là bắt buộc để tạo hồ sơ nhân viên.',
+            'hire_date.required' => 'Ngày vào làm là bắt buộc.',
         ]);
 
         $employee = DB::transaction(function () use ($candidate, $validated) {
@@ -211,7 +211,7 @@ class CandidateController extends Controller
 
         return redirect()
             ->route('admin.employees.show', $employee)
-            ->with('success', 'Da chuyen ung vien thanh nhan vien thanh cong.');
+            ->with('success', 'Đã chuyển ứng viên thành nhân viên thành công.');
     }
 
     public function destroy(Candidate $candidate): RedirectResponse
@@ -223,14 +223,14 @@ class CandidateController extends Controller
         } catch (QueryException) {
             return redirect()
                 ->route('admin.recruitment.candidates')
-                ->with('error', 'Khong the xoa ung vien vi van con du lieu lien quan trong he thong.');
+                ->with('error', 'Không thể xóa ứng viên vì vẫn còn dữ liệu liên quan trong hệ thống.');
         }
 
         $this->deleteCvFile($cvPath);
 
         return redirect()
             ->route('admin.recruitment.candidates')
-            ->with('success', 'Xoa ung vien thanh cong.');
+            ->with('success', 'Xóa ứng viên thành công.');
     }
 
     private function availableJobPosts()
@@ -294,11 +294,11 @@ class CandidateController extends Controller
             'cv_file' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx'],
             'status' => ['required', 'in:new,interview,passed,failed'],
         ], [
-            'job_post_id.exists' => 'Tin tuyen dung duoc chon khong hop le.',
-            'full_name.required' => 'Ho va ten ung vien la bat buoc.',
-            'email.email' => 'Email ung vien khong hop le.',
-            'cv_file.mimes' => 'CV chi ho tro dinh dang PDF, DOC hoac DOCX.',
-            'status.in' => 'Trang thai ung vien khong hop le.',
+            'job_post_id.exists' => 'Tin tuyển dụng được chọn không hợp lệ.',
+            'full_name.required' => 'Họ và tên ứng viên là bắt buộc.',
+            'email.email' => 'Email ứng viên không hợp lệ.',
+            'cv_file.mimes' => 'CV chỉ hỗ trợ định dạng PDF, DOC hoặc DOCX.',
+            'status.in' => 'Trạng thái ứng viên không hợp lệ.',
         ]);
     }
 
@@ -332,7 +332,7 @@ class CandidateController extends Controller
         Storage::disk('public')->copy($candidate->cv_file, $targetPath);
 
         $employee->documents()->create([
-            'document_name' => 'CV tu ung vien',
+            'document_name' => 'CV từ ứng viên',
             'document_type' => 'cv',
             'file_path' => $targetPath,
         ]);

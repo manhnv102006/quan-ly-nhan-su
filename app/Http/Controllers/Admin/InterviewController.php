@@ -58,11 +58,11 @@ class InterviewController extends Controller
             'interview_date' => ['required', 'date'],
             'note' => ['nullable', 'string'],
         ], [
-            'candidate_id.required' => 'Ung vien la bat buoc.',
-            'candidate_id.exists' => 'Ung vien duoc chon khong hop le.',
-            'interviewer_id.exists' => 'Nguoi phong van duoc chon khong hop le.',
-            'interview_date.required' => 'Thoi gian phong van la bat buoc.',
-            'interview_date.date' => 'Thoi gian phong van khong hop le.',
+            'candidate_id.required' => 'Ứng viên là bắt buộc.',
+            'candidate_id.exists' => 'Ứng viên được chọn không hợp lệ.',
+            'interviewer_id.exists' => 'Người phỏng vấn được chọn không hợp lệ.',
+            'interview_date.required' => 'Thời gian phỏng vấn là bắt buộc.',
+            'interview_date.date' => 'Thời gian phỏng vấn không hợp lệ.',
         ]);
 
         $validated['interviewer_id'] = $validated['interviewer_id'] ?: null;
@@ -81,7 +81,7 @@ class InterviewController extends Controller
 
         return redirect()
             ->route('admin.recruitment.interviews')
-            ->with('success', 'Tao lich phong van thanh cong.');
+            ->with('success', 'Tạo lịch phỏng vấn thành công.');
     }
 
     public function update(Request $request, Interview $interview): RedirectResponse
@@ -98,14 +98,14 @@ class InterviewController extends Controller
             'weaknesses' => ['nullable', 'string'],
             'note' => ['nullable', 'string'],
         ], [
-            'status.required' => 'Trang thai buoi phong van la bat buoc.',
-            'status.in' => 'Trang thai buoi phong van khong hop le.',
-            'result.required' => 'Ket qua phong van la bat buoc.',
-            'result.in' => 'Ket qua phong van khong hop le.',
-            'technical_score.between' => 'Diem ky thuat phai tu 0 den 10.',
-            'attitude_score.between' => 'Diem thai do phai tu 0 den 10.',
-            'culture_score.between' => 'Diem phu hop van hoa phai tu 0 den 10.',
-            'overall_score.between' => 'Diem tong quan phai tu 0 den 10.',
+            'status.required' => 'Trạng thái buổi phỏng vấn là bắt buộc.',
+            'status.in' => 'Trạng thái buổi phỏng vấn không hợp lệ.',
+            'result.required' => 'Kết quả phỏng vấn là bắt buộc.',
+            'result.in' => 'Kết quả phỏng vấn không hợp lệ.',
+            'technical_score.between' => 'Điểm kỹ thuật phải từ 0 đến 10.',
+            'attitude_score.between' => 'Điểm thái độ phải từ 0 đến 10.',
+            'culture_score.between' => 'Điểm phù hợp văn hóa phải từ 0 đến 10.',
+            'overall_score.between' => 'Điểm tổng quan phải từ 0 đến 10.',
         ]);
 
         DB::transaction(function () use ($interview, $validated) {
@@ -139,6 +139,6 @@ class InterviewController extends Controller
 
         return redirect()
             ->route('admin.recruitment.interviews')
-            ->with('success', 'Cap nhat ket qua phong van thanh cong.');
+            ->with('success', 'Cập nhật kết quả phỏng vấn thành công.');
     }
 }
