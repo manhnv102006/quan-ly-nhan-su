@@ -20,10 +20,15 @@ class CandidateInterviewResultMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: $this->candidate->status === 'passed'
-                ? 'Chúc mừng bạn đã vượt qua vòng phỏng vấn'
-                : 'Thông báo kết quả phỏng vấn'
+            subject: $this->subjectText()
         );
+    }
+
+    public function subjectText(): string
+    {
+        return $this->candidate->status === 'passed'
+            ? 'Chúc mừng bạn đã vượt qua vòng phỏng vấn'
+            : 'Thông báo kết quả phỏng vấn';
     }
 
     public function content(): Content
