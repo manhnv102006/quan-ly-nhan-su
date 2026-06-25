@@ -9,75 +9,69 @@ class PayrollSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('payrolls')->insert([
-            [
-                'employee_id' => 1,
-                'payroll_period_id' => 1,
-                'generated_by' => 1,
-                'basic_salary' => 50000000,
-                'allowance' => 2000000,
-                'bonus' => 1000000,
-                'deduction' => 500000,
-                'total_salary' => 52500000,
-                'status' => 'paid',
-                'approved_by' => 1,
-                'approved_at' => now(),
-                'paid_by' => 1,
-                'paid_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'employee_id' => 2,
-                'payroll_period_id' => 1,
-                'generated_by' => 1,
-                'basic_salary' => 25000000,
-                'allowance' => 1000000,
-                'bonus' => 0,
-                'deduction' => 200000,
-                'total_salary' => 25800000,
-                'status' => 'approved',
-                'approved_by' => 1,
-                'approved_at' => now(),
-                'paid_by' => null,
-                'paid_at' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'employee_id' => 3,
-                'payroll_period_id' => 1,
-                'generated_by' => 1,
-                'basic_salary' => 18000000,
-                'allowance' => 500000,
-                'bonus' => 500000,
-                'deduction' => 0,
-                'total_salary' => 19000000,
-                'status' => 'pending',
-                'approved_by' => null,
-                'approved_at' => null,
-                'paid_by' => null,
-                'paid_at' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'employee_id' => 4,
-                'payroll_period_id' => 1,
-                'generated_by' => 1,
-                'basic_salary' => 10000000,
-                'allowance' => 1000000,
-                'bonus' => 0,
-                'deduction' => 0,
-                'total_salary' => 11000000,
-                'status' => 'draft',
-                'approved_by' => null,
-                'approved_at' => null,
-                'paid_by' => null,
-                'paid_at' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        // Clear existing payrolls
+        DB::table('payrolls')->truncate();
+
+        $employees = DB::table('employees')->get();
+        $periods = DB::table('payroll_periods')->get();
+
+        foreach ($periods as $period) {
+            foreach ($employees as $employee) {
+                // Determine salary based on employee code
+                $basicSalary = 10000000;
+                if ($employee->employee_code === 'EMP001') {
+                    $basicSalary = 50000000;
+                } elseif ($employee->employee_code === 'EMP002') {
+                    $basicSalary = 25000000;
+                } elseif ($employee->employee_code === 'EMP003') {
+                    $basicSalary = 18000000;
+                } elseif ($employee->employee_code === 'EMP004') {
+                    $basicSalary = 12000000;
+                } elseif ($employee->employee_code === 'EMP005') {
+                    $basicSalary = 15000000;
+                }
+
+                // Random variations for allowance, bonus, deduction
+                $allowance = rand(1, 4) * 500000; // 500k to 2M
+                $bonus = rand(0, 3) * 500000; // 0 to 1.5M
+                $deduction = rand(0, 2) * 200000; // 0 to 400k
+                $totalSalary = $basicSalary + $allowance + $bonus - $deduction;
+
+                // Assign status based on period ID or month to make it look realistic
+                // E.g., older months are 'paid', current/future months are 'draft' or 'pending'
+                if ($period->month < 6) {
+                    $status = 'paid';
+                } elseif ($period->month < 9) {
+                    $status = 'approved';
+                } elseif ($period->month === 9) {
+                    $status = 'pending';
+                } else {
+                    $status = 'draft';
+                }
+
+                $approvedBy = in_array($status, ['approved', 'paid']) ? 1 : null;
+                $approvedAt = in_array($status, ['approved', 'paid']) ? now()->subDays(rand(1, 5)) : null;
+                $paidBy = $status === 'paid' ? 1 : null;
+                $paidAt = $status === 'paid' ? now() : null;
+
+                DB::table('payrolls')->insert([
+                    'employee_id' => $employee->id,
+                    'payroll_period_id' => $period->id,
+                    'generated_by' => 1,
+                    'basic_salary' => $basicSalary,
+                    'allowance' => $allowance,
+                    'bonus' => $bonus,
+                    'deduction' => $deduction,
+                    'total_salary' => $totalSalary,
+                    'status' => $status,
+                    'approved_by' => $approvedBy,
+                    'approved_at' => $approvedAt,
+                    'paid_by' => $paidBy,
+                    'paid_at' => $paidAt,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
     }
 }

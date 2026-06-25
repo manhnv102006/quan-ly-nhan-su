@@ -59,7 +59,11 @@
                         @forelse ($periods as $period)
                             <tr class="border-t border-slate-100 hover:bg-slate-50 transition">
                                 <td class="px-6 py-4 text-slate-600">{{ $period->id }}</td>
-                                <td class="px-6 py-4 font-semibold text-slate-800">{{ $period->name }}</td>
+                                <td class="px-6 py-4 font-semibold text-slate-800">
+                                    <a href="{{ route('admin.payroll-periods.show', $period) }}" class="text-violet-600 hover:text-violet-900 hover:underline">
+                                        {{ $period->name }}
+                                    </a>
+                                </td>
                                 <td class="px-6 py-4 text-slate-600">{{ $period->month }}</td>
                                 <td class="px-6 py-4 text-slate-600">{{ $period->year }}</td>
                                 <td class="px-6 py-4 text-slate-600">{{ $period->start_date?->format('d/m/Y') }}</td>
@@ -73,6 +77,10 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex justify-center gap-2">
+                                        <a href="{{ route('admin.payroll-periods.show', $period) }}"
+                                           class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200"
+                                           title="Chi tiết">👁️</a>
+
                                         <a href="{{ route('admin.payroll-periods.edit', $period) }}"
                                            class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200"
                                            title="Sửa">✏️</a>
