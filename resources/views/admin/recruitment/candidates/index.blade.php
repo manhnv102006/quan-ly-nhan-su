@@ -1,174 +1,221 @@
-<x-admin-layout title="Ứng viên">
+<x-admin-layout title="Ung vien">
+    @php
+        $filters = $filters ?? [
+            'search' => '',
+            'status' => '',
+            'job_post_id' => '',
+            'cv_status' => '',
+            'converted' => '',
+            'created_from' => '',
+            'created_to' => '',
+        ];
+        $statusLabels = [
+            'new' => 'Moi',
+            'interview' => 'Phong van',
+            'passed' => 'Dat',
+            'failed' => 'Khong dat',
+        ];
+        $statusClasses = [
+            'new' => 'bg-sky-100 text-sky-700',
+            'interview' => 'bg-amber-100 text-amber-700',
+            'passed' => 'bg-emerald-100 text-emerald-700',
+            'failed' => 'bg-rose-100 text-rose-700',
+        ];
+    @endphp
 
     <div class="space-y-6">
-
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <div class="flex items-center gap-2 text-sm text-slate-500">
-                    <a href="{{ route('admin.recruitment') }}" class="hover:text-violet-600 transition">Tuyển dụng</a>
+                    <a href="{{ route('admin.recruitment') }}" class="hover:text-cyan-600 transition">Tuyen dung</a>
                     <span>/</span>
-                    <span class="text-slate-700 font-medium">Ứng viên</span>
+                    <span class="font-medium text-slate-700">Ung vien</span>
                 </div>
-
-                <h2 class="mt-2 text-2xl font-bold text-slate-800">Danh sách ứng viên</h2>
-                <p class="text-sm text-slate-500 mt-1">
-                    Theo dõi hồ sơ ứng viên và trạng thái tuyển dụng hiện tại trong hệ thống.
-                </p>
+                <h2 class="mt-2 text-2xl font-bold text-slate-800">Quan ly ung vien</h2>
+                <p class="mt-1 text-sm text-slate-500">Loc ho so, theo doi trang thai phong van va chuyen ung vien dat thanh nhan vien.</p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
-                <a href="{{ route('admin.recruitment.candidates.create') }}"
-                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-cyan-600 text-white font-medium hover:bg-cyan-700 transition shadow-lg shadow-cyan-500/20">
-                    + Thêm ứng viên
-                </a>
-
-                <a href="{{ route('admin.recruitment') }}"
-                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
-                    Quay lại tuyển dụng
-                </a>
-            </div>
+            <a href="{{ route('admin.recruitment.candidates.create') }}"
+               class="inline-flex items-center rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
+                Them ung vien
+            </a>
         </div>
 
         @if (session('success'))
-            <div class="flex items-center gap-3 bg-white border border-emerald-200 shadow-sm rounded-2xl px-5 py-4">
-                <p class="text-sm font-medium text-emerald-700">{{ session('success') }}</p>
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
+                {{ session('success') }}
             </div>
         @endif
 
         @if (session('error'))
-            <div class="flex items-center gap-3 bg-white border border-red-200 shadow-sm rounded-2xl px-5 py-4">
-                <p class="text-sm font-medium text-red-700">{{ session('error') }}</p>
+            <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
+                {{ session('error') }}
             </div>
         @endif
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm text-slate-500">Tổng ứng viên</p>
-                <h3 class="text-3xl font-bold mt-2 text-slate-900">{{ $stats['total'] }}</h3>
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-6">
+            <div class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-slate-500">Tong</p>
+                <p class="mt-2 text-2xl font-bold text-slate-800">{{ $stats['total'] ?? 0 }}</p>
             </div>
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm text-slate-500">Mới tiếp nhận</p>
-                <h3 class="text-3xl font-bold mt-2 text-sky-600">{{ $stats['new'] }}</h3>
+            <div class="rounded-3xl border border-sky-100 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-sky-600">Moi</p>
+                <p class="mt-2 text-2xl font-bold text-sky-700">{{ $stats['new'] ?? 0 }}</p>
             </div>
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm text-slate-500">Đang phỏng vấn</p>
-                <h3 class="text-3xl font-bold mt-2 text-amber-600">{{ $stats['interview'] }}</h3>
+            <div class="rounded-3xl border border-amber-100 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-amber-600">Phong van</p>
+                <p class="mt-2 text-2xl font-bold text-amber-700">{{ $stats['interview'] ?? 0 }}</p>
             </div>
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm text-slate-500">Đạt</p>
-                <h3 class="text-3xl font-bold mt-2 text-emerald-600">{{ $stats['passed'] }}</h3>
+            <div class="rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-emerald-600">Dat</p>
+                <p class="mt-2 text-2xl font-bold text-emerald-700">{{ $stats['passed'] ?? 0 }}</p>
+            </div>
+            <div class="rounded-3xl border border-rose-100 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-rose-600">Khong dat</p>
+                <p class="mt-2 text-2xl font-bold text-rose-700">{{ $stats['failed'] ?? 0 }}</p>
+            </div>
+            <div class="rounded-3xl border border-indigo-100 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-indigo-600">Da nhan viec</p>
+                <p class="mt-2 text-2xl font-bold text-indigo-700">{{ $stats['converted'] ?? 0 }}</p>
             </div>
         </div>
 
-        <div class="admin-card p-6">
-            <form method="GET" action="{{ route('admin.recruitment.candidates') }}" class="flex flex-col gap-4 lg:flex-row lg:items-end">
-                <div class="flex-1">
-                    <label for="search" class="block text-sm font-medium text-slate-700 mb-2">
-                        Tìm kiếm ứng viên
-                    </label>
-                    <input type="text" id="search" name="search" value="{{ $search }}"
-                        placeholder="Nhập họ tên, điện thoại, email, địa chỉ hoặc tin tuyển dụng"
-                        class="w-full rounded-xl border-slate-200 focus:border-violet-500 focus:ring-violet-500">
+        <div class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+            <form method="GET" action="{{ route('admin.recruitment.candidates') }}" class="grid grid-cols-1 gap-4 lg:grid-cols-6">
+                <div class="lg:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Tim kiem</label>
+                    <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="Ten, email, so dien thoai, vi tri..."
+                           class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
                 </div>
 
-                <div class="flex flex-wrap gap-3">
-                    <button type="submit"
-                        class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
-                        Tìm kiếm
-                    </button>
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Trang thai</label>
+                    <select name="status" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                        <option value="">Tat ca</option>
+                        @foreach ($statusLabels as $value => $label)
+                            <option value="{{ $value }}" @selected($filters['status'] === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-                    @if ($search !== '')
-                        <a href="{{ route('admin.recruitment.candidates') }}"
-                            class="inline-flex items-center justify-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
-                            Xóa bộ lọc
-                        </a>
-                    @endif
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Tin tuyen dung</label>
+                    <select name="job_post_id" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                        <option value="">Tat ca</option>
+                        @foreach ($jobPosts as $jobPost)
+                            <option value="{{ $jobPost->id }}" @selected((string) $filters['job_post_id'] === (string) $jobPost->id)>{{ $jobPost->title }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">CV</label>
+                    <select name="cv_status" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                        <option value="">Tat ca</option>
+                        <option value="has_cv" @selected($filters['cv_status'] === 'has_cv')>Co CV</option>
+                        <option value="missing_cv" @selected($filters['cv_status'] === 'missing_cv')>Thieu CV</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Nhan vien</label>
+                    <select name="converted" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                        <option value="">Tat ca</option>
+                        <option value="yes" @selected($filters['converted'] === 'yes')>Da chuyen</option>
+                        <option value="no" @selected($filters['converted'] === 'no')>Chua chuyen</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Tu ngay</label>
+                    <input type="date" name="created_from" value="{{ $filters['created_from'] }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Den ngay</label>
+                    <input type="date" name="created_to" value="{{ $filters['created_to'] }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                </div>
+
+                <div class="flex items-end gap-3 lg:col-span-4">
+                    <button type="submit" class="rounded-xl bg-slate-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-900">Loc ung vien</button>
+                    <a href="{{ route('admin.recruitment.candidates') }}" class="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Xoa loc</a>
                 </div>
             </form>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <h3 class="font-semibold text-slate-800">Danh sách ứng viên</h3>
-                <p class="text-sm text-slate-500">Hiển thị {{ $candidates->count() }} / {{ $candidates->total() }} bản ghi</p>
-            </div>
-
+        <div class="rounded-3xl border border-slate-100 bg-white shadow-sm">
             <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200">
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Họ tên</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Tin tuyển dụng</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Điện thoại</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Email</th>
-                            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">CV</th>
-                            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
-                            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Ngày tạo</th>
-                            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
+                <table class="min-w-full divide-y divide-slate-100">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Ung vien</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Tin tuyen dung</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Lien he</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">CV</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Trang thai</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Nhan vien</th>
+                            <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Thao tac</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-slate-100 bg-white">
                         @forelse ($candidates as $candidate)
-                            <tr class="border-b border-slate-200 hover:bg-slate-50 transition">
-                                <td class="px-6 py-4">
-                                    <a href="{{ route('admin.recruitment.candidates.show', $candidate) }}" class="font-medium text-slate-800 hover:text-cyan-700 transition">
-                                        {{ $candidate->full_name }}
-                                    </a>
-                                    <p class="mt-1 text-sm text-slate-500">{{ $candidate->address }}</p>
+                            <tr class="align-top">
+                                <td class="px-5 py-4">
+                                    <p class="font-semibold text-slate-800">{{ $candidate->full_name }}</p>
+                                    <p class="mt-1 text-sm text-slate-500">Tao luc {{ $candidate->created_at?->format('d/m/Y H:i') ?? '-' }}</p>
                                 </td>
-                                <td class="px-6 py-4 text-slate-600">{{ $candidate->jobPost?->title ?? 'Chưa gắn tin tuyển dụng' }}</td>
-                                <td class="px-6 py-4 text-slate-600">{{ $candidate->phone }}</td>
-                                <td class="px-6 py-4 text-slate-600">{{ $candidate->email }}</td>
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-5 py-4 text-sm text-slate-600">
+                                    {{ $candidate->jobPost?->title ?? 'Chua gan tin' }}
+                                </td>
+                                <td class="px-5 py-4 text-sm text-slate-600">
+                                    <p>{{ $candidate->phone }}</p>
+                                    <p class="mt-1">{{ $candidate->email }}</p>
+                                </td>
+                                <td class="px-5 py-4">
                                     @if ($candidate->cv_file)
-                                        <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Đã có CV</span>
+                                        <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Co CV</span>
                                     @else
-                                        <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Chưa có CV</span>
+                                        <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Thieu CV</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-center">
-                                    @if ($candidate->status === 'new')
-                                        <span class="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">Mới</span>
-                                    @elseif ($candidate->status === 'interview')
-                                        <span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Phỏng vấn</span>
-                                    @elseif ($candidate->status === 'passed')
-                                        <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Đạt</span>
+                                <td class="px-5 py-4">
+                                    <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $statusClasses[$candidate->status] ?? 'bg-slate-100 text-slate-700' }}">
+                                        {{ $statusLabels[$candidate->status] ?? $candidate->status }}
+                                    </span>
+                                </td>
+                                <td class="px-5 py-4 text-sm text-slate-600">
+                                    @if ($candidate->employee)
+                                        <a href="{{ route('admin.employees.show', $candidate->employee) }}" class="font-medium text-cyan-700 hover:text-cyan-800">
+                                            {{ $candidate->employee->employee_code }}
+                                        </a>
                                     @else
-                                        <span class="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">Không đạt</span>
+                                        <span class="text-slate-400">Chua chuyen</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-center text-slate-600">{{ $candidate->created_at?->format('d/m/Y') ?? '-' }}</td>
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <a href="{{ route('admin.recruitment.candidates.show', $candidate) }}" class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200" title="Chi tiết">👁</a>
-                                        <a href="{{ route('admin.recruitment.candidates.edit', $candidate) }}" class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200" title="Sửa">✏️</a>
-                                        <form action="{{ route('admin.recruitment.candidates.destroy', $candidate) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn xóa ứng viên này? Các lịch phỏng vấn liên quan cũng sẽ bị xóa.')">
+                                <td class="px-5 py-4">
+                                    <div class="flex justify-end gap-2">
+                                        <a href="{{ route('admin.recruitment.candidates.show', $candidate) }}" class="rounded-lg bg-cyan-100 px-3 py-2 text-sm font-medium text-cyan-700 transition hover:bg-cyan-200">Xem</a>
+                                        <a href="{{ route('admin.recruitment.candidates.edit', $candidate) }}" class="rounded-lg bg-amber-100 px-3 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-200">Sua</a>
+                                        <form action="{{ route('admin.recruitment.candidates.destroy', $candidate) }}" method="POST" onsubmit="return confirm('Ban co chac muon xoa ung vien nay?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200" title="Xóa">🗑</button>
+                                            <button type="submit" class="rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-200">Xoa</button>
                                         </form>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-12 text-slate-400">
-                                    {{ $search !== '' ? 'Không tìm thấy ứng viên phù hợp.' : 'Chưa có ứng viên nào trong hệ thống.' }}
-                                </td>
+                                <td colspan="7" class="px-5 py-12 text-center text-sm text-slate-500">Chua co ung vien phu hop.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
 
-            @if ($candidates->hasPages())
-                <div class="px-6 py-4 border-t border-slate-200">{{ $candidates->links() }}</div>
-            @endif
+            <div class="border-t border-slate-100 p-5">
+                {{ $candidates->links() }}
+            </div>
         </div>
-
     </div>
-
 </x-admin-layout>

@@ -28,10 +28,28 @@ class CandidateObserver
                 return;
             }
 
+            $mail = new CandidateInterviewResultMail($freshCandidate);
+
             try {
                 Mail::to($freshCandidate->email)
-                    ->send(new CandidateInterviewResultMail($freshCandidate));
+                    ->send($mail);
+
+                $freshCandidate->emailLogs()->create([
+                    'email' => $freshCandidate->email,
+                    'type' => 'interview_result',
+                    'status' => 'sent',
+                    'subject' => $mail->subjectText(),
+                    'sent_at' => now(),
+                ]);
             } catch (Throwable $exception) {
+                $freshCandidate->emailLogs()->create([
+                    'email' => $freshCandidate->email,
+                    'type' => 'interview_result',
+                    'status' => 'failed',
+                    'subject' => $mail->subjectText(),
+                    'error_message' => $exception->getMessage(),
+                ]);
+
                 Log::warning('Unable to send interview result email to candidate.', [
                     'candidate_id' => $freshCandidate->id,
                     'candidate_email' => $freshCandidate->email,

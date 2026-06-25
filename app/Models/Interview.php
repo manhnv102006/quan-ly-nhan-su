@@ -13,7 +13,15 @@ class Interview extends Model
         'candidate_id',
         'interviewer_id',
         'interview_date',
+        'status',
         'result',
+        'technical_score',
+        'attitude_score',
+        'culture_score',
+        'overall_score',
+        'recommendation',
+        'strengths',
+        'weaknesses',
         'note',
     ];
 
@@ -21,6 +29,10 @@ class Interview extends Model
     {
         return [
             'interview_date' => 'datetime',
+            'technical_score' => 'integer',
+            'attitude_score' => 'integer',
+            'culture_score' => 'integer',
+            'overall_score' => 'integer',
         ];
     }
 

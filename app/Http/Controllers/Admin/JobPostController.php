@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Department;
+use App\Models\Employee;
 use App\Models\JobPost;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +20,7 @@ class JobPostController extends Controller
 
         return view('admin.recruitment.job-posts.index', array_merge($data, [
             'departments' => $this->activeDepartments(),
+            'recruiters' => $this->activeRecruiters(),
             'showCreateForm' => true,
             'showEditForm' => false,
         ]));
@@ -39,13 +41,14 @@ class JobPostController extends Controller
     {
         $validated = $this->validateJobPost($request);
 
-        $validated['department_id'] = $validated['department_id'] ?: null;
+        $validated['department_id'] = ($validated['department_id'] ?? null) ?: null;
+        $validated['recruiter_id'] = ($validated['recruiter_id'] ?? null) ?: null;
 
         JobPost::create($validated);
 
         return redirect()
             ->route('admin.recruitment.job-posts')
-            ->with('success', 'Thêm tin tuyển dụng thành công.');
+            ->with('success', 'Them tin tuyen dung thanh cong.');
     }
 
     public function edit(JobPost $jobPost): View
@@ -55,9 +58,10 @@ class JobPostController extends Controller
 
         return view('admin.recruitment.job-posts.index', array_merge($data, [
             'departments' => $this->activeDepartments(),
+            'recruiters' => $this->activeRecruiters(),
             'showCreateForm' => false,
             'showEditForm' => true,
-            'editingJobPost' => $jobPost->load('department'),
+            'editingJobPost' => $jobPost->load(['department', 'recruiter']),
         ]));
     }
 
@@ -65,13 +69,14 @@ class JobPostController extends Controller
     {
         $validated = $this->validateJobPost($request);
 
-        $validated['department_id'] = $validated['department_id'] ?: null;
+        $validated['department_id'] = ($validated['department_id'] ?? null) ?: null;
+        $validated['recruiter_id'] = ($validated['recruiter_id'] ?? null) ?: null;
 
         $jobPost->update($validated);
 
         return redirect()
             ->route('admin.recruitment.job-posts')
-            ->with('success', 'Cập nhật tin tuyển dụng thành công.');
+            ->with('success', 'Cap nhat tin tuyen dung thanh cong.');
     }
 
     public function destroy(JobPost $jobPost): RedirectResponse
@@ -81,24 +86,30 @@ class JobPostController extends Controller
         } catch (QueryException) {
             return redirect()
                 ->route('admin.recruitment.job-posts')
-                ->with('error', 'Không thể xóa tin tuyển dụng vì vẫn còn dữ liệu liên quan trong hệ thống.');
+                ->with('error', 'Khong the xoa tin tuyen dung vi van con du lieu lien quan trong he thong.');
         }
 
         return redirect()
             ->route('admin.recruitment.job-posts')
-            ->with('success', 'Xóa tin tuyển dụng thành công.');
+            ->with('success', 'Xoa tin tuyen dung thanh cong.');
     }
 
     private function jobPostListData(string $search): array
     {
         $jobPosts = JobPost::query()
-            ->with('department')
+            ->with(['department', 'recruiter'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('title', 'like', "%{$search}%")
                         ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('requirements', 'like', "%{$search}%")
+                        ->orWhere('benefits', 'like', "%{$search}%")
+                        ->orWhere('work_location', 'like', "%{$search}%")
                         ->orWhereHas('department', function ($departmentQuery) use ($search) {
                             $departmentQuery->where('department_name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('recruiter', function ($recruiterQuery) use ($search) {
+                            $recruiterQuery->where('full_name', 'like', "%{$search}%");
                         });
                 });
             })
@@ -123,23 +134,45 @@ class JobPostController extends Controller
             ->get(['id', 'department_name']);
     }
 
+    private function activeRecruiters()
+    {
+        return Employee::query()
+            ->where('status', 'active')
+            ->orderBy('full_name')
+            ->get(['id', 'full_name', 'employee_code']);
+    }
+
     private function validateJobPost(Request $request): array
     {
         return $request->validate([
             'department_id' => ['nullable', 'exists:departments,id'],
+            'recruiter_id' => ['nullable', 'exists:employees,id'],
             'title' => ['required', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
+            'salary_min' => ['nullable', 'numeric', 'min:0'],
+            'salary_max' => ['nullable', 'numeric', 'min:0', 'gte:salary_min'],
+            'work_location' => ['nullable', 'string', 'max:255'],
+            'work_type' => ['nullable', 'in:full_time,part_time,remote,hybrid,contract'],
+            'application_deadline' => ['nullable', 'date'],
             'description' => ['nullable', 'string'],
+            'requirements' => ['nullable', 'string'],
+            'benefits' => ['nullable', 'string'],
             'status' => ['required', 'in:open,closed'],
         ], [
-            'department_id.exists' => 'Phòng ban được chọn không hợp lệ.',
-            'title.required' => 'Tiêu đề tin tuyển dụng là bắt buộc.',
-            'title.max' => 'Tiêu đề tin tuyển dụng không được vượt quá 255 ký tự.',
-            'quantity.required' => 'Số lượng tuyển là bắt buộc.',
-            'quantity.integer' => 'Số lượng tuyển phải là số nguyên.',
-            'quantity.min' => 'Số lượng tuyển phải lớn hơn 0.',
-            'status.required' => 'Trạng thái là bắt buộc.',
-            'status.in' => 'Trạng thái tin tuyển dụng không hợp lệ.',
+            'department_id.exists' => 'Phong ban duoc chon khong hop le.',
+            'recruiter_id.exists' => 'Nguoi phu trach tuyen dung khong hop le.',
+            'title.required' => 'Tieu de tin tuyen dung la bat buoc.',
+            'title.max' => 'Tieu de tin tuyen dung khong duoc vuot qua 255 ky tu.',
+            'quantity.required' => 'So luong tuyen la bat buoc.',
+            'quantity.integer' => 'So luong tuyen phai la so nguyen.',
+            'quantity.min' => 'So luong tuyen phai lon hon 0.',
+            'salary_min.numeric' => 'Luong toi thieu phai la so.',
+            'salary_max.numeric' => 'Luong toi da phai la so.',
+            'salary_max.gte' => 'Luong toi da phai lon hon hoac bang luong toi thieu.',
+            'work_type.in' => 'Hinh thuc lam viec khong hop le.',
+            'application_deadline.date' => 'Han nop ho so khong hop le.',
+            'status.required' => 'Trang thai la bat buoc.',
+            'status.in' => 'Trang thai tin tuyen dung khong hop le.',
         ]);
     }
 }
