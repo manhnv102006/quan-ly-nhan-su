@@ -1,151 +1,215 @@
-<x-admin-layout title="Lịch phỏng vấn">
+<x-admin-layout title="Phong van">
+    @php
+        $statusLabels = [
+            'scheduled' => 'Da len lich',
+            'completed' => 'Da phong van',
+            'cancelled' => 'Da huy',
+            'no_show' => 'Khong den',
+        ];
+        $resultLabels = [
+            'pending' => 'Cho ket qua',
+            'passed' => 'Dat',
+            'failed' => 'Khong dat',
+        ];
+        $recommendationLabels = [
+            '' => 'Chua chon',
+            'hire' => 'Nen tuyen',
+            'consider' => 'Can can nhac',
+            'reject' => 'Tu choi',
+        ];
+    @endphp
 
     <div class="space-y-6">
-
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <div class="flex items-center gap-2 text-sm text-slate-500">
-                    <a href="{{ route('admin.recruitment') }}" class="hover:text-amber-600 transition">Tuyển dụng</a>
+                    <a href="{{ route('admin.recruitment') }}" class="hover:text-cyan-600 transition">Tuyen dung</a>
                     <span>/</span>
-                    <span class="text-slate-700 font-medium">Lịch phỏng vấn</span>
+                    <span class="font-medium text-slate-700">Phong van</span>
                 </div>
-
-                <h2 class="mt-2 text-2xl font-bold text-slate-800">Danh sách lịch phỏng vấn</h2>
-                <p class="text-sm text-slate-500 mt-1">
-                    Theo dõi toàn bộ lịch phỏng vấn hiện có, ứng viên liên quan và cập nhật kết quả ngay trên từng lịch.
-                </p>
+                <h2 class="mt-2 text-2xl font-bold text-slate-800">Quan ly phong van</h2>
+                <p class="mt-1 text-sm text-slate-500">Cap nhat trang thai buoi phong van, diem danh gia va ket qua ung vien.</p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
-                <a href="{{ route('admin.recruitment.interviews.create') }}"
-                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-600 text-white font-medium hover:bg-amber-700 transition shadow-lg shadow-amber-500/20">
-                    + Tạo lịch phỏng vấn
-                </a>
-
-                <a href="{{ route('admin.recruitment') }}"
-                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
-                    Quay lại tuyển dụng
-                </a>
-            </div>
+            <a href="{{ route('admin.recruitment.interviews.create') }}"
+               class="inline-flex items-center rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
+                Tao lich phong van
+            </a>
         </div>
 
         @if (session('success'))
-            <div class="flex items-center gap-3 bg-white border border-emerald-200 shadow-sm rounded-2xl px-5 py-4">
-                <p class="text-sm font-medium text-emerald-700">{{ session('success') }}</p>
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
+                {{ session('success') }}
             </div>
         @endif
 
-        @if (session('error'))
-            <div class="flex items-center gap-3 bg-white border border-red-200 shadow-sm rounded-2xl px-5 py-4">
-                <p class="text-sm font-medium text-red-700">{{ session('error') }}</p>
+        @if (isset($errors) && $errors->any())
+            <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+                <p class="font-semibold">Vui long kiem tra lai thong tin phong van:</p>
+                <ul class="mt-2 list-disc space-y-1 pl-5">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
             </div>
         @endif
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm text-slate-500">Tổng lịch phỏng vấn</p>
-                <h3 class="text-3xl font-bold mt-2 text-slate-900">{{ $stats['total'] }}</h3>
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-slate-500">Tong lich</p>
+                <p class="mt-2 text-2xl font-bold text-slate-800">{{ $stats['total'] ?? 0 }}</p>
             </div>
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm text-slate-500">Đang chờ kết quả</p>
-                <h3 class="text-3xl font-bold mt-2 text-amber-600">{{ $stats['pending'] }}</h3>
+            <div class="rounded-3xl border border-amber-100 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-amber-600">Cho ket qua</p>
+                <p class="mt-2 text-2xl font-bold text-amber-700">{{ $stats['pending'] ?? 0 }}</p>
             </div>
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm text-slate-500">Đạt</p>
-                <h3 class="text-3xl font-bold mt-2 text-emerald-600">{{ $stats['passed'] }}</h3>
+            <div class="rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-emerald-600">Dat</p>
+                <p class="mt-2 text-2xl font-bold text-emerald-700">{{ $stats['passed'] ?? 0 }}</p>
             </div>
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm text-slate-500">Không đạt</p>
-                <h3 class="text-3xl font-bold mt-2 text-rose-600">{{ $stats['failed'] }}</h3>
+            <div class="rounded-3xl border border-rose-100 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-rose-600">Khong dat</p>
+                <p class="mt-2 text-2xl font-bold text-rose-700">{{ $stats['failed'] ?? 0 }}</p>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <h3 class="font-semibold text-slate-800">Danh sách lịch phỏng vấn</h3>
-                <p class="text-sm text-slate-500">Hiển thị {{ $interviews->count() }} / {{ $interviews->total() }} bản ghi</p>
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div class="rounded-2xl border border-slate-100 bg-white p-4 text-sm shadow-sm">
+                <span class="font-semibold text-slate-700">Da len lich:</span> {{ $stats['scheduled'] ?? 0 }}
             </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200">
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Ứng viên</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Tin tuyển dụng</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Người phỏng vấn</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Thời gian</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Cập nhật kết quả</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($interviews as $interview)
-                            <tr class="border-b border-slate-200 hover:bg-slate-50 transition align-top">
-                                <td class="px-6 py-4">
-                                    <div class="font-medium text-slate-800">{{ $interview->candidate?->full_name ?? 'Ứng viên không tồn tại' }}</div>
-                                    <p class="mt-1 text-sm text-slate-500">{{ $interview->candidate?->phone ?? 'Không có số điện thoại' }}</p>
-                                </td>
-                                <td class="px-6 py-4 text-slate-600">{{ $interview->candidate?->jobPost?->title ?? 'Chưa gắn tin tuyển dụng' }}</td>
-                                <td class="px-6 py-4 text-slate-600">{{ $interview->interviewer?->full_name ?? 'Chưa phân công' }}</td>
-                                <td class="px-6 py-4 text-slate-600">{{ $interview->interview_date?->format('d/m/Y H:i') ?? '-' }}</td>
-                                <td class="px-6 py-4 min-w-[320px]">
-                                    <form action="{{ route('admin.recruitment.interviews.update', $interview) }}" method="POST" class="space-y-3">
-                                        @csrf
-                                        @method('PUT')
-
-                                        <div>
-                                            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Kết quả</label>
-                                            <select name="result"
-                                                    class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none">
-                                                <option value="pending" @selected($interview->result === 'pending')>Đang chờ</option>
-                                                <option value="passed" @selected($interview->result === 'passed')>Đạt</option>
-                                                <option value="failed" @selected($interview->result === 'failed')>Không đạt</option>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Ghi chú</label>
-                                            <textarea name="note" rows="3"
-                                                      class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none">{{ old('note', $interview->note) }}</textarea>
-                                        </div>
-
-                                        <div class="flex items-center justify-between gap-3">
-                                            <div>
-                                                @if ($interview->result === 'pending')
-                                                    <span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Đang chờ</span>
-                                                @elseif ($interview->result === 'passed')
-                                                    <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Đạt</span>
-                                                @else
-                                                    <span class="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">Không đạt</span>
-                                                @endif
-                                            </div>
-
-                                            <button type="submit"
-                                                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition">
-                                                Lưu kết quả
-                                            </button>
-                                        </div>
-                                    </form>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="text-center py-12 text-slate-400">Chưa có lịch phỏng vấn nào trong hệ thống.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <div class="rounded-2xl border border-slate-100 bg-white p-4 text-sm shadow-sm">
+                <span class="font-semibold text-slate-700">Da phong van:</span> {{ $stats['completed'] ?? 0 }}
             </div>
+            <div class="rounded-2xl border border-slate-100 bg-white p-4 text-sm shadow-sm">
+                <span class="font-semibold text-slate-700">Da huy:</span> {{ $stats['cancelled'] ?? 0 }}
+            </div>
+            <div class="rounded-2xl border border-slate-100 bg-white p-4 text-sm shadow-sm">
+                <span class="font-semibold text-slate-700">Khong den:</span> {{ $stats['no_show'] ?? 0 }}
+            </div>
+        </div>
 
-            @if ($interviews->hasPages())
-                <div class="px-6 py-4 border-t border-slate-200">
-                    {{ $interviews->links() }}
+        <div class="space-y-4">
+            @forelse ($interviews as $interview)
+                <div class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                    <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-800">{{ $interview->candidate?->full_name ?? 'Ung vien da xoa' }}</h3>
+                            <p class="mt-1 text-sm text-slate-500">
+                                {{ $interview->candidate?->jobPost?->title ?? 'Chua gan tin tuyen dung' }}
+                            </p>
+                            <p class="mt-1 text-sm text-slate-500">
+                                Phong van: {{ $interview->interview_date?->format('d/m/Y H:i') ?? '-' }}
+                                @if ($interview->interviewer)
+                                    - {{ $interview->interviewer->full_name }}
+                                @endif
+                            </p>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2">
+                            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                                {{ $statusLabels[$interview->status] ?? $interview->status }}
+                            </span>
+                            @if ($interview->result === 'passed')
+                                <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Dat</span>
+                            @elseif ($interview->result === 'failed')
+                                <span class="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">Khong dat</span>
+                            @else
+                                <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Cho ket qua</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <form action="{{ route('admin.recruitment.interviews.update', $interview) }}" method="POST" class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+                        @csrf
+                        @method('PUT')
+
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Trang thai buoi phong van</label>
+                            <select name="status" required class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                                @foreach ($statusLabels as $value => $label)
+                                    <option value="{{ $value }}" @selected($interview->status === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Ket qua</label>
+                            <select name="result" required class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                                @foreach ($resultLabels as $value => $label)
+                                    <option value="{{ $value }}" @selected($interview->result === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700">De xuat</label>
+                            <select name="recommendation" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                                @foreach ($recommendationLabels as $value => $label)
+                                    <option value="{{ $value }}" @selected((string) $interview->recommendation === (string) $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Diem tong quan</label>
+                            <input type="number" min="0" max="10" name="overall_score" value="{{ $interview->overall_score }}"
+                                   class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                        </div>
+
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Diem ky thuat</label>
+                            <input type="number" min="0" max="10" name="technical_score" value="{{ $interview->technical_score }}"
+                                   class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                        </div>
+
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Diem thai do</label>
+                            <input type="number" min="0" max="10" name="attitude_score" value="{{ $interview->attitude_score }}"
+                                   class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                        </div>
+
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Diem van hoa</label>
+                            <input type="number" min="0" max="10" name="culture_score" value="{{ $interview->culture_score }}"
+                                   class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                        </div>
+
+                        <div class="lg:col-span-4">
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Ghi chu chung</label>
+                            <textarea name="note" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">{{ $interview->note }}</textarea>
+                        </div>
+
+                        <div class="lg:col-span-2">
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Diem manh</label>
+                            <textarea name="strengths" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">{{ $interview->strengths }}</textarea>
+                        </div>
+
+                        <div class="lg:col-span-2">
+                            <label class="mb-2 block text-sm font-medium text-slate-700">Diem can cai thien</label>
+                            <textarea name="weaknesses" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">{{ $interview->weaknesses }}</textarea>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-3 lg:col-span-4">
+                            <button type="submit" class="rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-700">
+                                Cap nhat ket qua
+                            </button>
+                            @if ($interview->candidate)
+                                <a href="{{ route('admin.recruitment.candidates.show', $interview->candidate) }}" class="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                                    Xem ung vien
+                                </a>
+                            @endif
+                        </div>
+                    </form>
                 </div>
-            @endif
+            @empty
+                <div class="rounded-3xl border border-slate-100 bg-white px-5 py-12 text-center text-sm text-slate-500 shadow-sm">
+                    Chua co lich phong van nao.
+                </div>
+            @endforelse
         </div>
 
+        <div class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+            {{ $interviews->links() }}
+        </div>
     </div>
-
 </x-admin-layout>
