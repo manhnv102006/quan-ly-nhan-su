@@ -66,9 +66,11 @@ class InterviewController extends Controller
         $validated['result'] = 'pending';
 
         DB::transaction(function () use ($validated) {
-            $interview = Interview::create($validated);
+            $candidate = Candidate::query()->findOrFail($validated['candidate_id']);
 
-            $interview->candidate()->update([
+            Interview::create($validated);
+
+            $candidate->update([
                 'status' => 'interview',
             ]);
         });
@@ -101,9 +103,13 @@ class InterviewController extends Controller
                 default => 'interview',
             };
 
-            $interview->candidate()->update([
-                'status' => $candidateStatus,
-            ]);
+            $candidate = $interview->candidate;
+
+            if ($candidate !== null) {
+                $candidate->update([
+                    'status' => $candidateStatus,
+                ]);
+            }
         });
 
         return redirect()
