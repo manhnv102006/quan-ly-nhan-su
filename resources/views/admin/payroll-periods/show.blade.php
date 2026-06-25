@@ -20,16 +20,72 @@
 
             <div class="flex items-center gap-3">
                 @if ($payrollPeriod->status === 'open')
-                    <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
-                        🟢 Trạng thái: Đang mở (Open)
+                    <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-sky-100 text-sky-700 border border-sky-200">
+                        🔵 Chưa tính lương (Open)
                     </span>
+                    <form action="{{ route('admin.payroll-periods.calculate', $payrollPeriod) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-medium shadow-lg transition">
+                            ⚡ Tính lương tự động
+                        </button>
+                    </form>
+                @elseif ($payrollPeriod->status === 'calculated')
+                    <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                        🟡 Đã tính lương (Calculated)
+                    </span>
+                    <form action="{{ route('admin.payroll-periods.approve', $payrollPeriod) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg transition">
+                            ✅ Duyệt toàn bộ kỳ lương
+                        </button>
+                    </form>
+                @elseif ($payrollPeriod->status === 'approved')
+                    <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-violet-100 text-violet-700 border border-violet-200">
+                        🟣 Đã duyệt (Approved)
+                    </span>
+                    <form action="{{ route('admin.payroll-periods.pay', $payrollPeriod) }}" method="POST"
+                          onsubmit="return confirm('Xác nhận đã thực hiện chi trả lương cho toàn bộ nhân viên trong kỳ này?')">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-lg transition">
+                            💰 Chi trả toàn bộ kỳ lương
+                        </button>
+                    </form>
+                @elseif ($payrollPeriod->status === 'paid')
+                    <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                        🟢 Đã chi trả (Paid)
+                    </span>
+                    <form action="{{ route('admin.payroll-periods.close', $payrollPeriod) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-medium shadow-lg transition">
+                            🔒 Đóng kỳ lương
+                        </button>
+                    </form>
                 @else
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                        🔒 Trạng thái: Đã đóng (Closed)
+                        🔒 Đã đóng (Closed)
                     </span>
                 @endif
             </div>
         </div>
+
+        @if($payrollPeriod->approved_by || $payrollPeriod->paid_by)
+            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-wrap gap-6 text-xs text-slate-500">
+                @if($payrollPeriod->approved_by)
+                    <div class="flex items-center gap-1.5">
+                        <span>✔️ <b>Người duyệt:</b> {{ $payrollPeriod->approver?->name }}</span>
+                        <span>•</span>
+                        <span>{{ $payrollPeriod->approved_at?->format('H:i d/m/Y') }}</span>
+                    </div>
+                @endif
+                @if($payrollPeriod->paid_by)
+                    <div class="flex items-center gap-1.5">
+                        <span>💵 <b>Người chi trả:</b> {{ $payrollPeriod->payer?->name }}</span>
+                        <span>•</span>
+                        <span>{{ $payrollPeriod->paid_at?->format('H:i d/m/Y') }}</span>
+                    </div>
+                @endif
+            </div>
+        @endif
 
         <!-- Thống kê tổng quan -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
@@ -76,10 +132,10 @@
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Mã NV</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Họ và tên</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Lương cơ bản</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Phụ cấp & Thưởng</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Phụ cấp</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Thưởng (KPI)</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Khấu trừ</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Thực lĩnh</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
                             <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
                         </tr>
                     </thead>
@@ -96,7 +152,10 @@
                                     {{ number_format($payroll->basic_salary, 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4 text-slate-600">
-                                    {{ number_format($payroll->allowance + $payroll->bonus, 0, ',', '.') }} ₫
+                                    {{ number_format($payroll->allowance, 0, ',', '.') }} ₫
+                                </td>
+                                <td class="px-6 py-4 font-medium text-emerald-600">
+                                    @if($payroll->bonus > 0)+@endif{{ number_format($payroll->bonus, 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4 text-red-500">
                                     -{{ number_format($payroll->deduction, 0, ',', '.') }} ₫
@@ -104,84 +163,12 @@
                                 <td class="px-6 py-4 font-bold text-violet-600">
                                     {{ number_format($payroll->total_salary, 0, ',', '.') }} ₫
                                 </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex flex-col items-center justify-center text-center gap-1">
-                                        @if ($payroll->isPaid())
-                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                                                Đã chi trả
-                                            </span>
-                                            @if($payroll->approved_by)
-                                                <span class="text-[10px] text-slate-400 block max-w-[150px] truncate"
-                                                      title="Duyệt bởi {{ $payroll->approver?->name }} vào lúc {{ $payroll->approved_at?->format('H:i d/m/Y') }}">
-                                                    Duyệt: {{ $payroll->approver?->name }}
-                                                </span>
-                                            @endif
-                                            @if($payroll->paid_by)
-                                                <span class="text-[10px] text-slate-500 block max-w-[150px] truncate"
-                                                      title="Chi trả bởi {{ $payroll->payer?->name }} vào lúc {{ $payroll->paid_at?->format('H:i d/m/Y') }}">
-                                                    Trả bởi: {{ $payroll->payer?->name }}
-                                                </span>
-                                            @endif
-                                        @elseif ($payroll->isApproved())
-                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                                                Chưa chi trả (Đã duyệt)
-                                            </span>
-                                            @if($payroll->approved_by)
-                                                <span class="text-[10px] text-slate-400 block max-w-[150px] truncate"
-                                                      title="Duyệt bởi {{ $payroll->approver?->name }} vào lúc {{ $payroll->approved_at?->format('H:i d/m/Y') }}">
-                                                    Duyệt: {{ $payroll->approver?->name }}
-                                                </span>
-                                            @endif
-                                        @elseif ($payroll->isPending())
-                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
-                                                Chưa chi trả (Chờ duyệt)
-                                            </span>
-                                        @else
-                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
-                                                Chưa chi trả (Nháp)
-                                            </span>
-                                        @endif
-                                    </div>
-                                </td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex justify-center items-center gap-2">
-                                        @if ($payroll->isDraft())
-                                            <form action="{{ route('admin.payrolls.submit', $payroll) }}" method="POST">
-                                                @csrf
-                                                <button type="submit"
-                                                        class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition">
-                                                    Gửi duyệt
-                                                </button>
-                                            </form>
-                                        @elseif ($payroll->isPending())
-                                            <form action="{{ route('admin.payrolls.approve', $payroll) }}" method="POST">
-                                                @csrf
-                                                <button type="submit"
-                                                        class="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold transition">
-                                                    Duyệt
-                                                </button>
-                                            </form>
-                                        @elseif ($payroll->isApproved())
-                                            <form action="{{ route('admin.payrolls.pay', $payroll) }}" method="POST"
-                                                  onsubmit="return confirm('Xác nhận đã thực hiện chi trả lương cho nhân viên {{ $payroll->employee?->full_name }}?')">
-                                                @csrf
-                                                <button type="submit"
-                                                        class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition shadow-sm shadow-emerald-500/10">
-                                                    Chi trả
-                                                </button>
-                                            </form>
-                                        @else
-                                            <span class="text-emerald-600 font-semibold text-xs flex items-center gap-1">
-                                                <svg class="w-4 h-4 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                                                </svg>
-                                                Đã chi trả
-                                            </span>
-                                        @endif
                                         <a href="{{ route('admin.payrolls.pdf', $payroll) }}"
-                                           class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1"
+                                           class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1"
                                            title="Xuất PDF">
-                                            📄 PDF
+                                            📄 Xuất PDF
                                         </a>
                                     </div>
                                 </td>

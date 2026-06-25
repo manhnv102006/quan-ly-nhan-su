@@ -16,6 +16,11 @@ class PayrollSeeder extends Seeder
         $periods = DB::table('payroll_periods')->get();
 
         foreach ($periods as $period) {
+            // Chỉ tạo payrolls cho các kỳ lương có trạng thái calculated trở lên
+            if ($period->status === 'open') {
+                continue;
+            }
+
             foreach ($employees as $employee) {
                 // Determine salary based on employee code
                 $basicSalary = 10000000;
@@ -37,23 +42,6 @@ class PayrollSeeder extends Seeder
                 $deduction = rand(0, 2) * 200000; // 0 to 400k
                 $totalSalary = $basicSalary + $allowance + $bonus - $deduction;
 
-                // Assign status based on period ID or month to make it look realistic
-                // E.g., older months are 'paid', current/future months are 'draft' or 'pending'
-                if ($period->month < 6) {
-                    $status = 'paid';
-                } elseif ($period->month < 9) {
-                    $status = 'approved';
-                } elseif ($period->month === 9) {
-                    $status = 'pending';
-                } else {
-                    $status = 'draft';
-                }
-
-                $approvedBy = in_array($status, ['approved', 'paid']) ? 1 : null;
-                $approvedAt = in_array($status, ['approved', 'paid']) ? now()->subDays(rand(1, 5)) : null;
-                $paidBy = $status === 'paid' ? 1 : null;
-                $paidAt = $status === 'paid' ? now() : null;
-
                 DB::table('payrolls')->insert([
                     'employee_id' => $employee->id,
                     'payroll_period_id' => $period->id,
@@ -63,11 +51,6 @@ class PayrollSeeder extends Seeder
                     'bonus' => $bonus,
                     'deduction' => $deduction,
                     'total_salary' => $totalSalary,
-                    'status' => $status,
-                    'approved_by' => $approvedBy,
-                    'approved_at' => $approvedAt,
-                    'paid_by' => $paidBy,
-                    'paid_at' => $paidAt,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
