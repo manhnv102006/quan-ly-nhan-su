@@ -126,6 +126,23 @@ class PayrollPeriodController extends Controller
             ->with('success', 'Cập nhật kỳ lương thành công.');
     }
 
+    public function show(PayrollPeriod $payrollPeriod): View
+    {
+        $payrolls = $payrollPeriod->payrolls()
+            ->with(['employee', 'approver', 'payer'])
+            ->latest()
+            ->paginate(10);
+
+        $stats = [
+            'total_count' => $payrollPeriod->payrolls()->count(),
+            'total_salary' => $payrollPeriod->payrolls()->sum('total_salary'),
+            'paid_salary' => $payrollPeriod->payrolls()->where('status', 'paid')->sum('total_salary'),
+            'unpaid_salary' => $payrollPeriod->payrolls()->where('status', '!=', 'paid')->sum('total_salary'),
+        ];
+
+        return view('admin.payroll-periods.show', compact('payrollPeriod', 'payrolls', 'stats'));
+    }
+
     public function destroy(PayrollPeriod $payrollPeriod): RedirectResponse
     {
         if ($payrollPeriod->payrolls()->exists()) {
@@ -141,3 +158,4 @@ class PayrollPeriodController extends Controller
             ->with('success', 'Xóa kỳ lương thành công.');
     }
 }
+
