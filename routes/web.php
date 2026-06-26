@@ -109,6 +109,17 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/attendance-reports', [AttendanceReportController::class, 'index'])->name('attendance-reports.index');
 
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
+
+    Route::get('/leave-requests', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'index'])->name('leave-requests');
+    Route::post('/leave-requests/{leaveRequest}/approve', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'approve'])->name('leave-requests.approve');
+    Route::post('/leave-requests/{leaveRequest}/reject', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'reject'])->name('leave-requests.reject');
+    Route::post('/payroll-periods/{payrollPeriod}/calculate', [PayrollPeriodController::class, 'calculate'])->name('payroll-periods.calculate');
+    Route::post('/payroll-periods/{payrollPeriod}/approve', [PayrollPeriodController::class, 'approve'])->name('payroll-periods.approve');
+    Route::post('/payroll-periods/{payrollPeriod}/pay', [PayrollPeriodController::class, 'pay'])->name('payroll-periods.pay');
+    Route::post('/payroll-periods/{payrollPeriod}/close', [PayrollPeriodController::class, 'close'])->name('payroll-periods.close');
+    Route::get('/payrolls/{payroll}/pdf', [PayrollController::class, 'exportPdf'])->name('payrolls.pdf');
+    Route::get('/contracts', [AdminModuleController::class, 'contracts'])->name('contracts');
+
     Route::post('/payrolls/generate', [PayrollController::class, 'generate'])->name('payrolls.generate');
     Route::post('/payrolls/{payroll}/submit', [PayrollController::class, 'submit'])->name('payrolls.submit');
     Route::post('/payrolls/{payroll}/approve', [PayrollController::class, 'approve'])->name('payrolls.approve');
@@ -124,6 +135,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/contracts/{contract}/extend', [ContractController::class, 'extend'])->name('contracts.extend');
     Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate');
     Route::resource('contracts', ContractController::class);
+
 
     Route::get('/recruitment', [RecruitmentController::class, 'index'])->name('recruitment');
     Route::get('/recruitment/job-posts', [JobPostController::class, 'index'])->name('recruitment.job-posts');

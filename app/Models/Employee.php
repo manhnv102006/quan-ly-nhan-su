@@ -2,21 +2,12 @@
 
 namespace App\Models;
 
-use App\Models\LeaveRequest;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Employee extends Model
 {
-    protected function casts(): array
-    {
-        return [
-            'date_of_birth' => 'date',
-            'hire_date' => 'date',
-        ];
-    }
-
     protected $fillable = [
         'user_id',
         'department_id',
@@ -32,6 +23,14 @@ class Employee extends Model
         'hire_date',
         'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'date_of_birth' => 'date',
+            'hire_date'     => 'date',
+        ];
+    }
 
     public function payrolls(): HasMany
     {
