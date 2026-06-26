@@ -1,125 +1,107 @@
 <x-admin-layout title="Tạo hợp đồng mới">
-    <div class="space-y-6">
-        <div class="flex items-center justify-between gap-4">
-            <div>
-                <h2 class="text-2xl font-bold text-slate-800">Tạo hợp đồng</h2>
-                <p class="text-sm text-slate-500 mt-1">Tạo hợp đồng mới cho nhân viên.</p>
-            </div>
-            <a href="{{ route('admin.contracts.index') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">Quay lại danh sách</a>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Tạo hợp đồng</h4>
+        <a class="btn btn-outline-secondary" href="{{ route('admin.contracts.index') }}">Quay lại</a>
+    </div>
 
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
-            <form action="{{ route('admin.contracts.store') }}" method="POST" enctype="multipart/form-data" class="grid gap-6">
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{{ route('admin.contracts.store') }}" enctype="multipart/form-data" class="row g-3">
                 @csrf
-
-                <div class="grid gap-6 sm:grid-cols-2">
-                    <div>
-                        <label for="employee_id" class="block text-sm font-semibold text-slate-700">Nhân viên</label>
-                        <select id="employee_id" name="employee_id" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none" required>
-                            <option value="">Chọn nhân viên</option>
-                            @foreach($employees as $employee)
-                                <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
-                            @endforeach
-                        </select>
-                        @error('employee_id')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="contract_type_id" class="block text-sm font-semibold text-slate-700">Loại hợp đồng</label>
-                        <select id="contract_type_id" name="contract_type_id" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none" required>
-                            <option value="">Chọn loại hợp đồng</option>
-                            @foreach($contractTypes as $type)
-                                <option value="{{ $type->id }}" {{ old('contract_type_id') == $type->id ? 'selected' : '' }}>{{ $type->contract_name }}</option>
-                            @endforeach
-                        </select>
-                        @error('contract_type_id')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                <div class="col-md-4">
+                    <label class="form-label">Nhân viên *</label>
+                    <select name="employee_id" class="form-select" required>
+                        <option value="">-- Chọn nhân viên --</option>
+                        @foreach($employees as $employee)
+                            <option value="{{ $employee->id }}" @selected(old('employee_id') == $employee->id)>{{ $employee->full_name }}</option>
+                        @endforeach
+                    </select>
+                    @error('employee_id')<div class="text-danger small">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Loại hợp đồng *</label>
+                    <select name="contract_type_id" class="form-select" required>
+                        <option value="">-- Chọn loại --</option>
+                        @foreach($contractTypes as $type)
+                            <option value="{{ $type->id }}" @selected(old('contract_type_id') == $type->id)>{{ $type->contract_name }}</option>
+                        @endforeach
+                    </select>
+                    @error('contract_type_id')<div class="text-danger small">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Mã hợp đồng</label>
+                    <input type="text" name="contract_code" class="form-control" value="{{ old('contract_code', $nextCode) }}" placeholder="Để trống sẽ tự sinh">
+                    @error('contract_code')<div class="text-danger small">{{ $message }}</div>@enderror
                 </div>
 
-                <div class="grid gap-6 sm:grid-cols-2">
-                    <div>
-                        <label for="contract_code" class="block text-sm font-semibold text-slate-700">Mã hợp đồng</label>
-                        <input id="contract_code" name="contract_code" type="text" value="{{ old('contract_code') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none" required>
-                        @error('contract_code')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="salary" class="block text-sm font-semibold text-slate-700">Lương</label>
-                        <input id="salary" name="salary" type="number" value="{{ old('salary') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none" min="0" required>
-                        @error('salary')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                <div class="col-md-4">
+                    <label class="form-label">Phòng ban *</label>
+                    <select name="department_id" class="form-select" required>
+                        <option value="">-- Chọn phòng ban --</option>
+                        @foreach($departments as $dept)
+                            <option value="{{ $dept->id }}" @selected(old('department_id') == $dept->id)>{{ $dept->department_name }}</option>
+                        @endforeach
+                    </select>
+                    @error('department_id')<div class="text-danger small">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Chức vụ *</label>
+                    <select name="position_id" class="form-select" required>
+                        <option value="">-- Chọn chức vụ --</option>
+                        @foreach($positions as $pos)
+                            <option value="{{ $pos->id }}" @selected(old('position_id') == $pos->id)>{{ $pos->position_name }}</option>
+                        @endforeach
+                    </select>
+                    @error('position_id')<div class="text-danger small">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Lương cơ bản *</label>
+                    <input type="number" name="salary" class="form-control" min="1" value="{{ old('salary') }}" required>
+                    @error('salary')<div class="text-danger small">{{ $message }}</div>@enderror
                 </div>
 
-                <div class="grid gap-6 sm:grid-cols-3">
-                    <div>
-                        <label for="start_date" class="block text-sm font-semibold text-slate-700">Ngày bắt đầu</label>
-                        <input id="start_date" name="start_date" type="date" value="{{ old('start_date') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none" required>
-                        @error('start_date')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="end_date" class="block text-sm font-semibold text-slate-700">Ngày kết thúc</label>
-                        <input id="end_date" name="end_date" type="date" value="{{ old('end_date') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
-                        @error('end_date')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="signed_date" class="block text-sm font-semibold text-slate-700">Ngày ký</label>
-                        <input id="signed_date" name="signed_date" type="date" value="{{ old('signed_date') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
-                        @error('signed_date')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                <div class="col-md-4">
+                    <label class="form-label">Phụ cấp</label>
+                    <input type="number" name="allowance" class="form-control" min="0" value="{{ old('allowance', 0) }}">
+                    @error('allowance')<div class="text-danger small">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Ngày bắt đầu *</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ old('start_date') }}" required>
+                    @error('start_date')<div class="text-danger small">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Ngày kết thúc *</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ old('end_date') }}" required>
+                    @error('end_date')<div class="text-danger small">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Ngày ký</label>
+                    <input type="date" name="signed_date" class="form-control" value="{{ old('signed_date') }}">
+                    @error('signed_date')<div class="text-danger small">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">File hợp đồng (pdf/doc/docx, ≤10MB)</label>
+                    <input type="file" name="contract_file" class="form-control">
+                    @error('contract_file')<div class="text-danger small">{{ $message }}</div>@enderror
                 </div>
 
-                <div class="grid gap-6 sm:grid-cols-2">
-                    <div>
-                        <label for="status" class="block text-sm font-semibold text-slate-700">Trạng thái</label>
-                        <select id="status" name="status" required class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">
-                            @foreach($statuses as $value => $label)
-                                <option value="{{ $value }}" {{ old('status') == $value ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        @error('status')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="contract_file" class="block text-sm font-semibold text-slate-700">Tệp hợp đồng</label>
-                        <input id="contract_file" name="contract_file" type="file" class="mt-2 w-full text-sm text-slate-700">
-                        @error('contract_file')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                <div class="col-12">
+                    <label class="form-label">Mô tả</label>
+                    <textarea name="description" class="form-control" rows="2" placeholder="Mô tả ngắn">{{ old('description') }}</textarea>
+                    @error('description')<div class="text-danger small">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Ghi chú</label>
+                    <textarea name="note" class="form-control" rows="2" placeholder="Ghi chú nội bộ">{{ old('note') }}</textarea>
+                    @error('note')<div class="text-danger small">{{ $message }}</div>@enderror
                 </div>
 
-                <div>
-                    <label for="note" class="block text-sm font-semibold text-slate-700">Ghi chú</label>
-                    <textarea id="note" name="note" rows="4" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">{{ old('note') }}</textarea>
-                    @error('note')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="flex justify-end gap-3">
-                    <a href="{{ route('admin.contracts.index') }}" class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">Hủy</a>
-                    <button type="submit" class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">Tạo hợp đồng</button>
+                <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                    <a class="btn btn-outline-secondary" href="{{ route('admin.contracts.index') }}">Hủy</a>
+                    <button type="submit" class="btn btn-primary">Lưu hợp đồng</button>
                 </div>
             </form>
         </div>
     </div>
 </x-admin-layout>
-
