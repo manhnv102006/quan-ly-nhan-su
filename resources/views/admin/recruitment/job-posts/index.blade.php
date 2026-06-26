@@ -1,423 +1,343 @@
 <x-admin-layout title="Tin tuyển dụng">
-
     @php
-        $showCreateForm = $showCreateForm ?? false;
-        $showEditForm = $showEditForm ?? false;
-        $editingJobPost = $editingJobPost ?? null;
-        $formVisible = $showCreateForm || $showEditForm;
-        $isEditMode = $showEditForm && $editingJobPost;
-        $formAction = $isEditMode
-            ? route('admin.recruitment.job-posts.update', $editingJobPost)
+        $showForm = ($showCreateForm ?? false) || ($showEditForm ?? false);
+        $formJobPost = ($showEditForm ?? false) ? ($editingJobPost ?? null) : null;
+        $formAction = ($showEditForm ?? false) && $formJobPost
+            ? route('admin.recruitment.job-posts.update', $formJobPost)
             : route('admin.recruitment.job-posts.store');
-        $formTitle = $isEditMode ? 'Sửa tin tuyển dụng' : 'Thêm tin tuyển dụng mới';
-        $formDescription = $isEditMode
-            ? 'Cập nhật thông tin tin tuyển dụng: ' . $editingJobPost->title
-            : 'Điền thông tin theo đúng dữ liệu hiện có của hệ thống.';
-        $submitLabel = $isEditMode ? 'Lưu thay đổi' : '+ Lưu tin tuyển dụng';
+        $inputClass = 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10';
+        $workTypes = [
+            'full_time' => 'Full-time',
+            'part_time' => 'Part-time',
+            'remote' => 'Remote',
+            'hybrid' => 'Hybrid',
+            'contract' => 'Contract',
+        ];
     @endphp
 
-    <div class="space-y-6">
+    @include('admin.recruitment.partials.ui-contrast')
 
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <div class="flex items-center gap-2 text-sm text-slate-500">
-                    <a href="{{ route('admin.recruitment') }}" class="hover:text-violet-600 transition">Tuyển dụng</a>
-                    <span>/</span>
-                    <span class="text-slate-700 font-medium">Tin tuyển dụng</span>
+    <div class="recruitment-ui max-w-full overflow-hidden space-y-6">
+        <section class="recruitment-hero rounded-[2rem] border border-white/80 bg-white/90 p-5 shadow-sm shadow-slate-200/60 sm:p-6">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                        <a href="{{ route('admin.recruitment') }}" class="hover:text-cyan-600">Tuyển dụng</a>
+                        <span>/</span>
+                        <span class="font-semibold text-slate-700">Tin tuyển dụng</span>
+                    </div>
+                    <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Quản lý tin tuyển dụng</h2>
+                    <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+                        Tạo nhu cầu tuyển dụng, gắn phòng ban, người phụ trách, mức lương và hạn nộp hồ sơ.
+                    </p>
                 </div>
 
-                <h2 class="mt-2 text-2xl font-bold text-slate-800">Danh sách tin tuyển dụng</h2>
-                <p class="text-sm text-slate-500 mt-1">
-                    Theo dõi và tìm kiếm các tin tuyển dụng đã tạo trong hệ thống.
-                </p>
-            </div>
-
-            <div class="flex flex-wrap gap-3">
-                @if ($formVisible)
-                    <a href="{{ route('admin.recruitment.job-posts') }}"
-                       class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
-                        Quay lại danh sách
-                    </a>
-                @else
-                    <a href="{{ route('admin.recruitment.job-posts.create') }}"
-                       class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
-                        + Thêm tin tuyển dụng
-                    </a>
-                @endif
-
-                <a href="{{ route('admin.recruitment') }}"
-                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
-                    Quay lại tuyển dụng
+                <a href="{{ route('admin.recruitment.job-posts.create') }}"
+                   class="recruitment-btn-primary inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
+                    Tạo tin tuyển dụng
                 </a>
             </div>
-        </div>
+        </section>
 
         @if (session('success'))
-            <div class="flex items-center gap-3 bg-white border border-emerald-200 shadow-sm rounded-2xl px-5 py-4">
-                <p class="text-sm font-medium text-emerald-700">{{ session('success') }}</p>
-            </div>
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-700">{{ session('success') }}</div>
         @endif
 
         @if (session('error'))
-            <div class="flex items-center gap-3 bg-white border border-red-200 shadow-sm rounded-2xl px-5 py-4">
-                <p class="text-sm font-medium text-red-700">{{ session('error') }}</p>
+            <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">{{ session('error') }}</div>
+        @endif
+
+        @if (isset($errors) && $errors->any())
+            <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+                <p class="font-bold">Vui lòng kiểm tra lại thông tin:</p>
+                <ul class="mt-2 list-disc space-y-1 pl-5">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
             </div>
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm text-slate-500">Tổng tin tuyển dụng</p>
-                <h3 class="text-3xl font-bold mt-2 text-slate-900">{{ $stats['total'] }}</h3>
+        <section class="recruitment-stats grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div class="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-sm">
+                <p class="text-sm font-bold text-slate-500">Tổng tin</p>
+                <p class="mt-2 text-3xl font-black text-slate-900">{{ $stats['total'] ?? 0 }}</p>
             </div>
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm text-slate-500">Đang mở</p>
-                <h3 class="text-3xl font-bold mt-2 text-emerald-600">{{ $stats['open'] }}</h3>
+            <div class="rounded-[1.5rem] border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
+                <p class="text-sm font-bold text-emerald-700">Đang mở</p>
+                <p class="mt-2 text-3xl font-black text-emerald-800">{{ $stats['open'] ?? 0 }}</p>
             </div>
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm text-slate-500">Đã đóng</p>
-                <h3 class="text-3xl font-bold mt-2 text-rose-600">{{ $stats['closed'] }}</h3>
+            <div class="rounded-[1.5rem] border border-slate-100 bg-slate-50 p-5 shadow-sm">
+                <p class="text-sm font-bold text-slate-600">Đã đóng</p>
+                <p class="mt-2 text-3xl font-black text-slate-900">{{ $stats['closed'] ?? 0 }}</p>
             </div>
-        </div>
+        </section>
 
-        @if ($formVisible)
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
-                <div class="mb-6">
-                    <h3 class="text-xl font-bold text-slate-800">{{ $formTitle }}</h3>
-                    <p class="text-sm text-slate-500 mt-1">{{ $formDescription }}</p>
+        @if ($showForm)
+            <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
+                <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h3 class="text-base font-black text-slate-900">{{ ($showEditForm ?? false) ? 'Cập nhật tin tuyển dụng' : 'Tạo tin tuyển dụng' }}</h3>
+                            <p class="mt-1 text-sm text-slate-500">Nhập đầy đủ thông tin để ứng viên và HR dễ theo dõi.</p>
+                        </div>
+                        <a href="{{ route('admin.recruitment.job-posts') }}" class="text-sm font-bold text-slate-500 transition hover:text-cyan-700">Đóng form</a>
+                    </div>
                 </div>
 
-                @if ($errors->any())
-                    <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                        <p class="font-semibold mb-1">Vui lòng kiểm tra lại thông tin:</p>
-                        <ul class="list-disc list-inside space-y-0.5">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-
-                <form action="{{ $formAction }}" method="POST" class="space-y-5 max-w-3xl">
+                <form action="{{ $formAction }}" method="POST" class="grid grid-cols-1 gap-5 p-5 sm:p-6 lg:grid-cols-2">
                     @csrf
-                    @if ($isEditMode)
+                    @if (($showEditForm ?? false) && $formJobPost)
                         @method('PUT')
                     @endif
 
-                    <div>
-                        <label for="title" class="block text-sm font-semibold text-slate-700 mb-2">
-                            Tiêu đề tin tuyển dụng <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="title"
-                            name="title"
-                            value="{{ old('title', $editingJobPost?->title) }}"
-                            placeholder="Ví dụ: Nhân viên tuyển dụng, Lập trình viên PHP"
-                            maxlength="255"
-                            required
-                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('title') border-red-400 @enderror"
-                        >
-                        @error('title')
-                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                    <div class="rounded-2xl bg-cyan-50 px-4 py-3 lg:col-span-2">
+                        <h4 class="text-sm font-black text-cyan-950">Thông tin công việc</h4>
+                        <p class="mt-1 text-sm text-cyan-700">Nhập vị trí, phòng ban, người phụ trách và số lượng cần tuyển.</p>
+                    </div>
+
+                    <div class="lg:col-span-2">
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Tiêu đề <span class="text-red-500">*</span></label>
+                        <input type="text" name="title" value="{{ old('title', $formJobPost?->title) }}" required class="{{ $inputClass }}">
+                        @error('title')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
-                        <label for="department_id" class="block text-sm font-semibold text-slate-700 mb-2">
-                            Phòng ban
-                        </label>
-                        <select
-                            id="department_id"
-                            name="department_id"
-                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('department_id') border-red-400 @enderror"
-                        >
-                            <option value="">-- Chưa gán phòng ban --</option>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Phòng ban</label>
+                        <select name="department_id" class="{{ $inputClass }}">
+                            <option value="">Chưa gắn phòng ban</option>
                             @foreach (($departments ?? collect()) as $department)
-                                <option value="{{ $department->id }}" @selected((string) old('department_id', $editingJobPost?->department_id) === (string) $department->id)>
+                                <option value="{{ $department->id }}" @selected((string) old('department_id', $formJobPost?->department_id) === (string) $department->id)>
                                     {{ $department->department_name }}
                                 </option>
                             @endforeach
                         </select>
-                        @error('department_id')
-                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        @error('department_id')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
-                        <label for="quantity" class="block text-sm font-semibold text-slate-700 mb-2">
-                            Số lượng tuyển <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="number"
-                            id="quantity"
-                            name="quantity"
-                            value="{{ old('quantity', $editingJobPost?->quantity) }}"
-                            placeholder="Nhập số lượng cần tuyển"
-                            min="1"
-                            required
-                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('quantity') border-red-400 @enderror"
-                        >
-                        @error('quantity')
-                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="status" class="block text-sm font-semibold text-slate-700 mb-2">
-                            Trạng thái <span class="text-red-500">*</span>
-                        </label>
-                        <select
-                            id="status"
-                            name="status"
-                            required
-                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('status') border-red-400 @enderror"
-                        >
-                            <option value="">-- Chọn trạng thái --</option>
-                            <option value="open" @selected(old('status', $editingJobPost?->status) === 'open')>Đang mở</option>
-                            <option value="closed" @selected(old('status', $editingJobPost?->status) === 'closed')>Đã đóng</option>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Người phụ trách</label>
+                        <select name="recruiter_id" class="{{ $inputClass }}">
+                            <option value="">Chưa gắn người phụ trách</option>
+                            @foreach (($recruiters ?? collect()) as $recruiter)
+                                <option value="{{ $recruiter->id }}" @selected((string) old('recruiter_id', $formJobPost?->recruiter_id) === (string) $recruiter->id)>
+                                    {{ $recruiter->employee_code }} - {{ $recruiter->full_name }}
+                                </option>
+                            @endforeach
                         </select>
-                        @error('status')
-                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        @error('recruiter_id')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
-                        <label for="description" class="block text-sm font-semibold text-slate-700 mb-2">
-                            Mô tả
-                        </label>
-                        <textarea
-                            id="description"
-                            name="description"
-                            rows="5"
-                            placeholder="Mô tả công việc, yêu cầu hoặc ghi chú tuyển dụng"
-                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition resize-y @error('description') border-red-400 @enderror"
-                        >{{ old('description', $editingJobPost?->description) }}</textarea>
-                        @error('description')
-                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Số lượng <span class="text-red-500">*</span></label>
+                        <input type="number" min="1" name="quantity" value="{{ old('quantity', $formJobPost?->quantity ?? 1) }}" required class="{{ $inputClass }}">
+                        @error('quantity')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
                     </div>
 
-                    <div class="flex flex-wrap gap-3 pt-2">
-                        <button type="submit"
-                                class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
-                            {{ $submitLabel }}
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Trạng thái <span class="text-red-500">*</span></label>
+                        <select name="status" required class="{{ $inputClass }}">
+                            <option value="open" @selected(old('status', $formJobPost?->status ?? 'open') === 'open')>Đang tuyển</option>
+                            <option value="closed" @selected(old('status', $formJobPost?->status) === 'closed')>Đã đóng</option>
+                        </select>
+                        @error('status')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div class="rounded-2xl bg-slate-50 px-4 py-3 lg:col-span-2">
+                        <h4 class="text-sm font-black text-slate-900">Lương, hình thức và thời hạn</h4>
+                        <p class="mt-1 text-sm text-slate-500">Các thông tin này giúp ứng viên hiểu nhanh điều kiện tuyển dụng.</p>
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Lương tối thiểu</label>
+                        <input type="number" min="0" step="100000" name="salary_min" value="{{ old('salary_min', $formJobPost?->salary_min) }}" class="{{ $inputClass }}">
+                        @error('salary_min')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Lương tối đa</label>
+                        <input type="number" min="0" step="100000" name="salary_max" value="{{ old('salary_max', $formJobPost?->salary_max) }}" class="{{ $inputClass }}">
+                        @error('salary_max')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Địa điểm</label>
+                        <input type="text" name="work_location" value="{{ old('work_location', $formJobPost?->work_location) }}" class="{{ $inputClass }}">
+                        @error('work_location')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Hình thức</label>
+                        <select name="work_type" class="{{ $inputClass }}">
+                            <option value="">Chưa chọn</option>
+                            @foreach ($workTypes as $value => $label)
+                                <option value="{{ $value }}" @selected(old('work_type', $formJobPost?->work_type) === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        @error('work_type')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Hạn nộp hồ sơ</label>
+                        <input type="date" name="application_deadline" value="{{ old('application_deadline', $formJobPost?->application_deadline?->format('Y-m-d')) }}" class="{{ $inputClass }}">
+                        @error('application_deadline')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div class="rounded-2xl bg-amber-50 px-4 py-3 lg:col-span-2">
+                        <h4 class="text-sm font-black text-amber-950">Nội dung tuyển dụng</h4>
+                        <p class="mt-1 text-sm text-amber-700">Tách rõ mô tả, yêu cầu và quyền lợi để tin tuyển dụng dễ đọc hơn.</p>
+                    </div>
+
+                    <div class="lg:col-span-2">
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Mô tả công việc</label>
+                        <textarea name="description" rows="4" class="{{ $inputClass }} resize-y">{{ old('description', $formJobPost?->description) }}</textarea>
+                        @error('description')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Yêu cầu</label>
+                        <textarea name="requirements" rows="4" class="{{ $inputClass }} resize-y">{{ old('requirements', $formJobPost?->requirements) }}</textarea>
+                        @error('requirements')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Quyền lợi</label>
+                        <textarea name="benefits" rows="4" class="{{ $inputClass }} resize-y">{{ old('benefits', $formJobPost?->benefits) }}</textarea>
+                        @error('benefits')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div class="flex flex-col-reverse gap-3 lg:col-span-2 sm:flex-row sm:items-center">
+                        <a href="{{ route('admin.recruitment.job-posts') }}" class="inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200">Hủy</a>
+                        <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
+                            {{ ($showEditForm ?? false) ? 'Lưu thay đổi' : 'Tạo tin' }}
                         </button>
-                        <a href="{{ route('admin.recruitment.job-posts') }}"
-                           class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
-                            Hủy
-                        </a>
                     </div>
                 </form>
-            </div>
+            </section>
         @endif
 
-        <div class="admin-card p-6">
-            <form method="GET" action="{{ route('admin.recruitment.job-posts') }}" class="flex flex-col gap-4 lg:flex-row lg:items-end">
-                <div class="flex-1">
-                    <label for="search" class="block text-sm font-medium text-slate-700 mb-2">
-                        Tìm kiếm tin tuyển dụng
-                    </label>
-                    <input
-                        type="text"
-                        id="search"
-                        name="search"
-                        value="{{ $search }}"
-                        placeholder="Nhập tiêu đề, mô tả hoặc tên phòng ban"
-                        class="w-full rounded-xl border-slate-200 focus:border-violet-500 focus:ring-violet-500"
-                    >
+        <section class="recruitment-panel rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm shadow-slate-200/60">
+            <form method="GET" action="{{ route('admin.recruitment.job-posts') }}" class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+                <div class="lg:col-span-5">
+                    <label class="mb-2 block text-sm font-bold text-slate-700">Tìm kiếm</label>
+                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Tìm theo tiêu đề, phòng ban, người phụ trách..."
+                           class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10">
                 </div>
 
-                <div class="flex flex-wrap gap-3">
-                    <button
-                        type="submit"
-                        class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition"
-                    >
-                        Tìm kiếm
-                    </button>
+                <div class="lg:col-span-3">
+                    <label class="mb-2 block text-sm font-bold text-slate-700">Trạng thái</label>
+                    <select name="status" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="open" @selected(($filters['status'] ?? '') === 'open')>Đang tuyển</option>
+                        <option value="closed" @selected(($filters['status'] ?? '') === 'closed')>Đã đóng</option>
+                    </select>
+                </div>
 
-                    @if ($search !== '')
-                        <a
-                            href="{{ route('admin.recruitment.job-posts') }}"
-                            class="inline-flex items-center justify-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition"
-                        >
-                            Xóa bộ lọc
-                        </a>
-                    @endif
+                <div class="lg:col-span-3">
+                    <label class="mb-2 block text-sm font-bold text-slate-700">Phòng ban</label>
+                    <select name="department_id" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10">
+                        <option value="">Tất cả phòng ban</option>
+                        @foreach (($departments ?? collect()) as $department)
+                            <option value="{{ $department->id }}" @selected((string) ($filters['department_id'] ?? '') === (string) $department->id)>
+                                {{ $department->department_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-3 lg:col-span-1 lg:justify-end">
+                    <button type="submit" class="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800">Lọc</button>
+                </div>
+
+                <div class="lg:col-span-12">
+                    <a href="{{ route('admin.recruitment.job-posts') }}" class="inline-flex rounded-2xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200">Xóa bộ lọc</a>
                 </div>
             </form>
-        </div>
+        </section>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-
-            <div class="px-6 py-4 border-b border-slate-200 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <h3 class="font-semibold text-slate-800">Danh sách tin tuyển dụng</h3>
-
-                <p class="text-sm text-slate-500">
-                    Hiển thị {{ $jobPosts->count() }} / {{ $jobPosts->total() }} bản ghi
-                </p>
-            </div>
-
+        <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
             <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200">
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">ID</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Tiêu đề</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Phòng ban</th>
-                            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Số lượng</th>
-                            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
-                            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Ngày tạo</th>
-                            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
+                <table class="min-w-[1050px] divide-y divide-slate-100">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-5 py-4 text-left text-xs font-black uppercase tracking-wide text-slate-500">Vị trí</th>
+                            <th class="px-5 py-4 text-left text-xs font-black uppercase tracking-wide text-slate-500">Phòng ban</th>
+                            <th class="px-5 py-4 text-left text-xs font-black uppercase tracking-wide text-slate-500">Phụ trách</th>
+                            <th class="px-5 py-4 text-left text-xs font-black uppercase tracking-wide text-slate-500">Lương / Hạn</th>
+                            <th class="px-5 py-4 text-left text-xs font-black uppercase tracking-wide text-slate-500">Trạng thái</th>
+                            <th class="px-5 py-4 text-right text-xs font-black uppercase tracking-wide text-slate-500">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-slate-100 bg-white">
                         @forelse ($jobPosts as $jobPost)
-                            <tr class="border-b border-slate-200 hover:bg-slate-50 transition">
-                                <td class="px-6 py-4 text-slate-700">{{ $jobPost->id }}</td>
-                                <td class="px-6 py-4">
-                                    <div class="font-medium text-slate-800">{{ $jobPost->title }}</div>
-                                    <p class="mt-1 text-sm text-slate-500 line-clamp-2">
-                                        {{ $jobPost->description ?: 'Không có mô tả.' }}
+                            <tr class="align-top transition hover:bg-slate-50/70">
+                                <td class="px-5 py-4">
+                                    <p class="max-w-sm break-words font-bold text-slate-900">{{ $jobPost->title }}</p>
+                                    <p class="mt-1 text-sm text-slate-500">Số lượng: {{ $jobPost->quantity }}</p>
+                                    <p class="mt-1 max-w-sm break-words text-sm text-slate-500">
+                                        {{ $jobPost->work_location ?: 'Chưa có địa điểm' }}
+                                        @if ($jobPost->work_type)
+                                            - {{ $workTypes[$jobPost->work_type] ?? $jobPost->work_type }}
+                                        @endif
                                     </p>
+                                    <details class="mt-3 max-w-md rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                                        <summary class="cursor-pointer text-sm font-bold text-cyan-700">Xem chi tiết nhanh</summary>
+                                        <div class="mt-3 space-y-3 text-sm leading-6 text-slate-600">
+                                            <div>
+                                                <p class="font-bold text-slate-800">Mô tả</p>
+                                                <p class="break-words">{{ $jobPost->description ?: 'Chưa có mô tả.' }}</p>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-slate-800">Yêu cầu</p>
+                                                <p class="break-words">{{ $jobPost->requirements ?: 'Chưa có yêu cầu.' }}</p>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-slate-800">Quyền lợi</p>
+                                                <p class="break-words">{{ $jobPost->benefits ?: 'Chưa có quyền lợi.' }}</p>
+                                            </div>
+                                        </div>
+                                    </details>
                                 </td>
-                                <td class="px-6 py-4 text-slate-600">
-                                    {{ $jobPost->department?->department_name ?? 'Chưa gán phòng ban' }}
-                                </td>
-                                <td class="px-6 py-4 text-center text-slate-700 font-semibold">
-                                    {{ $jobPost->quantity }}
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    @if ($jobPost->status === 'open')
-                                        <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                                            Đang mở
-                                        </span>
+                                <td class="px-5 py-4 text-sm text-slate-600">{{ $jobPost->department?->department_name ?? 'Chưa gắn' }}</td>
+                                <td class="px-5 py-4 text-sm text-slate-600">{{ $jobPost->recruiter?->full_name ?? 'Chưa gắn' }}</td>
+                                <td class="px-5 py-4 text-sm text-slate-600">
+                                    @if ($jobPost->salary_min || $jobPost->salary_max)
+                                        <p>{{ $jobPost->salary_min ? number_format((float) $jobPost->salary_min, 0, ',', '.') : '0' }} - {{ $jobPost->salary_max ? number_format((float) $jobPost->salary_max, 0, ',', '.') : 'Thỏa thuận' }}</p>
                                     @else
-                                        <span class="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">
-                                            Đã đóng
-                                        </span>
+                                        <p>Thỏa thuận</p>
+                                    @endif
+                                    <p class="mt-1 text-slate-500">{{ $jobPost->application_deadline?->format('d/m/Y') ?? 'Chưa có hạn' }}</p>
+                                </td>
+                                <td class="px-5 py-4">
+                                    @if ($jobPost->status === 'open')
+                                        <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">Đang tuyển</span>
+                                    @else
+                                        <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Đã đóng</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-center text-slate-600">
-                                    {{ $jobPost->created_at?->format('d/m/Y') ?? '-' }}
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <a href="{{ route('admin.recruitment.job-posts.edit', $jobPost) }}"
-                                           class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-amber-100 text-amber-600 hover:bg-amber-200 transition"
-                                           title="Sửa tin tuyển dụng">
-                                            ✏️
-                                        </a>
-
-                                        <form action="{{ route('admin.recruitment.job-posts.destroy', $jobPost) }}"
-                                              method="POST"
-                                              id="delete-form-{{ $jobPost->id }}"
-                                              class="inline">
+                                <td class="px-5 py-4">
+                                    <div class="flex justify-end gap-2">
+                                        <a href="{{ route('admin.recruitment.job-posts.edit', $jobPost) }}" class="rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700 transition hover:bg-amber-100">Sửa</a>
+                                        <form action="{{ route('admin.recruitment.job-posts.destroy', $jobPost) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn xóa tin tuyển dụng này?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="button"
-                                                    class="js-open-delete-modal inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition"
-                                                    title="Xóa tin tuyển dụng"
-                                                    data-form-id="delete-form-{{ $jobPost->id }}"
-                                                    data-job-title="{{ $jobPost->title }}">
-                                                🗑
-                                            </button>
+                                            <button type="submit" class="rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-700 transition hover:bg-red-100">Xóa</button>
                                         </form>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-12 text-slate-400">
-                                    Không tìm thấy tin tuyển dụng phù hợp.
-                                </td>
+                                <td colspan="6" class="px-5 py-14 text-center text-sm text-slate-500">Chưa có tin tuyển dụng nào.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
 
-            @if ($jobPosts->hasPages())
-                <div class="px-6 py-4 border-t border-slate-200">
-                    {{ $jobPosts->links() }}
-                </div>
-            @endif
-        </div>
-
-    </div>
-
-    <div id="delete-confirm-modal"
-         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl shadow-xl w-full max-w-md mx-4 p-6">
-            <div class="w-16 h-16 mx-auto rounded-2xl bg-red-100 flex items-center justify-center">
-                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
+            <div class="border-t border-slate-100 p-5">
+                {{ $jobPosts->links() }}
             </div>
-
-            <h3 class="mt-5 text-lg font-bold text-slate-800 text-center">Xác nhận xóa tin tuyển dụng</h3>
-            <p class="mt-2 text-sm text-slate-500 text-center">
-                Bạn có chắc muốn xóa tin tuyển dụng
-                <span id="delete-job-title" class="font-semibold text-slate-800"></span>?
-            </p>
-            <p class="mt-2 text-xs text-red-600 text-center font-medium">
-                Tin tuyển dụng sẽ bị xóa khỏi hệ thống. Ứng viên liên kết sẽ không bị xóa và sẽ được gỡ liên kết khỏi tin tuyển dụng này.
-            </p>
-
-            <div class="mt-6 flex gap-3">
-                <button type="button" id="cancel-delete-btn"
-                        class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
-                    Hủy
-                </button>
-                <button type="button" id="confirm-delete-btn"
-                        class="flex-1 px-5 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition">
-                    Xác nhận xóa
-                </button>
-            </div>
-        </div>
+        </section>
     </div>
-
-    <script>
-        (function () {
-            const modal = document.getElementById('delete-confirm-modal');
-            const titleEl = document.getElementById('delete-job-title');
-            const cancelBtn = document.getElementById('cancel-delete-btn');
-            const confirmBtn = document.getElementById('confirm-delete-btn');
-            let targetFormId = null;
-
-            function openModal() {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            }
-
-            function closeModal() {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                targetFormId = null;
-            }
-
-            document.querySelectorAll('.js-open-delete-modal').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    targetFormId = button.dataset.formId;
-                    titleEl.textContent = button.dataset.jobTitle || '';
-                    openModal();
-                });
-            });
-
-            cancelBtn.addEventListener('click', closeModal);
-
-            confirmBtn.addEventListener('click', function () {
-                if (!targetFormId) return;
-                const form = document.getElementById(targetFormId);
-                if (form) form.submit();
-            });
-
-            modal.addEventListener('click', function (event) {
-                if (event.target === modal) closeModal();
-            });
-        })();
-    </script>
-
 </x-admin-layout>
