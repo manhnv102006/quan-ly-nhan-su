@@ -134,14 +134,15 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/contracts/trash', [ContractController::class, 'trash'])->name('contracts.trashed');
     Route::post('/contracts/{contract}/restore', [ContractController::class, 'restore'])->name('contracts.restore');
     Route::delete('/contracts/{contract}/force-delete', [ContractController::class, 'forceDelete'])->name('contracts.forceDelete');
-    Route::post('/contracts/{contract}/extend', [ContractController::class, 'extend'])->name('contracts.extend');
-    Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate');
+    Route::get('/contracts/{contract}/extend', [ContractController::class, 'extendForm'])->name('contracts.extend.form');
+    Route::post('/contracts/{contract}/extend', [ContractController::class, 'extendStore'])->name('contracts.extend');
+    Route::post('/contracts/{contract}/cancel', [ContractController::class, 'cancel'])->name('contracts.cancel');
     Route::resource('contracts', ContractController::class);
 
     Route::get('/recruitment', [AdminModuleController::class, 'recruitment'])->name('recruitment');
 
     Route::get('/payrolls/{payroll}/pdf', [PayrollController::class, 'exportPdf'])->name('payrolls.pdf');
-    Route::get('/contracts', [AdminModuleController::class, 'contracts'])->name('contracts');
+    // Route contracts index is defined above; remove legacy alias to avoid conflict
     Route::get('/recruitment', [RecruitmentController::class, 'index'])->name('recruitment');
     Route::get('/recruitment/job-posts', [JobPostController::class, 'index'])->name('recruitment.job-posts');
     Route::get('/recruitment/job-posts/create', [JobPostController::class, 'create'])->name('recruitment.job-posts.create');
