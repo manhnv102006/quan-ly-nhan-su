@@ -1,156 +1,153 @@
 <x-admin-layout title="Tuyển dụng">
+    @php
+        $cards = [
+            [
+                'label' => 'Tổng tin tuyển dụng',
+                'value' => $stats['job_posts'] ?? 0,
+                'hint' => 'Nhu cầu tuyển dụng đang được quản lý',
+                'tone' => 'bg-cyan-50 text-cyan-700 ring-cyan-100',
+                'icon' => 'briefcase',
+            ],
+            [
+                'label' => 'Tổng ứng viên',
+                'value' => $stats['candidates'] ?? 0,
+                'hint' => 'Hồ sơ ứng viên đã tiếp nhận',
+                'tone' => 'bg-sky-50 text-sky-700 ring-sky-100',
+                'icon' => 'users',
+            ],
+            [
+                'label' => 'Chờ duyệt',
+                'value' => $stats['pending_candidates'] ?? 0,
+                'hint' => 'Ứng viên mới cần sàng lọc',
+                'tone' => 'bg-amber-50 text-amber-700 ring-amber-100',
+                'icon' => 'clock',
+            ],
+            [
+                'label' => 'Phỏng vấn',
+                'value' => $stats['interview_candidates'] ?? 0,
+                'hint' => 'Ứng viên đang ở vòng phỏng vấn',
+                'tone' => 'bg-indigo-50 text-indigo-700 ring-indigo-100',
+                'icon' => 'calendar',
+            ],
+            [
+                'label' => 'Đã nhận',
+                'value' => $stats['passed_candidates'] ?? 0,
+                'hint' => 'Ứng viên có kết quả đạt',
+                'tone' => 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+                'icon' => 'check',
+            ],
+            [
+                'label' => 'Đã từ chối',
+                'value' => $stats['failed_candidates'] ?? 0,
+                'hint' => 'Ứng viên không phù hợp',
+                'tone' => 'bg-rose-50 text-rose-700 ring-rose-100',
+                'icon' => 'xmark',
+            ],
+        ];
 
-    <div class="space-y-6">
+        $modules = [
+            [
+                'title' => 'Tin tuyển dụng',
+                'description' => 'Tạo và quản lý nhu cầu tuyển dụng theo phòng ban, người phụ trách, mức lương và hạn nộp hồ sơ.',
+                'route' => route('admin.recruitment.job-posts'),
+                'cta' => 'Quản lý tin tuyển dụng',
+                'badge' => ($stats['job_posts'] ?? 0).' tin',
+                'tone' => 'cyan',
+            ],
+            [
+                'title' => 'Ứng viên',
+                'description' => 'Theo dõi hồ sơ, CV, trạng thái tuyển dụng và chuyển ứng viên đạt thành nhân viên.',
+                'route' => route('admin.recruitment.candidates'),
+                'cta' => 'Quản lý ứng viên',
+                'badge' => ($stats['candidates'] ?? 0).' hồ sơ',
+                'tone' => 'sky',
+            ],
+            [
+                'title' => 'Phỏng vấn',
+                'description' => 'Lên lịch phỏng vấn, ghi nhận điểm đánh giá, đề xuất tuyển và cập nhật kết quả.',
+                'route' => route('admin.recruitment.interviews'),
+                'cta' => 'Quản lý phỏng vấn',
+                'badge' => ($stats['interviews'] ?? 0).' lịch',
+                'tone' => 'amber',
+            ],
+        ];
+    @endphp
 
-        <div class="admin-card overflow-hidden">
-            <div class="relative px-6 sm:px-8 py-7 border-b border-slate-100 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-violet-50 via-indigo-50 to-cyan-50"></div>
+    @include('admin.recruitment.partials.ui-contrast')
 
-                <div class="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 text-[10px] font-bold uppercase tracking-wider mb-3">
-                            Module tuyển dụng
+    <div class="recruitment-ui max-w-full overflow-hidden space-y-6">
+        <section class="relative overflow-hidden rounded-[2rem] bg-slate-950 px-5 py-6 text-white shadow-sm sm:px-7 sm:py-8">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.38),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.28),transparent_34%)]"></div>
+            <div class="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <div class="min-w-0">
+                    <span class="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-cyan-100 ring-1 ring-white/15">
+                        Trung tâm tuyển dụng
+                    </span>
+                    <h2 class="mt-4 text-3xl font-black tracking-tight sm:text-4xl">Bảng điều khiển tuyển dụng</h2>
+                    <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-200">
+                        Tổng quan nhanh quy trình tuyển dụng: tin đang tuyển, hồ sơ ứng viên, phỏng vấn và ứng viên đã đạt.
+                    </p>
+                </div>
+
+                <div class="flex flex-col gap-3 sm:flex-row">
+                    <a href="{{ route('admin.recruitment.job-posts.create') }}"
+                       class="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-900 transition hover:bg-cyan-50">
+                        Tạo tin tuyển dụng
+                    </a>
+                    <a href="{{ route('admin.recruitment.candidates.create') }}"
+                       class="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-cyan-400">
+                        Thêm ứng viên
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="recruitment-stats grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            @foreach ($cards as $card)
+                <div class="overflow-hidden rounded-[1.75rem] border border-white/80 bg-white p-5 shadow-sm shadow-slate-200/60">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
+                            <p class="mt-3 text-3xl font-black tracking-tight text-slate-900">{{ $card['value'] }}</p>
+                        </div>
+                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 {{ $card['tone'] }}">
+                            @if ($card['icon'] === 'briefcase')
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.1A2.25 2.25 0 0 1 18 20.5H6a2.25 2.25 0 0 1-2.25-2.25v-4.1m16.5 0A2.25 2.25 0 0 0 18 11.9H6a2.25 2.25 0 0 0-2.25 2.25m16.5 0v-2.4A2.25 2.25 0 0 0 18 9.5H6a2.25 2.25 0 0 0-2.25 2.25v2.4M9 9.5V6.75A2.25 2.25 0 0 1 11.25 4.5h1.5A2.25 2.25 0 0 1 15 6.75V9.5" /></svg>
+                            @elseif ($card['icon'] === 'users')
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.965-3.07M12 7.875a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
+                            @elseif ($card['icon'] === 'clock')
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m5-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                            @elseif ($card['icon'] === 'calendar')
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3.75 8.25h16.5M4.5 6.75A2.25 2.25 0 0 1 6.75 4.5h10.5a2.25 2.25 0 0 1 2.25 2.25v10.5a2.25 2.25 0 0 1-2.25 2.25H6.75a2.25 2.25 0 0 1-2.25-2.25V6.75Z" /></svg>
+                            @elseif ($card['icon'] === 'check')
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                            @else
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                            @endif
+                        </div>
+                    </div>
+                    <p class="mt-4 text-sm leading-6 text-slate-500">{{ $card['hint'] }}</p>
+                </div>
+            @endforeach
+        </section>
+
+        <section class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            @foreach ($modules as $module)
+                <a href="{{ $module['route'] }}"
+                   class="group overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white p-6 shadow-sm shadow-slate-200/60 transition hover:-translate-y-1 hover:border-cyan-200 hover:shadow-lg hover:shadow-cyan-100/60">
+                    <div class="flex items-center justify-between gap-4">
+                        <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ $module['badge'] }}</span>
+                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 transition group-hover:bg-cyan-600 group-hover:text-white">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            </svg>
                         </span>
-                        <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">
-                            Dashboard tuyển dụng
-                        </h2>
-                        <p class="mt-1.5 text-sm text-slate-500 max-w-2xl">
-                            Theo dõi nhanh hiệu quả tuyển dụng của PeopleHub qua các chỉ số trọng tâm và truy cập nhanh tới từng nghiệp vụ chính.
-                        </p>
                     </div>
-
-                    <div class="flex flex-wrap gap-3">
-                        <a href="{{ route('admin.recruitment.job-posts') }}"
-                           class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
-                            Xem tin tuyển dụng
-                        </a>
-
-                        <a href="{{ route('admin.dashboard') }}"
-                           class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
-                            Về dashboard tổng
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="px-6 sm:px-8 py-6 sm:py-8 space-y-8">
-                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-                    <div class="rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-6 shadow-sm">
-                        <p class="text-sm font-medium text-violet-600">Tổng tin tuyển dụng</p>
-                        <h3 class="mt-3 text-4xl font-black tracking-tight text-slate-900">{{ $stats['job_posts'] }}</h3>
-                        <p class="mt-2 text-sm text-slate-500">Số lượng tin đang được quản lý trong hệ thống.</p>
-                    </div>
-
-                    <div class="rounded-3xl border border-cyan-100 bg-gradient-to-br from-cyan-50 to-white p-6 shadow-sm">
-                        <p class="text-sm font-medium text-cyan-600">Tổng ứng viên</p>
-                        <h3 class="mt-3 text-4xl font-black tracking-tight text-slate-900">{{ $stats['candidates'] }}</h3>
-                        <p class="mt-2 text-sm text-slate-500">Toàn bộ hồ sơ ứng viên đã tiếp nhận.</p>
-                    </div>
-
-                    <div class="rounded-3xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-6 shadow-sm">
-                        <p class="text-sm font-medium text-amber-600">Tổng lịch phỏng vấn</p>
-                        <h3 class="mt-3 text-4xl font-black tracking-tight text-slate-900">{{ $stats['interviews'] }}</h3>
-                        <p class="mt-2 text-sm text-slate-500">Số buổi phỏng vấn đã được tạo trong hệ thống.</p>
-                    </div>
-
-                    <div class="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-6 shadow-sm">
-                        <p class="text-sm font-medium text-emerald-600">Tổng ứng viên đạt</p>
-                        <h3 class="mt-3 text-4xl font-black tracking-tight text-slate-900">{{ $stats['passed_candidates'] }}</h3>
-                        <p class="mt-2 text-sm text-slate-500">Ứng viên đã được đánh dấu đạt sau quá trình tuyển dụng.</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                    <a href="{{ route('admin.recruitment.job-posts') }}"
-                       class="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:border-violet-200 hover:shadow-md hover:shadow-violet-100 transition">
-                        <div class="flex items-center justify-between gap-4">
-                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-violet-500/20">
-                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-semibold">
-                                {{ $stats['job_posts'] }} tin
-                            </span>
-                        </div>
-
-                        <h3 class="mt-5 text-lg font-bold text-slate-800 group-hover:text-violet-700 transition">
-                            Quản lý tin tuyển dụng
-                        </h3>
-
-                        <p class="mt-2 text-sm text-slate-500 leading-relaxed">
-                            Xem danh sách, tìm kiếm và quản lý các tin tuyển dụng theo phòng ban, trạng thái và nhu cầu thực tế.
-                        </p>
-
-                        <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-violet-600">
-                            Truy cập chức năng
-                            <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                            </svg>
-                        </div>
-                    </a>
-
-                    <a href="{{ route('admin.recruitment.candidates') }}"
-                       class="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:border-cyan-200 hover:shadow-md hover:shadow-cyan-100 transition">
-                        <div class="flex items-center justify-between gap-4">
-                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
-                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                            </div>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-cyan-100 text-cyan-700 text-xs font-semibold">
-                                {{ $stats['candidates'] }} hồ sơ
-                            </span>
-                        </div>
-
-                        <h3 class="mt-5 text-lg font-bold text-slate-800 group-hover:text-cyan-700 transition">
-                            Quản lý ứng viên
-                        </h3>
-
-                        <p class="mt-2 text-sm text-slate-500 leading-relaxed">
-                            Theo dõi hồ sơ ứng viên, trạng thái xử lý và chi tiết CV trong toàn bộ quy trình tuyển dụng.
-                        </p>
-
-                        <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-cyan-600">
-                            Truy cập chức năng
-                            <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                            </svg>
-                        </div>
-                    </a>
-
-                    <a href="{{ route('admin.recruitment.interviews') }}"
-                       class="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:border-amber-200 hover:shadow-md hover:shadow-amber-100 transition">
-                        <div class="flex items-center justify-between gap-4">
-                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
-                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
-                                {{ $stats['interviews'] }} lịch
-                            </span>
-                        </div>
-
-                        <h3 class="mt-5 text-lg font-bold text-slate-800 group-hover:text-amber-700 transition">
-                            Quản lý phỏng vấn
-                        </h3>
-
-                        <p class="mt-2 text-sm text-slate-500 leading-relaxed">
-                            Theo dõi lịch phỏng vấn, người phụ trách và cập nhật kết quả phỏng vấn ngay trong cùng một luồng làm việc.
-                        </p>
-
-                        <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-amber-600">
-                            Truy cập chức năng
-                            <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                            </svg>
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </div>
-
+                    <h3 class="mt-5 text-xl font-black text-slate-900">{{ $module['title'] }}</h3>
+                    <p class="mt-3 text-sm leading-6 text-slate-500">{{ $module['description'] }}</p>
+                    <div class="mt-6 text-sm font-bold text-cyan-700">{{ $module['cta'] }}</div>
+                </a>
+            @endforeach
+        </section>
     </div>
-
 </x-admin-layout>
