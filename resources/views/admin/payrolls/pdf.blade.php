@@ -185,35 +185,35 @@
                         <tr>
                             <td class="label">Trạng thái:</td>
                             <td class="value" style="font-weight: bold;">
-                                @if ($payroll->isPaid())
+                                @if ($payroll->payrollPeriod?->isPaid())
                                     <span style="color: #10b981;">Đã chi trả</span>
-                                @elseif ($payroll->isApproved())
+                                @elseif ($payroll->payrollPeriod?->isApproved())
                                     <span style="color: #3b82f6;">Chưa chi trả (Đã duyệt)</span>
-                                @elseif ($payroll->isPending())
+                                @elseif ($payroll->payrollPeriod?->isCalculated())
                                     <span style="color: #f59e0b;">Chưa chi trả (Chờ duyệt)</span>
                                 @else
                                     <span style="color: #64748b;">Chưa chi trả (Bản nháp)</span>
                                 @endif
                             </td>
                         </tr>
-                        @if ($payroll->approved_by)
+                        @if ($payroll->payrollPeriod?->approved_by)
                             <tr>
                                 <td class="label">Người duyệt:</td>
-                                <td class="value">{{ $payroll->approver?->name }}</td>
+                                <td class="value">{{ $payroll->payrollPeriod->approver?->name }}</td>
                             </tr>
                             <tr>
                                 <td class="label">Ngày duyệt:</td>
-                                <td class="value">{{ $payroll->approved_at?->format('H:i d/m/Y') }}</td>
+                                <td class="value">{{ $payroll->payrollPeriod->approved_at?->format('H:i d/m/Y') }}</td>
                             </tr>
                         @endif
-                        @if ($payroll->paid_by)
+                        @if ($payroll->payrollPeriod?->paid_by)
                             <tr>
                                 <td class="label">Người chi trả:</td>
-                                <td class="value">{{ $payroll->payer?->name }}</td>
+                                <td class="value">{{ $payroll->payrollPeriod->payer?->name }}</td>
                             </tr>
                             <tr>
                                 <td class="label">Ngày chi trả:</td>
-                                <td class="value">{{ $payroll->paid_at?->format('H:i d/m/Y') }}</td>
+                                <td class="value">{{ $payroll->payrollPeriod->paid_at?->format('H:i d/m/Y') }}</td>
                             </tr>
                         @endif
                     </table>
@@ -265,7 +265,7 @@
                 <div class="signature-title">Người lập phiếu</div>
                 <div style="font-size: 11px; color: #666; margin-bottom: 50px;">(Ký và ghi rõ họ tên)</div>
                 <div class="signature-name">
-                    {{ $payroll->payer?->name ?: ($payroll->approver?->name ?: 'Quản trị viên') }}
+                    {{ $payroll->payrollPeriod?->payer?->name ?: ($payroll->payrollPeriod?->approver?->name ?: 'Quản trị viên') }}
                 </div>
             </div>
             <div class="clear"></div>
