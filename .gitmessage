@@ -1,0 +1,8 @@
+Refactor(Payroll): Áp dụng luồng quản lý theo kỳ lương (Batch-driven Workflow)
+
+- Cập nhật database: di chuyển trạng thái (status), người duyệt, người chi trả từ phiếu lương (payrolls) sang kỳ lương (payroll_periods).
+- Cấu trúc lại PayrollService: tự động tính toán tổng hợp lương, phụ cấp, khấu trừ, thưởng KPI hàng loạt cho tất cả nhân sự trong kỳ.
+- Cập nhật giao diện: thêm các thẻ thống kê tổng quan (Open, Calculated, Approved, Paid, Closed), giao diện chi tiết kỳ lương và danh sách phiếu lương nhân viên.
+- Thêm các nút hành động (Tính lương tự động, Duyệt, Chi trả, Đóng) tương ứng với State Machine.
+- Sửa lỗi chức năng xuất PDF không hiển thị đúng thông tin người duyệt do thay đổi cấu trúc bảng.
+- Cập nhật các Seeder để tương thích với cấu trúc Database mới.

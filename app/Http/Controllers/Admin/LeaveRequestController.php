@@ -2,20 +2,22 @@
 
 namespace App\Http\Controllers\Admin;
 
-
 use App\Http\Controllers\Controller;
-use App\Models\LeaveRequest;
-use App\Models\Employee;
 use App\Models\Department;
-use App\Models\User;
-use Illuminate\Http\Request;
+use App\Models\Employee;
+use App\Models\LeaveRequest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+
+
+use Illuminate\Http\RedirectResponse;
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class LeaveRequestController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $user = Auth::user();
         $employeeProfile = Employee::where('user_id', $user->id)->first();
@@ -39,8 +41,8 @@ class LeaveRequestController extends Controller
         }
 
         $stats = [
-            'total' => (clone $statsQuery)->count(),
-            'pending' => (clone $statsQuery)->where('status', 'pending')->count(),
+            'total'    => (clone $statsQuery)->count(),
+            'pending'  => (clone $statsQuery)->where('status', 'pending')->count(),
             'approved' => (clone $statsQuery)->where('status', 'approved')->count(),
             'rejected' => (clone $statsQuery)->where('status', 'rejected')->count(),
         ];
@@ -48,7 +50,7 @@ class LeaveRequestController extends Controller
         // 2. Query for listing
         $query = LeaveRequest::query()->with(['employee.department', 'approver']);
 
-        // Enforce same scoping for query listing
+        // Enforce same scoping for listing
         if ($user->role->name === 'manager') {
             if ($employeeProfile) {
                 $department = Department::where('manager_id', $employeeProfile->id)->first()
@@ -84,11 +86,13 @@ class LeaveRequestController extends Controller
 
     public function show(LeaveRequest $leaveRequest): View
     {
+
         $user = Auth::user();
 
         if ($user->role->name === 'manager') {
             $this->checkAccess($user, $leaveRequest);
         }
+
 
         $leaveRequest->load([
             'employee.department',
@@ -111,7 +115,7 @@ class LeaveRequestController extends Controller
         }
 
         $leaveRequest->update([
-            'status' => 'approved',
+            'status'      => 'approved',
             'approved_by' => $user->id,
             'approved_at' => now(),
         ]);
@@ -136,14 +140,14 @@ class LeaveRequestController extends Controller
             'reject_reason' => 'required|string|max:1000',
         ], [
             'reject_reason.required' => 'Vui lòng nhập lý do từ chối.',
-            'reject_reason.max' => 'Lý do từ chối không được vượt quá 1000 ký tự.',
+            'reject_reason.max'      => 'Lý do từ chối không được vượt quá 1000 ký tự.',
         ]);
 
         $leaveRequest->update([
-            'status' => 'rejected',
+            'status'        => 'rejected',
             'reject_reason' => $request->reject_reason,
-            'approved_by' => $user->id,
-            'approved_at' => now(),
+            'approved_by'   => $user->id,
+            'approved_at'   => now(),
         ]);
 
         return redirect()
