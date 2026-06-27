@@ -6,16 +6,6 @@
     <x-admin-layout title="Thông báo">
         @include('notifications.partials.content')
     </x-admin-layout>
-@elseif ($user->isManager())
-    @include('manager.partials.navigation')
-    <x-staff-layout
-        title="Thông báo"
-        subtitle="{{ $managedDepartment ? 'Thông báo phòng ban '.$managedDepartment->department_name : 'Chưa gắn phòng ban quản lý' }}"
-        role="manager"
-        :navigation="$navigation"
-    >
-        @include('notifications.partials.content')
-    </x-staff-layout>
 @else
     @php
         $staffNavigation = [

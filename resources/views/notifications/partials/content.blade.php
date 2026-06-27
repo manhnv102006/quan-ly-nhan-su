@@ -1,4 +1,9 @@
-@php($typeMeta = \App\Support\NotificationTypeMeta::all())
+@php
+    $typeMeta = \App\Support\NotificationTypeMeta::all();
+    $indexRoute = $indexRoute ?? 'notifications.index';
+    $readAllRoute = $readAllRoute ?? 'notifications.read-all';
+    $readRoute = $readRoute ?? 'notifications.read';
+@endphp
 
 <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-4">
@@ -22,7 +27,7 @@
                 </a>
             @endif
             @if ($stats['unread'] > 0)
-                <form action="{{ route('notifications.read-all') }}" method="POST">
+                <form action="{{ route($readAllRoute) }}" method="POST">
                     @csrf
                     @method('PATCH')
                     <button type="submit"
@@ -61,7 +66,7 @@
 
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         <div class="px-6 py-5 border-b border-slate-100">
-            <form action="{{ route('notifications.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <form action="{{ route($indexRoute) }}" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="md:col-span-2">
                     <label for="search" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Tìm kiếm</label>
                     <input id="search" name="search" type="text" value="{{ $filters['search'] }}"
@@ -112,7 +117,10 @@
         @else
             <div class="divide-y divide-slate-100">
                 @foreach ($notifications as $notification)
-                    @include('admin.partials.notification-item', ['notification' => $notification])
+                    @include('admin.partials.notification-item', [
+                        'notification' => $notification,
+                        'readRoute' => $readRoute,
+                    ])
                 @endforeach
             </div>
         @endif
