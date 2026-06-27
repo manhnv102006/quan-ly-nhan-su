@@ -40,7 +40,17 @@ class OvertimeRequestController extends Controller
 
     public function store(OvertimeRequestStoreRequest $request): RedirectResponse
     {
-        OvertimeRequest::create($request->validated());
+        $data = $request->validated();
+        $data['employee_id'] = $data['employee_id'] ?? $request->user()?->employee?->id;
+        $data['status'] = $data['status'] ?? OvertimeRequest::STATUS_PENDING;
+
+        if (! $data['employee_id']) {
+            return back()
+                ->withErrors(['employee_id' => 'Không xác định được nhân viên tạo đơn.'])
+                ->withInput();
+        }
+
+        OvertimeRequest::create($data);
 
         return redirect()
             ->route('admin.overtime-requests.index')
