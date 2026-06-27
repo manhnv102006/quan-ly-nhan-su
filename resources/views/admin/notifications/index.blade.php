@@ -10,6 +10,10 @@
                 <p class="text-sm text-slate-500 mt-1">Theo dõi cập nhật hệ thống, nghỉ phép, lương và KPI</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
+                <a href="{{ route('admin.notifications.create') }}"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition">
+                    + Thêm thông báo
+                </a>
                 @if ($stats['unread'] > 0)
                     <form action="{{ route('admin.notifications.read-all') }}" method="POST">
                         @csrf

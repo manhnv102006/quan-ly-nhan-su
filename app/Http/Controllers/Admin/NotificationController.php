@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreNotificationRequest;
+use App\Models\User;
 use App\Services\AdminNotificationService;
+use App\Support\NotificationTypeMeta;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -31,6 +34,43 @@ class NotificationController extends Controller
                 'search' => $request->string('search')->trim()->toString(),
             ],
         ]);
+    }
+
+    public function create(): View
+    {
+        return view('admin.notifications.create', [
+            'typeMeta' => NotificationTypeMeta::all(),
+            'users' => User::query()
+                ->with('role')
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name', 'email', 'role_id']),
+        ]);
+    }
+
+    public function store(StoreNotificationRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+        $recipientIds = $this->notifications->activeRecipientIds(
+            $validated['audience'],
+            $validated['user_ids'] ?? [],
+        );
+
+        if ($recipientIds === []) {
+            return back()
+                ->withInput()
+                ->withErrors(['user_ids' => 'Không tìm thấy người nhận hợp lệ.']);
+        }
+
+        $this->notifications->create($request->user(), [
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'type' => $validated['type'],
+        ], $recipientIds);
+
+        return redirect()
+            ->route('admin.notifications.index')
+            ->with('success', 'Đã gửi thông báo tới '.count($recipientIds).' người nhận.');
     }
 
     public function markAsRead(Request $request, int $notification): RedirectResponse

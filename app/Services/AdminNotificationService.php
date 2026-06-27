@@ -7,6 +7,7 @@ use App\Models\NotificationUser;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class AdminNotificationService
 {
@@ -99,6 +100,52 @@ class AdminNotificationService
                 'is_read' => true,
                 'read_at' => now(),
             ]);
+    }
+
+    public function create(User $sender, array $data, array $userIds): Notification
+    {
+        return DB::transaction(function () use ($sender, $data, $userIds) {
+            $notification = Notification::create([
+                'title' => $data['title'],
+                'content' => $data['content'],
+                'type' => $data['type'],
+                'sender_id' => $sender->id,
+            ]);
+
+            $now = now();
+            $rows = collect($userIds)
+                ->unique()
+                ->values()
+                ->map(fn (int $userId) => [
+                    'notification_id' => $notification->id,
+                    'user_id' => $userId,
+                    'is_read' => false,
+                    'read_at' => null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ])
+                ->all();
+
+            NotificationUser::insert($rows);
+
+            return $notification;
+        });
+    }
+
+    public function activeRecipientIds(string $audience, array $selectedIds = []): array
+    {
+        if ($audience === 'all') {
+            return User::query()
+                ->where('status', 'active')
+                ->pluck('id')
+                ->all();
+        }
+
+        return User::query()
+            ->where('status', 'active')
+            ->whereIn('id', $selectedIds)
+            ->pluck('id')
+            ->all();
     }
 
     private function baseQuery(User $user)
