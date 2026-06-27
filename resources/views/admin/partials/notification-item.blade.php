@@ -1,6 +1,5 @@
-@include('admin.partials.notification-type-meta')
-
 @php
+    $typeMeta = \App\Support\NotificationTypeMeta::all();
     $compact = $compact ?? false;
     $meta = $typeMeta[$notification->type] ?? $typeMeta['system'];
     $isRead = (bool) $notification->is_read;
