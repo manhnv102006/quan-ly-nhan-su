@@ -181,6 +181,7 @@ Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
     Route::patch('/manager/leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('manager.leave-requests.reject');
     Route::get('/manager/notifications', [ManagerNotificationController::class, 'index'])->name('manager.notifications.index');
     Route::get('/manager/notifications/create', [ManagerNotificationController::class, 'create'])->name('manager.notifications.create');
+    Route::get('/manager/notifications/{notification}', [ManagerNotificationController::class, 'show'])->name('manager.notifications.show');
     Route::post('/manager/notifications', [ManagerNotificationController::class, 'store'])->name('manager.notifications.store');
     Route::patch('/manager/notifications/read-all', [ManagerNotificationController::class, 'markAllAsRead'])->name('manager.notifications.read-all');
     Route::patch('/manager/notifications/{notification}/read', [ManagerNotificationController::class, 'markAsRead'])->name('manager.notifications.read');

@@ -5,6 +5,7 @@
     $readRoute = $readRoute ?? 'notifications.read';
     $createRoute = $createRoute ?? null;
     $showRoute = $showRoute ?? null;
+    $showAccent = $showAccent ?? null;
 @endphp
 
 <div class="space-y-6">
@@ -128,6 +129,7 @@
                         'notification' => $notification,
                         'readRoute' => $readRoute,
                         'showRoute' => $showRoute,
+                        'showAccent' => $showAccent,
                     ])
                 @endforeach
             </div>
