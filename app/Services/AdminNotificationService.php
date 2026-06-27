@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Department;
+use App\Models\Employee;
 use App\Models\Notification;
 use App\Models\NotificationUser;
 use App\Models\User;
@@ -132,7 +134,7 @@ class AdminNotificationService
         });
     }
 
-    public function activeRecipientIds(string $audience, array $selectedIds = []): array
+    public function activeRecipientIds(string $audience, array $userIds = [], array $departmentIds = []): array
     {
         if ($audience === 'all') {
             return User::query()
@@ -141,9 +143,42 @@ class AdminNotificationService
                 ->all();
         }
 
+        if ($audience === 'departments') {
+            $employeeUserIds = Employee::query()
+                ->whereIn('department_id', $departmentIds)
+                ->whereNotNull('user_id')
+                ->pluck('user_id');
+
+            $managerEmployeeIds = Department::query()
+                ->whereIn('id', $departmentIds)
+                ->whereNotNull('manager_id')
+                ->pluck('manager_id');
+
+            $managerUserIds = Employee::query()
+                ->whereIn('id', $managerEmployeeIds)
+                ->whereNotNull('user_id')
+                ->pluck('user_id');
+
+            $recipientIds = $employeeUserIds
+                ->merge($managerUserIds)
+                ->unique()
+                ->values()
+                ->all();
+
+            if ($recipientIds === []) {
+                return [];
+            }
+
+            return User::query()
+                ->where('status', 'active')
+                ->whereIn('id', $recipientIds)
+                ->pluck('id')
+                ->all();
+        }
+
         return User::query()
             ->where('status', 'active')
-            ->whereIn('id', $selectedIds)
+            ->whereIn('id', $userIds)
             ->pluck('id')
             ->all();
     }

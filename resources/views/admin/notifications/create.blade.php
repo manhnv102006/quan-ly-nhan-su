@@ -58,17 +58,47 @@
                 <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-5 space-y-4">
                     <p class="text-sm font-semibold text-slate-800">Đối tượng nhận</p>
 
-                    <div class="flex flex-wrap gap-4">
+                    <div class="flex flex-wrap gap-x-6 gap-y-3">
                         <label class="inline-flex items-center gap-2 cursor-pointer">
                             <input type="radio" name="audience" value="all" x-model="audience"
                                    class="text-violet-600 focus:ring-violet-500">
                             <span class="text-sm text-slate-700">Tất cả tài khoản đang hoạt động</span>
                         </label>
                         <label class="inline-flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="audience" value="departments" x-model="audience"
+                                   class="text-violet-600 focus:ring-violet-500">
+                            <span class="text-sm text-slate-700">Theo phòng ban</span>
+                        </label>
+                        <label class="inline-flex items-center gap-2 cursor-pointer">
                             <input type="radio" name="audience" value="selected" x-model="audience"
                                    class="text-violet-600 focus:ring-violet-500">
                             <span class="text-sm text-slate-700">Chọn người nhận cụ thể</span>
                         </label>
+                    </div>
+
+                    <div x-show="audience === 'departments'" x-cloak class="space-y-3">
+                        <p class="text-xs text-slate-500">Chọn một hoặc nhiều phòng ban — thông báo gửi tới nhân viên có tài khoản trong phòng ban đó</p>
+
+                        <div class="max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100">
+                            @forelse ($departments as $department)
+                                <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-violet-50/50 transition">
+                                    <input type="checkbox"
+                                           name="department_ids[]"
+                                           value="{{ $department->id }}"
+                                           @checked(in_array($department->id, array_map('intval', old('department_ids', []))))
+                                           class="rounded border-slate-300 text-violet-600 focus:ring-violet-500">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-medium text-slate-800">{{ $department->department_name }}</p>
+                                        <p class="text-xs text-slate-500">
+                                            {{ $department->department_code }}
+                                            · {{ $department->linked_users_count }} tài khoản liên kết
+                                        </p>
+                                    </div>
+                                </label>
+                            @empty
+                                <p class="px-4 py-8 text-center text-sm text-slate-500">Không có phòng ban đang hoạt động</p>
+                            @endforelse
+                        </div>
                     </div>
 
                     <div x-show="audience === 'selected'" x-cloak class="space-y-3">

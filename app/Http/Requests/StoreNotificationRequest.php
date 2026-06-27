@@ -18,7 +18,9 @@ class StoreNotificationRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string', 'max:5000'],
             'type' => ['required', Rule::in(['system', 'leave', 'payroll', 'kpi'])],
-            'audience' => ['required', Rule::in(['all', 'selected'])],
+            'audience' => ['required', Rule::in(['all', 'departments', 'selected'])],
+            'department_ids' => ['required_if:audience,departments', 'array', 'min:1'],
+            'department_ids.*' => ['integer', 'exists:departments,id'],
             'user_ids' => ['required_if:audience,selected', 'array', 'min:1'],
             'user_ids.*' => ['integer', 'exists:users,id'],
         ];
@@ -32,6 +34,8 @@ class StoreNotificationRequest extends FormRequest
             'type.required' => 'Loại thông báo là bắt buộc.',
             'type.in' => 'Loại thông báo không hợp lệ.',
             'audience.required' => 'Đối tượng nhận là bắt buộc.',
+            'department_ids.required_if' => 'Vui lòng chọn ít nhất một phòng ban.',
+            'department_ids.min' => 'Vui lòng chọn ít nhất một phòng ban.',
             'user_ids.required_if' => 'Vui lòng chọn ít nhất một người nhận.',
             'user_ids.min' => 'Vui lòng chọn ít nhất một người nhận.',
         ];
