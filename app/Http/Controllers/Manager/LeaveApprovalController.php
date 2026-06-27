@@ -8,6 +8,7 @@ use App\Models\LeaveRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class LeaveApprovalController extends Controller
@@ -72,12 +73,26 @@ class LeaveApprovalController extends Controller
             }
         }
 
-        $leaveRequest->update([
-            'status' => LeaveRequest::STATUS_APPROVED,
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
-            'reject_reason' => null,
-        ]);
+        // Kiểm tra trùng thời gian với các đơn đã duyệt khác
+        $overlap = LeaveRequest::where('employee_id', $leaveRequest->employee_id)
+            ->where('id', '!=', $leaveRequest->id)
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->whereDate('start_date', '<=', $leaveRequest->end_date)
+            ->whereDate('end_date', '>=', $leaveRequest->start_date)
+            ->exists();
+
+        if ($overlap) {
+            return back()->with('error', 'Đơn này trùng thời gian với đơn đã duyệt khác.');
+        }
+
+        DB::transaction(function () use ($leaveRequest) {
+            $leaveRequest->update([
+                'status' => LeaveRequest::STATUS_APPROVED,
+                'approved_by' => Auth::id(),
+                'approved_at' => now(),
+                'reject_reason' => null,
+            ]);
+        });
 
         return back()->with('success', 'Đã duyệt nghỉ phép.');
     }
@@ -95,12 +110,14 @@ class LeaveApprovalController extends Controller
             'reject_reason' => ['required', 'string', 'max:500'],
         ]);
 
-        $leaveRequest->update([
-            'status' => LeaveRequest::STATUS_REJECTED,
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
-            'reject_reason' => $request->reject_reason,
-        ]);
+        DB::transaction(function () use ($leaveRequest, $request) {
+            $leaveRequest->update([
+                'status' => LeaveRequest::STATUS_REJECTED,
+                'approved_by' => Auth::id(),
+                'approved_at' => now(),
+                'reject_reason' => $request->reject_reason,
+            ]);
+        });
 
         return back()->with('success', 'Đã từ chối nghỉ phép.');
     }
