@@ -1,4 +1,11 @@
 <x-admin-layout title="Duyệt nghỉ phép">
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <h4 class="mb-0">Đơn nghỉ phép cấp dưới</h4>
