@@ -27,6 +27,13 @@ class OvertimeApprovalController extends Controller
             ->whereHas('employee', function ($query) use ($departmentId) {
                 $query->where('department_id', $departmentId);
             })
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $keyword = trim((string) $request->search);
+                $query->whereHas('employee', function ($q) use ($keyword) {
+                    $q->where('full_name', 'like', '%' . $keyword . '%')
+                        ->orWhere('employee_code', 'like', '%' . $keyword . '%');
+                });
+            })
             ->when($request->filled('status'), function ($query) use ($request) {
                 $query->where('status', $request->status);
             })
@@ -36,6 +43,11 @@ class OvertimeApprovalController extends Controller
             ->when($request->filled('employee_id'), function ($query) use ($request) {
                 $query->where('employee_id', $request->employee_id);
             })
+            ->when($request->filled('department_id'), function ($query) use ($request) {
+                $query->whereHas('employee', function ($q) use ($request) {
+                    $q->where('department_id', $request->department_id);
+                });
+            })
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -43,7 +55,7 @@ class OvertimeApprovalController extends Controller
         return view('manager.overtime-requests.index', [
             'overtimeRequests' => $overtimeRequests,
             'employees' => $employees,
-            'filters' => $request->only(['status', 'work_date', 'employee_id']),
+            'filters' => $request->only(['search', 'status', 'work_date', 'employee_id', 'department_id']),
         ]);
     }
 
