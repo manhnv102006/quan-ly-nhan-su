@@ -73,7 +73,18 @@
                                 <td>{{ $item->start_time }}</td>
                                 <td>{{ $item->end_time }}</td>
                                 <td>{{ $item->total_hours }}</td>
-                                <td><span class="badge text-bg-secondary">{{ $item->status }}</span></td>
+                                <td>
+                                    @php
+                                        $statusClass = match($item->status) {
+                                            \App\Models\OvertimeRequest::STATUS_PENDING => 'text-bg-warning',
+                                            \App\Models\OvertimeRequest::STATUS_APPROVED => 'text-bg-success',
+                                            \App\Models\OvertimeRequest::STATUS_REJECTED => 'text-bg-danger',
+                                            \App\Models\OvertimeRequest::STATUS_COMPLETED => 'text-bg-primary',
+                                            default => 'text-bg-secondary',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $statusClass }}">{{ ucfirst($item->status) }}</span>
+                                </td>
                                 <td>{{ optional($item->created_at)->format('d/m/Y H:i') }}</td>
                                 <td class="text-end">
                                     <a href="{{ route('manager.overtime-requests.show', $item) }}" class="btn btn-sm btn-outline-primary">Xem</a>

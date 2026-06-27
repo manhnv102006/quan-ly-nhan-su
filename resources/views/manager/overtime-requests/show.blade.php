@@ -14,6 +14,15 @@
         @if(session('error'))
             <div class="alert alert-danger">{{ session('error') }}</div>
         @endif
+        @if($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0 ps-3">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         <div class="card">
             <div class="card-body">
@@ -44,7 +53,18 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label text-muted mb-1">Trạng thái</label>
-                        <div><span class="badge text-bg-secondary">{{ $overtimeRequest->status }}</span></div>
+                        <div>
+                            @php
+                                $statusClass = match($overtimeRequest->status) {
+                                    \App\Models\OvertimeRequest::STATUS_PENDING => 'text-bg-warning',
+                                    \App\Models\OvertimeRequest::STATUS_APPROVED => 'text-bg-success',
+                                    \App\Models\OvertimeRequest::STATUS_REJECTED => 'text-bg-danger',
+                                    \App\Models\OvertimeRequest::STATUS_COMPLETED => 'text-bg-primary',
+                                    default => 'text-bg-secondary',
+                                };
+                            @endphp
+                            <span class="badge {{ $statusClass }}">{{ ucfirst($overtimeRequest->status) }}</span>
+                        </div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label text-muted mb-1">Ngày duyệt</label>
@@ -63,10 +83,38 @@
                             @method('PATCH')
                             <button type="submit" class="btn btn-success">Phê duyệt</button>
                         </form>
-                        <button type="button" class="btn btn-danger">Từ chối</button>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">Từ chối</button>
                     </div>
                 @endif
             </div>
         </div>
     </div>
+
+    @if($overtimeRequest->status === \App\Models\OvertimeRequest::STATUS_PENDING)
+        <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ route('manager.overtime-requests.reject', $overtimeRequest) }}" method="POST">
+                        @csrf
+                        @method('PATCH')
+                        <div class="modal-header">
+                            <h5 class="modal-title">Từ chối đơn tăng ca</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <label for="reject_reason" class="form-label">Lý do từ chối</label>
+                            <textarea id="reject_reason" name="reject_reason" rows="4" class="form-control @error('reject_reason') is-invalid @enderror" required>{{ old('reject_reason') }}</textarea>
+                            @error('reject_reason')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
 </x-admin-layout>
