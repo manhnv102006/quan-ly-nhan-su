@@ -203,6 +203,7 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(fu
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/notifications', [UserNotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/{notification}', [UserNotificationController::class, 'show'])->name('notifications.show');
     Route::patch('/notifications/read-all', [UserNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::patch('/notifications/{notification}/read', [UserNotificationController::class, 'markAsRead'])->name('notifications.read');
 });
