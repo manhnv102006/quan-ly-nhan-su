@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreNotificationRequest;
+use App\Models\Department;
 use App\Models\User;
 use App\Services\AdminNotificationService;
 use App\Support\NotificationTypeMeta;
@@ -40,6 +41,13 @@ class NotificationController extends Controller
     {
         return view('admin.notifications.create', [
             'typeMeta' => NotificationTypeMeta::all(),
+            'departments' => Department::query()
+                ->where('status', 'active')
+                ->withCount([
+                    'employees as linked_users_count' => fn ($query) => $query->whereNotNull('user_id'),
+                ])
+                ->orderBy('department_name')
+                ->get(['id', 'department_code', 'department_name']),
             'users' => User::query()
                 ->with('role')
                 ->where('status', 'active')
@@ -54,12 +62,18 @@ class NotificationController extends Controller
         $recipientIds = $this->notifications->activeRecipientIds(
             $validated['audience'],
             $validated['user_ids'] ?? [],
+            $validated['department_ids'] ?? [],
         );
 
         if ($recipientIds === []) {
+            $errorKey = $validated['audience'] === 'departments' ? 'department_ids' : 'user_ids';
+            $errorMessage = $validated['audience'] === 'departments'
+                ? 'Không tìm thấy tài khoản nào liên kết với phòng ban đã chọn.'
+                : 'Không tìm thấy người nhận hợp lệ.';
+
             return back()
                 ->withInput()
-                ->withErrors(['user_ids' => 'Không tìm thấy người nhận hợp lệ.']);
+                ->withErrors([$errorKey => $errorMessage]);
         }
 
         $this->notifications->create($request->user(), [
