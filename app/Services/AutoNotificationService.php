@@ -45,7 +45,7 @@ class AutoNotificationService
                 $leaveRequest->start_date->format('d/m/Y'),
                 $leaveRequest->end_date->format('d/m/Y'),
                 $leaveRequest->total_days,
-            ), $recipients);
+            ), $recipients, $employee->department_id);
         });
     }
 
@@ -64,7 +64,7 @@ class AutoNotificationService
                 $this->leaveTypeLabel($leaveRequest->leave_type),
                 $leaveRequest->start_date->format('d/m/Y'),
                 $leaveRequest->end_date->format('d/m/Y'),
-            ), [$userId]);
+            ), [$userId], $leaveRequest->employee?->department_id);
         });
     }
 
@@ -88,7 +88,7 @@ class AutoNotificationService
                 $leaveRequest->start_date->format('d/m/Y'),
                 $leaveRequest->end_date->format('d/m/Y'),
                 $reason,
-            ), [$userId]);
+            ), [$userId], $leaveRequest->employee?->department_id);
         });
     }
 
@@ -129,7 +129,7 @@ class AutoNotificationService
                 'Bạn được giao theo dõi KPI "%s" (%s). Vui lòng xác nhận và cập nhật tiến độ.',
                 $assignment->kpi?->title ?? 'KPI',
                 $assignment->kpi?->code ?? '',
-            ), [$assignment->manager_id]);
+            ), [$assignment->manager_id], $assignment->kpi?->department_id);
         });
     }
 
@@ -141,7 +141,7 @@ class AutoNotificationService
             $this->send('kpi', 'Giao KPI đã được kích hoạt', sprintf(
                 'Giao KPI "%s" cho quản lý đã được phê duyệt và đang thực hiện.',
                 $assignment->kpi?->title ?? 'KPI',
-            ), array_filter([$assignment->assigned_by]));
+            ), array_filter([$assignment->assigned_by]), $assignment->kpi?->department_id);
         });
     }
 
@@ -153,7 +153,7 @@ class AutoNotificationService
             $this->send('kpi', 'Giao KPI đã bị hủy', sprintf(
                 'Giao KPI "%s" đã bị hủy.',
                 $assignment->kpi?->title ?? 'KPI',
-            ), array_filter([$assignment->assigned_by, $assignment->manager_id]));
+            ), array_filter([$assignment->assigned_by, $assignment->manager_id]), $assignment->kpi?->department_id);
         });
     }
 
@@ -165,7 +165,7 @@ class AutoNotificationService
             $this->send('kpi', 'KPI đã hoàn thành', sprintf(
                 'Giao KPI "%s" đã được đánh dấu hoàn thành.',
                 $assignment->kpi?->title ?? 'KPI',
-            ), array_filter([$assignment->assigned_by]));
+            ), array_filter([$assignment->assigned_by]), $assignment->kpi?->department_id);
         });
     }
 
@@ -182,7 +182,7 @@ class AutoNotificationService
             $this->send('system', 'Đơn tăng ca đã được duyệt', sprintf(
                 'Đơn tăng ca ngày %s của bạn đã được phê duyệt.',
                 $request->overtime_date->format('d/m/Y'),
-            ), [$userId]);
+            ), [$userId], $request->employee?->department_id);
         });
     }
 
@@ -199,7 +199,7 @@ class AutoNotificationService
             $this->send('system', 'Đơn tăng ca bị từ chối', sprintf(
                 'Đơn tăng ca ngày %s của bạn đã bị từ chối.',
                 $request->overtime_date->format('d/m/Y'),
-            ), [$userId]);
+            ), [$userId], $request->employee?->department_id);
         });
     }
 
@@ -242,7 +242,7 @@ class AutoNotificationService
                     $employee->full_name,
                     $contract->end_date->format('d/m/Y'),
                     $daysLeft,
-                ), $recipients);
+                ), $recipients, $employee->department_id);
 
                 if ($created) {
                     $sent++;
@@ -252,7 +252,7 @@ class AutoNotificationService
         return $sent;
     }
 
-    private function send(string $type, string $title, string $content, array $userIds): bool
+    private function send(string $type, string $title, string $content, array $userIds, ?int $departmentId = null): bool
     {
         $userIds = $this->resolveRecipients($userIds);
 
@@ -267,6 +267,7 @@ class AutoNotificationService
                 'title' => $title,
                 'content' => $content,
                 'type' => $type,
+                'department_id' => $departmentId,
             ], $userIds) !== null;
         } catch (\Throwable $exception) {
             Log::error('Auto notification failed.', [

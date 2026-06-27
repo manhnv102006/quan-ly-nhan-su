@@ -13,7 +13,13 @@ class Notification extends Model
         'content',
         'sender_id',
         'type',
+        'department_id',
     ];
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
 
     public function sender(): BelongsTo
     {

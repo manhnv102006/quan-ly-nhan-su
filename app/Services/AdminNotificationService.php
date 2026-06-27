@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\Notification;
 use App\Models\NotificationUser;
 use App\Models\User;
+use App\Support\ManagerDepartmentResolver;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -14,15 +15,7 @@ use Illuminate\Support\Facades\DB;
 class AdminNotificationService
 {
     /**
-     * @return Collection<int, object{
-     *     id: int,
-     *     title: string,
-     *     content: string,
-     *     type: string,
-     *     created_at: \Illuminate\Support\Carbon,
-     *     is_read: bool,
-     *     notification_user_id: int|null
-     * }>
+     * @return Collection<int, object>
      */
     public function recentForUser(User $user, int $limit = 5): Collection
     {
@@ -31,25 +24,7 @@ class AdminNotificationService
 
     public function paginateForUser(User $user, array $filters = [], int $perPage = 12): LengthAwarePaginator
     {
-        $query = $this->baseQuery($user);
-
-        if (($filters['status'] ?? 'all') === 'unread') {
-            $query->where('notification_users.is_read', false);
-        } elseif (($filters['status'] ?? 'all') === 'read') {
-            $query->where('notification_users.is_read', true);
-        }
-
-        if (! empty($filters['type'])) {
-            $query->where('notifications.type', $filters['type']);
-        }
-
-        if (! empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($inner) use ($search) {
-                $inner->where('notifications.title', 'like', "%{$search}%")
-                    ->orWhere('notifications.content', 'like', "%{$search}%");
-            });
-        }
+        $query = $this->applyFilters($this->baseQuery($user), $filters);
 
         return $query->paginate($perPage)->withQueryString();
     }
@@ -74,6 +49,10 @@ class AdminNotificationService
 
     public function markAsRead(User $user, int $notificationId): bool
     {
+        if (! $this->userCanAccessNotification($user, $notificationId)) {
+            return false;
+        }
+
         $pivot = NotificationUser::query()
             ->where('user_id', $user->id)
             ->where('notification_id', $notificationId)
@@ -95,13 +74,24 @@ class AdminNotificationService
 
     public function markAllAsRead(User $user): int
     {
-        return NotificationUser::query()
+        $query = NotificationUser::query()
             ->where('user_id', $user->id)
-            ->where('is_read', false)
-            ->update([
-                'is_read' => true,
-                'read_at' => now(),
-            ]);
+            ->where('is_read', false);
+
+        if ($user->isManager()) {
+            $departmentId = ManagerDepartmentResolver::managedDepartmentId($user);
+
+            if (! $departmentId) {
+                return 0;
+            }
+
+            $query->whereHas('notification', fn ($inner) => $inner->where('department_id', $departmentId));
+        }
+
+        return $query->update([
+            'is_read' => true,
+            'read_at' => now(),
+        ]);
     }
 
     public function create(User $sender, array $data, array $userIds): Notification
@@ -137,6 +127,64 @@ class AdminNotificationService
             ->all();
     }
 
+    public function activeRecipientIds(string $audience, array $userIds = [], array $departmentIds = []): array
+    {
+        if ($audience === 'all') {
+            return User::query()
+                ->where('status', 'active')
+                ->pluck('id')
+                ->all();
+        }
+
+        if ($audience === 'departments') {
+            return $this->recipientIdsForDepartments($departmentIds);
+        }
+
+        return User::query()
+            ->where('status', 'active')
+            ->whereIn('id', $userIds)
+            ->pluck('id')
+            ->all();
+    }
+
+    public function recipientIdsForDepartments(array $departmentIds): array
+    {
+        if ($departmentIds === []) {
+            return [];
+        }
+
+        $employeeUserIds = Employee::query()
+            ->whereIn('department_id', $departmentIds)
+            ->whereNotNull('user_id')
+            ->pluck('user_id');
+
+        $managerEmployeeIds = Department::query()
+            ->whereIn('id', $departmentIds)
+            ->whereNotNull('manager_id')
+            ->pluck('manager_id');
+
+        $managerUserIds = Employee::query()
+            ->whereIn('id', $managerEmployeeIds)
+            ->whereNotNull('user_id')
+            ->pluck('user_id');
+
+        $recipientIds = $employeeUserIds
+            ->merge($managerUserIds)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($recipientIds === []) {
+            return [];
+        }
+
+        return User::query()
+            ->where('status', 'active')
+            ->whereIn('id', $recipientIds)
+            ->pluck('id')
+            ->all();
+    }
+
     private function persistNotification(array $data, array $userIds): Notification
     {
         $userIds = $this->filterActiveUserIds($userIds);
@@ -151,6 +199,7 @@ class AdminNotificationService
                 'content' => $data['content'],
                 'type' => $data['type'],
                 'sender_id' => $data['sender_id'] ?? null,
+                'department_id' => $data['department_id'] ?? null,
             ]);
 
             $now = now();
@@ -173,58 +222,9 @@ class AdminNotificationService
         });
     }
 
-    public function activeRecipientIds(string $audience, array $userIds = [], array $departmentIds = []): array
-    {
-        if ($audience === 'all') {
-            return User::query()
-                ->where('status', 'active')
-                ->pluck('id')
-                ->all();
-        }
-
-        if ($audience === 'departments') {
-            $employeeUserIds = Employee::query()
-                ->whereIn('department_id', $departmentIds)
-                ->whereNotNull('user_id')
-                ->pluck('user_id');
-
-            $managerEmployeeIds = Department::query()
-                ->whereIn('id', $departmentIds)
-                ->whereNotNull('manager_id')
-                ->pluck('manager_id');
-
-            $managerUserIds = Employee::query()
-                ->whereIn('id', $managerEmployeeIds)
-                ->whereNotNull('user_id')
-                ->pluck('user_id');
-
-            $recipientIds = $employeeUserIds
-                ->merge($managerUserIds)
-                ->unique()
-                ->values()
-                ->all();
-
-            if ($recipientIds === []) {
-                return [];
-            }
-
-            return User::query()
-                ->where('status', 'active')
-                ->whereIn('id', $recipientIds)
-                ->pluck('id')
-                ->all();
-        }
-
-        return User::query()
-            ->where('status', 'active')
-            ->whereIn('id', $userIds)
-            ->pluck('id')
-            ->all();
-    }
-
     private function baseQuery(User $user)
     {
-        return Notification::query()
+        $query = Notification::query()
             ->join('notification_users', 'notification_users.notification_id', '=', 'notifications.id')
             ->where('notification_users.user_id', $user->id)
             ->select([
@@ -232,10 +232,64 @@ class AdminNotificationService
                 'notifications.title',
                 'notifications.content',
                 'notifications.type',
+                'notifications.department_id',
                 'notifications.created_at',
                 'notification_users.id as notification_user_id',
                 'notification_users.is_read',
             ])
             ->orderByDesc('notifications.created_at');
+
+        if ($user->isManager()) {
+            $departmentId = ManagerDepartmentResolver::managedDepartmentId($user);
+
+            if (! $departmentId) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            $query->where('notifications.department_id', $departmentId);
+        }
+
+        return $query;
+    }
+
+    private function applyFilters($query, array $filters)
+    {
+        if (($filters['status'] ?? 'all') === 'unread') {
+            $query->where('notification_users.is_read', false);
+        } elseif (($filters['status'] ?? 'all') === 'read') {
+            $query->where('notification_users.is_read', true);
+        }
+
+        if (! empty($filters['type'])) {
+            $query->where('notifications.type', $filters['type']);
+        }
+
+        if (! empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($inner) use ($search) {
+                $inner->where('notifications.title', 'like', "%{$search}%")
+                    ->orWhere('notifications.content', 'like', "%{$search}%");
+            });
+        }
+
+        return $query;
+    }
+
+    private function userCanAccessNotification(User $user, int $notificationId): bool
+    {
+        if (! $user->isManager()) {
+            return true;
+        }
+
+        $departmentId = ManagerDepartmentResolver::managedDepartmentId($user);
+
+        if (! $departmentId) {
+            return false;
+        }
+
+        return Notification::query()
+            ->whereKey($notificationId)
+            ->where('department_id', $departmentId)
+            ->exists();
     }
 }

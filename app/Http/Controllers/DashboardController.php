@@ -12,6 +12,7 @@ use App\Models\Payroll;
 use App\Models\Position;
 use App\Models\User;
 use App\Models\LeaveRequest;
+use App\Services\AdminNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -410,10 +411,7 @@ class DashboardController extends Controller
 
     private function unreadNotificationsCount(User $user): int
     {
-        return DB::table('notification_users')
-            ->where('user_id', $user->id)
-            ->where('is_read', false)
-            ->count();
+        return app(AdminNotificationService::class)->unreadCount($user);
     }
 
     private function aggregateDefaults(array $values): object

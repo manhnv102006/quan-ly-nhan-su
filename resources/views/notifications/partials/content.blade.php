@@ -4,7 +4,15 @@
     <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
             <h2 class="text-2xl font-bold text-slate-800">Tất cả thông báo</h2>
-            <p class="text-sm text-slate-500 mt-1">Theo dõi cập nhật hệ thống, nghỉ phép, lương và KPI</p>
+            <p class="text-sm text-slate-500 mt-1">
+                @if (auth()->user()?->isManager() && ($managedDepartment ?? null))
+                    Chỉ hiển thị thông báo thuộc phòng ban <span class="font-semibold text-emerald-600">{{ $managedDepartment->department_name }}</span>
+                @elseif (auth()->user()?->isManager())
+                    Bạn chưa được gắn phòng ban quản lý nên chưa có thông báo phòng ban.
+                @else
+                    Theo dõi cập nhật hệ thống, nghỉ phép, lương và KPI
+                @endif
+            </p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
             @if (auth()->user()?->isAdmin())

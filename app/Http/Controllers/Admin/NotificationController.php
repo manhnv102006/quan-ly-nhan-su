@@ -39,28 +39,52 @@ class NotificationController extends Controller
     public function store(StoreNotificationRequest $request): RedirectResponse
     {
         $validated = $request->validated();
-        $recipientIds = $this->notifications->activeRecipientIds(
-            $validated['audience'],
-            $validated['user_ids'] ?? [],
-            $validated['department_ids'] ?? [],
-        );
-
-        if ($recipientIds === []) {
-            $errorKey = $validated['audience'] === 'departments' ? 'department_ids' : 'user_ids';
-            $errorMessage = $validated['audience'] === 'departments'
-                ? 'Không tìm thấy tài khoản nào liên kết với phòng ban đã chọn.'
-                : 'Không tìm thấy người nhận hợp lệ.';
-
-            return back()
-                ->withInput()
-                ->withErrors([$errorKey => $errorMessage]);
-        }
-
-        $this->notifications->create($request->user(), [
+        $payload = [
             'title' => $validated['title'],
             'content' => $validated['content'],
             'type' => $validated['type'],
-        ], $recipientIds);
+        ];
+
+        if ($validated['audience'] === 'departments') {
+            $sentCount = 0;
+
+            foreach ($validated['department_ids'] as $departmentId) {
+                $recipientIds = $this->notifications->recipientIdsForDepartments([(int) $departmentId]);
+
+                if ($recipientIds === []) {
+                    continue;
+                }
+
+                $this->notifications->create($request->user(), array_merge($payload, [
+                    'department_id' => (int) $departmentId,
+                ]), $recipientIds);
+
+                $sentCount += count($recipientIds);
+            }
+
+            if ($sentCount === 0) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['department_ids' => 'Không tìm thấy tài khoản nào liên kết với phòng ban đã chọn.']);
+            }
+
+            return redirect()
+                ->route('notifications.index')
+                ->with('success', "Đã gửi thông báo tới {$sentCount} người nhận theo phòng ban.");
+        }
+
+        $recipientIds = $this->notifications->activeRecipientIds(
+            $validated['audience'],
+            $validated['user_ids'] ?? [],
+        );
+
+        if ($recipientIds === []) {
+            return back()
+                ->withInput()
+                ->withErrors(['user_ids' => 'Không tìm thấy người nhận hợp lệ.']);
+        }
+
+        $this->notifications->create($request->user(), $payload, $recipientIds);
 
         return redirect()
             ->route('notifications.index')
