@@ -5,6 +5,7 @@
     $notificationsIndexRoute = match (true) {
         $user?->isAdmin() => 'notifications.index',
         $user?->isManager() => 'manager.notifications.index',
+        $user?->isEmployee() => 'employee.notifications.index',
         default => 'notifications.index',
     };
 @endphp

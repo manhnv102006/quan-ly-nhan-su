@@ -1,37 +1,25 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Employee;
 
-use App\Http\Controllers\Controller as BaseController;
+use App\Http\Controllers\Controller;
 use App\Services\AdminNotificationService;
-use App\Support\ManagerDepartmentResolver;
+use App\Support\EmployeeNavigation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-class NotificationController extends BaseController
+class NotificationController extends Controller
 {
     public function __construct(
         private AdminNotificationService $notifications,
     ) {}
 
-    public function index(Request $request): View|RedirectResponse
+    public function index(Request $request): View
     {
         $user = $request->user();
 
-        if ($user->isManager() && ! $user->isAdmin()) {
-            return redirect()->route('manager.notifications.index', $request->query());
-        }
-
-        if ($user->isEmployee() && ! $user->isAdmin()) {
-            return redirect()->route('employee.notifications.index', $request->query());
-        }
-
-        $managedDepartment = $user->isManager()
-            ? ManagerDepartmentResolver::managedDepartment($user)
-            : null;
-
-        return view('notifications.index', [
+        return view('employee.notifications.index', [
             'notifications' => $this->notifications->paginateForUser($user, [
                 'status' => $request->string('status')->toString() ?: 'all',
                 'type' => $request->string('type')->toString(),
@@ -43,7 +31,7 @@ class NotificationController extends BaseController
                 'type' => $request->string('type')->toString(),
                 'search' => $request->string('search')->trim()->toString(),
             ],
-            'managedDepartment' => $managedDepartment,
+            'navigation' => EmployeeNavigation::items(),
         ]);
     }
 
@@ -61,7 +49,7 @@ class NotificationController extends BaseController
         $count = $this->notifications->markAllAsRead($request->user());
 
         return redirect()
-            ->route('notifications.index')
+            ->route('employee.notifications.index')
             ->with('success', $count > 0 ? "Đã đánh dấu {$count} thông báo là đã đọc." : 'Không có thông báo chưa đọc.');
     }
 }
