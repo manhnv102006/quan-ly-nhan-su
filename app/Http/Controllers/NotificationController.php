@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller as BaseController;
 use App\Services\AdminNotificationService;
+use App\Support\ManagerDepartmentResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,6 +18,9 @@ class NotificationController extends BaseController
     public function index(Request $request): View
     {
         $user = $request->user();
+        $managedDepartment = $user->isManager()
+            ? ManagerDepartmentResolver::managedDepartment($user)
+            : null;
 
         return view('notifications.index', [
             'notifications' => $this->notifications->paginateForUser($user, [
@@ -30,6 +34,7 @@ class NotificationController extends BaseController
                 'type' => $request->string('type')->toString(),
                 'search' => $request->string('search')->trim()->toString(),
             ],
+            'managedDepartment' => $managedDepartment,
         ]);
     }
 
