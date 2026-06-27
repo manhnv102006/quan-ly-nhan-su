@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\OvertimeRequestStoreRequest;
 use App\Http\Requests\OvertimeRequestUpdateRequest;
+use App\Models\Employee;
 use App\Models\OvertimeRequest;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -20,7 +22,7 @@ class OvertimeRequestController extends Controller
     {
         $overtimeRequests = OvertimeRequest::with(['employee', 'approver'])
             ->latest()
-            ->paginate(15);
+            ->paginate(10);
 
         $stats = [
             'total' => OvertimeRequest::count(),
@@ -35,14 +37,19 @@ class OvertimeRequestController extends Controller
 
     public function create(): View
     {
-        return view('admin.overtime-requests.create');
+        $employees = Employee::query()
+            ->where('status', 'active')
+            ->orderBy('full_name')
+            ->get();
+
+        return view('admin.overtime-requests.create', compact('employees'));
     }
 
     public function store(OvertimeRequestStoreRequest $request): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->normalizePayload($request->validated());
         $data['employee_id'] = $data['employee_id'] ?? $request->user()?->employee?->id;
-        $data['status'] = $data['status'] ?? OvertimeRequest::STATUS_PENDING;
+        $data['status'] = OvertimeRequest::STATUS_PENDING;
 
         if (! $data['employee_id']) {
             return back()
@@ -70,7 +77,12 @@ class OvertimeRequestController extends Controller
             abort(403, 'Chỉ được chỉnh sửa đơn ở trạng thái Pending.');
         }
 
-        return view('admin.overtime-requests.edit', compact('overtimeRequest'));
+        $employees = Employee::query()
+            ->where('status', 'active')
+            ->orderBy('full_name')
+            ->get();
+
+        return view('admin.overtime-requests.edit', compact('overtimeRequest', 'employees'));
     }
 
     public function update(OvertimeRequestUpdateRequest $request, OvertimeRequest $overtimeRequest): RedirectResponse
@@ -81,7 +93,7 @@ class OvertimeRequestController extends Controller
                 ->with('error', 'Đơn đã duyệt/từ chối, không thể chỉnh sửa.');
         }
 
-        $overtimeRequest->update($request->validated());
+        $overtimeRequest->update($this->normalizePayload($request->validated()));
 
         return redirect()
             ->route('admin.overtime-requests.show', $overtimeRequest)
@@ -101,5 +113,16 @@ class OvertimeRequestController extends Controller
         return redirect()
             ->route('admin.overtime-requests.index')
             ->with('success', 'Xóa yêu cầu tăng ca thành công.');
+    }
+
+    private function normalizePayload(array $payload): array
+    {
+        if (! isset($payload['total_hours']) || $payload['total_hours'] === null || $payload['total_hours'] === '') {
+            $start = Carbon::createFromFormat('H:i', $payload['start_time']);
+            $end = Carbon::createFromFormat('H:i', $payload['end_time']);
+            $payload['total_hours'] = round($end->diffInMinutes($start) / 60, 2);
+        }
+
+        return $payload;
     }
 }

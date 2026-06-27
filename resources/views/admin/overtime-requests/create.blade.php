@@ -15,6 +15,21 @@
                 <form action="{{ route('admin.overtime-requests.store') }}" method="POST" class="row g-3">
                     @csrf
 
+                    <div class="col-md-6">
+                        <label for="employee_id" class="form-label fw-semibold">Nhân viên</label>
+                        <select id="employee_id" name="employee_id" class="form-select @error('employee_id') is-invalid @enderror">
+                            <option value="">-- Chọn nhân viên --</option>
+                            @foreach($employees as $employee)
+                                <option value="{{ $employee->id }}" @selected(old('employee_id') == $employee->id)>
+                                    {{ $employee->full_name }} ({{ $employee->employee_code }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('employee_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     <div class="col-md-4">
                         <label for="work_date" class="form-label fw-semibold">Ngày</label>
                         <input type="date" id="work_date" name="work_date" class="form-control @error('work_date') is-invalid @enderror" value="{{ old('work_date') }}" required>
@@ -46,12 +61,6 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-
-                    @error('employee_id')
-                        <div class="col-12">
-                            <div class="alert alert-danger mb-0">{{ $message }}</div>
-                        </div>
-                    @enderror
 
                     <div class="col-12 d-flex justify-content-end gap-2 pt-2">
                         <button type="reset" class="btn btn-light border">Làm mới</button>
