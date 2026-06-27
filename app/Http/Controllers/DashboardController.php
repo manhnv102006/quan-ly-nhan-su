@@ -258,7 +258,7 @@ class DashboardController extends Controller
                     'payrolls.bonus',
                     'payrolls.deduction',
                     'payrolls.total_salary',
-                    'payrolls.status',
+                    'payroll_periods.status',
                     'payroll_periods.month',
                     'payroll_periods.year',
                 ]);
