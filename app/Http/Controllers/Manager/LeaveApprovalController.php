@@ -52,6 +52,10 @@ class LeaveApprovalController extends Controller
         $manager = $this->currentManager();
         $this->authorizeForManager($leaveRequest, $manager);
 
+        if ($leaveRequest->status !== LeaveRequest::STATUS_PENDING) {
+            return back()->with('error', 'Chỉ xử lý đơn ở trạng thái chờ duyệt.');
+        }
+
         $leaveRequest->update([
             'status' => LeaveRequest::STATUS_APPROVED,
             'approved_by' => Auth::id(),
@@ -66,6 +70,10 @@ class LeaveApprovalController extends Controller
     {
         $manager = $this->currentManager();
         $this->authorizeForManager($leaveRequest, $manager);
+
+        if ($leaveRequest->status !== LeaveRequest::STATUS_PENDING) {
+            return back()->with('error', 'Chỉ xử lý đơn ở trạng thái chờ duyệt.');
+        }
 
         $request->validate([
             'reject_reason' => ['required', 'string', 'max:500'],
