@@ -78,7 +78,7 @@
 
                 @if($overtimeRequest->status === \App\Models\OvertimeRequest::STATUS_PENDING)
                     <div class="d-flex gap-2 mt-4">
-                        <form action="{{ route('manager.overtime-requests.approve', $overtimeRequest) }}" method="POST">
+                        <form id="approve-form" action="{{ route('manager.overtime-requests.approve', $overtimeRequest) }}" method="POST">
                             @csrf
                             @method('PATCH')
                             <button type="submit" class="btn btn-success">Phê duyệt</button>
@@ -94,7 +94,7 @@
         <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                    <form action="{{ route('manager.overtime-requests.reject', $overtimeRequest) }}" method="POST">
+                    <form id="reject-form" action="{{ route('manager.overtime-requests.reject', $overtimeRequest) }}" method="POST">
                         @csrf
                         @method('PATCH')
                         <div class="modal-header">
@@ -116,5 +116,62 @@
                 </div>
             </div>
         </div>
+    @endif
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @if($overtimeRequest->status === \App\Models\OvertimeRequest::STATUS_PENDING)
+        <script>
+            const approveForm = document.getElementById('approve-form');
+            const rejectForm = document.getElementById('reject-form');
+
+            if (approveForm) {
+                approveForm.addEventListener('submit', function (event) {
+                    if (approveForm.dataset.confirmed === '1') return;
+
+                    event.preventDefault();
+                    Swal.fire({
+                        title: 'Xác nhận phê duyệt?',
+                        text: 'Bạn có chắc muốn phê duyệt đơn tăng ca này?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Phê duyệt',
+                        cancelButtonText: 'Hủy',
+                        confirmButtonColor: '#198754'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            approveForm.dataset.confirmed = '1';
+                            approveForm.submit();
+                        }
+                    });
+                });
+            }
+
+            if (rejectForm) {
+                rejectForm.addEventListener('submit', function (event) {
+                    if (rejectForm.dataset.confirmed === '1') return;
+
+                    const reason = document.getElementById('reject_reason')?.value?.trim() || '';
+                    if (!reason) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    Swal.fire({
+                        title: 'Xác nhận từ chối?',
+                        text: 'Bạn có chắc muốn từ chối đơn tăng ca này?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Từ chối',
+                        cancelButtonText: 'Hủy',
+                        confirmButtonColor: '#dc3545'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            rejectForm.dataset.confirmed = '1';
+                            rejectForm.submit();
+                        }
+                    });
+                });
+            }
+        </script>
     @endif
 </x-admin-layout>
