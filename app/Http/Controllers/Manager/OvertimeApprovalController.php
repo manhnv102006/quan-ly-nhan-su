@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -44,5 +45,42 @@ class OvertimeApprovalController extends Controller
             'employees' => $employees,
             'filters' => $request->only(['status', 'work_date', 'employee_id']),
         ]);
+    }
+
+    public function show(OvertimeRequest $overtimeRequest): View
+    {
+        $manager = Employee::where('user_id', Auth::id())->firstOrFail();
+        $this->authorizeInManagedDepartment($overtimeRequest, $manager->department_id);
+
+        $overtimeRequest->load(['employee.department', 'approver']);
+
+        return view('manager.overtime-requests.show', compact('overtimeRequest'));
+    }
+
+    public function approve(OvertimeRequest $overtimeRequest): RedirectResponse
+    {
+        $manager = Employee::where('user_id', Auth::id())->firstOrFail();
+        $this->authorizeInManagedDepartment($overtimeRequest, $manager->department_id);
+
+        if ($overtimeRequest->status !== OvertimeRequest::STATUS_PENDING) {
+            return back()->with('error', 'Chỉ đơn Pending mới được phê duyệt.');
+        }
+
+        $overtimeRequest->update([
+            'status' => OvertimeRequest::STATUS_APPROVED,
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+        ]);
+
+        return back()->with('success', 'Phê duyệt đơn tăng ca thành công.');
+    }
+
+    protected function authorizeInManagedDepartment(OvertimeRequest $overtimeRequest, ?int $departmentId): void
+    {
+        $requestDepartmentId = $overtimeRequest->employee?->department_id;
+
+        if (! $departmentId || $requestDepartmentId !== $departmentId) {
+            abort(403, 'Bạn không có quyền truy cập đơn tăng ca này.');
+        }
     }
 }
