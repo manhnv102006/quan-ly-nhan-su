@@ -12,6 +12,8 @@ use Illuminate\View\View;
 
 class LeaveApprovalController extends Controller
 {
+    private const ANNUAL_LEAVE_ALLOWANCE = 12; // số ngày phép năm mặc định
+
     public function index(Request $request): View
     {
         $manager = $this->currentManager();
@@ -54,6 +56,20 @@ class LeaveApprovalController extends Controller
 
         if ($leaveRequest->status !== LeaveRequest::STATUS_PENDING) {
             return back()->with('error', 'Chỉ xử lý đơn ở trạng thái chờ duyệt.');
+        }
+
+        // Kiểm tra quota phép năm (chỉ áp dụng cho annual)
+        if ($leaveRequest->leave_type === 'annual') {
+            $year = $leaveRequest->start_date?->year ?? now()->year;
+            $used = LeaveRequest::where('employee_id', $leaveRequest->employee_id)
+                ->where('leave_type', 'annual')
+                ->where('status', LeaveRequest::STATUS_APPROVED)
+                ->whereYear('start_date', $year)
+                ->sum('total_days');
+
+            if (($used + $leaveRequest->total_days) > self::ANNUAL_LEAVE_ALLOWANCE) {
+                return back()->with('error', 'Số ngày phép năm không đủ để duyệt đơn này.');
+            }
         }
 
         $leaveRequest->update([
