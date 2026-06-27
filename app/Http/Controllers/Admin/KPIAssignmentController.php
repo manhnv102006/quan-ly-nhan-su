@@ -8,11 +8,16 @@ use App\Models\KPI;
 use App\Models\KPIAssignment;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\AutoNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class KPIAssignmentController extends Controller
 {
+    public function __construct(
+        private AutoNotificationService $autoNotifications,
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -93,7 +98,9 @@ class KPIAssignmentController extends Controller
         $data['assigned_by'] = Auth::id();
         $data['status'] = 'pending';
 
-        KPIAssignment::create($data);
+        $assignment = KPIAssignment::create($data);
+
+        $this->autoNotifications->kpiAssigned($assignment);
 
         return redirect()
             ->route('admin.kpi-assignments.index')
@@ -160,6 +167,8 @@ class KPIAssignmentController extends Controller
     {
         $assignment->update(['status' => 'active']);
 
+        $this->autoNotifications->kpiApproved($assignment);
+
         return redirect()
             ->route('admin.kpi-assignments.index')
             ->with('success', 'Phê duyệt giao KPI thành công');
@@ -172,6 +181,8 @@ class KPIAssignmentController extends Controller
     {
         $assignment->update(['status' => 'cancelled']);
 
+        $this->autoNotifications->kpiRejected($assignment);
+
         return redirect()
             ->route('admin.kpi-assignments.index')
             ->with('success', 'Hủy giao KPI thành công');
@@ -183,6 +194,8 @@ class KPIAssignmentController extends Controller
     public function complete(KPIAssignment $assignment)
     {
         $assignment->update(['status' => 'completed']);
+
+        $this->autoNotifications->kpiCompleted($assignment);
 
         return redirect()
             ->route('admin.kpi-assignments.index')

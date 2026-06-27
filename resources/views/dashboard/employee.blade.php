@@ -12,8 +12,24 @@
     $employeeName = $employeeProfile?->full_name ?? Auth::user()->name;
     $attendanceLabels = ['present' => 'Đúng giờ', 'late' => 'Đi muộn', 'absent' => 'Vắng mặt', 'leave' => 'Nghỉ phép'];
     $attendanceClasses = ['present' => 'bg-emerald-50 text-emerald-700 border-emerald-100', 'late' => 'bg-amber-50 text-amber-700 border-amber-100', 'absent' => 'bg-rose-50 text-rose-700 border-rose-100', 'leave' => 'bg-sky-50 text-sky-700 border-sky-100'];
-    $payrollLabels = ['draft' => 'Nháp', 'approved' => 'Đã duyệt', 'paid' => 'Đã thanh toán'];
-    $payrollClasses = ['draft' => 'bg-amber-50 text-amber-700 border-amber-100', 'approved' => 'bg-cyan-50 text-cyan-700 border-cyan-100', 'paid' => 'bg-emerald-50 text-emerald-700 border-emerald-100'];
+    $payrollLabels = [
+        'open' => 'Đang mở',
+        'calculated' => 'Đã tính lương',
+        'approved' => 'Đã duyệt',
+        'paid' => 'Đã thanh toán',
+        'closed' => 'Đã đóng',
+        'draft' => 'Nháp',
+        'pending' => 'Chờ duyệt',
+    ];
+    $payrollClasses = [
+        'open' => 'bg-slate-50 text-slate-700 border-slate-200',
+        'calculated' => 'bg-amber-50 text-amber-700 border-amber-100',
+        'approved' => 'bg-cyan-50 text-cyan-700 border-cyan-100',
+        'paid' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+        'closed' => 'bg-slate-50 text-slate-600 border-slate-200',
+        'draft' => 'bg-amber-50 text-amber-700 border-amber-100',
+        'pending' => 'bg-amber-50 text-amber-700 border-amber-100',
+    ];
     $kpiLabels = ['pending' => 'Chờ bắt đầu', 'in_progress' => 'Đang thực hiện', 'completed' => 'Hoàn thành'];
     $kpiClasses = ['pending' => 'bg-amber-50 text-amber-700 border-amber-100', 'in_progress' => 'bg-cyan-50 text-cyan-700 border-cyan-100', 'completed' => 'bg-emerald-50 text-emerald-700 border-emerald-100'];
     $noticeLabels = ['system' => 'Hệ thống', 'leave' => 'Nghỉ phép', 'payroll' => 'Lương', 'kpi' => 'KPI'];
