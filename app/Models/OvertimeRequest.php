@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OvertimeRequest extends Model
 {
@@ -42,5 +43,10 @@ class OvertimeRequest extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function histories(): HasMany
+    {
+        return $this->hasMany(OvertimeRequestHistory::class);
     }
 }
