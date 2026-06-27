@@ -253,6 +253,7 @@ class DashboardController extends Controller
                 ->orderByDesc('payroll_periods.year')
                 ->orderByDesc('payroll_periods.month')
                 ->first([
+                    'payrolls.id',
                     'payrolls.basic_salary',
                     'payrolls.allowance',
                     'payrolls.bonus',
