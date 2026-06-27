@@ -21,13 +21,19 @@ class LeaveApprovalController extends Controller
                 $q->where('manager_id', $manager->id);
             })
             ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
+            ->when($request->filled('employee_id'), fn($q) => $q->where('employee_id', $request->employee_id))
+            ->when($request->filled('start_from'), fn($q) => $q->whereDate('start_date', '>=', $request->start_from))
+            ->when($request->filled('start_to'), fn($q) => $q->whereDate('start_date', '<=', $request->start_to))
             ->orderByDesc('created_at');
 
         $leaveRequests = $query->paginate(15)->withQueryString();
+        $employees = Employee::where('manager_id', $manager->id)->orderBy('full_name')->get();
 
         return view('manager.leave-requests.index', [
             'leaveRequests' => $leaveRequests,
             'filters' => $request->only(['status']),
+            'employees' => $employees,
+            'filters' => $request->only(['status', 'employee_id', 'start_from', 'start_to']),
         ]);
     }
 

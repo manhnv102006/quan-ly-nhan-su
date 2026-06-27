@@ -18,7 +18,24 @@
                         <option value="rejected" @selected(($filters['status'] ?? '') === 'rejected')>Đã từ chối</option>
                     </select>
                 </div>
-                <div class="col-md-3 d-flex align-items-end gap-2">
+                <div class="col-md-3">
+                    <label class="form-label">Nhân viên</label>
+                    <select name="employee_id" class="form-select">
+                        <option value="">Tất cả</option>
+                        @foreach($employees as $emp)
+                            <option value="{{ $emp->id }}" @selected(($filters['employee_id'] ?? '') == $emp->id)>{{ $emp->full_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Từ ngày</label>
+                    <input type="date" name="start_from" value="{{ $filters['start_from'] ?? '' }}" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Đến ngày</label>
+                    <input type="date" name="start_to" value="{{ $filters['start_to'] ?? '' }}" class="form-control">
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
                     <button class="btn btn-success" type="submit"><i class="bi bi-search"></i> Lọc</button>
                     <a class="btn btn-outline-secondary" href="{{ route('manager.leave-requests.index') }}">Xóa lọc</a>
                 </div>
