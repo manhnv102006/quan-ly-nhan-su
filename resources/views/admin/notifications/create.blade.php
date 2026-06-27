@@ -12,6 +12,12 @@
             </a>
         </div>
 
+        @if (session('success'))
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+                <p class="text-sm font-medium text-emerald-700">{{ session('success') }}</p>
+            </div>
+        @endif
+
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <form action="{{ route('admin.notifications.store') }}" method="POST"
                   class="p-6 sm:p-8 space-y-6"
@@ -124,6 +130,8 @@
                     </div>
                 </div>
 
+                @include('notifications.partials.schedule-fields', ['accent' => 'violet'])
+
                 <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
                     <a href="{{ route('notifications.index') }}"
                        class="inline-flex items-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
@@ -131,11 +139,13 @@
                     </a>
                     <button type="submit"
                             class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition">
-                        Gửi thông báo
+                        Lưu & gửi
                     </button>
                 </div>
             </form>
         </div>
+
+        @include('notifications.partials.pending-scheduled', ['pendingScheduled' => $pendingScheduled])
     </div>
 
 </x-admin-layout>

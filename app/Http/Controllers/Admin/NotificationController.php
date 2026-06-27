@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\AdminNotificationService;
 use App\Support\NotificationTypeMeta;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class NotificationController extends Controller
@@ -19,6 +20,8 @@ class NotificationController extends Controller
 
     public function create(): View
     {
+        $user = auth()->user();
+
         return view('admin.notifications.create', [
             'typeMeta' => NotificationTypeMeta::all(),
             'departments' => Department::query()
@@ -33,12 +36,15 @@ class NotificationController extends Controller
                 ->where('status', 'active')
                 ->orderBy('name')
                 ->get(['id', 'name', 'email', 'role_id']),
+            'pendingScheduled' => $this->notifications->pendingScheduledForUser($user),
         ]);
     }
 
     public function store(StoreNotificationRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $scheduled = ($validated['send_mode'] ?? 'immediate') === 'scheduled';
+        $scheduledAt = $scheduled ? Carbon::parse($validated['scheduled_at']) : null;
         $payload = [
             'title' => $validated['title'],
             'content' => $validated['content'],
@@ -46,31 +52,29 @@ class NotificationController extends Controller
         ];
 
         if ($validated['audience'] === 'departments') {
-            $sentCount = 0;
+            return $this->storeForDepartments($request, $validated, $payload, $scheduled, $scheduledAt);
+        }
 
-            foreach ($validated['department_ids'] as $departmentId) {
-                $recipientIds = $this->notifications->recipientIdsForDepartments([(int) $departmentId]);
+        $schedulePayload = [
+            'audience' => $validated['audience'],
+            'user_ids' => array_map('intval', $validated['user_ids'] ?? []),
+        ];
 
-                if ($recipientIds === []) {
-                    continue;
-                }
-
-                $this->notifications->create($request->user(), array_merge($payload, [
-                    'department_id' => (int) $departmentId,
-                ]), $recipientIds);
-
-                $sentCount += count($recipientIds);
+        if ($scheduled) {
+            if ($validated['audience'] === 'selected' && $schedulePayload['user_ids'] === []) {
+                return back()->withInput()->withErrors(['user_ids' => 'Vui lòng chọn ít nhất một người nhận.']);
             }
 
-            if ($sentCount === 0) {
-                return back()
-                    ->withInput()
-                    ->withErrors(['department_ids' => 'Không tìm thấy tài khoản nào liên kết với phòng ban đã chọn.']);
-            }
+            $this->notifications->schedule(
+                $request->user(),
+                $payload,
+                $schedulePayload,
+                $scheduledAt,
+            );
 
             return redirect()
-                ->route('notifications.index')
-                ->with('success', "Đã gửi thông báo tới {$sentCount} người nhận theo phòng ban.");
+                ->route('admin.notifications.create')
+                ->with('success', 'Đã lên lịch gửi thông báo lúc '.$scheduledAt->format('d/m/Y H:i').'.');
         }
 
         $recipientIds = $this->notifications->activeRecipientIds(
@@ -89,5 +93,59 @@ class NotificationController extends Controller
         return redirect()
             ->route('notifications.index')
             ->with('success', 'Đã gửi thông báo tới '.count($recipientIds).' người nhận.');
+    }
+
+    private function storeForDepartments(
+        StoreNotificationRequest $request,
+        array $validated,
+        array $payload,
+        bool $scheduled,
+        ?Carbon $scheduledAt,
+    ): RedirectResponse {
+        $processed = 0;
+
+        foreach ($validated['department_ids'] as $departmentId) {
+            $deptId = (int) $departmentId;
+            $recipientIds = $this->notifications->recipientIdsForDepartments([$deptId]);
+
+            if ($recipientIds === []) {
+                continue;
+            }
+
+            $deptPayload = array_merge($payload, ['department_id' => $deptId]);
+            $schedulePayload = [
+                'audience' => 'departments',
+                'department_ids' => [$deptId],
+            ];
+
+            if ($scheduled) {
+                $this->notifications->schedule(
+                    $request->user(),
+                    $deptPayload,
+                    $schedulePayload,
+                    $scheduledAt,
+                );
+            } else {
+                $this->notifications->create($request->user(), $deptPayload, $recipientIds);
+            }
+
+            $processed += $scheduled ? 1 : count($recipientIds);
+        }
+
+        if ($processed === 0) {
+            return back()
+                ->withInput()
+                ->withErrors(['department_ids' => 'Không tìm thấy tài khoản nào liên kết với phòng ban đã chọn.']);
+        }
+
+        if ($scheduled) {
+            return redirect()
+                ->route('admin.notifications.create')
+                ->with('success', "Đã lên lịch {$processed} thông báo phòng ban, gửi lúc ".$scheduledAt->format('d/m/Y H:i').'.');
+        }
+
+        return redirect()
+            ->route('notifications.index')
+            ->with('success', "Đã gửi thông báo tới {$processed} người nhận theo phòng ban.");
     }
 }

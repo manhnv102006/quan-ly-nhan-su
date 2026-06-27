@@ -47,6 +47,32 @@ class NotificationController extends BaseController
         ]);
     }
 
+    public function show(Request $request, int $notification): View|RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->isManager() && ! $user->isAdmin()) {
+            return redirect()->route('manager.notifications.show', $notification);
+        }
+
+        if ($user->isEmployee() && ! $user->isAdmin()) {
+            return redirect()->route('employee.notifications.show', $notification);
+        }
+
+        $item = $this->notifications->findForUser($user, $notification);
+
+        abort_if(! $item, 404);
+
+        $this->notifications->markAsRead($user, $notification);
+
+        $item->is_read = true;
+        $item->read_at = $item->read_at ?? now();
+
+        return view('admin.notifications.show', [
+            'notification' => $item,
+        ]);
+    }
+
     public function markAsRead(Request $request, int $notification): RedirectResponse
     {
         $this->notifications->markAsRead($request->user(), $notification);

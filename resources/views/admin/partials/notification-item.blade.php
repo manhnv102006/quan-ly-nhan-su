@@ -20,7 +20,7 @@
         $wrapperClass,
         'px-4 py-3.5' => $compact,
         'px-6 py-5' => ! $compact,
-        'bg-violet-50/40' => ! $isRead && ! $showRoute,
+        'bg-violet-50/40' => ! $isRead && (! $showRoute || $showAccent === 'violet'),
         'bg-sky-50/40' => ! $isRead && $showRoute && $showAccent === 'sky',
         'bg-emerald-50/40' => ! $isRead && $showRoute && $showAccent === 'emerald',
     ])
@@ -37,7 +37,7 @@
                     'font-semibold text-slate-800 leading-snug',
                     'text-sm' => $compact,
                     'text-base' => ! $compact,
-                    'text-violet-900' => ! $isRead && ! $showRoute,
+                    'text-violet-900' => ! $isRead && (! $showRoute || $showAccent === 'violet'),
                     'text-sky-900' => ! $isRead && $showRoute && $showAccent === 'sky',
                     'text-emerald-900' => ! $isRead && $showRoute && $showAccent === 'emerald',
                 ])>
@@ -70,6 +70,7 @@
             @if ($showRoute && ! $compact)
                 <span @class([
                     'ml-auto text-xs font-medium',
+                    'text-violet-600 group-hover:text-violet-700' => $showAccent === 'violet',
                     'text-sky-600 group-hover:text-sky-700' => $showAccent === 'sky',
                     'text-emerald-600 group-hover:text-emerald-700' => $showAccent === 'emerald',
                 ])>

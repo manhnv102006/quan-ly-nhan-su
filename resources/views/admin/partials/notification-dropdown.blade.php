@@ -9,11 +9,13 @@
         default => 'notifications.index',
     };
     $notificationsShowRoute = match (true) {
+        $user?->isAdmin() => 'notifications.show',
         $user?->isManager() => 'manager.notifications.show',
         $user?->isEmployee() => 'employee.notifications.show',
         default => null,
     };
     $notificationsShowAccent = match (true) {
+        $user?->isAdmin() => 'violet',
         $user?->isManager() => 'emerald',
         $user?->isEmployee() => 'sky',
         default => 'sky',
