@@ -7,6 +7,13 @@
             </div>
         </div>
 
+        @if(session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
+
         <div class="card mb-3">
             <div class="card-body">
                 <form method="GET" action="{{ route('manager.overtime-requests.index') }}" class="row g-3">
@@ -55,6 +62,7 @@
                             <th>Tổng giờ</th>
                             <th>Trạng thái</th>
                             <th>Ngày tạo</th>
+                            <th class="text-end">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -67,10 +75,13 @@
                                 <td>{{ $item->total_hours }}</td>
                                 <td><span class="badge text-bg-secondary">{{ $item->status }}</span></td>
                                 <td>{{ optional($item->created_at)->format('d/m/Y H:i') }}</td>
+                                <td class="text-end">
+                                    <a href="{{ route('manager.overtime-requests.show', $item) }}" class="btn btn-sm btn-outline-primary">Xem</a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-4">Không có đơn tăng ca phù hợp.</td>
+                                <td colspan="8" class="text-center text-muted py-4">Không có đơn tăng ca phù hợp.</td>
                             </tr>
                         @endforelse
                     </tbody>
