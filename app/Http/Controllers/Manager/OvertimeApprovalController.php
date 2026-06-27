@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
+use App\Models\OvertimeRequestHistory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class OvertimeApprovalController extends Controller
@@ -64,7 +66,7 @@ class OvertimeApprovalController extends Controller
         $manager = Employee::where('user_id', Auth::id())->firstOrFail();
         $this->authorizeInManagedDepartment($overtimeRequest, $manager->department_id);
 
-        $overtimeRequest->load(['employee.department', 'approver']);
+        $overtimeRequest->load(['employee.department', 'approver', 'histories.actor']);
 
         return view('manager.overtime-requests.show', compact('overtimeRequest'));
     }
@@ -78,11 +80,20 @@ class OvertimeApprovalController extends Controller
             return back()->with('error', 'Chỉ đơn Pending mới được phê duyệt.');
         }
 
-        $overtimeRequest->update([
-            'status' => OvertimeRequest::STATUS_APPROVED,
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
-        ]);
+        DB::transaction(function () use ($overtimeRequest) {
+            $overtimeRequest->update([
+                'status' => OvertimeRequest::STATUS_APPROVED,
+                'approved_by' => Auth::id(),
+                'approved_at' => now(),
+            ]);
+
+            OvertimeRequestHistory::create([
+                'overtime_request_id' => $overtimeRequest->id,
+                'actor_id' => Auth::id(),
+                'action' => 'approved',
+                'processed_at' => now(),
+            ]);
+        });
 
         return back()->with('success', 'Phê duyệt đơn tăng ca thành công.');
     }
@@ -102,12 +113,21 @@ class OvertimeApprovalController extends Controller
             'reject_reason.required' => 'Vui lòng nhập lý do từ chối.',
         ]);
 
-        $overtimeRequest->update([
-            'status' => OvertimeRequest::STATUS_REJECTED,
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
-            'reject_reason' => $validated['reject_reason'],
-        ]);
+        DB::transaction(function () use ($overtimeRequest, $validated) {
+            $overtimeRequest->update([
+                'status' => OvertimeRequest::STATUS_REJECTED,
+                'approved_by' => Auth::id(),
+                'approved_at' => now(),
+                'reject_reason' => $validated['reject_reason'],
+            ]);
+
+            OvertimeRequestHistory::create([
+                'overtime_request_id' => $overtimeRequest->id,
+                'actor_id' => Auth::id(),
+                'action' => 'rejected',
+                'processed_at' => now(),
+            ]);
+        });
 
         return back()->with('success', 'Từ chối đơn tăng ca thành công.');
     }
