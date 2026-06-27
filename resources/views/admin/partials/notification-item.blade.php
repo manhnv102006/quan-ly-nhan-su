@@ -3,6 +3,7 @@
     $compact = $compact ?? false;
     $readRoute = $readRoute ?? 'notifications.read';
     $showRoute = $showRoute ?? null;
+    $showAccent = $showAccent ?? 'sky';
     $meta = $typeMeta[$notification->type] ?? $typeMeta['system'];
     $isRead = (bool) $notification->is_read;
     $wrapperTag = $showRoute ? 'a' : 'div';
@@ -20,7 +21,8 @@
         'px-4 py-3.5' => $compact,
         'px-6 py-5' => ! $compact,
         'bg-violet-50/40' => ! $isRead && ! $showRoute,
-        'bg-sky-50/40' => ! $isRead && $showRoute,
+        'bg-sky-50/40' => ! $isRead && $showRoute && $showAccent === 'sky',
+        'bg-emerald-50/40' => ! $isRead && $showRoute && $showAccent === 'emerald',
     ])
 >
     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $meta['icon'] }}">
@@ -36,7 +38,8 @@
                     'text-sm' => $compact,
                     'text-base' => ! $compact,
                     'text-violet-900' => ! $isRead && ! $showRoute,
-                    'text-sky-900' => ! $isRead && $showRoute,
+                    'text-sky-900' => ! $isRead && $showRoute && $showAccent === 'sky',
+                    'text-emerald-900' => ! $isRead && $showRoute && $showAccent === 'emerald',
                 ])>
                     {{ $notification->title }}
                 </p>
@@ -65,7 +68,11 @@
                 @endif
             </span>
             @if ($showRoute && ! $compact)
-                <span class="ml-auto text-xs font-medium text-sky-600 group-hover:text-sky-700">
+                <span @class([
+                    'ml-auto text-xs font-medium',
+                    'text-sky-600 group-hover:text-sky-700' => $showAccent === 'sky',
+                    'text-emerald-600 group-hover:text-emerald-700' => $showAccent === 'emerald',
+                ])>
                     Xem chi tiết →
                 </span>
             @elseif (! $compact && ! $isRead && $notification->notification_user_id && ! $showRoute)

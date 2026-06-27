@@ -9,8 +9,14 @@
         default => 'notifications.index',
     };
     $notificationsShowRoute = match (true) {
+        $user?->isManager() => 'manager.notifications.show',
         $user?->isEmployee() => 'employee.notifications.show',
         default => null,
+    };
+    $notificationsShowAccent = match (true) {
+        $user?->isManager() => 'emerald',
+        $user?->isEmployee() => 'sky',
+        default => 'sky',
     };
 @endphp
 
@@ -68,6 +74,7 @@
                         'notification' => $notification,
                         'compact' => true,
                         'showRoute' => $notificationsShowRoute,
+                        'showAccent' => $notificationsShowAccent,
                     ])
                 @empty
                     <div class="px-4 py-10 text-center">

@@ -39,6 +39,26 @@ class NotificationController extends Controller
         ]);
     }
 
+    public function show(Request $request, int $notification): View
+    {
+        $user = $request->user();
+        $managedDepartment = ManagerDepartmentResolver::managedDepartment($user);
+        $item = $this->notifications->findForUser($user, $notification);
+
+        abort_if(! $item, 404);
+
+        $this->notifications->markAsRead($user, $notification);
+
+        $item->is_read = true;
+        $item->read_at = $item->read_at ?? now();
+
+        return view('manager.notifications.show', [
+            'notification' => $item,
+            'managedDepartment' => $managedDepartment,
+            'navigation' => ManagerNavigation::items(),
+        ]);
+    }
+
     public function markAsRead(Request $request, int $notification): RedirectResponse
     {
         $this->notifications->markAsRead($request->user(), $notification);
