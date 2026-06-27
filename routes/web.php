@@ -164,11 +164,14 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
 });
 
-Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
-    Route::get('/manager/dashboard', [DashboardController::class, 'manager'])->name('manager.dashboard');
-    Route::get('/manager/leave-requests', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'index'])->name('manager.leave-requests');
-    Route::post('/manager/leave-requests/{leaveRequest}/approve', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'approve'])->name('manager.leave-requests.approve');
-    Route::post('/manager/leave-requests/{leaveRequest}/reject', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'reject'])->name('manager.leave-requests.reject');
+Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'manager'])->name('dashboard');
+
+    // Duyệt nghỉ phép (quản lý chỉ thấy cấp dưới)
+    Route::get('/leave-requests', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'index'])->name('leave-requests.index');
+    Route::get('/leave-requests/{leaveRequest}', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'show'])->name('leave-requests.show');
+    Route::patch('/leave-requests/{leaveRequest}/approve', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'approve'])->name('leave-requests.approve');
+    Route::patch('/leave-requests/{leaveRequest}/reject', [\App\Http\Controllers\Admin\LeaveRequestController::class, 'reject'])->name('leave-requests.reject');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
