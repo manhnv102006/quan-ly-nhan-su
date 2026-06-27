@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
+use App\Services\AutoNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,10 @@ use Illuminate\View\View;
 
 class LeaveRequestController extends Controller
 {
+    public function __construct(
+        private AutoNotificationService $autoNotifications,
+    ) {}
+
     public function index(Request $request): View
     {
         $user = Auth::user();
@@ -116,6 +121,8 @@ class LeaveRequestController extends Controller
             'approved_at' => now(),
         ]);
 
+        $this->autoNotifications->leaveApproved($leaveRequest);
+
         return redirect()
             ->back()
             ->with('success', 'Phê duyệt đơn nghỉ phép thành công.');
@@ -145,6 +152,8 @@ class LeaveRequestController extends Controller
             'approved_by'   => $user->id,
             'approved_at'   => now(),
         ]);
+
+        $this->autoNotifications->leaveRejected($leaveRequest);
 
         return redirect()
             ->back()
