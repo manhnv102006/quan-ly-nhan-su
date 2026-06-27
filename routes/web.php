@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\RecruitmentController;
 use App\Http\Controllers\Admin\ShiftController;
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Employee\NotificationController as EmployeeNotificationController;
 use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
@@ -187,6 +188,9 @@ Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
+    Route::get('/employee/notifications', [EmployeeNotificationController::class, 'index'])->name('employee.notifications.index');
+    Route::patch('/employee/notifications/read-all', [EmployeeNotificationController::class, 'markAllAsRead'])->name('employee.notifications.read-all');
+    Route::patch('/employee/notifications/{notification}/read', [EmployeeNotificationController::class, 'markAsRead'])->name('employee.notifications.read');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(function () {
