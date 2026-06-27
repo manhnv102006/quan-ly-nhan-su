@@ -66,11 +66,21 @@ class OvertimeRequestController extends Controller
 
     public function edit(OvertimeRequest $overtimeRequest): View
     {
+        if ($overtimeRequest->status !== OvertimeRequest::STATUS_PENDING) {
+            abort(403, 'Chỉ được chỉnh sửa đơn ở trạng thái Pending.');
+        }
+
         return view('admin.overtime-requests.edit', compact('overtimeRequest'));
     }
 
     public function update(OvertimeRequestUpdateRequest $request, OvertimeRequest $overtimeRequest): RedirectResponse
     {
+        if ($overtimeRequest->status !== OvertimeRequest::STATUS_PENDING) {
+            return redirect()
+                ->route('admin.overtime-requests.show', $overtimeRequest)
+                ->with('error', 'Đơn đã duyệt/từ chối, không thể chỉnh sửa.');
+        }
+
         $overtimeRequest->update($request->validated());
 
         return redirect()
@@ -80,6 +90,12 @@ class OvertimeRequestController extends Controller
 
     public function destroy(OvertimeRequest $overtimeRequest): RedirectResponse
     {
+        if ($overtimeRequest->status !== OvertimeRequest::STATUS_PENDING) {
+            return redirect()
+                ->route('admin.overtime-requests.show', $overtimeRequest)
+                ->with('error', 'Đơn đã duyệt/từ chối, không thể xóa.');
+        }
+
         $overtimeRequest->delete();
 
         return redirect()
