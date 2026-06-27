@@ -1,6 +1,12 @@
 @php
     $headerNotifications = $headerNotifications ?? collect();
     $headerUnreadCount = $headerUnreadCount ?? 0;
+    $user = auth()->user();
+    $notificationsIndexRoute = match (true) {
+        $user?->isAdmin() => 'notifications.index',
+        $user?->isManager() => 'manager.notifications.index',
+        default => 'notifications.index',
+    };
 @endphp
 
 <div class="relative" x-data="{ open: false }">
@@ -65,7 +71,7 @@
             </div>
 
             <div class="border-t border-slate-100 bg-slate-50/80 px-4 py-3">
-                <a href="{{ route('notifications.index') }}"
+                <a href="{{ route($notificationsIndexRoute) }}"
                    @click.stop="open = false"
                    class="flex w-full items-center justify-center rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-violet-600 shadow-sm ring-1 ring-slate-200/80 transition hover:bg-violet-50 hover:text-violet-700">
                     Xem tất cả thông báo
