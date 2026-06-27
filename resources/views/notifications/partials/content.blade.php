@@ -4,6 +4,7 @@
     $readAllRoute = $readAllRoute ?? 'notifications.read-all';
     $readRoute = $readRoute ?? 'notifications.read';
     $createRoute = $createRoute ?? null;
+    $showRoute = $showRoute ?? null;
 @endphp
 
 <div class="space-y-6">
@@ -126,6 +127,7 @@
                     @include('admin.partials.notification-item', [
                         'notification' => $notification,
                         'readRoute' => $readRoute,
+                        'showRoute' => $showRoute,
                     ])
                 @endforeach
             </div>

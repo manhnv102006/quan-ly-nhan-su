@@ -8,6 +8,10 @@
         $user?->isEmployee() => 'employee.notifications.index',
         default => 'notifications.index',
     };
+    $notificationsShowRoute = match (true) {
+        $user?->isEmployee() => 'employee.notifications.show',
+        default => null,
+    };
 @endphp
 
 <div class="relative" x-data="{ open: false }">
@@ -63,6 +67,7 @@
                     @include('admin.partials.notification-item', [
                         'notification' => $notification,
                         'compact' => true,
+                        'showRoute' => $notificationsShowRoute,
                     ])
                 @empty
                     <div class="px-4 py-10 text-center">
