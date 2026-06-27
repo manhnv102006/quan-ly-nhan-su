@@ -8,5 +8,6 @@
         'indexRoute' => 'manager.notifications.index',
         'readAllRoute' => 'manager.notifications.read-all',
         'readRoute' => 'manager.notifications.read',
+        'createRoute' => $managedDepartment ? 'manager.notifications.create' : null,
     ])
 </x-staff-layout>
