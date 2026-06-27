@@ -185,6 +185,36 @@ class AdminNotificationService
             ->all();
     }
 
+    public function filterDepartmentRecipientIds(int $departmentId, array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        $allowed = $this->recipientIdsForDepartments([$departmentId]);
+
+        return array_values(array_intersect($allowed, array_map('intval', $userIds)));
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function departmentMemberUsers(int $departmentId): Collection
+    {
+        $recipientIds = $this->recipientIdsForDepartments([$departmentId]);
+
+        if ($recipientIds === []) {
+            return collect();
+        }
+
+        return User::query()
+            ->with('role')
+            ->where('status', 'active')
+            ->whereIn('id', $recipientIds)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email', 'role_id']);
+    }
+
     private function persistNotification(array $data, array $userIds): Notification
     {
         $userIds = $this->filterActiveUserIds($userIds);

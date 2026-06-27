@@ -3,6 +3,7 @@
     $indexRoute = $indexRoute ?? 'notifications.index';
     $readAllRoute = $readAllRoute ?? 'notifications.read-all';
     $readRoute = $readRoute ?? 'notifications.read';
+    $createRoute = $createRoute ?? null;
 @endphp
 
 <div class="space-y-6">
@@ -23,6 +24,11 @@
             @if (auth()->user()?->isAdmin())
                 <a href="{{ route('admin.notifications.create') }}"
                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition">
+                    + Thêm thông báo
+                </a>
+            @elseif ($createRoute && ($managedDepartment ?? null))
+                <a href="{{ route($createRoute) }}"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition">
                     + Thêm thông báo
                 </a>
             @endif
