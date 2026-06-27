@@ -12,6 +12,18 @@ class OvertimeRequest extends Model
     public const STATUS_APPROVED = 'approved';
     public const STATUS_REJECTED = 'rejected';
     public const STATUS_COMPLETED = 'completed';
+    public const STATUS_LABELS = [
+        self::STATUS_PENDING => 'Pending',
+        self::STATUS_APPROVED => 'Approved',
+        self::STATUS_REJECTED => 'Rejected',
+        self::STATUS_COMPLETED => 'Completed',
+    ];
+    public const STATUS_BADGE_CLASSES = [
+        self::STATUS_PENDING => 'text-bg-warning',
+        self::STATUS_APPROVED => 'text-bg-success',
+        self::STATUS_REJECTED => 'text-bg-danger',
+        self::STATUS_COMPLETED => 'text-bg-primary',
+    ];
 
     protected $fillable = [
         'employee_id',
@@ -48,5 +60,15 @@ class OvertimeRequest extends Model
     public function histories(): HasMany
     {
         return $this->hasMany(OvertimeRequestHistory::class);
+    }
+
+    public function statusLabel(): string
+    {
+        return self::STATUS_LABELS[$this->status] ?? ucfirst((string) $this->status);
+    }
+
+    public function statusBadgeClass(): string
+    {
+        return self::STATUS_BADGE_CLASSES[$this->status] ?? 'text-bg-secondary';
     }
 }

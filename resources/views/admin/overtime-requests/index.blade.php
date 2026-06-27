@@ -13,12 +13,23 @@
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
+        @if(session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted">Tổng đơn</div><div class="h4 mb-0">{{ $stats['total'] }}</div></div></div></div>
+            <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted">Chờ duyệt</div><div class="h4 mb-0 text-warning">{{ $stats['pending'] }}</div></div></div></div>
+            <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted">Đã duyệt</div><div class="h4 mb-0 text-success">{{ $stats['approved'] }}</div></div></div></div>
+            <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted">Đã từ chối/Hoàn tất</div><div class="h4 mb-0 text-primary">{{ $stats['rejected'] + $stats['completed'] }}</div></div></div></div>
+        </div>
 
         <div class="card">
             <div class="table-responsive">
                 <table class="table table-striped table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
+                            <th>Nhân viên</th>
                             <th>Ngày tăng ca</th>
                             <th>Giờ bắt đầu</th>
                             <th>Giờ kết thúc</th>
@@ -31,12 +42,13 @@
                     <tbody>
                         @forelse($overtimeRequests as $item)
                             <tr>
+                                <td>{{ $item->employee?->full_name ?? '—' }}</td>
                                 <td>{{ optional($item->work_date)->format('d/m/Y') }}</td>
                                 <td>{{ $item->start_time }}</td>
                                 <td>{{ $item->end_time }}</td>
                                 <td>{{ $item->total_hours }}</td>
                                 <td>
-                                    <span class="badge text-bg-secondary">{{ $item->status }}</span>
+                                    <span class="badge {{ $item->statusBadgeClass() }}">{{ $item->statusLabel() }}</span>
                                 </td>
                                 <td>{{ optional($item->created_at)->format('d/m/Y H:i') }}</td>
                                 <td class="text-end">
@@ -55,7 +67,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">Chưa có đơn tăng ca nào.</td>
+                                <td colspan="8" class="text-center py-4 text-muted">Chưa có đơn tăng ca nào.</td>
                             </tr>
                         @endforelse
                     </tbody>

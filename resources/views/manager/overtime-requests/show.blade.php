@@ -54,16 +54,7 @@
                     <div class="col-md-4">
                         <label class="form-label text-muted mb-1">Trạng thái</label>
                         <div>
-                            @php
-                                $statusClass = match($overtimeRequest->status) {
-                                    \App\Models\OvertimeRequest::STATUS_PENDING => 'text-bg-warning',
-                                    \App\Models\OvertimeRequest::STATUS_APPROVED => 'text-bg-success',
-                                    \App\Models\OvertimeRequest::STATUS_REJECTED => 'text-bg-danger',
-                                    \App\Models\OvertimeRequest::STATUS_COMPLETED => 'text-bg-primary',
-                                    default => 'text-bg-secondary',
-                                };
-                            @endphp
-                            <span class="badge {{ $statusClass }}">{{ ucfirst($overtimeRequest->status) }}</span>
+                            <span class="badge {{ $overtimeRequest->statusBadgeClass() }}">{{ $overtimeRequest->statusLabel() }}</span>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -74,6 +65,12 @@
                         <label class="form-label text-muted mb-1">Lý do</label>
                         <div class="border rounded-3 p-3 bg-light">{{ $overtimeRequest->reason ?: '—' }}</div>
                     </div>
+                    @if($overtimeRequest->reject_reason)
+                        <div class="col-12">
+                            <label class="form-label text-muted mb-1">Lý do từ chối</label>
+                            <div class="border rounded-3 p-3 bg-danger-subtle text-danger-emphasis">{{ $overtimeRequest->reject_reason }}</div>
+                        </div>
+                    @endif
                 </div>
 
                 @if($overtimeRequest->status === \App\Models\OvertimeRequest::STATUS_PENDING)

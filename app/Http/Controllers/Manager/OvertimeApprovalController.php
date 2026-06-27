@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
 use App\Models\OvertimeRequestHistory;
@@ -14,10 +15,13 @@ use Illuminate\View\View;
 
 class OvertimeApprovalController extends Controller
 {
+    private const PER_PAGE = 10;
+
     public function index(Request $request): View
     {
-        $manager = Employee::where('user_id', Auth::id())->firstOrFail();
+        $manager = $this->currentManager();
         $departmentId = $manager->department_id;
+        $managedDepartment = Department::find($departmentId);
 
         $employees = Employee::query()
             ->where('department_id', $departmentId)
@@ -51,12 +55,13 @@ class OvertimeApprovalController extends Controller
                 });
             })
             ->latest()
-            ->paginate(15)
+            ->paginate(self::PER_PAGE)
             ->withQueryString();
 
         return view('manager.overtime-requests.index', [
             'overtimeRequests' => $overtimeRequests,
             'employees' => $employees,
+            'managedDepartment' => $managedDepartment,
             'filters' => $request->only(['search', 'status', 'work_date', 'employee_id', 'department_id']),
         ]);
     }
@@ -78,41 +83,13 @@ class OvertimeApprovalController extends Controller
             return back()->with('error', 'Chỉ đơn Pending mới được phê duyệt.');
         }
 
-        DB::transaction(function () use ($overtimeRequest) {
-            $overtimeRequest->update([
-                'status' => OvertimeRequest::STATUS_APPROVED,
-                'approved_by' => Auth::id(),
-                'approved_at' => now(),
-            ]);
-
-            OvertimeRequestHistory::create([
-                'overtime_request_id' => $overtimeRequest->id,
-                'actor_id' => Auth::id(),
-                'action' => 'approved',
-                'processed_at' => now(),
-            ]);
-
-            $employeeUserId = $overtimeRequest->employee?->user_id;
-            if ($employeeUserId) {
-                $notificationId = DB::table('notifications')->insertGetId([
-                    'title' => 'Đơn tăng ca đã được phê duyệt',
-                    'content' => 'Đơn tăng ca ngày '.optional($overtimeRequest->work_date)->format('d/m/Y').' của bạn đã được quản lý phê duyệt.',
-                    'sender_id' => Auth::id(),
-                    'type' => 'system',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                DB::table('notification_users')->insert([
-                    'notification_id' => $notificationId,
-                    'user_id' => $employeeUserId,
-                    'is_read' => false,
-                    'read_at' => null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        });
+        $this->processDecision(
+            overtimeRequest: $overtimeRequest,
+            status: OvertimeRequest::STATUS_APPROVED,
+            action: 'approved',
+            title: 'Đơn tăng ca đã được phê duyệt',
+            content: 'Đơn tăng ca ngày '.$overtimeRequest->work_date?->format('d/m/Y').' của bạn đã được quản lý phê duyệt.',
+        );
 
         return back()->with('success', 'Phê duyệt đơn tăng ca thành công.');
     }
@@ -131,43 +108,75 @@ class OvertimeApprovalController extends Controller
             'reject_reason.required' => 'Vui lòng nhập lý do từ chối.',
         ]);
 
-        DB::transaction(function () use ($overtimeRequest, $validated) {
+        $this->processDecision(
+            overtimeRequest: $overtimeRequest,
+            status: OvertimeRequest::STATUS_REJECTED,
+            action: 'rejected',
+            title: 'Đơn tăng ca đã bị từ chối',
+            content: 'Đơn tăng ca ngày '.$overtimeRequest->work_date?->format('d/m/Y').' của bạn đã bị từ chối. Lý do: '.$validated['reject_reason'],
+            rejectReason: $validated['reject_reason'],
+        );
+
+        return back()->with('success', 'Từ chối đơn tăng ca thành công.');
+    }
+
+    protected function currentManager(): Employee
+    {
+        return Employee::where('user_id', Auth::id())->firstOrFail();
+    }
+
+    protected function processDecision(
+        OvertimeRequest $overtimeRequest,
+        string $status,
+        string $action,
+        string $title,
+        string $content,
+        ?string $rejectReason = null
+    ): void {
+        $actorId = (int) Auth::id();
+
+        DB::transaction(function () use ($overtimeRequest, $status, $action, $title, $content, $rejectReason, $actorId) {
             $overtimeRequest->update([
-                'status' => OvertimeRequest::STATUS_REJECTED,
-                'approved_by' => Auth::id(),
+                'status' => $status,
+                'approved_by' => $actorId,
                 'approved_at' => now(),
-                'reject_reason' => $validated['reject_reason'],
+                'reject_reason' => $rejectReason,
             ]);
 
             OvertimeRequestHistory::create([
                 'overtime_request_id' => $overtimeRequest->id,
-                'actor_id' => Auth::id(),
-                'action' => 'rejected',
+                'actor_id' => $actorId,
+                'action' => $action,
                 'processed_at' => now(),
             ]);
 
-            $employeeUserId = $overtimeRequest->employee?->user_id;
-            if ($employeeUserId) {
-                $notificationId = DB::table('notifications')->insertGetId([
-                    'title' => 'Đơn tăng ca đã bị từ chối',
-                    'content' => 'Đơn tăng ca ngày '.optional($overtimeRequest->work_date)->format('d/m/Y').' của bạn đã bị từ chối. Lý do: '.$validated['reject_reason'],
-                    'sender_id' => Auth::id(),
-                    'type' => 'system',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                DB::table('notification_users')->insert([
-                    'notification_id' => $notificationId,
-                    'user_id' => $employeeUserId,
-                    'is_read' => false,
-                    'read_at' => null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            $this->notifyEmployee($overtimeRequest, $title, $content, $actorId);
         });
+    }
 
-        return back()->with('success', 'Từ chối đơn tăng ca thành công.');
+    protected function notifyEmployee(OvertimeRequest $overtimeRequest, string $title, string $content, int $actorId): void
+    {
+        $employeeUserId = $overtimeRequest->employee?->user_id;
+        if (! $employeeUserId) {
+            return;
+        }
+
+        $notificationId = DB::table('notifications')->insertGetId([
+            'title' => $title,
+            'content' => $content,
+            'sender_id' => $actorId,
+            'type' => 'system',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('notification_users')->insert([
+            'notification_id' => $notificationId,
+            'user_id' => $employeeUserId,
+            'is_read' => false,
+            'read_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

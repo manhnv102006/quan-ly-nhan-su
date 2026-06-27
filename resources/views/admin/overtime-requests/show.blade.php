@@ -1,86 +1,72 @@
-<x-admin-layout>
-
-    <div class="space-y-6">
-
-        <div class="flex justify-between">
-
-            <h1 class="text-2xl font-bold">
-                Chi tiết đơn tăng ca
-            </h1>
-
-            <a href="{{ route('admin.overtime-requests.index') }}"
-                class="px-4 py-2 bg-slate-500 text-white rounded-lg">
-
-                Quay lại
-
-            </a>
-
+<x-admin-layout title="Chi tiết đơn tăng ca">
+    <div class="container-fluid py-2">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4 class="mb-1">Chi tiết đơn tăng ca</h4>
+                <p class="text-muted mb-0">Thông tin đầy đủ yêu cầu tăng ca.</p>
+            </div>
+            <div class="d-flex gap-2">
+                @if($overtimeRequest->status === \App\Models\OvertimeRequest::STATUS_PENDING)
+                    <a href="{{ route('admin.overtime-requests.edit', $overtimeRequest) }}" class="btn btn-warning">Sửa</a>
+                @endif
+                <a href="{{ route('admin.overtime-requests.index') }}" class="btn btn-outline-secondary">Quay lại</a>
+            </div>
         </div>
 
-        <div class="bg-white border rounded-xl p-6">
+        @if(session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
 
-            <div class="grid grid-cols-2 gap-5">
-
-                <div>
-                    <p class="text-slate-500">
-                        Nhân viên
-                    </p>
-
-                    <h4 class="font-semibold">
-                        {{ $overtimeRequest->employee->full_name }}
-                    </h4>
+        <div class="card">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted mb-1">Nhân viên</label>
+                        <div class="fw-semibold">{{ $overtimeRequest->employee?->full_name ?? '—' }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted mb-1">Phòng ban</label>
+                        <div class="fw-semibold">{{ $overtimeRequest->employee?->department?->department_name ?? '—' }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted mb-1">Ngày tăng ca</label>
+                        <div class="fw-semibold">{{ optional($overtimeRequest->work_date)->format('d/m/Y') }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted mb-1">Giờ bắt đầu</label>
+                        <div class="fw-semibold">{{ $overtimeRequest->start_time }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted mb-1">Giờ kết thúc</label>
+                        <div class="fw-semibold">{{ $overtimeRequest->end_time }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted mb-1">Tổng giờ</label>
+                        <div class="fw-semibold">{{ $overtimeRequest->total_hours }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted mb-1">Trạng thái</label>
+                        <div><span class="badge {{ $overtimeRequest->statusBadgeClass() }}">{{ $overtimeRequest->statusLabel() }}</span></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted mb-1">Người duyệt</label>
+                        <div class="fw-semibold">{{ $overtimeRequest->approver?->name ?? '—' }}</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-muted mb-1">Lý do</label>
+                        <div class="border rounded-3 p-3 bg-light">{{ $overtimeRequest->reason ?: '—' }}</div>
+                    </div>
+                    @if($overtimeRequest->reject_reason)
+                        <div class="col-12">
+                            <label class="form-label text-muted mb-1">Lý do từ chối</label>
+                            <div class="border rounded-3 p-3 bg-danger-subtle text-danger-emphasis">{{ $overtimeRequest->reject_reason }}</div>
+                        </div>
+                    @endif
                 </div>
-
-                <div>
-                    <p class="text-slate-500">
-                        Phòng ban
-                    </p>
-
-                    <h4 class="font-semibold">
-                        {{ $overtimeRequest->employee->department?->department_name }}
-                    </h4>
-                </div>
-
-                <div>
-                    <p class="text-slate-500">
-                        Ngày tăng ca
-                    </p>
-
-                    <h4 class="font-semibold">
-                        {{ optional($overtimeRequest->work_date)->format('d/m/Y') }}
-                    </h4>
-                </div>
-
-                <div>
-                    <p class="text-slate-500">
-                        Trạng thái
-                    </p>
-
-                    <h4 class="font-semibold">
-                        {{ $overtimeRequest->status }}
-                    </h4>
-                </div>
-
-                <div class="col-span-2">
-
-                    <p class="text-slate-500">
-                        Lý do
-                    </p>
-
-                    <p>
-                        {{ $overtimeRequest->reason }}
-                    </p>
-
-                </div>
-
             </div>
-
-            <div class="mt-6 p-4 rounded-lg bg-slate-50 border text-slate-600 text-sm">
-                Module đang ở giai đoạn khung cấu trúc. Chưa triển khai nghiệp vụ duyệt/từ chối.
-            </div>
-
         </div>
-
     </div>
-
 </x-admin-layout>
