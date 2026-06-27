@@ -43,7 +43,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($leaveRequest->histories as $history)
+                        @foreach($leaveRequest->histories->sortByDesc('created_at') as $history)
                             <tr>
                                 <td>{{ optional($history->created_at)->format('d/m/Y H:i') }}</td>
                                 <td>{{ $history->action === 'approved' ? 'Duyệt' : 'Từ chối' }}</td>

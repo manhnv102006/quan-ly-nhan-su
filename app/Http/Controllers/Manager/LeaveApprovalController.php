@@ -5,16 +5,18 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
-use App\Models\LeaveRequestHistory;
+use App\Services\LeaveApprovalService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class LeaveApprovalController extends Controller
 {
-    private const ANNUAL_LEAVE_ALLOWANCE = 12; // số ngày phép năm mặc định
+    public function __construct(private readonly LeaveApprovalService $service)
+    {
+    }
 
     public function index(Request $request): View
     {
@@ -56,51 +58,13 @@ class LeaveApprovalController extends Controller
         $manager = $this->currentManager();
         $this->authorizeForManager($leaveRequest, $manager);
 
-        if ($leaveRequest->status !== LeaveRequest::STATUS_PENDING) {
-            return back()->with('error', 'Chỉ xử lý đơn ở trạng thái chờ duyệt.');
+        try {
+            $this->service->approve($leaveRequest, Auth::id());
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', 'Không thể duyệt đơn.')->withInput();
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Không thể duyệt đơn.')->withInput();
         }
-
-        // Kiểm tra quota phép năm (chỉ áp dụng cho annual)
-        if ($leaveRequest->leave_type === 'annual') {
-            $year = $leaveRequest->start_date?->year ?? now()->year;
-            $used = LeaveRequest::where('employee_id', $leaveRequest->employee_id)
-                ->where('leave_type', 'annual')
-                ->where('status', LeaveRequest::STATUS_APPROVED)
-                ->whereYear('start_date', $year)
-                ->sum('total_days');
-
-            if (($used + $leaveRequest->total_days) > self::ANNUAL_LEAVE_ALLOWANCE) {
-                return back()->with('error', 'Số ngày phép năm không đủ để duyệt đơn này.');
-            }
-        }
-
-        // Kiểm tra trùng thời gian với các đơn đã duyệt khác
-        $overlap = LeaveRequest::where('employee_id', $leaveRequest->employee_id)
-            ->where('id', '!=', $leaveRequest->id)
-            ->where('status', LeaveRequest::STATUS_APPROVED)
-            ->whereDate('start_date', '<=', $leaveRequest->end_date)
-            ->whereDate('end_date', '>=', $leaveRequest->start_date)
-            ->exists();
-
-        if ($overlap) {
-            return back()->with('error', 'Đơn này trùng thời gian với đơn đã duyệt khác.');
-        }
-
-        DB::transaction(function () use ($leaveRequest) {
-            $leaveRequest->update([
-                'status' => LeaveRequest::STATUS_APPROVED,
-                'approved_by' => Auth::id(),
-                'approved_at' => now(),
-                'reject_reason' => null,
-            ]);
-
-            LeaveRequestHistory::create([
-                'leave_request_id' => $leaveRequest->id,
-                'actor_id' => Auth::id(),
-                'action' => 'approved',
-                'note' => null,
-            ]);
-        });
 
         return back()->with('success', 'Đã duyệt nghỉ phép.');
     }
@@ -110,29 +74,17 @@ class LeaveApprovalController extends Controller
         $manager = $this->currentManager();
         $this->authorizeForManager($leaveRequest, $manager);
 
-        if ($leaveRequest->status !== LeaveRequest::STATUS_PENDING) {
-            return back()->with('error', 'Chỉ xử lý đơn ở trạng thái chờ duyệt.');
-        }
-
         $request->validate([
             'reject_reason' => ['required', 'string', 'max:500'],
         ]);
 
-        DB::transaction(function () use ($leaveRequest, $request) {
-            $leaveRequest->update([
-                'status' => LeaveRequest::STATUS_REJECTED,
-                'approved_by' => Auth::id(),
-                'approved_at' => now(),
-                'reject_reason' => $request->reject_reason,
-            ]);
-
-            LeaveRequestHistory::create([
-                'leave_request_id' => $leaveRequest->id,
-                'actor_id' => Auth::id(),
-                'action' => 'rejected',
-                'note' => $request->reject_reason,
-            ]);
-        });
+        try {
+            $this->service->reject($leaveRequest, Auth::id(), $request->reject_reason);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', 'Không thể từ chối đơn.')->withInput();
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Không thể từ chối đơn.')->withInput();
+        }
 
         return back()->with('success', 'Đã từ chối nghỉ phép.');
     }
