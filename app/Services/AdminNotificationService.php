@@ -93,11 +93,18 @@ class AdminNotificationService
         if ($user->isManager()) {
             $departmentId = ManagerDepartmentResolver::managedDepartmentId($user);
 
-            if (! $departmentId) {
-                return 0;
-            }
+            $query->whereHas('notification', function ($inner) use ($departmentId) {
+                if ($departmentId) {
+                    $inner->where(function ($scope) use ($departmentId) {
+                        $scope->where('department_id', $departmentId)
+                            ->orWhereNull('department_id');
+                    });
 
-            $query->whereHas('notification', fn ($inner) => $inner->where('department_id', $departmentId));
+                    return;
+                }
+
+                $inner->whereNull('department_id');
+            });
         }
 
         return $query->update([
@@ -282,16 +289,26 @@ class AdminNotificationService
             ->orderByDesc('notifications.created_at');
 
         if ($user->isManager()) {
-            $departmentId = ManagerDepartmentResolver::managedDepartmentId($user);
-
-            if (! $departmentId) {
-                return $query->whereRaw('1 = 0');
-            }
-
-            $query->where('notifications.department_id', $departmentId);
+            $this->applyManagerNotificationScope($query, $user);
         }
 
         return $query;
+    }
+
+    private function applyManagerNotificationScope($query, User $user): void
+    {
+        $departmentId = ManagerDepartmentResolver::managedDepartmentId($user);
+
+        if ($departmentId) {
+            $query->where(function ($inner) use ($departmentId) {
+                $inner->where('notifications.department_id', $departmentId)
+                    ->orWhereNull('notifications.department_id');
+            });
+
+            return;
+        }
+
+        $query->whereNull('notifications.department_id');
     }
 
     private function applyFilters($query, array $filters)
@@ -319,19 +336,31 @@ class AdminNotificationService
 
     private function userCanAccessNotification(User $user, int $notificationId): bool
     {
+        $hasPivot = NotificationUser::query()
+            ->where('user_id', $user->id)
+            ->where('notification_id', $notificationId)
+            ->exists();
+
+        if (! $hasPivot) {
+            return false;
+        }
+
         if (! $user->isManager()) {
             return true;
         }
 
         $departmentId = ManagerDepartmentResolver::managedDepartmentId($user);
+        $notificationQuery = Notification::query()->whereKey($notificationId);
 
-        if (! $departmentId) {
-            return false;
+        if ($departmentId) {
+            $notificationQuery->where(function ($inner) use ($departmentId) {
+                $inner->where('department_id', $departmentId)
+                    ->orWhereNull('department_id');
+            });
+        } else {
+            $notificationQuery->whereNull('department_id');
         }
 
-        return Notification::query()
-            ->whereKey($notificationId)
-            ->where('department_id', $departmentId)
-            ->exists();
+        return $notificationQuery->exists();
     }
 }
