@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
+use App\Models\LeaveRequestHistory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -45,7 +46,7 @@ class LeaveApprovalController extends Controller
         $manager = $this->currentManager();
         $this->authorizeForManager($leaveRequest, $manager);
 
-        $leaveRequest->load(['employee.department', 'employee.position', 'approver']);
+        $leaveRequest->load(['employee.department', 'employee.position', 'approver', 'histories.actor']);
 
         return view('manager.leave-requests.show', compact('leaveRequest'));
     }
@@ -92,6 +93,13 @@ class LeaveApprovalController extends Controller
                 'approved_at' => now(),
                 'reject_reason' => null,
             ]);
+
+            LeaveRequestHistory::create([
+                'leave_request_id' => $leaveRequest->id,
+                'actor_id' => Auth::id(),
+                'action' => 'approved',
+                'note' => null,
+            ]);
         });
 
         return back()->with('success', 'Đã duyệt nghỉ phép.');
@@ -116,6 +124,13 @@ class LeaveApprovalController extends Controller
                 'approved_by' => Auth::id(),
                 'approved_at' => now(),
                 'reject_reason' => $request->reject_reason,
+            ]);
+
+            LeaveRequestHistory::create([
+                'leave_request_id' => $leaveRequest->id,
+                'actor_id' => Auth::id(),
+                'action' => 'rejected',
+                'note' => $request->reject_reason,
             ]);
         });
 

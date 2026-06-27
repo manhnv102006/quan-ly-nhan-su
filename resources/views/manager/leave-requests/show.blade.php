@@ -1,4 +1,11 @@
 <x-admin-layout title="Chi tiết đơn nghỉ phép">
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <h4 class="mb-0">Đơn nghỉ phép</h4>
@@ -21,6 +28,34 @@
             @endif
         </div>
     </div>
+
+    @if($leaveRequest->histories->count())
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Lịch sử xử lý</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>Hành động</th>
+                            <th>Người thực hiện</th>
+                            <th>Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($leaveRequest->histories as $history)
+                            <tr>
+                                <td>{{ optional($history->created_at)->format('d/m/Y H:i') }}</td>
+                                <td>{{ $history->action === 'approved' ? 'Duyệt' : 'Từ chối' }}</td>
+                                <td>{{ $history->actor->name ?? '—' }}</td>
+                                <td>{{ $history->note ?? '—' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
 
     <div class="card mb-3">
         <div class="card-body">
