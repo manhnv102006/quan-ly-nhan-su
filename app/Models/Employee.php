@@ -53,6 +53,16 @@ class Employee extends Model
         return $this->hasMany(Contract::class);
     }
 
+    public function manager(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'manager_id');
+    }
+
+    public function subordinates(): HasMany
+    {
+        return $this->hasMany(self::class, 'manager_id');
+    }
+
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);
