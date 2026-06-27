@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\ContractTypeController;
 
 use App\Http\Controllers\Admin\KPIController;
 use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\NotificationController as UserNotificationController;
 
 use App\Http\Controllers\Admin\PayrollPeriodController;
 use App\Http\Controllers\Admin\PositionController;
@@ -39,11 +40,8 @@ Route::get('/dashboard', [DashboardController::class, 'redirect'])
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/create', [NotificationController::class, 'create'])->name('notifications.create');
     Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
-    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
-    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::get('/accounts', [AccountController::class, 'index'])->name('accounts');
     Route::get('/accounts/trash', [AccountController::class, 'trash'])->name('accounts.trash');
     Route::get('/accounts/create', [AccountController::class, 'create'])->name('accounts.create');
@@ -189,6 +187,12 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(fu
     Route::get('/employee/leave-requests', [EmployeeLeaveController::class, 'index'])->name('employee.leave-requests');
     Route::get('/employee/leave-requests/create', [EmployeeLeaveController::class, 'create'])->name('employee.leave-requests.create');
     Route::post('/employee/leave-requests', [EmployeeLeaveController::class, 'store'])->name('employee.leave-requests.store');
+});
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/notifications', [UserNotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('/notifications/read-all', [UserNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::patch('/notifications/{notification}/read', [UserNotificationController::class, 'markAsRead'])->name('notifications.read');
 });
 
 Route::middleware('auth')->group(function () {

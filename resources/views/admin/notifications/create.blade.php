@@ -6,7 +6,7 @@
                 <h2 class="text-2xl font-bold text-slate-800">Thêm thông báo</h2>
                 <p class="text-sm text-slate-500 mt-1">Tạo và gửi thông báo tới người dùng trong hệ thống</p>
             </div>
-            <a href="{{ route('admin.notifications.index') }}"
+            <a href="{{ route('notifications.index') }}"
                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-medium hover:bg-slate-50 transition">
                 ← Danh sách thông báo
             </a>
@@ -125,7 +125,7 @@
                 </div>
 
                 <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
-                    <a href="{{ route('admin.notifications.index') }}"
+                    <a href="{{ route('notifications.index') }}"
                        class="inline-flex items-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
                         Hủy
                     </a>

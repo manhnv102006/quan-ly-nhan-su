@@ -106,21 +106,60 @@ class AdminNotificationService
 
     public function create(User $sender, array $data, array $userIds): Notification
     {
-        return DB::transaction(function () use ($sender, $data, $userIds) {
+        return $this->persistNotification(array_merge($data, [
+            'sender_id' => $sender->id,
+        ]), $userIds);
+    }
+
+    public function createSystem(array $data, array $userIds): ?Notification
+    {
+        $userIds = $this->filterActiveUserIds($userIds);
+
+        if ($userIds === []) {
+            return null;
+        }
+
+        return $this->persistNotification(array_merge($data, [
+            'sender_id' => $data['sender_id'] ?? null,
+        ]), $userIds);
+    }
+
+    public function filterActiveUserIds(array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        return User::query()
+            ->where('status', 'active')
+            ->whereIn('id', $userIds)
+            ->pluck('id')
+            ->all();
+    }
+
+    private function persistNotification(array $data, array $userIds): Notification
+    {
+        $userIds = $this->filterActiveUserIds($userIds);
+
+        if ($userIds === []) {
+            throw new \InvalidArgumentException('Không có người nhận hợp lệ.');
+        }
+
+        return DB::transaction(function () use ($data, $userIds) {
             $notification = Notification::create([
                 'title' => $data['title'],
                 'content' => $data['content'],
                 'type' => $data['type'],
-                'sender_id' => $sender->id,
+                'sender_id' => $data['sender_id'] ?? null,
             ]);
 
             $now = now();
             $rows = collect($userIds)
                 ->unique()
                 ->values()
-                ->map(fn (int $userId) => [
+                ->map(fn ($userId) => [
                     'notification_id' => $notification->id,
-                    'user_id' => $userId,
+                    'user_id' => (int) $userId,
                     'is_read' => false,
                     'read_at' => null,
                     'created_at' => $now,

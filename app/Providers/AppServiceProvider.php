@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Candidate::observe(CandidateObserver::class);
 
-        View::composer('admin.partials.notification-dropdown', function ($view) {
+        View::composer(['admin.partials.notification-dropdown', 'partials.notification-dropdown'], function ($view) {
             $user = auth()->user();
 
             if (! $user) {
