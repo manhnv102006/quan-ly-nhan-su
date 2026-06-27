@@ -54,6 +54,26 @@ class EmployeePayrollController extends Controller
         return view('employee.payrolls.index', compact('employee', 'payrolls', 'summary'));
     }
 
+    public function show(Payroll $payroll): View
+    {
+        $employee = $this->getEmployee();
+
+        if ($payroll->employee_id !== $employee->id) {
+            abort(403, 'Bạn không có quyền xem phiếu lương này.');
+        }
+
+        $payroll->load([
+            'employee.department',
+            'employee.position',
+            'payrollPeriod.approver',
+            'payrollPeriod.payer',
+            'approver',
+            'payer',
+        ]);
+
+        return view('employee.payrolls.show', compact('employee', 'payroll'));
+    }
+
     public function exportPdf(Payroll $payroll)
     {
         $employee = $this->getEmployee();
