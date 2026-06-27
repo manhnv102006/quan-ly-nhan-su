@@ -47,7 +47,7 @@
                     </p>
 
                     <h4 class="font-semibold">
-                        {{ $overtimeRequest->overtime_date->format('d/m/Y') }}
+                        {{ optional($overtimeRequest->work_date)->format('d/m/Y') }}
                     </h4>
                 </div>
 
@@ -75,37 +75,9 @@
 
             </div>
 
-            @if($overtimeRequest->status == 'pending')
-
-            <div class="flex gap-3 mt-6">
-
-                <form method="POST"
-                    action="{{ route('admin.overtime-requests.approve',$overtimeRequest) }}">
-
-                    @csrf
-                    @method('PATCH')
-
-                    <button class="px-4 py-2 bg-green-600 text-white rounded-lg">
-                        Duyệt
-                    </button>
-
-                </form>
-
-                <form method="POST"
-                    action="{{ route('admin.overtime-requests.reject',$overtimeRequest) }}">
-
-                    @csrf
-                    @method('PATCH')
-
-                    <button class="px-4 py-2 bg-red-600 text-white rounded-lg">
-                        Từ chối
-                    </button>
-
-                </form>
-
+            <div class="mt-6 p-4 rounded-lg bg-slate-50 border text-slate-600 text-sm">
+                Module đang ở giai đoạn khung cấu trúc. Chưa triển khai nghiệp vụ duyệt/từ chối.
             </div>
-
-            @endif
 
         </div>
 

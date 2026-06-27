@@ -35,9 +35,7 @@ class DashboardController extends Controller
                     ->whereNotNull('end_date')
                     ->whereBetween('end_date', [today()->toDateString(), today()->addDays(30)->toDateString()])
                     ->count(), 'color' => 'rose', 'route' => 'admin.contracts.index'],
-
                 ['label' => 'Đơn nghỉ phép', 'value' => LeaveRequest::count(), 'color' => 'amber', 'route' => 'admin.leave-requests'],
-                ['label' => 'Hợp đồng', 'value' => Contract::count(), 'color' => 'violet', 'route' => 'admin.contracts'],
                 ['label' => 'Ứng viên', 'value' => Candidate::count(), 'color' => 'rose', 'route' => 'admin.recruitment'],
             ],
             'recentJobs' => JobPost::query()->latest()->take(5)->get(),
