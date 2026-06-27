@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreManagerNotificationRequest;
 use App\Services\AdminNotificationService;
 use App\Support\ManagerDepartmentResolver;
 use App\Support\ManagerNavigation;
@@ -54,5 +55,64 @@ class NotificationController extends Controller
         return redirect()
             ->route('manager.notifications.index')
             ->with('success', $count > 0 ? "Đã đánh dấu {$count} thông báo là đã đọc." : 'Không có thông báo chưa đọc.');
+    }
+
+    public function create(Request $request): View|RedirectResponse
+    {
+        $user = $request->user();
+        $managedDepartment = ManagerDepartmentResolver::managedDepartment($user);
+
+        if (! $managedDepartment) {
+            return redirect()
+                ->route('manager.notifications.index')
+                ->withErrors(['department' => 'Bạn chưa được gắn phòng ban quản lý nên không thể gửi thông báo.']);
+        }
+
+        return view('manager.notifications.create', [
+            'managedDepartment' => $managedDepartment,
+            'members' => $this->notifications->departmentMemberUsers($managedDepartment->id),
+            'navigation' => ManagerNavigation::items(),
+        ]);
+    }
+
+    public function store(StoreManagerNotificationRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        $managedDepartment = ManagerDepartmentResolver::managedDepartment($user);
+
+        if (! $managedDepartment) {
+            return back()
+                ->withInput()
+                ->withErrors(['department' => 'Bạn chưa được gắn phòng ban quản lý.']);
+        }
+
+        $validated = $request->validated();
+        $payload = [
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'type' => 'system',
+            'department_id' => $managedDepartment->id,
+        ];
+
+        if ($validated['audience'] === 'all') {
+            $recipientIds = $this->notifications->recipientIdsForDepartments([$managedDepartment->id]);
+        } else {
+            $recipientIds = $this->notifications->filterDepartmentRecipientIds(
+                $managedDepartment->id,
+                $validated['user_ids'] ?? [],
+            );
+        }
+
+        if ($recipientIds === []) {
+            return back()
+                ->withInput()
+                ->withErrors(['user_ids' => 'Không tìm thấy thành viên hợp lệ trong phòng ban.']);
+        }
+
+        $this->notifications->create($user, $payload, $recipientIds);
+
+        return redirect()
+            ->route('manager.notifications.index')
+            ->with('success', 'Đã gửi thông báo tới '.count($recipientIds).' thành viên phòng ban.');
     }
 }
