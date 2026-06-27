@@ -18,6 +18,10 @@
             <div class="card-body">
                 <form method="GET" action="{{ route('manager.overtime-requests.index') }}" class="row g-3">
                     <div class="col-md-3">
+                        <label class="form-label">Tìm kiếm</label>
+                        <input type="text" name="search" class="form-control" value="{{ $filters['search'] ?? '' }}" placeholder="Tên hoặc mã nhân viên">
+                    </div>
+                    <div class="col-md-2">
                         <label class="form-label">Trạng thái</label>
                         <select name="status" class="form-select">
                             <option value="">Tất cả</option>
@@ -27,11 +31,11 @@
                             <option value="completed" @selected(($filters['status'] ?? '') === 'completed')>Completed</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label">Ngày</label>
                         <input type="date" name="work_date" class="form-control" value="{{ $filters['work_date'] ?? '' }}">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Nhân viên</label>
                         <select name="employee_id" class="form-select">
                             <option value="">Tất cả nhân viên</option>
@@ -42,9 +46,20 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end gap-2">
-                        <button type="submit" class="btn btn-primary w-100">Lọc</button>
-                        <a href="{{ route('manager.overtime-requests.index') }}" class="btn btn-outline-secondary w-100">Bỏ lọc</a>
+                    <div class="col-md-2">
+                        <label class="form-label">Phòng ban</label>
+                        <select name="department_id" class="form-select">
+                            <option value="">Tất cả</option>
+                            @if($managedDepartment)
+                                <option value="{{ $managedDepartment->id }}" @selected(($filters['department_id'] ?? '') == $managedDepartment->id)>
+                                    {{ $managedDepartment->department_name }}
+                                </option>
+                            @endif
+                        </select>
+                    </div>
+                    <div class="col-md-12 d-flex justify-content-end gap-2">
+                        <button type="submit" class="btn btn-primary">Lọc</button>
+                        <a href="{{ route('manager.overtime-requests.index') }}" class="btn btn-outline-secondary">Bỏ lọc</a>
                     </div>
                 </form>
             </div>
@@ -74,16 +89,7 @@
                                 <td>{{ $item->end_time }}</td>
                                 <td>{{ $item->total_hours }}</td>
                                 <td>
-                                    @php
-                                        $statusClass = match($item->status) {
-                                            \App\Models\OvertimeRequest::STATUS_PENDING => 'text-bg-warning',
-                                            \App\Models\OvertimeRequest::STATUS_APPROVED => 'text-bg-success',
-                                            \App\Models\OvertimeRequest::STATUS_REJECTED => 'text-bg-danger',
-                                            \App\Models\OvertimeRequest::STATUS_COMPLETED => 'text-bg-primary',
-                                            default => 'text-bg-secondary',
-                                        };
-                                    @endphp
-                                    <span class="badge {{ $statusClass }}">{{ ucfirst($item->status) }}</span>
+                                    <span class="badge {{ $item->statusBadgeClass() }}">{{ $item->statusLabel() }}</span>
                                 </td>
                                 <td>{{ optional($item->created_at)->format('d/m/Y H:i') }}</td>
                                 <td class="text-end">
