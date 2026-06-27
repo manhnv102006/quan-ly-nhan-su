@@ -11,10 +11,10 @@ return new class extends Migration
     {
         Schema::table('contracts', function (Blueprint $table) {
             if (! Schema::hasColumn('contracts', 'department_id')) {
-                $table->unsignedBigInteger('department_id')->after('employee_id');
+                $table->unsignedBigInteger('department_id')->nullable()->after('employee_id');
             }
             if (! Schema::hasColumn('contracts', 'position_id')) {
-                $table->unsignedBigInteger('position_id')->after('department_id');
+                $table->unsignedBigInteger('position_id')->nullable()->after('department_id');
             }
             if (! Schema::hasColumn('contracts', 'allowance')) {
                 $table->decimal('allowance', 15, 2)->default(0)->after('salary');
@@ -28,9 +28,20 @@ return new class extends Migration
 
             $table->index(['employee_id', 'status']);
             $table->index(['start_date', 'end_date']);
+        });
 
-            $table->foreign('department_id')->references('id')->on('departments')->restrictOnDelete();
-            $table->foreign('position_id')->references('id')->on('positions')->restrictOnDelete();
+        // backfill department_id và position_id từ employee nếu có
+        DB::table('contracts')
+            ->join('employees', 'employees.id', '=', 'contracts.employee_id')
+            ->update([
+                'contracts.department_id' => DB::raw('employees.department_id'),
+                'contracts.position_id' => DB::raw('employees.position_id'),
+            ]);
+
+        Schema::table('contracts', function (Blueprint $table) {
+            // thêm ràng buộc khóa ngoại cho cột nullable, cho phép set null khi xóa
+            $table->foreign('department_id')->references('id')->on('departments')->nullOnDelete();
+            $table->foreign('position_id')->references('id')->on('positions')->nullOnDelete();
             $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
         });
 
