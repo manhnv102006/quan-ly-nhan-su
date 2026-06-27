@@ -25,10 +25,20 @@ return new class extends Migration
             if (! Schema::hasColumn('contracts', 'created_by')) {
                 $table->unsignedBigInteger('created_by')->nullable()->after('note');
             }
-
-            $table->index(['employee_id', 'status']);
-            $table->index(['start_date', 'end_date']);
         });
+
+        // Thêm index nếu chưa tồn tại (tránh duplicate key)
+        $existingIndexes = collect(DB::select("SHOW INDEX FROM contracts"))->pluck('Key_name')->toArray();
+        if (! in_array('contracts_employee_id_status_index', $existingIndexes)) {
+            Schema::table('contracts', function (Blueprint $table) {
+                $table->index(['employee_id', 'status'], 'contracts_employee_id_status_index');
+            });
+        }
+        if (! in_array('contracts_start_date_end_date_index', $existingIndexes)) {
+            Schema::table('contracts', function (Blueprint $table) {
+                $table->index(['start_date', 'end_date'], 'contracts_start_date_end_date_index');
+            });
+        }
 
         // backfill department_id và position_id từ employee nếu có
         DB::table('contracts')
@@ -71,8 +81,9 @@ return new class extends Migration
                 $table->dropColumn('department_id');
             }
 
-            $table->dropIndex(['employee_id', 'status']);
-            $table->dropIndex(['start_date', 'end_date']);
+            // Xóa index nếu tồn tại
+            try { $table->dropIndex('contracts_employee_id_status_index'); } catch (\Throwable $e) {}
+            try { $table->dropIndex('contracts_start_date_end_date_index'); } catch (\Throwable $e) {}
         });
 
         DB::statement("ALTER TABLE contracts MODIFY COLUMN status ENUM('active','expired','terminated') NOT NULL");

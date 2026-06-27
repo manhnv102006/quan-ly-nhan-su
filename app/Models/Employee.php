@@ -67,12 +67,10 @@ class Employee extends Model
     {
         return $this->hasMany(Attendance::class);
     }
-    public function leaveRequests()
-{
-    return $this->hasMany(
-        LeaveRequest::class
-    );
-}
+    public function attendance(): BelongsTo
+    {
+        return $this->belongsTo(Attendance::class);
+    }
 
     public function employeeKpis(): HasMany
     {
@@ -83,7 +81,7 @@ class Employee extends Model
     public function leaveRequests(): HasMany
     {
         return $this->hasMany(LeaveRequest::class);
-
+    }
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

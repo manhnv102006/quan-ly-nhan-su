@@ -70,7 +70,7 @@
                         </td>
 
                         <td class="p-3">
-                            {{ $item->overtime_date?->format('d/m/Y') }}
+                            {{ $item->work_date?->format('d/m/Y') }}
                         </td>
 
                         <td class="p-3">

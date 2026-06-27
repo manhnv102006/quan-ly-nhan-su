@@ -7,24 +7,40 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OvertimeRequest extends Model
 {
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_REJECTED = 'rejected';
+    public const STATUS_COMPLETED = 'completed';
+
     protected $fillable = [
         'employee_id',
-        'overtime_date',
+        'work_date',
         'start_time',
         'end_time',
+        'total_hours',
         'reason',
         'status',
+        'approved_by',
+        'approved_at',
+        'reject_reason',
     ];
 
     protected function casts(): array
     {
         return [
-            'overtime_date' => 'date',
+            'work_date' => 'date',
+            'approved_at' => 'datetime',
+            'total_hours' => 'decimal:2',
         ];
     }
 
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }
