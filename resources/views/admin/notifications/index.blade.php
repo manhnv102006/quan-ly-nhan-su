@@ -1,6 +1,6 @@
 <x-admin-layout title="Thông báo">
 
-    @include('admin.partials.notification-type-meta')
+    @php($typeMeta = \App\Support\NotificationTypeMeta::all())
 
     <div class="space-y-6">
 
