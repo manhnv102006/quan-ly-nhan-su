@@ -8,5 +8,6 @@
         'indexRoute' => 'employee.notifications.index',
         'readAllRoute' => 'employee.notifications.read-all',
         'readRoute' => 'employee.notifications.read',
+        'showRoute' => 'employee.notifications.show',
     ])
 </x-staff-layout>

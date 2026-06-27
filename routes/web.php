@@ -189,6 +189,7 @@ Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
     Route::get('/employee/notifications', [EmployeeNotificationController::class, 'index'])->name('employee.notifications.index');
+    Route::get('/employee/notifications/{notification}', [EmployeeNotificationController::class, 'show'])->name('employee.notifications.show');
     Route::patch('/employee/notifications/read-all', [EmployeeNotificationController::class, 'markAllAsRead'])->name('employee.notifications.read-all');
     Route::patch('/employee/notifications/{notification}/read', [EmployeeNotificationController::class, 'markAsRead'])->name('employee.notifications.read');
 });

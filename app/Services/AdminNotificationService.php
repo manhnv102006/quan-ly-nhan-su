@@ -47,6 +47,18 @@ class AdminNotificationService
         ];
     }
 
+    public function findForUser(User $user, int $notificationId): ?object
+    {
+        return $this->baseQuery($user)
+            ->leftJoin('users as senders', 'senders.id', '=', 'notifications.sender_id')
+            ->addSelect([
+                'senders.name as sender_name',
+                'notification_users.read_at',
+            ])
+            ->where('notifications.id', $notificationId)
+            ->first();
+    }
+
     public function markAsRead(User $user, int $notificationId): bool
     {
         if (! $this->userCanAccessNotification($user, $notificationId)) {
