@@ -4,7 +4,10 @@
 
 @if ($user->isAdmin())
     <x-admin-layout title="Thông báo">
-        @include('notifications.partials.content')
+        @include('notifications.partials.content', [
+            'showRoute' => 'notifications.show',
+            'showAccent' => 'violet',
+        ])
     </x-admin-layout>
 @else
     @php

@@ -92,6 +92,7 @@ class NotificationController extends Controller
             'managedDepartment' => $managedDepartment,
             'members' => $this->notifications->departmentMemberUsers($managedDepartment->id),
             'navigation' => ManagerNavigation::items(),
+            'pendingScheduled' => $this->notifications->pendingScheduledForUser($user),
         ]);
     }
 
@@ -107,12 +108,34 @@ class NotificationController extends Controller
         }
 
         $validated = $request->validated();
+        $scheduled = ($validated['send_mode'] ?? 'immediate') === 'scheduled';
+        $scheduledAt = $scheduled ? \Illuminate\Support\Carbon::parse($validated['scheduled_at']) : null;
         $payload = [
             'title' => $validated['title'],
             'content' => $validated['content'],
             'type' => 'system',
             'department_id' => $managedDepartment->id,
         ];
+        $schedulePayload = [
+            'audience' => $validated['audience'],
+            'user_ids' => array_map('intval', $validated['user_ids'] ?? []),
+        ];
+
+        if ($scheduled) {
+            if ($validated['audience'] === 'selected' && $schedulePayload['user_ids'] === []) {
+                return back()->withInput()->withErrors(['user_ids' => 'Vui lòng chọn ít nhất một thành viên.']);
+            }
+
+            if ($validated['audience'] === 'all' && $this->notifications->recipientIdsForDepartments([$managedDepartment->id]) === []) {
+                return back()->withInput()->withErrors(['user_ids' => 'Không có thành viên hợp lệ trong phòng ban.']);
+            }
+
+            $this->notifications->schedule($user, $payload, $schedulePayload, $scheduledAt);
+
+            return redirect()
+                ->route('manager.notifications.create')
+                ->with('success', 'Đã lên lịch gửi thông báo lúc '.$scheduledAt->format('d/m/Y H:i').'.');
+        }
 
         if ($validated['audience'] === 'all') {
             $recipientIds = $this->notifications->recipientIdsForDepartments([$managedDepartment->id]);

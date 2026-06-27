@@ -19,6 +19,12 @@
             </a>
         </div>
 
+        @if (session('success'))
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+                <p class="text-sm font-medium text-emerald-700">{{ session('success') }}</p>
+            </div>
+        @endif
+
         <div class="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-5 py-4">
             <p class="text-sm text-emerald-800">
                 Thông báo sẽ chỉ hiển thị trong phòng ban <strong>{{ $managedDepartment->department_name }}</strong>
@@ -96,6 +102,8 @@
                     </div>
                 </div>
 
+                @include('notifications.partials.schedule-fields', ['accent' => 'emerald'])
+
                 <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
                     <a href="{{ route('manager.notifications.index') }}"
                        class="inline-flex items-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
@@ -103,10 +111,12 @@
                     </a>
                     <button type="submit"
                             class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition">
-                        Gửi thông báo
+                        Lưu & gửi
                     </button>
                 </div>
             </form>
         </div>
+
+        @include('notifications.partials.pending-scheduled', ['pendingScheduled' => $pendingScheduled])
     </div>
 </x-staff-layout>
