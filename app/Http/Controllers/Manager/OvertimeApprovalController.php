@@ -63,8 +63,7 @@ class OvertimeApprovalController extends Controller
 
     public function show(OvertimeRequest $overtimeRequest): View
     {
-        $manager = Employee::where('user_id', Auth::id())->firstOrFail();
-        $this->authorizeInManagedDepartment($overtimeRequest, $manager->department_id);
+        $this->authorize('view', $overtimeRequest);
 
         $overtimeRequest->load(['employee.department', 'approver', 'histories.actor']);
 
@@ -73,8 +72,7 @@ class OvertimeApprovalController extends Controller
 
     public function approve(OvertimeRequest $overtimeRequest): RedirectResponse
     {
-        $manager = Employee::where('user_id', Auth::id())->firstOrFail();
-        $this->authorizeInManagedDepartment($overtimeRequest, $manager->department_id);
+        $this->authorize('approve', $overtimeRequest);
 
         if ($overtimeRequest->status !== OvertimeRequest::STATUS_PENDING) {
             return back()->with('error', 'Chỉ đơn Pending mới được phê duyệt.');
@@ -121,8 +119,7 @@ class OvertimeApprovalController extends Controller
 
     public function reject(Request $request, OvertimeRequest $overtimeRequest): RedirectResponse
     {
-        $manager = Employee::where('user_id', Auth::id())->firstOrFail();
-        $this->authorizeInManagedDepartment($overtimeRequest, $manager->department_id);
+        $this->authorize('reject', $overtimeRequest);
 
         if ($overtimeRequest->status !== OvertimeRequest::STATUS_PENDING) {
             return back()->with('error', 'Chỉ đơn Pending mới được từ chối.');
@@ -172,14 +169,5 @@ class OvertimeApprovalController extends Controller
         });
 
         return back()->with('success', 'Từ chối đơn tăng ca thành công.');
-    }
-
-    protected function authorizeInManagedDepartment(OvertimeRequest $overtimeRequest, ?int $departmentId): void
-    {
-        $requestDepartmentId = $overtimeRequest->employee?->department_id;
-
-        if (! $departmentId || $requestDepartmentId !== $departmentId) {
-            abort(403, 'Bạn không có quyền truy cập đơn tăng ca này.');
-        }
     }
 }

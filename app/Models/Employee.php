@@ -53,6 +53,11 @@ class Employee extends Model
         return $this->hasMany(Contract::class);
     }
 
+    public function overtimeRequests(): HasMany
+    {
+        return $this->hasMany(OvertimeRequest::class);
+    }
+
     public function manager(): BelongsTo
     {
         return $this->belongsTo(self::class, 'manager_id');
