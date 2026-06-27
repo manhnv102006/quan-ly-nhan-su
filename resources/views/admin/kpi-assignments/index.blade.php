@@ -95,28 +95,28 @@
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                 <p class="text-slate-500 text-sm">Chờ phê duyệt</p>
                 <h3 class="text-3xl font-bold mt-2 text-yellow-600">
-                    {{ \App\Models\KPIAssignment::where('status', 'pending')->count() }}
+                    {{ number_format($stats['pending']) }}
                 </h3>
             </div>
 
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                 <p class="text-slate-500 text-sm">Đang thực hiện</p>
                 <h3 class="text-3xl font-bold mt-2 text-blue-600">
-                    {{ \App\Models\KPIAssignment::where('status', 'active')->count() }}
+                    {{ number_format($stats['active']) }}
                 </h3>
             </div>
 
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                 <p class="text-slate-500 text-sm">Hoàn thành</p>
                 <h3 class="text-3xl font-bold mt-2 text-green-600">
-                    {{ \App\Models\KPIAssignment::where('status', 'completed')->count() }}
+                    {{ number_format($stats['completed']) }}
                 </h3>
             </div>
 
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                 <p class="text-slate-500 text-sm">Tổng cộng</p>
                 <h3 class="text-3xl font-bold mt-2 text-violet-600">
-                    {{ \App\Models\KPIAssignment::count() }}
+                    {{ number_format($stats['total']) }}
                 </h3>
             </div>
 
@@ -160,15 +160,15 @@
                             </td>
 
                             <td class="px-6 py-4 font-semibold text-slate-800">
-                                {{ $assignment->kpi->code }}
+                                {{ $assignment->kpi_code }}
                             </td>
 
                             <td class="px-6 py-4 text-slate-700">
-                                {{ $assignment->kpi->title }}
+                                {{ $assignment->kpi_title }}
                             </td>
 
                             <td class="px-6 py-4 text-slate-700">
-                                {{ $assignment->manager->name }}
+                                {{ $assignment->manager_name }}
                             </td>
 
                             <td class="px-6 py-4 text-center">

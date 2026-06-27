@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'user_id',
         'department_id',
@@ -28,7 +31,7 @@ class Employee extends Model
     {
         return [
             'date_of_birth' => 'date',
-            'hire_date'     => 'date',
+            'hire_date' => 'date',
         ];
     }
 
@@ -70,6 +73,31 @@ class Employee extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function linkedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class)->withTrashed();
+    }
+
+    public function hasLinkedAccount(): bool
+    {
+        return $this->user_id !== null && $this->user !== null;
+    }
+
+    public function clearStaleUserLink(): bool
+    {
+        if ($this->user_id === null) {
+            return false;
+        }
+
+        if (User::query()->whereKey($this->user_id)->exists()) {
+            return false;
+        }
+
+        $this->forceFill(['user_id' => null])->save();
+
+        return true;
     }
 
     public function documents(): HasMany

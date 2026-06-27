@@ -1,55 +1,93 @@
-<section class="space-y-6">
-    <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Delete Account') }}
-        </h2>
+<div class="rounded-3xl border border-red-100 bg-white shadow-sm overflow-hidden">
+    <div class="border-b border-red-100 bg-gradient-to-r from-red-50 to-white px-6 py-5 sm:px-8">
+        <div class="flex items-start gap-4">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+                          d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-800">Xóa tài khoản</h3>
+                <p class="mt-1 text-sm text-slate-500">
+                    Sau khi xóa, toàn bộ dữ liệu tài khoản sẽ bị xóa vĩnh viễn. Hãy sao lưu thông tin cần thiết trước khi thực hiện.
+                </p>
+            </div>
+        </div>
+    </div>
 
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.') }}
-        </p>
-    </header>
+    <div class="p-6 sm:p-8">
+        <div class="rounded-2xl border border-red-100 bg-red-50/50 px-5 py-4">
+            <p class="text-sm text-red-800 font-medium">Hành động này không thể hoàn tác.</p>
+            <p class="mt-1 text-xs text-red-600">Bạn sẽ bị đăng xuất và mất quyền truy cập vào hệ thống.</p>
+        </div>
 
-    <x-danger-button
-        x-data=""
-        x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
-    >{{ __('Delete Account') }}</x-danger-button>
+        <button type="button"
+                id="open-delete-account-modal"
+                class="mt-5 inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700">
+            Xóa tài khoản của tôi
+        </button>
+    </div>
+</div>
 
-    <x-modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
+<div id="delete-account-modal"
+     class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="bg-gradient-to-r from-red-50 to-white px-6 py-5 border-b border-red-100">
+            <h3 class="text-lg font-bold text-slate-800">Xác nhận xóa tài khoản</h3>
+            <p class="mt-1 text-sm text-slate-500">Nhập mật khẩu để xác nhận bạn muốn xóa vĩnh viễn tài khoản này.</p>
+        </div>
+
         <form method="post" action="{{ route('profile.destroy') }}" class="p-6">
             @csrf
             @method('delete')
 
-            <h2 class="text-lg font-medium text-gray-900">
-                {{ __('Are you sure you want to delete your account?') }}
-            </h2>
+            <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">Mật khẩu hiện tại</label>
+            <input id="password" name="password" type="password" placeholder="Nhập mật khẩu để xác nhận"
+                   class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-800 focus:border-red-400 focus:ring-2 focus:ring-red-500/30 transition">
+            @if ($errors->userDeletion->has('password'))
+                <p class="mt-1.5 text-xs text-red-600">{{ $errors->userDeletion->first('password') }}</p>
+            @endif
 
-            <p class="mt-1 text-sm text-gray-600">
-                {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.') }}
-            </p>
-
-            <div class="mt-6">
-                <x-input-label for="password" value="{{ __('Password') }}" class="sr-only" />
-
-                <x-text-input
-                    id="password"
-                    name="password"
-                    type="password"
-                    class="mt-1 block w-3/4"
-                    placeholder="{{ __('Password') }}"
-                />
-
-                <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
-            </div>
-
-            <div class="mt-6 flex justify-end">
-                <x-secondary-button x-on:click="$dispatch('close')">
-                    {{ __('Cancel') }}
-                </x-secondary-button>
-
-                <x-danger-button class="ms-3">
-                    {{ __('Delete Account') }}
-                </x-danger-button>
+            <div class="mt-6 flex gap-3">
+                <button type="button" id="close-delete-account-modal"
+                        class="flex-1 rounded-xl bg-slate-100 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200">
+                    Hủy
+                </button>
+                <button type="submit"
+                        class="flex-1 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700">
+                    Xóa vĩnh viễn
+                </button>
             </div>
         </form>
-    </x-modal>
-</section>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const modal = document.getElementById('delete-account-modal');
+        const openBtn = document.getElementById('open-delete-account-modal');
+        const closeBtn = document.getElementById('close-delete-account-modal');
+        if (!modal || !openBtn) return;
+
+        const shouldOpen = {{ $errors->userDeletion->isNotEmpty() ? 'true' : 'false' }};
+
+        function openModal() {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        openBtn.addEventListener('click', openModal);
+        closeBtn?.addEventListener('click', closeModal);
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) closeModal();
+        });
+
+        if (shouldOpen) openModal();
+    })();
+</script>

@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Employee;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -26,6 +29,7 @@ class AccountController extends Controller
             'total' => User::count(),
             'active' => User::where('status', 'active')->count(),
             'verified' => User::whereNotNull('email_verified_at')->count(),
+            'trashed' => User::onlyTrashed()->count(),
         ];
 
         return view('admin.accounts.index', compact('users', 'stats'));
@@ -81,7 +85,15 @@ class AccountController extends Controller
     {
         $user->load(['role', 'employee.department', 'employee.position']);
 
-        return view('admin.accounts.show', compact('user'));
+        $availableEmployees = Employee::query()
+            ->where(function ($query) {
+                $query->whereNull('user_id')
+                    ->orWhereNotIn('user_id', User::query()->select('id'));
+            })
+            ->orderBy('full_name')
+            ->get(['id', 'employee_code', 'full_name', 'email']);
+
+        return view('admin.accounts.show', compact('user', 'availableEmployees'));
     }
 
     public function edit(User $user): View
@@ -197,5 +209,197 @@ class AccountController extends Controller
         return redirect()
             ->back()
             ->with('success', "Đã đặt lại mật khẩu cho tài khoản {$user->username} thành công.");
+    }
+
+    public function destroy(User $user): RedirectResponse
+    {
+        if ($error = $this->deleteGuardMessage($user)) {
+            return redirect()->back()->with('error', $error);
+        }
+
+        $this->releaseUniqueFields($user);
+
+        Employee::query()
+            ->where('user_id', $user->id)
+            ->update(['user_id' => null]);
+
+        $user->delete();
+
+        return redirect()
+            ->route('admin.accounts')
+            ->with('success', "Đã chuyển tài khoản {$user->username} vào thùng rác.");
+    }
+
+    public function trash(Request $request): View
+    {
+        $users = User::onlyTrashed()
+            ->with('role')
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('username', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->orderByDesc('deleted_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('admin.accounts.trash', compact('users'));
+    }
+
+    public function restore(int $id): RedirectResponse
+    {
+        $user = User::onlyTrashed()->findOrFail($id);
+
+        if ($error = $this->restoreConflictMessage($user)) {
+            return redirect()->back()->with('error', $error);
+        }
+
+        $this->restoreUniqueFields($user);
+        $user->restore();
+
+        return redirect()
+            ->route('admin.accounts.trash')
+            ->with('success', "Đã khôi phục tài khoản {$user->username}.");
+    }
+
+    public function forceDelete(int $id): RedirectResponse
+    {
+        $user = User::onlyTrashed()->findOrFail($id);
+
+        if ($error = $this->deleteGuardMessage($user)) {
+            return redirect()->back()->with('error', $error);
+        }
+
+        $username = $user->username;
+
+        Employee::query()
+            ->where('user_id', $user->id)
+            ->update(['user_id' => null]);
+
+        $user->forceDelete();
+
+        return redirect()
+            ->route('admin.accounts.trash')
+            ->with('success', "Đã xóa vĩnh viễn tài khoản {$username}.");
+    }
+
+    private function deleteGuardMessage(User $user): ?string
+    {
+        if ($user->id === auth()->id()) {
+            return 'Bạn không thể xóa tài khoản đang đăng nhập.';
+        }
+
+        if ($user->isAdmin()) {
+            $otherAdmins = User::withTrashed()
+                ->where('id', '!=', $user->id)
+                ->whereHas('role', fn ($query) => $query->where('name', Role::ADMIN))
+                ->count();
+
+            if ($otherAdmins === 0) {
+                return 'Không thể xóa tài khoản quản trị viên cuối cùng.';
+            }
+        }
+
+        return null;
+    }
+
+    public function linkEmployee(Request $request, User $user): RedirectResponse
+    {
+        if ($user->employee && $user->employee->hasLinkedAccount()) {
+            return redirect()
+                ->route('admin.accounts.show', $user)
+                ->with('error', 'Tài khoản này đã được liên kết với một nhân viên.');
+        }
+
+        $validated = $request->validate([
+            'employee_id' => [
+                'required',
+                'integer',
+                Rule::exists('employees', 'id'),
+            ],
+        ], [
+            'employee_id.required' => 'Vui lòng chọn nhân viên để liên kết.',
+            'employee_id.exists' => 'Nhân viên không tồn tại.',
+        ]);
+
+        $employee = Employee::query()->findOrFail($validated['employee_id']);
+        $employee->clearStaleUserLink();
+        $employee->refresh();
+
+        if ($employee->hasLinkedAccount()) {
+            return redirect()
+                ->route('admin.accounts.show', $user)
+                ->with('error', 'Nhân viên này đã được liên kết với tài khoản khác.');
+        }
+
+        $employee->update(['user_id' => $user->id]);
+
+        return redirect()
+            ->route('admin.accounts.show', $user)
+            ->with('success', "Đã liên kết tài khoản {$user->username} với nhân viên {$employee->full_name}.");
+    }
+
+    public function unlinkEmployee(User $user): RedirectResponse
+    {
+        $employee = $user->employee;
+
+        if (! $employee) {
+            return redirect()
+                ->route('admin.accounts.show', $user)
+                ->with('error', 'Tài khoản này chưa liên kết nhân viên nào.');
+        }
+
+        $employee->update(['user_id' => null]);
+
+        return redirect()
+            ->route('admin.accounts.show', $user)
+            ->with('success', "Đã gỡ liên kết nhân viên {$employee->full_name} khỏi tài khoản {$user->username}.");
+    }
+
+    private function releaseUniqueFields(User $user): void
+    {
+        $usernameSuffix = '::d'.$user->id;
+
+        $user->update([
+            'email' => $user->email.'::deleted::'.$user->id,
+            'username' => Str::limit($user->username, 50 - strlen($usernameSuffix), '').$usernameSuffix,
+        ]);
+    }
+
+    private function restoreUniqueFields(User $user): void
+    {
+        if (str_contains($user->email, '::deleted::')) {
+            $user->email = explode('::deleted::', $user->email, 2)[0];
+        }
+
+        if (preg_match('/::d\d+$/', $user->username)) {
+            $user->username = preg_replace('/::d\d+$/', '', $user->username);
+        }
+
+        $user->save();
+    }
+
+    private function restoreConflictMessage(User $user): ?string
+    {
+        $originalEmail = str_contains($user->email, '::deleted::')
+            ? explode('::deleted::', $user->email, 2)[0]
+            : $user->email;
+
+        $originalUsername = preg_match('/::d\d+$/', $user->username)
+            ? preg_replace('/::d\d+$/', '', $user->username)
+            : $user->username;
+
+        if (User::where('email', $originalEmail)->where('id', '!=', $user->id)->exists()) {
+            return 'Không thể khôi phục vì email đã được sử dụng bởi tài khoản khác.';
+        }
+
+        if (User::where('username', $originalUsername)->where('id', '!=', $user->id)->exists()) {
+            return 'Không thể khôi phục vì tên đăng nhập đã được sử dụng bởi tài khoản khác.';
+        }
+
+        return null;
     }
 }

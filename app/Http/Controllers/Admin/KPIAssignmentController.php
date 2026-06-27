@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreKPIAssignmentRequest;
 use App\Models\KPI;
 use App\Models\KPIAssignment;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -49,9 +50,19 @@ class KPIAssignmentController extends Controller
 
         $assignments = $query->orderBy('created_at', 'desc')->paginate(10);
         $kpis = KPI::where('status', 'active')->get();
-        $managers = User::where('role_id', 2)->get(); // Assuming role_id 2 is manager
+        $managers = User::query()
+            ->whereHas('role', fn ($q) => $q->where('name', Role::MANAGER))
+            ->orderBy('name')
+            ->get();
 
-        return view('admin.kpi-assignments.index', compact('assignments', 'kpis', 'managers'));
+        $stats = [
+            'pending' => KPIAssignment::where('status', 'pending')->count(),
+            'active' => KPIAssignment::where('status', 'active')->count(),
+            'completed' => KPIAssignment::where('status', 'completed')->count(),
+            'total' => KPIAssignment::count(),
+        ];
+
+        return view('admin.kpi-assignments.index', compact('assignments', 'kpis', 'managers', 'stats'));
     }
 
     /**
@@ -65,7 +76,10 @@ class KPIAssignmentController extends Controller
             })
             ->get();
 
-        $managers = User::where('role_id', 2)->get();
+        $managers = User::query()
+            ->whereHas('role', fn ($q) => $q->where('name', Role::MANAGER))
+            ->orderBy('name')
+            ->get();
 
         return view('admin.kpi-assignments.create', compact('kpis', 'managers'));
     }
@@ -102,7 +116,10 @@ class KPIAssignmentController extends Controller
     {
         $assignment->load(['kpi', 'manager']);
         $kpis = KPI::where('status', 'active')->get();
-        $managers = User::where('role_id', 2)->get();
+        $managers = User::query()
+            ->whereHas('role', fn ($q) => $q->where('name', Role::MANAGER))
+            ->orderBy('name')
+            ->get();
 
         // Get assigned KPI IDs for each manager (excluding current assignment)
         $assignedKpis = KPIAssignment::where('id', '!=', $assignment->id)
