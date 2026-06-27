@@ -132,6 +132,10 @@
                             <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"><span class="text-slate-500">Phụ cấp</span><span class="font-semibold text-slate-800">{{ number_format((float) $latestPayroll->allowance, 0, ',', '.') }}đ</span></div>
                             <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"><span class="text-slate-500">Thưởng / khấu trừ</span><span class="font-semibold text-slate-800">{{ number_format((float) $latestPayroll->bonus, 0, ',', '.') }}đ / {{ number_format((float) $latestPayroll->deduction, 0, ',', '.') }}đ</span></div>
                         </div>
+                        <div class="mt-5 flex flex-wrap gap-3">
+                            <a href="{{ route('employee.payrolls.index') }}" class="inline-flex items-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">Xem tất cả phiếu lương</a>
+                            <a href="{{ route('employee.payrolls.pdf', ['payroll' => $latestPayroll->id ?? 0]) }}" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Tải phiếu hiện tại</a>
+                        </div>
                     @else
                         <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center"><p class="text-sm font-semibold text-slate-700">Chưa có phiếu lương để hiển thị.</p></div>
                     @endif
