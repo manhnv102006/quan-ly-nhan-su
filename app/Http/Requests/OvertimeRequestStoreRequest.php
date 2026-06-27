@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\OvertimeRequest;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -38,5 +39,27 @@ class OvertimeRequestStoreRequest extends FormRequest
             'end_time.after' => 'Giờ kết thúc phải lớn hơn giờ bắt đầu.',
             'reason.required' => 'Vui lòng nhập lý do tăng ca.',
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $employeeId = $this->input('employee_id') ?? $this->user()?->employee?->id;
+
+            if (! $employeeId || ! $this->work_date || ! $this->start_time || ! $this->end_time) {
+                return;
+            }
+
+            $isOverlapped = OvertimeRequest::query()
+                ->where('employee_id', $employeeId)
+                ->whereDate('work_date', $this->work_date)
+                ->where('start_time', '<', $this->end_time)
+                ->where('end_time', '>', $this->start_time)
+                ->exists();
+
+            if ($isOverlapped) {
+                $validator->errors()->add('start_time', 'Khoảng thời gian tăng ca bị trùng trong cùng ngày.');
+            }
+        });
     }
 }
