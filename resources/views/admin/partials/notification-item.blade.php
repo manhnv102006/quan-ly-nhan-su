@@ -51,7 +51,7 @@
                 @endif
             </span>
             @if (! $compact && ! $isRead && $notification->notification_user_id)
-                <form action="{{ route('admin.notifications.read', $notification->id) }}" method="POST" class="ml-auto">
+                <form action="{{ route('notifications.read', $notification->id) }}" method="POST" class="ml-auto">
                     @csrf
                     @method('PATCH')
                     <button type="submit" class="text-xs font-medium text-violet-600 hover:text-violet-700">

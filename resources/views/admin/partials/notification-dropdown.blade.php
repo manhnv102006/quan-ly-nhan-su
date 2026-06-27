@@ -65,7 +65,7 @@
             </div>
 
             <div class="border-t border-slate-100 bg-slate-50/80 px-4 py-3">
-                <a href="{{ route('admin.notifications.index') }}"
+                <a href="{{ route('notifications.index') }}"
                    @click.stop="open = false"
                    class="flex w-full items-center justify-center rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-violet-600 shadow-sm ring-1 ring-slate-200/80 transition hover:bg-violet-50 hover:text-violet-700">
                     Xem tất cả thông báo

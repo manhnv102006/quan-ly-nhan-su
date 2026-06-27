@@ -4,9 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\OvertimeRequest;
+use App\Services\AutoNotificationService;
 
 class OvertimeRequestController extends Controller
 {
+    public function __construct(
+        private AutoNotificationService $autoNotifications,
+    ) {}
+
     public function index()
     {
         $overtimeRequests = OvertimeRequest::with([
@@ -52,6 +57,8 @@ class OvertimeRequestController extends Controller
             'status' => 'approved'
         ]);
 
+        $this->autoNotifications->overtimeApproved($overtimeRequest);
+
         return back()->with(
             'success',
             'Đã duyệt đơn tăng ca'
@@ -64,6 +71,8 @@ class OvertimeRequestController extends Controller
         $overtimeRequest->update([
             'status' => 'rejected'
         ]);
+
+        $this->autoNotifications->overtimeRejected($overtimeRequest);
 
         return back()->with(
             'success',
