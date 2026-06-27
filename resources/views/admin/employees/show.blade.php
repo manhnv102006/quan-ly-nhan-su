@@ -2,10 +2,75 @@
 
     <div class="space-y-6">
 
+        {{-- Profile hero --}}
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-600 text-white shadow-xl shadow-violet-500/20">
+            <div class="absolute inset-0 opacity-20">
+                <div class="absolute -top-10 -right-10 w-56 h-56 rounded-full bg-white/30 blur-2xl"></div>
+                <div class="absolute bottom-0 left-10 w-40 h-40 rounded-full bg-cyan-300/40 blur-2xl"></div>
+            </div>
+            <div class="relative p-6 sm:p-8">
+                <div class="flex flex-col lg:flex-row lg:items-center gap-6">
+                    <div class="w-24 h-24 rounded-3xl bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
+                        @if ($employee->avatar)
+                            <img src="{{ asset('storage/' . $employee->avatar) }}"
+                                 alt="{{ $employee->full_name }}"
+                                 class="w-full h-full object-cover">
+                        @else
+                            <span class="text-4xl font-bold text-white">
+                                {{ strtoupper(substr($employee->full_name, 0, 1)) }}
+                            </span>
+                        @endif
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-violet-100 text-sm font-medium tracking-wide uppercase">Hồ sơ nhân viên</p>
+                        <h2 class="mt-1 text-2xl sm:text-3xl font-bold truncate">{{ $employee->full_name }}</h2>
+                        <p class="mt-1 text-violet-100 font-mono text-sm">{{ $employee->employee_code }}</p>
+                        <div class="mt-4 flex flex-wrap items-center gap-2">
+                            @if ($employee->status === 'active')
+                                <span class="inline-flex px-3 py-1 rounded-full bg-emerald-400/20 border border-emerald-300/40 text-emerald-50 text-xs font-semibold">Đang làm việc</span>
+                            @elseif ($employee->status === 'inactive')
+                                <span class="inline-flex px-3 py-1 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-50 text-xs font-semibold">Tạm khóa</span>
+                            @else
+                                <span class="inline-flex px-3 py-1 rounded-full bg-rose-400/20 border border-rose-300/40 text-rose-50 text-xs font-semibold">Đã nghỉ</span>
+                            @endif
+                            @if ($employee->department)
+                                <span class="inline-flex px-3 py-1 rounded-full bg-white/15 border border-white/25 text-white text-xs font-medium">
+                                    {{ $employee->department->department_name }}
+                                </span>
+                            @endif
+                            @if ($employee->position)
+                                <span class="inline-flex px-3 py-1 rounded-full bg-white/15 border border-white/25 text-white text-xs font-medium">
+                                    {{ $employee->position->position_name }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4 shrink-0">
+                        <div class="rounded-2xl bg-white/10 backdrop-blur border border-white/20 px-4 py-3 text-center">
+                            <p class="text-2xl font-bold">{{ $documents->count() }}</p>
+                            <p class="text-[11px] text-violet-100 mt-0.5">Tài liệu</p>
+                        </div>
+                        <div class="rounded-2xl bg-white/10 backdrop-blur border border-white/20 px-4 py-3 text-center">
+                            <p class="text-2xl font-bold">{{ $contracts->count() }}</p>
+                            <p class="text-[11px] text-violet-100 mt-0.5">Hợp đồng</p>
+                        </div>
+                        <div class="rounded-2xl bg-white/10 backdrop-blur border border-white/20 px-4 py-3 text-center">
+                            <p class="text-2xl font-bold">{{ $employeeKpis->count() }}</p>
+                            <p class="text-[11px] text-violet-100 mt-0.5">KPI</p>
+                        </div>
+                        <div class="rounded-2xl bg-white/10 backdrop-blur border border-white/20 px-4 py-3 text-center">
+                            <p class="text-2xl font-bold">{{ $attendances->count() }}</p>
+                            <p class="text-[11px] text-violet-100 mt-0.5">Chấm công</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
-                <h2 class="text-2xl font-bold text-slate-800">Chi tiết nhân viên</h2>
-                <p class="text-slate-500 mt-1">Xem thông tin chi tiết của nhân viên</p>
+                <h2 class="text-xl font-bold text-slate-800">Thông tin chi tiết</h2>
+                <p class="text-slate-500 mt-1 text-sm">Quản lý hồ sơ, tài liệu và lịch sử công việc</p>
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
@@ -31,7 +96,7 @@
                             id="open-delete-modal-show"
                             data-employee-name="{{ $employee->full_name }}"
                             class="px-5 py-3 rounded-xl bg-red-100 text-red-700 font-medium hover:bg-red-200 transition">
-                        Xóa nhân viên
+                        Xóa mềm
                     </button>
                 </form>
 
@@ -205,7 +270,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
+                <div id="lich-su-dieu-chuyen" class="bg-white rounded-3xl shadow-sm border border-slate-100">
                     <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-slate-800">Lịch sử điều chuyển phòng ban</h3>
                         <span class="text-sm text-slate-500">{{ $transferHistory->count() }} bản ghi</span>
@@ -243,56 +308,67 @@
 
             </div>
 
-            <div>
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 text-center">
-                    <div class="w-28 h-28 mx-auto rounded-3xl bg-violet-100 flex items-center justify-center overflow-hidden">
-                        @if ($employee->avatar)
-                            <img src="{{ asset('storage/' . $employee->avatar) }}"
-                                 alt="{{ $employee->full_name }}"
-                                 class="w-full h-full object-cover">
-                        @else
-                            <span class="text-4xl font-bold text-violet-600">
-                                {{ strtoupper(substr($employee->full_name, 0, 1)) }}
-                            </span>
-                        @endif
-                    </div>
+            <div class="space-y-4">
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+                    <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Điều hướng nhanh</p>
+                    <nav class="space-y-1">
+                        <a href="#ho-so-tai-lieu" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700 transition">
+                            <span class="w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center text-xs">📁</span>
+                            Tài liệu hồ sơ
+                        </a>
+                        <a href="#tai-khoan-lien-ket" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700 transition">
+                            <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs">👤</span>
+                            Tài khoản liên kết
+                        </a>
+                        <a href="#hop-dong" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700 transition">
+                            <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">📄</span>
+                            Hợp đồng lao động
+                        </a>
+                        <a href="#lich-su-dieu-chuyen" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700 transition">
+                            <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-xs">↔</span>
+                            Lịch sử điều chuyển
+                        </a>
+                    </nav>
+                </div>
 
-                    <h3 class="mt-5 text-xl font-bold text-slate-800">{{ $employee->full_name }}</h3>
-                    <p class="text-slate-500 mt-2">{{ $employee->employee_code }}</p>
-
-                    <div class="mt-4">
-                        @if ($employee->status === 'active')
-                            <span class="inline-flex items-center px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold">Đang làm việc</span>
-                        @elseif ($employee->status === 'inactive')
-                            <span class="inline-flex items-center px-4 py-2 rounded-full bg-amber-100 text-amber-700 text-sm font-semibold">Tạm khóa</span>
-                        @else
-                            <span class="inline-flex items-center px-4 py-2 rounded-full bg-rose-100 text-rose-700 text-sm font-semibold">Đã nghỉ</span>
-                        @endif
-                    </div>
-
-                    @if ($employee->department)
-                        <p class="mt-4 text-sm text-slate-500">
-                            Phòng ban: <span class="font-semibold text-slate-800">{{ $employee->department->department_name }}</span>
-                        </p>
-                    @endif
-
-                    @if ($employee->position)
-                        <p class="mt-2 text-sm text-slate-500">
-                            Chức vụ: <span class="font-semibold text-slate-800">{{ $employee->position->position_name }}</span>
-                        </p>
+                <div class="bg-gradient-to-br from-violet-600 to-indigo-700 rounded-3xl p-6 text-white shadow-lg shadow-violet-500/20">
+                    <p class="text-sm font-semibold opacity-90">Liên hệ nhanh</p>
+                    <p class="mt-2 text-sm text-violet-100">{{ $employee->email }}</p>
+                    <p class="mt-1 text-sm text-violet-100">{{ $employee->phone }}</p>
+                    @if ($employee->hire_date)
+                        <p class="mt-4 text-xs text-violet-200">Vào làm từ {{ $employee->hire_date->format('d/m/Y') }}</p>
                     @endif
                 </div>
             </div>
 
         </div>
 
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
-            <div class="px-6 py-5 border-b border-slate-100">
+        <div id="tai-khoan-lien-ket" class="bg-white rounded-3xl shadow-sm border border-slate-100">
+            <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <h3 class="text-lg font-semibold text-slate-800">Tài khoản hệ thống liên kết</h3>
+                @if ($employee->hasLinkedAccount())
+                    <form action="{{ route('admin.employees.unlink-account', $employee) }}"
+                          method="POST"
+                          id="unlink-account-form">
+                        @csrf
+                        @method('PATCH')
+                        <button type="button"
+                                id="open-unlink-account-modal"
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-100 text-orange-700 text-sm font-medium hover:bg-orange-200 transition">
+                            Gỡ liên kết
+                        </button>
+                    </form>
+                @elseif ($availableAccounts->isNotEmpty())
+                    <button type="button"
+                            id="open-link-account-modal"
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition">
+                        + Liên kết tài khoản
+                    </button>
+                @endif
             </div>
 
             <div class="p-6">
-                @if ($employee->user)
+                @if ($employee->hasLinkedAccount())
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         <div>
                             <label class="block text-sm font-medium text-slate-500 mb-2">Tên đăng nhập</label>
@@ -348,12 +424,26 @@
                         </div>
                         <p class="mt-4 text-slate-500 font-medium">Chưa liên kết tài khoản hệ thống</p>
                         <p class="mt-1 text-sm text-slate-400">Nhân viên này chưa được gán với tài khoản đăng nhập</p>
+                        @if ($availableAccounts->isNotEmpty())
+                            <button type="button"
+                                    id="open-link-account-modal-empty"
+                                    onclick="document.getElementById('open-link-account-modal')?.click()"
+                                    class="mt-5 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition">
+                                Liên kết tài khoản ngay
+                            </button>
+                        @else
+                            <p class="mt-4 text-sm text-amber-600">Không còn tài khoản trống để liên kết.</p>
+                            <a href="{{ route('admin.accounts.create') }}"
+                               class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-100 text-violet-700 text-sm font-medium hover:bg-violet-200 transition">
+                                Tạo tài khoản mới
+                            </a>
+                        @endif
                     </div>
                 @endif
             </div>
         </div>
 
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
+        <div id="hop-dong" class="bg-white rounded-3xl shadow-sm border border-slate-100">
             <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-slate-800">Hợp đồng lao động</h3>
                 <span class="text-sm text-slate-500">{{ $contracts->count() }} hợp đồng gần đây</span>
@@ -533,77 +623,45 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
-                <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <h3 class="text-lg font-semibold text-slate-800">Tài liệu hồ sơ</h3>
-                        <span class="text-sm text-slate-500">{{ $documents->count() }} tài liệu</span>
-                    </div>
-                    @php
-                        $downloadableDocuments = $documents->filter(fn ($document) => $document->existsOnDisk());
-                    @endphp
-                    @if ($downloadableDocuments->isNotEmpty())
-                        <a href="{{ route('admin.employees.documents.download-all', $employee) }}"
-                           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
-                            </svg>
-                            Tải tất cả tài liệu ({{ $downloadableDocuments->count() }})
-                        </a>
-                    @endif
-                </div>
-
-                <div class="p-6 overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="text-sm text-slate-500 border-b border-slate-100">
-                                <th class="py-3 px-4 font-medium">Tên tài liệu</th>
-                                <th class="py-3 px-4 font-medium">Loại</th>
-                                <th class="py-3 px-4 font-medium">Ngày tải lên</th>
-                                <th class="py-3 px-4 font-medium text-center">Tải xuống</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($documents as $document)
-                                <tr class="border-b border-slate-50 hover:bg-slate-50">
-                                    <td class="py-3 px-4 font-medium text-slate-800">{{ $document->document_name }}</td>
-                                    <td class="py-3 px-4 text-slate-700">{{ $document->typeLabel() }}</td>
-                                    <td class="py-3 px-4 text-slate-700">{{ $document->created_at?->format('d/m/Y') ?? '—' }}</td>
-                                    <td class="py-3 px-4 text-center">
-                                        @if ($document->existsOnDisk())
-                                            <a href="{{ route('admin.employees.documents.download', [$employee, $document]) }}"
-                                               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-100 text-violet-700 text-xs font-semibold hover:bg-violet-200 transition"
-                                               title="Tải xuống {{ $document->document_name }}">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
-                                                </svg>
-                                                Tải xuống
-                                            </a>
-                                        @else
-                                            <span class="inline-flex px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-xs font-medium"
-                                                  title="File không tồn tại trên hệ thống">
-                                                Không có file
-                                            </span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="py-8 text-center text-slate-400">Chưa có tài liệu nào</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
         </div>
+
+        @include('admin.employees.partials.documents-grid', [
+            'employee' => $employee,
+            'documents' => $documents,
+        ])
 
     </div>
 
     @include('admin.employees.partials.transfer-department-modal')
+    @include('admin.employees.partials.link-account-modal')
+
+    <div id="unlink-account-modal"
+         class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm"
+         style="display: none;">
+        <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm mx-4 p-6 text-center">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-orange-100 flex items-center justify-center">
+                <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+            </div>
+            <h3 class="mt-5 text-lg font-bold text-slate-800">Gỡ liên kết tài khoản?</h3>
+            <p class="mt-2 text-sm text-slate-500">
+                Tài khoản <span class="font-semibold text-slate-700">{{ $employee->user?->username }}</span>
+                sẽ không còn liên kết với nhân viên này.
+            </p>
+            <div class="mt-6 flex gap-3">
+                <button type="button" id="close-unlink-account-modal"
+                        class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
+                    Hủy
+                </button>
+                <button type="button" id="confirm-unlink-account"
+                        class="flex-1 px-5 py-3 rounded-xl text-white font-medium transition"
+                        style="background-color: #ea580c;">
+                    Gỡ liên kết
+                </button>
+            </div>
+        </div>
+    </div>
 
     <div id="delete-confirm-modal"
          class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
@@ -615,13 +673,13 @@
                 </svg>
             </div>
 
-            <h3 class="mt-5 text-lg font-bold text-slate-800 text-center">Xác nhận xóa nhân viên</h3>
+            <h3 class="mt-5 text-lg font-bold text-slate-800 text-center">Chuyển nhân viên vào thùng rác?</h3>
             <p class="mt-2 text-sm text-slate-500 text-center">
-                Bạn có chắc muốn xóa vĩnh viễn nhân viên
+                Bạn có chắc muốn xóa mềm nhân viên
                 <span id="delete-employee-name" class="font-semibold text-slate-800">{{ $employee->full_name }}</span>?
             </p>
-            <p class="mt-2 text-xs text-red-600 text-center font-medium">
-                Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan sẽ bị xóa.
+            <p class="mt-2 text-xs text-amber-600 text-center font-medium">
+                Nhân viên sẽ được ẩn khỏi danh sách và có thể khôi phục từ mục「Nhân viên đã xóa」.
             </p>
 
             <div class="mt-6 flex gap-3">
@@ -630,14 +688,45 @@
                     Hủy
                 </button>
                 <button type="button" id="confirm-delete-btn"
-                        class="flex-1 px-5 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition">
-                    Xác nhận xóa
+                        class="flex-1 px-5 py-3 rounded-xl bg-orange-600 text-white font-medium hover:bg-orange-700 transition">
+                    Chuyển vào thùng rác
                 </button>
             </div>
         </div>
     </div>
 
     <script>
+        (function () {
+            const unlinkModal = document.getElementById('unlink-account-modal');
+            const openUnlinkBtn = document.getElementById('open-unlink-account-modal');
+            const closeUnlinkBtn = document.getElementById('close-unlink-account-modal');
+            const confirmUnlinkBtn = document.getElementById('confirm-unlink-account');
+            const unlinkForm = document.getElementById('unlink-account-form');
+
+            if (openUnlinkBtn && unlinkModal) {
+                function openUnlinkModal() {
+                    unlinkModal.classList.remove('hidden');
+                    unlinkModal.classList.add('flex');
+                    unlinkModal.style.display = 'flex';
+                }
+
+                function closeUnlinkModal() {
+                    unlinkModal.classList.add('hidden');
+                    unlinkModal.classList.remove('flex');
+                    unlinkModal.style.display = 'none';
+                }
+
+                openUnlinkBtn.addEventListener('click', openUnlinkModal);
+                closeUnlinkBtn?.addEventListener('click', closeUnlinkModal);
+                confirmUnlinkBtn?.addEventListener('click', function () {
+                    if (unlinkForm) unlinkForm.submit();
+                });
+                unlinkModal.addEventListener('click', function (event) {
+                    if (event.target === unlinkModal) closeUnlinkModal();
+                });
+            }
+        })();
+
         (function () {
             const modal = document.getElementById('delete-confirm-modal');
             const openBtn = document.getElementById('open-delete-modal-show');
