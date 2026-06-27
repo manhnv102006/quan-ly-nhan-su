@@ -75,6 +75,31 @@ class OvertimeApprovalController extends Controller
         return back()->with('success', 'Phê duyệt đơn tăng ca thành công.');
     }
 
+    public function reject(Request $request, OvertimeRequest $overtimeRequest): RedirectResponse
+    {
+        $manager = Employee::where('user_id', Auth::id())->firstOrFail();
+        $this->authorizeInManagedDepartment($overtimeRequest, $manager->department_id);
+
+        if ($overtimeRequest->status !== OvertimeRequest::STATUS_PENDING) {
+            return back()->with('error', 'Chỉ đơn Pending mới được từ chối.');
+        }
+
+        $validated = $request->validate([
+            'reject_reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'reject_reason.required' => 'Vui lòng nhập lý do từ chối.',
+        ]);
+
+        $overtimeRequest->update([
+            'status' => OvertimeRequest::STATUS_REJECTED,
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+            'reject_reason' => $validated['reject_reason'],
+        ]);
+
+        return back()->with('success', 'Từ chối đơn tăng ca thành công.');
+    }
+
     protected function authorizeInManagedDepartment(OvertimeRequest $overtimeRequest, ?int $departmentId): void
     {
         $requestDepartmentId = $overtimeRequest->employee?->department_id;
