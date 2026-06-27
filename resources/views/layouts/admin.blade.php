@@ -77,7 +77,7 @@
         <div class="flex-1 flex flex-col min-w-0 min-h-screen relative">
             @include('admin.partials.header')
 
-            <main class="flex-1 p-4 sm:p-6 lg:p-8 pb-10">
+            <main class="relative z-0 flex-1 p-4 sm:p-6 lg:p-8 pb-10">
                 {{ $slot }}
             </main>
         </div>

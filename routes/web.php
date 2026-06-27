@@ -19,6 +19,8 @@ use App\Http\Controllers\Admin\ContractTypeController;
 
 
 use App\Http\Controllers\Admin\KPIController;
+use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\NotificationController as UserNotificationController;
 
 use App\Http\Controllers\Admin\PayrollPeriodController;
 use App\Http\Controllers\Admin\PositionController;
@@ -26,6 +28,7 @@ use App\Http\Controllers\Admin\RecruitmentController;
 use App\Http\Controllers\Admin\ShiftController;
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +41,8 @@ Route::get('/dashboard', [DashboardController::class, 'redirect'])
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+    Route::get('/notifications/create', [NotificationController::class, 'create'])->name('notifications.create');
+    Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
     Route::get('/accounts', [AccountController::class, 'index'])->name('accounts');
     Route::get('/accounts/trash', [AccountController::class, 'trash'])->name('accounts.trash');
     Route::get('/accounts/create', [AccountController::class, 'create'])->name('accounts.create');
@@ -173,6 +178,11 @@ Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
     Route::get('/manager/leave-requests', [LeaveRequestController::class, 'index'])->name('manager.leave-requests');
     Route::patch('/manager/leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('manager.leave-requests.approve');
     Route::patch('/manager/leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('manager.leave-requests.reject');
+    Route::get('/manager/notifications', [ManagerNotificationController::class, 'index'])->name('manager.notifications.index');
+    Route::get('/manager/notifications/create', [ManagerNotificationController::class, 'create'])->name('manager.notifications.create');
+    Route::post('/manager/notifications', [ManagerNotificationController::class, 'store'])->name('manager.notifications.store');
+    Route::patch('/manager/notifications/read-all', [ManagerNotificationController::class, 'markAllAsRead'])->name('manager.notifications.read-all');
+    Route::patch('/manager/notifications/{notification}/read', [ManagerNotificationController::class, 'markAsRead'])->name('manager.notifications.read');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
@@ -183,6 +193,12 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(fu
     Route::get('/employee/leave-requests', [EmployeeLeaveController::class, 'index'])->name('employee.leave-requests');
     Route::get('/employee/leave-requests/create', [EmployeeLeaveController::class, 'create'])->name('employee.leave-requests.create');
     Route::post('/employee/leave-requests', [EmployeeLeaveController::class, 'store'])->name('employee.leave-requests.store');
+});
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/notifications', [UserNotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('/notifications/read-all', [UserNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::patch('/notifications/{notification}/read', [UserNotificationController::class, 'markAsRead'])->name('notifications.read');
 });
 
 Route::middleware('auth')->group(function () {

@@ -142,7 +142,7 @@
         ></div>
 
         <div class="relative flex min-h-screen min-w-0 flex-1 flex-col">
-            <header class="staff-header sticky top-0 z-30">
+            <header class="staff-header sticky top-0 z-50 overflow-visible">
                 <div class="flex h-[74px] items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div class="flex min-w-0 flex-1 items-center gap-4">
                         <button
@@ -177,6 +177,8 @@
                     </div>
 
                     <div class="flex items-center gap-2 sm:gap-3">
+                        @include('admin.partials.notification-dropdown')
+
                         <div class="hidden rounded-2xl border border-white/70 bg-white/75 px-3 py-2 text-right shadow-sm shadow-slate-200/50 sm:block">
                             <p class="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Hôm nay</p>
                             <p class="text-sm font-semibold text-slate-700">{{ now()->format('d/m/Y') }}</p>
@@ -209,7 +211,7 @@
                 </div>
             </header>
 
-            <main class="flex-1 p-4 pb-10 sm:p-6 lg:p-8">
+            <main class="relative z-0 flex-1 p-4 pb-10 sm:p-6 lg:p-8">
                 {{ $slot }}
             </main>
         </div>

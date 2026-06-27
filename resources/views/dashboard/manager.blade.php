@@ -33,6 +33,13 @@
             'note' => 'Quản lý nghỉ phép',
         ],
         [
+            'label' => 'Thông báo',
+            'href' => route('manager.notifications.index'),
+            'route' => 'manager.notifications*',
+            'icon' => 'M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0',
+            'note' => 'Phòng ban của bạn',
+        ],
+        [
             'label' => 'Tuyển dụng',
             'href' => route('manager.dashboard') . '#recruitment',
             'icon' => 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
