@@ -60,17 +60,38 @@ return new class extends Migration
             FROM information_schema.KEY_COLUMN_USAGE
             WHERE TABLE_SCHEMA = DATABASE()
               AND TABLE_NAME = 'overtime_requests'
-              AND COLUMN_NAME = 'approved_by'
+              AND COLUMN_NAME IN ('employee_id', 'approved_by')
               AND REFERENCED_TABLE_NAME IS NOT NULL
-        "))->pluck('CONSTRAINT_NAME')->toArray();
+        "));
 
         foreach ($foreignKeys as $foreignKey) {
-            DB::statement("ALTER TABLE overtime_requests DROP FOREIGN KEY `{$foreignKey}`");
+            DB::statement("ALTER TABLE overtime_requests DROP FOREIGN KEY `{$foreignKey->CONSTRAINT_NAME}`");
         }
 
         Schema::table('overtime_requests', function (Blueprint $table) {
+            // employee_id: xóa nhân viên thì xóa toàn bộ đơn tăng ca liên quan
+            $table->foreign('employee_id')->references('id')->on('employees')->cascadeOnDelete();
+            // approved_by: xóa tài khoản người duyệt thì set null
             $table->foreign('approved_by')->references('id')->on('users')->nullOnDelete();
         });
+
+        // Index cho employee_id, work_date, status
+        $indexes = collect(DB::select("SHOW INDEX FROM overtime_requests"))->pluck('Key_name')->toArray();
+        if (! in_array('overtime_requests_employee_id_index', $indexes, true)) {
+            Schema::table('overtime_requests', function (Blueprint $table) {
+                $table->index('employee_id', 'overtime_requests_employee_id_index');
+            });
+        }
+        if (! in_array('overtime_requests_work_date_index', $indexes, true)) {
+            Schema::table('overtime_requests', function (Blueprint $table) {
+                $table->index('work_date', 'overtime_requests_work_date_index');
+            });
+        }
+        if (! in_array('overtime_requests_status_index', $indexes, true)) {
+            Schema::table('overtime_requests', function (Blueprint $table) {
+                $table->index('status', 'overtime_requests_status_index');
+            });
+        }
     }
 
     public function down(): void
@@ -82,6 +103,16 @@ return new class extends Migration
         }
 
         Schema::table('overtime_requests', function (Blueprint $table) {
+            try {
+                $table->dropIndex('overtime_requests_status_index');
+            } catch (\Throwable $e) {}
+            try {
+                $table->dropIndex('overtime_requests_work_date_index');
+            } catch (\Throwable $e) {}
+            try {
+                $table->dropIndex('overtime_requests_employee_id_index');
+            } catch (\Throwable $e) {}
+
             if (Schema::hasColumn('overtime_requests', 'reject_reason')) {
                 $table->dropColumn('reject_reason');
             }
