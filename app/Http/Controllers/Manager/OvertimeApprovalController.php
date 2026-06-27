@@ -93,6 +93,27 @@ class OvertimeApprovalController extends Controller
                 'action' => 'approved',
                 'processed_at' => now(),
             ]);
+
+            $employeeUserId = $overtimeRequest->employee?->user_id;
+            if ($employeeUserId) {
+                $notificationId = DB::table('notifications')->insertGetId([
+                    'title' => 'Đơn tăng ca đã được phê duyệt',
+                    'content' => 'Đơn tăng ca ngày '.optional($overtimeRequest->work_date)->format('d/m/Y').' của bạn đã được quản lý phê duyệt.',
+                    'sender_id' => Auth::id(),
+                    'type' => 'system',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                DB::table('notification_users')->insert([
+                    'notification_id' => $notificationId,
+                    'user_id' => $employeeUserId,
+                    'is_read' => false,
+                    'read_at' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         });
 
         return back()->with('success', 'Phê duyệt đơn tăng ca thành công.');
@@ -127,6 +148,27 @@ class OvertimeApprovalController extends Controller
                 'action' => 'rejected',
                 'processed_at' => now(),
             ]);
+
+            $employeeUserId = $overtimeRequest->employee?->user_id;
+            if ($employeeUserId) {
+                $notificationId = DB::table('notifications')->insertGetId([
+                    'title' => 'Đơn tăng ca đã bị từ chối',
+                    'content' => 'Đơn tăng ca ngày '.optional($overtimeRequest->work_date)->format('d/m/Y').' của bạn đã bị từ chối. Lý do: '.$validated['reject_reason'],
+                    'sender_id' => Auth::id(),
+                    'type' => 'system',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                DB::table('notification_users')->insert([
+                    'notification_id' => $notificationId,
+                    'user_id' => $employeeUserId,
+                    'is_read' => false,
+                    'read_at' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         });
 
         return back()->with('success', 'Từ chối đơn tăng ca thành công.');
