@@ -4,9 +4,14 @@ namespace App\Policies;
 
 use App\Models\OvertimeRequest;
 use App\Models\User;
+use App\Services\ManagerEmployeeResolver;
 
 class OvertimeRequestPolicy
 {
+    public function __construct(private readonly ManagerEmployeeResolver $managerResolver)
+    {
+    }
+
     public function viewAny(User $user): bool
     {
         return $user->isAdmin() || $user->isManager() || $user->isEmployee();
@@ -19,13 +24,9 @@ class OvertimeRequestPolicy
         }
 
         if ($user->isManager()) {
-            $managerDepartmentId = $user->employee?->department_id;
-            $requestDepartmentId = $overtimeRequest->employee?->department_id;
-
-            return $managerDepartmentId && $requestDepartmentId === $managerDepartmentId;
+            return $this->managerCanManage($user, $overtimeRequest);
         }
 
-        // Nhân viên chỉ xem được đơn của chính mình
         if ($user->isEmployee()) {
             return $overtimeRequest->employee?->user_id === $user->id;
         }
@@ -44,7 +45,6 @@ class OvertimeRequestPolicy
             return true;
         }
 
-        // Nhân viên chỉ sửa được đơn của mình khi pending
         if ($user->isEmployee()) {
             return $overtimeRequest->employee?->user_id === $user->id
                 && $overtimeRequest->status === OvertimeRequest::STATUS_PENDING;
@@ -59,7 +59,6 @@ class OvertimeRequestPolicy
             return true;
         }
 
-        // Nhân viên chỉ xóa được đơn của mình khi pending
         if ($user->isEmployee()) {
             return $overtimeRequest->employee?->user_id === $user->id
                 && $overtimeRequest->status === OvertimeRequest::STATUS_PENDING;
@@ -74,14 +73,23 @@ class OvertimeRequestPolicy
             return false;
         }
 
-        $managerDepartmentId = $user->employee?->department_id;
-        $requestDepartmentId = $overtimeRequest->employee?->department_id;
-
-        return $managerDepartmentId && $requestDepartmentId === $managerDepartmentId;
+        return $this->managerCanManage($user, $overtimeRequest);
     }
 
     public function reject(User $user, OvertimeRequest $overtimeRequest): bool
     {
         return $this->approve($user, $overtimeRequest);
+    }
+
+    protected function managerCanManage(User $user, OvertimeRequest $overtimeRequest): bool
+    {
+        $manager = $this->managerResolver->resolve($user);
+        if (! $manager) {
+            return false;
+        }
+
+        $overtimeRequest->loadMissing('employee');
+
+        return $overtimeRequest->employee?->isManagedBy($manager) ?? false;
     }
 }

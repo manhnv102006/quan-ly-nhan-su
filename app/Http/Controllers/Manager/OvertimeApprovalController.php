@@ -28,12 +28,13 @@ class OvertimeApprovalController extends Controller
     public function index(Request $request): View
     {
         $manager = $this->currentManager();
-        $departmentId = $manager->department_id;
         $filters = $request->only(['search', 'status', 'work_date', 'employee_id', 'department_id']);
+        $managedEmployees = $this->managedEmployeesQuery($manager);
+        $managedDepartmentId = $this->managedDepartmentId($manager);
 
         $overtimeRequests = OvertimeRequest::query()
             ->with(['employee.department'])
-            ->whereHas('employee', fn ($query) => $query->where('department_id', $departmentId))
+            ->whereHas('employee', fn ($query) => $query->whereIn('id', (clone $managedEmployees)->select('id')))
             ->filter($filters)
             ->latest()
             ->paginate(self::PER_PAGE)
@@ -41,11 +42,8 @@ class OvertimeApprovalController extends Controller
 
         return view('manager.overtime-requests.index', [
             'overtimeRequests' => $overtimeRequests,
-            'employees' => Employee::query()
-                ->where('department_id', $departmentId)
-                ->orderBy('full_name')
-                ->get(),
-            'managedDepartment' => Department::find($departmentId),
+            'employees' => (clone $managedEmployees)->orderBy('full_name')->get(),
+            'managedDepartment' => $managedDepartmentId ? Department::find($managedDepartmentId) : null,
             'filters' => $filters,
         ]);
     }
