@@ -47,6 +47,11 @@ class User extends Authenticatable
         return $this->hasRole(Role::EMPLOYEE);
     }
 
+    public function kpiAssignments()
+    {
+        return $this->hasMany(KPIAssignment::class, 'manager_id');
+    }
+
     public function dashboardRouteName(): string
     {
         return $this->role?->dashboardRouteName() ?? 'dashboard';
