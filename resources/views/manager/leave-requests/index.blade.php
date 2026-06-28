@@ -1,10 +1,5 @@
 <x-admin-layout title="Duyệt nghỉ phép">
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
+    <x-flash-messages />
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
@@ -74,21 +69,7 @@
                             <td>{{ optional($item->start_date)->format('d/m/Y') }}</td>
                             <td>{{ optional($item->end_date)->format('d/m/Y') }}</td>
                             <td>{{ $item->total_days }}</td>
-                            <td>
-                                @php
-                                    $badge = [
-                                        'pending' => 'badge text-bg-warning',
-                                        'approved' => 'badge text-bg-success',
-                                        'rejected' => 'badge text-bg-danger',
-                                    ][$item->status] ?? 'badge text-bg-secondary';
-                                    $label = [
-                                        'pending' => 'Chờ duyệt',
-                                        'approved' => 'Đã duyệt',
-                                        'rejected' => 'Đã từ chối',
-                                    ][$item->status] ?? $item->status;
-                                @endphp
-                                <span class="{{ $badge }}">{{ $label }}</span>
-                            </td>
+                            <td><x-status-badge :model="$item" /></td>
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('manager.leave-requests.show', $item) }}">
                                     <i class="bi bi-eye"></i> Xem

@@ -8,72 +8,17 @@
             <a href="{{ route('manager.overtime-requests.index') }}" class="btn btn-outline-secondary">Quay lại</a>
         </div>
 
-        @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="alert alert-danger">{{ session('error') }}</div>
-        @endif
-        @if($errors->any())
-            <div class="alert alert-danger">
-                <ul class="mb-0 ps-3">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+        <x-flash-messages />
 
         <div class="card">
             <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label text-muted mb-1">Tên nhân viên</label>
-                        <div class="fw-semibold">{{ $overtimeRequest->employee?->full_name ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label text-muted mb-1">Phòng ban</label>
-                        <div class="fw-semibold">{{ $overtimeRequest->employee?->department?->department_name ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label text-muted mb-1">Ngày</label>
-                        <div class="fw-semibold">{{ optional($overtimeRequest->work_date)->format('d/m/Y') }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label text-muted mb-1">Giờ bắt đầu</label>
-                        <div class="fw-semibold">{{ $overtimeRequest->start_time }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label text-muted mb-1">Giờ kết thúc</label>
-                        <div class="fw-semibold">{{ $overtimeRequest->end_time }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label text-muted mb-1">Tổng giờ</label>
-                        <div class="fw-semibold">{{ $overtimeRequest->total_hours }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label text-muted mb-1">Trạng thái</label>
-                        <div>
-                            <span class="badge {{ $overtimeRequest->statusBadgeClass() }}">{{ $overtimeRequest->statusLabel() }}</span>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label text-muted mb-1">Ngày duyệt</label>
-                        <div class="fw-semibold">{{ optional($overtimeRequest->approved_at)->format('d/m/Y H:i') ?? '—' }}</div>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label text-muted mb-1">Lý do</label>
-                        <div class="border rounded-3 p-3 bg-light">{{ $overtimeRequest->reason ?: '—' }}</div>
-                    </div>
-                    @if($overtimeRequest->reject_reason)
-                        <div class="col-12">
-                            <label class="form-label text-muted mb-1">Lý do từ chối</label>
-                            <div class="border rounded-3 p-3 bg-danger-subtle text-danger-emphasis">{{ $overtimeRequest->reject_reason }}</div>
-                        </div>
-                    @endif
-                </div>
+                @include('overtime-requests.partials.detail-fields', [
+                    'overtimeRequest' => $overtimeRequest,
+                    'approverLabel' => 'Ngày duyệt',
+                    'showApprovedAt' => true,
+                ])
 
-                @if($overtimeRequest->status === \App\Models\OvertimeRequest::STATUS_PENDING)
+                @if($overtimeRequest->isPending())
                     <div class="d-flex gap-2 mt-4">
                         <form id="approve-form" action="{{ route('manager.overtime-requests.approve', $overtimeRequest) }}" method="POST">
                             @csrf
@@ -86,50 +31,10 @@
             </div>
         </div>
 
-        <div class="card mt-3">
-            <div class="card-header">
-                <h6 class="mb-0">Lịch sử xử lý đơn tăng ca</h6>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Người xử lý</th>
-                                <th>Hành động</th>
-                                <th>Thời gian</th>
-                                <th>Mã đơn</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($overtimeRequest->histories->sortByDesc('processed_at') as $history)
-                                <tr>
-                                    <td>{{ $history->actor?->name ?? 'Hệ thống' }}</td>
-                                    <td>
-                                        @if($history->action === 'approved')
-                                            <span class="badge text-bg-success">Phê duyệt</span>
-                                        @elseif($history->action === 'rejected')
-                                            <span class="badge text-bg-danger">Từ chối</span>
-                                        @else
-                                            <span class="badge text-bg-secondary">{{ $history->action }}</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ optional($history->processed_at)->format('d/m/Y H:i:s') }}</td>
-                                    <td>#{{ $history->overtime_request_id }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted py-3">Chưa có lịch sử xử lý.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        @include('overtime-requests.partials.history-table', ['overtimeRequest' => $overtimeRequest])
     </div>
 
-    @if($overtimeRequest->status === \App\Models\OvertimeRequest::STATUS_PENDING)
+    @if($overtimeRequest->isPending())
         <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -158,7 +63,7 @@
     @endif
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    @if($overtimeRequest->status === \App\Models\OvertimeRequest::STATUS_PENDING)
+    @if($overtimeRequest->isPending())
         <script>
             const approveForm = document.getElementById('approve-form');
             const rejectForm = document.getElementById('reject-form');

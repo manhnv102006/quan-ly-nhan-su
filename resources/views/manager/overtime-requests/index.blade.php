@@ -7,12 +7,7 @@
             </div>
         </div>
 
-        @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="alert alert-danger">{{ session('error') }}</div>
-        @endif
+        <x-flash-messages />
 
         <div class="card mb-3">
             <div class="card-body">
@@ -89,7 +84,7 @@
                                 <td>{{ $item->end_time }}</td>
                                 <td>{{ $item->total_hours }}</td>
                                 <td>
-                                    <span class="badge {{ $item->statusBadgeClass() }}">{{ $item->statusLabel() }}</span>
+                                    <x-status-badge :model="$item" />
                                 </td>
                                 <td>{{ optional($item->created_at)->format('d/m/Y H:i') }}</td>
                                 <td class="text-end">

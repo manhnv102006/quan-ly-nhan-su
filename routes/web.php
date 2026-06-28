@@ -164,7 +164,7 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::get('/dashboard', [DashboardController::class, 'manager'])->name('dashboard');
 
     // Duyệt nghỉ phép (quản lý chỉ thấy cấp dưới)
-    Route::get('/leave-requests', [LeaveApprovalController::class, 'index'])->name('leave-requests.index');
+    Route::get('/leave-requests', [LeaveApprovalController::class, 'index'])->name('leave-requests');
     Route::get('/leave-requests/{leaveRequest}', [LeaveApprovalController::class, 'show'])->name('leave-requests.show');
     Route::patch('/leave-requests/{leaveRequest}/approve', [LeaveApprovalController::class, 'approve'])->name('leave-requests.approve');
     Route::patch('/leave-requests/{leaveRequest}/reject', [LeaveApprovalController::class, 'reject'])->name('leave-requests.reject');
