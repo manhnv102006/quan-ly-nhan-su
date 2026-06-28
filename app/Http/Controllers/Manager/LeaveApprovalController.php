@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Manager;
 
+use App\Http\Controllers\Concerns\ResolvesCurrentEmployee;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LeaveRequestRejectRequest;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Services\LeaveApprovalService;
@@ -14,6 +16,8 @@ use Illuminate\View\View;
 
 class LeaveApprovalController extends Controller
 {
+    use ResolvesCurrentEmployee;
+
     public function __construct(private readonly LeaveApprovalService $service)
     {
     }
@@ -37,7 +41,6 @@ class LeaveApprovalController extends Controller
 
         return view('manager.leave-requests.index', [
             'leaveRequests' => $leaveRequests,
-            'filters' => $request->only(['status']),
             'employees' => $employees,
             'filters' => $request->only(['status', 'employee_id', 'start_from', 'start_to']),
         ]);
@@ -53,48 +56,32 @@ class LeaveApprovalController extends Controller
         return view('manager.leave-requests.show', compact('leaveRequest'));
     }
 
-    public function approve(Request $request, LeaveRequest $leaveRequest): RedirectResponse
+    public function approve(LeaveRequest $leaveRequest): RedirectResponse
     {
         $manager = $this->currentManager();
         $this->authorizeForManager($leaveRequest, $manager);
 
         try {
-            $this->service->approve($leaveRequest, Auth::id());
+            $this->service->approve($leaveRequest, (int) Auth::id());
         } catch (ValidationException $e) {
-            return back()->withErrors($e->errors())->with('error', 'Không thể duyệt đơn.')->withInput();
-        } catch (\Throwable $e) {
-            return back()->with('error', 'Không thể duyệt đơn.')->withInput();
+            return back()->withErrors($e->errors())->with('error', 'Không thể duyệt đơn.');
         }
 
         return back()->with('success', 'Đã duyệt nghỉ phép.');
     }
 
-    public function reject(Request $request, LeaveRequest $leaveRequest): RedirectResponse
+    public function reject(LeaveRequestRejectRequest $request, LeaveRequest $leaveRequest): RedirectResponse
     {
         $manager = $this->currentManager();
         $this->authorizeForManager($leaveRequest, $manager);
 
-        $request->validate([
-            'reject_reason' => ['required', 'string', 'max:500'],
-        ]);
-
         try {
-            $this->service->reject($leaveRequest, Auth::id(), $request->reject_reason);
+            $this->service->reject($leaveRequest, (int) Auth::id(), $request->validated('reject_reason'));
         } catch (ValidationException $e) {
-            return back()->withErrors($e->errors())->with('error', 'Không thể từ chối đơn.')->withInput();
-        } catch (\Throwable $e) {
-            return back()->with('error', 'Không thể từ chối đơn.')->withInput();
+            return back()->withErrors($e->errors())->with('error', 'Không thể từ chối đơn.');
         }
 
         return back()->with('success', 'Đã từ chối nghỉ phép.');
-    }
-
-    protected function currentManager(): Employee
-    {
-        $manager = Employee::where('user_id', Auth::id())->first();
-        abort_if(! $manager, 403, 'Không tìm thấy thông tin nhân viên quản lý.');
-
-        return $manager;
     }
 
     protected function authorizeForManager(LeaveRequest $leaveRequest, Employee $manager): void

@@ -10,19 +10,9 @@
             </a>
         </div>
 
-        @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="alert alert-danger">{{ session('error') }}</div>
-        @endif
+        <x-flash-messages />
 
-        <div class="row g-3 mb-3">
-            <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted">Tổng đơn</div><div class="h4 mb-0">{{ $stats['total'] }}</div></div></div></div>
-            <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted">Chờ duyệt</div><div class="h4 mb-0 text-warning">{{ $stats['pending'] }}</div></div></div></div>
-            <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted">Đã duyệt</div><div class="h4 mb-0 text-success">{{ $stats['approved'] }}</div></div></div></div>
-            <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted">Đã từ chối/Hoàn tất</div><div class="h4 mb-0 text-primary">{{ $stats['rejected'] + $stats['completed'] }}</div></div></div></div>
-        </div>
+        <x-request-stats-cards :stats="$stats" :completed="$stats['completed']" />
 
         <div class="card">
             <div class="table-responsive">
@@ -48,7 +38,7 @@
                                 <td>{{ $item->end_time }}</td>
                                 <td>{{ $item->total_hours }}</td>
                                 <td>
-                                    <span class="badge {{ $item->statusBadgeClass() }}">{{ $item->statusLabel() }}</span>
+                                    <x-status-badge :model="$item" />
                                 </td>
                                 <td>{{ optional($item->created_at)->format('d/m/Y H:i') }}</td>
                                 <td class="text-end">
