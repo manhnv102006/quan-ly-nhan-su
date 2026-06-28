@@ -26,19 +26,22 @@ class LeaveApprovalController extends Controller
     public function index(Request $request): View
     {
         $manager = $this->currentManager();
-        $departmentId = $this->managedDepartmentId($manager);
 
-        $query = LeaveRequest::with(['employee.department', 'employee.position', 'approver'])
-            ->whereHas('employee', function ($q) use ($manager, $departmentId) {
-                $q->where(function ($scope) use ($manager, $departmentId) {
-                    $scope->where('manager_id', $manager->id);
-                    if ($departmentId) {
-                        $scope->orWhere('department_id', $departmentId);
-                    }
-                });
-            })
+        $query = LeaveRequest::query()
+            ->with(['employee.department', 'employee.position', 'approver'])
+            ->forManager($manager)
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
-            ->when($request->filled('employee_id'), fn ($q) => $q->where('employee_id', $request->employee_id))
+            ->when($request->filled('employee_id'), function ($q) use ($request, $manager) {
+                $employeeId = (int) $request->employee_id;
+                $allowed = Employee::query()
+                    ->managedByManager($manager)
+                    ->whereKey($employeeId)
+                    ->exists();
+
+                abort_unless($allowed, 403, 'Bạn không có quyền xem đơn của nhân viên này.');
+
+                $q->where('employee_id', $employeeId);
+            })
             ->when($request->filled('start_from'), fn ($q) => $q->whereDate('start_date', '>=', $request->start_from))
             ->when($request->filled('start_to'), fn ($q) => $q->whereDate('start_date', '<=', $request->start_to))
             ->orderByDesc('created_at');
@@ -46,7 +49,7 @@ class LeaveApprovalController extends Controller
         $leaveRequests = $query->paginate(10)->withQueryString();
 
         $employees = Employee::query()
-            ->when($departmentId, fn ($q) => $q->where('department_id', $departmentId))
+            ->managedByManager($manager)
             ->where('id', '!=', $manager->id)
             ->orderBy('full_name')
             ->get();
@@ -99,12 +102,8 @@ class LeaveApprovalController extends Controller
     protected function authorizeForManager(LeaveRequest $leaveRequest, Employee $manager): void
     {
         $employee = $leaveRequest->employee;
-        $departmentId = $this->managedDepartmentId($manager);
 
-        $allowed = $employee?->manager_id === $manager->id
-            || ($departmentId && $employee?->department_id === $departmentId);
-
-        if (! $allowed) {
+        if (! $employee?->isManagedBy($manager)) {
             abort(403, 'Bạn không có quyền duyệt yêu cầu này.');
         }
     }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -71,6 +72,14 @@ class LeaveRequest extends Model
     public function statusBadgeClass(): string
     {
         return self::STATUS_BADGE_CLASSES[$this->status] ?? 'text-bg-secondary';
+    }
+
+    /**
+     * @param  Builder<LeaveRequest>  $query
+     */
+    public function scopeForManager(Builder $query, Employee $manager): Builder
+    {
+        return $query->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->managedByManager($manager));
     }
 }
 
