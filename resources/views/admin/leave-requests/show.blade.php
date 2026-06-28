@@ -4,8 +4,11 @@
 
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-800">Chi tiết đơn nghỉ phép</h1>
-                <p class="text-slate-500">Xem thông tin đơn nghỉ phép (chỉ xem, không duyệt).</p>
+                <div class="flex flex-wrap items-center gap-3 mb-1">
+                    <h1 class="text-2xl font-bold text-slate-800">Chi tiết đơn nghỉ phép</h1>
+                    <x-view-only-badge />
+                </div>
+                <p class="text-slate-500">Xem thông tin đơn nghỉ phép. Admin không được duyệt hoặc từ chối.</p>
             </div>
 
             <a href="{{ route('admin.leave-requests') }}" class="px-4 py-2 bg-slate-600 text-white rounded-xl">
@@ -56,18 +59,25 @@
                         <p class="text-sm text-slate-500">Trạng thái</p>
                         <p><x-status-badge :model="$leaveRequest" /></p>
                     </div>
-                    @if($leaveRequest->approver)
+                    @if($leaveRequest->status === \App\Models\LeaveRequest::STATUS_APPROVED && $leaveRequest->approver)
                         <div>
                             <p class="text-sm text-slate-500">Người duyệt</p>
                             <p class="font-semibold">{{ $leaveRequest->approver->name }}</p>
                             <p class="text-xs text-slate-400">{{ optional($leaveRequest->approved_at)->format('d/m/Y H:i') }}</p>
                         </div>
                     @endif
-                    @if($leaveRequest->reject_reason)
+                    @if($leaveRequest->status === \App\Models\LeaveRequest::STATUS_REJECTED)
                         <div>
-                            <p class="text-sm text-slate-500">Lý do từ chối</p>
-                            <p class="font-semibold text-rose-600">{{ $leaveRequest->reject_reason }}</p>
+                            <p class="text-sm text-slate-500">Người từ chối</p>
+                            <p class="font-semibold">{{ $leaveRequest->rejecter?->name ?? '—' }}</p>
+                            <p class="text-xs text-slate-400">{{ optional($leaveRequest->rejected_at)->format('d/m/Y H:i') }}</p>
                         </div>
+                        @if($leaveRequest->reject_reason)
+                            <div>
+                                <p class="text-sm text-slate-500">Lý do từ chối</p>
+                                <p class="font-semibold text-rose-600">{{ $leaveRequest->reject_reason }}</p>
+                            </div>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -102,12 +112,6 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-        @endif
-
-        @if($leaveRequest->isPending())
-            <div class="alert alert-info mb-0">
-                Đơn đang chờ quản lý phê duyệt. Admin chỉ được xem, không được duyệt/từ chối.
             </div>
         @endif
 

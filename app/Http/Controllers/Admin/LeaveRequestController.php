@@ -12,7 +12,7 @@ class LeaveRequestController extends Controller
     public function index(Request $request): View
     {
         $statsQuery = LeaveRequest::query();
-        $query = LeaveRequest::query()->with(['employee.department', 'approver']);
+        $query = LeaveRequest::query()->with(['employee.department', 'approver', 'rejecter']);
 
         $stats = [
             'total' => (clone $statsQuery)->count(),
@@ -39,7 +39,7 @@ class LeaveRequestController extends Controller
 
     public function show(LeaveRequest $leaveRequest): View
     {
-        $leaveRequest->load(['employee.department', 'employee.position', 'approver', 'histories.actor']);
+        $leaveRequest->load(['employee.department', 'employee.position', 'approver', 'rejecter', 'histories.actor']);
 
         return view('admin.leave-requests.show', compact('leaveRequest'));
     }
