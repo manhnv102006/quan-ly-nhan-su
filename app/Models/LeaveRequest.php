@@ -93,7 +93,7 @@ class LeaveRequest extends Model
         $this->loadMissing('employee');
 
         if (! $this->employee?->isManagedBy($manager)) {
-            abort(403, 'Bạn không có quyền duyệt yêu cầu này.');
+            abort(403, 'Bạn không có quyền xử lý đơn nghỉ phép này. Đơn không thuộc nhân viên do bạn quản lý.');
         }
     }
 
@@ -118,10 +118,19 @@ class LeaveRequest extends Model
                         ->orWhere('employee_code', 'like', '%'.$keyword.'%');
                 });
             })
+            ->when(! empty($filters['employee_name']), function (Builder $q) use ($filters) {
+                $name = trim((string) $filters['employee_name']);
+                $q->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->where('full_name', 'like', '%'.$name.'%'));
+            })
+            ->when(! empty($filters['employee_code']), function (Builder $q) use ($filters) {
+                $code = trim((string) $filters['employee_code']);
+                $q->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->where('employee_code', 'like', '%'.$code.'%'));
+            })
             ->when(! empty($filters['leave_type']), fn (Builder $q) => $q->where('leave_type', $filters['leave_type']))
             ->when(! empty($filters['status']), fn (Builder $q) => $q->where('status', $filters['status']))
             ->when(! empty($filters['start_from']), fn (Builder $q) => $q->whereDate('start_date', '>=', $filters['start_from']))
-            ->when(! empty($filters['start_to']), fn (Builder $q) => $q->whereDate('start_date', '<=', $filters['start_to']));
+            ->when(! empty($filters['start_to']), fn (Builder $q) => $q->whereDate('start_date', '<=', $filters['start_to']))
+            ->when(! empty($filters['employee_id']), fn (Builder $q) => $q->where('employee_id', $filters['employee_id']));
     }
 }
 

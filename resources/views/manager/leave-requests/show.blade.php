@@ -7,6 +7,9 @@
             <small class="text-muted">Nhân viên: {{ $leaveRequest->employee->full_name ?? '—' }}</small>
         </div>
         <div class="d-flex gap-2">
+            <a href="{{ route('manager.leave-requests.index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Quay lại
+            </a>
             @if($leaveRequest->isPending())
                 <form method="POST" action="{{ route('manager.leave-requests.approve', $leaveRequest) }}">
                     @csrf
@@ -22,33 +25,7 @@
         </div>
     </div>
 
-    @if($leaveRequest->histories->count())
-        <div class="card mb-3">
-            <div class="card-header fw-semibold">Lịch sử xử lý</div>
-            <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                    <thead>
-                        <tr>
-                            <th>Thời gian</th>
-                            <th>Hành động</th>
-                            <th>Người thực hiện</th>
-                            <th>Ghi chú</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($leaveRequest->histories->sortByDesc('created_at') as $history)
-                            <tr>
-                                <td>{{ optional($history->created_at)->format('d/m/Y H:i') }}</td>
-                                <td>{{ $history->action === 'approved' ? 'Duyệt' : 'Từ chối' }}</td>
-                                <td>{{ $history->actor->name ?? '—' }}</td>
-                                <td>{{ $history->note ?? '—' }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    @endif
+    @include('leave-requests.partials.history-table', ['leaveRequest' => $leaveRequest])
 
     <div class="card mb-3">
         <div class="card-body">
@@ -67,7 +44,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="text-muted small">Loại nghỉ</div>
-                    <div class="fw-semibold text-capitalize">{{ $leaveRequest->leave_type }}</div>
+                    <div class="fw-semibold">{{ \App\Models\LeaveRequest::LEAVE_TYPE_LABELS[$leaveRequest->leave_type] ?? $leaveRequest->leave_type }}</div>
                 </div>
                 <div class="col-md-3">
                     <div class="text-muted small">Từ ngày</div>
@@ -89,32 +66,20 @@
                     <div class="text-muted small">Trạng thái</div>
                     <x-status-badge :model="$leaveRequest" />
                 </div>
-                @if($leaveRequest->status === \App\Models\LeaveRequest::STATUS_APPROVED)
-                    <div class="col-md-4">
-                        <div class="text-muted small">Người duyệt</div>
-                        <div class="fw-semibold">{{ $leaveRequest->approver->name ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-muted small">Thời gian duyệt</div>
-                        <div class="fw-semibold">{{ optional($leaveRequest->approved_at)->format('d/m/Y H:i') ?? '—' }}</div>
-                    </div>
-                @elseif($leaveRequest->status === \App\Models\LeaveRequest::STATUS_REJECTED)
-                    <div class="col-md-4">
-                        <div class="text-muted small">Người từ chối</div>
-                        <div class="fw-semibold">{{ $leaveRequest->rejecter->name ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-muted small">Thời gian từ chối</div>
-                        <div class="fw-semibold">{{ optional($leaveRequest->rejected_at)->format('d/m/Y H:i') ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-12">
-                        <div class="text-muted small">Lý do từ chối</div>
-                        <div class="fw-semibold text-danger">{{ $leaveRequest->reject_reason ?? '—' }}</div>
-                    </div>
-                @endif
             </div>
         </div>
     </div>
+
+    @if(in_array($leaveRequest->status, [\App\Models\LeaveRequest::STATUS_APPROVED, \App\Models\LeaveRequest::STATUS_REJECTED], true))
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Thông tin phê duyệt</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    @include('leave-requests.partials.approval-info', ['leaveRequest' => $leaveRequest])
+                </div>
+            </div>
+        </div>
+    @endif
 
     @if($leaveRequest->isPending())
         <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">

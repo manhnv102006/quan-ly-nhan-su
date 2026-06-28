@@ -59,26 +59,10 @@
                         <p class="text-sm text-slate-500">Trạng thái</p>
                         <p><x-status-badge :model="$leaveRequest" /></p>
                     </div>
-                    @if($leaveRequest->status === \App\Models\LeaveRequest::STATUS_APPROVED && $leaveRequest->approver)
-                        <div>
-                            <p class="text-sm text-slate-500">Người duyệt</p>
-                            <p class="font-semibold">{{ $leaveRequest->approver->name }}</p>
-                            <p class="text-xs text-slate-400">{{ optional($leaveRequest->approved_at)->format('d/m/Y H:i') }}</p>
-                        </div>
-                    @endif
-                    @if($leaveRequest->status === \App\Models\LeaveRequest::STATUS_REJECTED)
-                        <div>
-                            <p class="text-sm text-slate-500">Người từ chối</p>
-                            <p class="font-semibold">{{ $leaveRequest->rejecter?->name ?? '—' }}</p>
-                            <p class="text-xs text-slate-400">{{ optional($leaveRequest->rejected_at)->format('d/m/Y H:i') }}</p>
-                        </div>
-                        @if($leaveRequest->reject_reason)
-                            <div>
-                                <p class="text-sm text-slate-500">Lý do từ chối</p>
-                                <p class="font-semibold text-rose-600">{{ $leaveRequest->reject_reason }}</p>
-                            </div>
-                        @endif
-                    @endif
+                    @include('leave-requests.partials.approval-info', [
+                        'leaveRequest' => $leaveRequest,
+                        'variant' => 'tailwind',
+                    ])
                 </div>
             </div>
 
