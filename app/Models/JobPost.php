@@ -11,9 +11,17 @@ class JobPost extends Model
 
     protected $fillable = [
         'department_id',
+        'recruiter_id',
         'title',
         'quantity',
+        'salary_min',
+        'salary_max',
+        'work_location',
+        'work_type',
+        'application_deadline',
         'description',
+        'requirements',
+        'benefits',
         'status',
     ];
 
@@ -21,11 +29,19 @@ class JobPost extends Model
     {
         return [
             'quantity' => 'integer',
+            'salary_min' => 'decimal:2',
+            'salary_max' => 'decimal:2',
+            'application_deadline' => 'date',
         ];
     }
 
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class)->withTrashed();
+    }
+
+    public function recruiter(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'recruiter_id');
     }
 }

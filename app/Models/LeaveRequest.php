@@ -20,11 +20,22 @@ class LeaveRequest extends Model
         'reject_reason',
     ];
 
+
     protected $casts = [
         'start_date'  => 'date',
         'end_date'    => 'date',
         'approved_at' => 'datetime',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'start_date' => 'date',
+            'end_date' => 'date',
+            'approved_at' => 'datetime',
+        ];
+    }
+
 
     public function employee(): BelongsTo
     {
