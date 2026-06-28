@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\LeaveRequest;
 use App\Models\User;
 use App\Services\ManagerEmployeeResolver;
+use Illuminate\Auth\Access\Response;
 
 class LeaveRequestPolicy
 {
@@ -12,34 +13,38 @@ class LeaveRequestPolicy
     {
     }
 
-    public function viewAsManager(User $user, LeaveRequest $leaveRequest): bool
+    public function viewAsManager(User $user, LeaveRequest $leaveRequest): Response
     {
-        return $this->managerCanManage($user, $leaveRequest);
+        return $this->managerCanManageResponse($user, $leaveRequest);
     }
 
-    public function approve(User $user, LeaveRequest $leaveRequest): bool
+    public function approve(User $user, LeaveRequest $leaveRequest): Response
     {
-        return $this->managerCanManage($user, $leaveRequest);
+        return $this->managerCanManageResponse($user, $leaveRequest);
     }
 
-    public function reject(User $user, LeaveRequest $leaveRequest): bool
+    public function reject(User $user, LeaveRequest $leaveRequest): Response
     {
-        return $this->managerCanManage($user, $leaveRequest);
+        return $this->managerCanManageResponse($user, $leaveRequest);
     }
 
-    protected function managerCanManage(User $user, LeaveRequest $leaveRequest): bool
+    protected function managerCanManageResponse(User $user, LeaveRequest $leaveRequest): Response
     {
         if (! $user->isManager()) {
-            return false;
+            return Response::deny('Chỉ quản lý mới được thực hiện thao tác này.', 403);
         }
 
         $manager = $this->managerResolver->resolve($user);
         if (! $manager) {
-            return false;
+            return Response::deny('Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Vui lòng liên hệ quản trị để được hỗ trợ.', 403);
         }
 
         $leaveRequest->loadMissing('employee');
 
-        return $leaveRequest->employee?->isManagedBy($manager) ?? false;
+        if (! $leaveRequest->employee?->isManagedBy($manager)) {
+            return Response::deny('Bạn không có quyền xử lý đơn nghỉ phép này. Đơn không thuộc nhân viên do bạn quản lý.', 403);
+        }
+
+        return Response::allow();
     }
 }

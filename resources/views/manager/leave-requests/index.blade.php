@@ -8,6 +8,23 @@
         </div>
     </div>
 
+    @if(!($managerLinked ?? true))
+        <div class="alert alert-warning d-flex align-items-start gap-3 mb-0">
+            <i class="bi bi-exclamation-triangle-fill fs-5 mt-1"></i>
+            <div>
+                <h5 class="alert-heading mb-2">Chưa liên kết hồ sơ nhân viên</h5>
+                <p class="mb-2">
+                    Tài khoản quản lý của bạn chưa được liên kết với hồ sơ nhân viên trong hệ thống,
+                    nên không thể tải danh sách đơn nghỉ phép cần duyệt.
+                </p>
+                <p class="mb-0 small text-muted">
+                    Vui lòng liên hệ quản trị viên để liên kết tài khoản với hồ sơ nhân viên tương ứng
+                    (trường <code>user_id</code> trên bảng nhân viên). Sau khi liên kết, hệ thống sẽ tự lấy
+                    đúng hồ sơ quản lý và hiển thị đơn của cấp dưới theo <code>manager_id</code> hoặc phòng ban được giao quản lý.
+                </p>
+            </div>
+        </div>
+    @else
     <div class="row g-3 mb-3">
         <div class="col-md-4">
             <div class="card border-0 shadow-sm h-100">
@@ -36,12 +53,18 @@
     </div>
 
     <div class="card mb-3">
+        <div class="card-header fw-semibold">Tìm kiếm &amp; lọc</div>
         <div class="card-body">
             <form class="row g-3" method="GET" action="{{ route('manager.leave-requests.index') }}">
                 <div class="col-md-3">
-                    <label class="form-label">Tìm kiếm nhân viên</label>
-                    <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" class="form-control"
-                           placeholder="Tên hoặc mã nhân viên">
+                    <label class="form-label">Tên nhân viên</label>
+                    <input type="text" name="employee_name" value="{{ $filters['employee_name'] ?? '' }}" class="form-control"
+                           placeholder="Nhập tên nhân viên">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Mã nhân viên</label>
+                    <input type="text" name="employee_code" value="{{ $filters['employee_code'] ?? '' }}" class="form-control"
+                           placeholder="Nhập mã nhân viên">
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Loại nghỉ</label>
@@ -69,22 +92,23 @@
                     <label class="form-label">Nghỉ đến ngày</label>
                     <input type="date" name="start_to" value="{{ $filters['start_to'] ?? '' }}" class="form-control">
                 </div>
-                <div class="col-md-1 d-flex align-items-end gap-2">
-                    <button class="btn btn-success w-100" type="submit" title="Lọc">
-                        <i class="bi bi-search"></i>
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-search"></i> Tìm kiếm
                     </button>
-                </div>
-                <div class="col-12 d-flex justify-content-end">
-                    <a class="btn btn-outline-secondary btn-sm" href="{{ route('manager.leave-requests.index') }}">Xóa lọc</a>
+                    @if(collect($filters)->filter()->isNotEmpty())
+                        <a class="btn btn-outline-secondary" href="{{ route('manager.leave-requests.index') }}">Xóa lọc</a>
+                    @endif
                 </div>
             </form>
         </div>
     </div>
 
-    <div class="card">
+    <div class="card mb-3">
+        <div class="card-header fw-semibold">Danh sách đơn nghỉ phép</div>
         <div class="table-responsive">
             <table class="table table-striped align-middle mb-0">
-                <thead>
+                <thead class="table-light">
                     <tr>
                         <th>#</th>
                         <th>Mã NV</th>
@@ -128,4 +152,13 @@
             </div>
         @endif
     </div>
+
+    @include('leave-requests.partials.history-table', [
+        'histories' => $recentHistories,
+        'showEmployee' => true,
+        'showLeaveRequestLink' => true,
+        'title' => 'Lịch sử phê duyệt gần đây',
+        'cardClass' => '',
+    ])
+    @endif
 </x-admin-layout>
