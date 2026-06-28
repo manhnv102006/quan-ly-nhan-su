@@ -11,7 +11,7 @@
             'icon' => 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z',
             'children' => [
                 ['route' => 'admin.shifts.index', 'label' => 'Quản lý ca'],
-                ['route' => 'admin.leave-requests', 'label' => 'Duyệt nghỉ phép'],
+                ['route' => 'admin.leave-requests', 'label' => 'Quản lý nghỉ phép'],
                 ['route' => 'admin.overtime-requests.index', 'label' => 'Duyệt tăng ca'],
                 ['route' => 'admin.attendance-reports.index', 'label' => 'Báo cáo chấm công'],
             ],
