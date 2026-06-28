@@ -63,8 +63,7 @@ class LeaveApprovalController extends Controller
 
     public function show(LeaveRequest $leaveRequest): View
     {
-        $manager = $this->currentManager();
-        $this->authorizeForManager($leaveRequest, $manager);
+        $this->authorize('viewAsManager', $leaveRequest);
 
         $leaveRequest->load(['employee.department', 'employee.position', 'approver', 'rejecter', 'histories.actor']);
 
@@ -73,11 +72,12 @@ class LeaveApprovalController extends Controller
 
     public function approve(LeaveRequest $leaveRequest): RedirectResponse
     {
+        $this->authorize('approve', $leaveRequest);
+
         $manager = $this->currentManager();
-        $this->authorizeForManager($leaveRequest, $manager);
 
         try {
-            $this->service->approve($leaveRequest, (int) Auth::id());
+            $this->service->approve($leaveRequest, (int) Auth::id(), $manager);
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->with('error', 'Không thể duyệt đơn.');
         }
@@ -87,24 +87,16 @@ class LeaveApprovalController extends Controller
 
     public function reject(LeaveRequestRejectRequest $request, LeaveRequest $leaveRequest): RedirectResponse
     {
+        $this->authorize('reject', $leaveRequest);
+
         $manager = $this->currentManager();
-        $this->authorizeForManager($leaveRequest, $manager);
 
         try {
-            $this->service->reject($leaveRequest, (int) Auth::id(), $request->validated('reject_reason'));
+            $this->service->reject($leaveRequest, (int) Auth::id(), $manager, $request->validated('reject_reason'));
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->with('error', 'Không thể từ chối đơn.');
         }
 
         return back()->with('success', 'Đã từ chối nghỉ phép.');
-    }
-
-    protected function authorizeForManager(LeaveRequest $leaveRequest, Employee $manager): void
-    {
-        $employee = $leaveRequest->employee;
-
-        if (! $employee?->isManagedBy($manager)) {
-            abort(403, 'Bạn không có quyền duyệt yêu cầu này.');
-        }
     }
 }
