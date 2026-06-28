@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Concerns\ResolvesCurrentEmployee;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveRequestRejectRequest;
-use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Services\LeaveApprovalService;
 use Illuminate\Http\RedirectResponse;
@@ -26,38 +25,27 @@ class LeaveApprovalController extends Controller
     public function index(Request $request): View
     {
         $manager = $this->currentManager();
+        $filters = $request->only(['search', 'leave_type', 'status', 'start_from', 'start_to']);
 
-        $query = LeaveRequest::query()
-            ->with(['employee.department', 'employee.position', 'approver'])
-            ->forManager($manager)
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
-            ->when($request->filled('employee_id'), function ($q) use ($request, $manager) {
-                $employeeId = (int) $request->employee_id;
-                $allowed = Employee::query()
-                    ->managedByManager($manager)
-                    ->whereKey($employeeId)
-                    ->exists();
+        $scopedQuery = LeaveRequest::query()->forManager($manager);
 
-                abort_unless($allowed, 403, 'Bạn không có quyền xem đơn của nhân viên này.');
+        $stats = [
+            'pending' => (clone $scopedQuery)->where('status', LeaveRequest::STATUS_PENDING)->count(),
+            'approved' => (clone $scopedQuery)->where('status', LeaveRequest::STATUS_APPROVED)->count(),
+            'rejected' => (clone $scopedQuery)->where('status', LeaveRequest::STATUS_REJECTED)->count(),
+        ];
 
-                $q->where('employee_id', $employeeId);
-            })
-            ->when($request->filled('start_from'), fn ($q) => $q->whereDate('start_date', '>=', $request->start_from))
-            ->when($request->filled('start_to'), fn ($q) => $q->whereDate('start_date', '<=', $request->start_to))
-            ->orderByDesc('created_at');
-
-        $leaveRequests = $query->paginate(10)->withQueryString();
-
-        $employees = Employee::query()
-            ->managedByManager($manager)
-            ->where('id', '!=', $manager->id)
-            ->orderBy('full_name')
-            ->get();
+        $leaveRequests = (clone $scopedQuery)
+            ->with(['employee.department', 'employee.position', 'approver', 'rejecter'])
+            ->filter($filters)
+            ->orderByDesc('created_at')
+            ->paginate(10)
+            ->withQueryString();
 
         return view('manager.leave-requests.index', [
             'leaveRequests' => $leaveRequests,
-            'employees' => $employees,
-            'filters' => $request->only(['status', 'employee_id', 'start_from', 'start_to']),
+            'stats' => $stats,
+            'filters' => $filters,
         ]);
     }
 
