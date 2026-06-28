@@ -10,26 +10,35 @@ class ManagerEmployeeResolver
 {
     public function resolve(User $user): ?Employee
     {
-        if ($employee = $user->employee) {
-            return $employee;
+        $user->loadMissing('employee');
+
+        if ($user->employee) {
+            return $user->employee;
         }
 
-        $departmentManager = Employee::query()
+        $linkedEmployee = Employee::query()
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($linkedEmployee) {
+            return $linkedEmployee;
+        }
+
+        $departmentHead = Employee::query()
             ->whereIn('id', Department::query()->whereNotNull('manager_id')->select('manager_id'))
             ->where(function ($query) use ($user) {
-                $query->where('email', $user->email)
+                $query->where('user_id', $user->id)
+                    ->orWhere('email', $user->email)
                     ->orWhere('full_name', $user->name);
             })
             ->first();
 
-        if ($departmentManager && ! $departmentManager->user_id) {
-            $departmentManager->update(['user_id' => $user->id]);
+        if ($departmentHead) {
+            if (! $departmentHead->user_id) {
+                $departmentHead->update(['user_id' => $user->id]);
+            }
 
-            return $departmentManager->fresh();
-        }
-
-        if ($departmentManager) {
-            return $departmentManager;
+            return $departmentHead->fresh();
         }
 
         $employeeCode = match ($user->username) {
@@ -40,7 +49,8 @@ class ManagerEmployeeResolver
         };
 
         if ($employeeCode) {
-            $employee = Employee::where('employee_code', $employeeCode)
+            $employee = Employee::query()
+                ->where('employee_code', $employeeCode)
                 ->where(function ($query) use ($user) {
                     $query->whereNull('user_id')->orWhere('user_id', $user->id);
                 })

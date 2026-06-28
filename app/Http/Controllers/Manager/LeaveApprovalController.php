@@ -25,6 +25,8 @@ class LeaveApprovalController extends Controller
 
     public function index(Request $request): View
     {
+        $this->authorize('viewAnyAsManager', LeaveRequest::class);
+
         $manager = $this->currentManagerOrNull();
 
         if (! $manager) {
