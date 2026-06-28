@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Models\LeaveRequestHistory;
 use App\Models\User;
@@ -16,9 +17,10 @@ class LeaveApprovalService
     {
     }
 
-    public function approve(LeaveRequest $leaveRequest, int $actorId): void
+    public function approve(LeaveRequest $leaveRequest, int $actorId, Employee $manager): void
     {
         $this->assertManagerActor($actorId);
+        $leaveRequest->authorizeManagerAction($manager);
         $this->assertPending($leaveRequest);
 
         if ($leaveRequest->leave_type === 'annual') {
@@ -55,9 +57,10 @@ class LeaveApprovalService
         );
     }
 
-    public function reject(LeaveRequest $leaveRequest, int $actorId, string $reason): void
+    public function reject(LeaveRequest $leaveRequest, int $actorId, Employee $manager, string $reason): void
     {
         $this->assertManagerActor($actorId);
+        $leaveRequest->authorizeManagerAction($manager);
         $this->assertPending($leaveRequest);
 
         $this->processDecision(
