@@ -56,14 +56,7 @@ abstract class OvertimeRequestBaseRequest extends FormRequest
             }
 
             $query = OvertimeRequest::query()
-                ->where('employee_id', $employeeId)
-                ->whereDate('work_date', $workDate)
-                ->where('start_time', '<', $end)
-                ->where('end_time', '>', $start);
-
-            if ($this->ignoreOvertimeRequestId()) {
-                $query->where('id', '!=', $this->ignoreOvertimeRequestId());
-            }
+                ->overlappingTime($employeeId, $workDate, $start, $end, $this->ignoreOvertimeRequestId());
 
             if ($query->exists()) {
                 $validator->errors()->add('start_time', 'Khoảng thời gian tăng ca bị trùng trong cùng ngày.');
