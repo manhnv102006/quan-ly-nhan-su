@@ -29,7 +29,7 @@
     </div>
     <div class="col-md-4">
         <label class="form-label text-muted mb-1">Trạng thái</label>
-        <div><span class="badge {{ $model?->statusBadgeClass() }}">{{ $model?->statusLabel() }}</span></div>
+        <div><x-status-badge :model="$model" /></div>
     </div>
     <div class="col-md-4">
         <label class="form-label text-muted mb-1">{{ $approverLabel ?? 'Người duyệt' }}</label>

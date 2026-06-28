@@ -123,23 +123,7 @@
                             Trạng thái
                         </p>
 
-                        <p>
-
-                            @if($leaveRequest->status == 'pending')
-                                <span class="badge bg-warning">
-                                    Chờ duyệt
-                                </span>
-                            @elseif($leaveRequest->status == 'approved')
-                                <span class="badge bg-success">
-                                    Đã duyệt
-                                </span>
-                            @else
-                                <span class="badge bg-danger">
-                                    Từ chối
-                                </span>
-                            @endif
-
-                        </p>
+                        <p><x-status-badge :model="$leaveRequest" /></p>
                     </div>
 
                 </div>
@@ -162,7 +146,7 @@
         </div>
 
         {{-- Duyệt đơn --}}
-        @if($leaveRequest->status == 'pending')
+        @if($leaveRequest->isPending())
 
             <div class="flex gap-3">
 

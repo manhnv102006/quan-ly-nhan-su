@@ -1,10 +1,5 @@
 <x-admin-layout title="Chi tiết đơn nghỉ phép">
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
+    <x-flash-messages />
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
@@ -12,7 +7,7 @@
             <small class="text-muted">Nhân viên: {{ $leaveRequest->employee->full_name ?? '—' }}</small>
         </div>
         <div class="d-flex gap-2">
-            @if($leaveRequest->status === \App\Models\LeaveRequest::STATUS_PENDING)
+            @if($leaveRequest->isPending())
                 <form method="POST" action="{{ route('manager.leave-requests.approve', $leaveRequest) }}">
                     @csrf
                     @method('PATCH')
@@ -94,19 +89,7 @@
                 </div>
                 <div class="col-md-4">
                     <div class="text-muted small">Trạng thái</div>
-                    @php
-                        $badge = [
-                            'pending' => 'badge text-bg-warning',
-                            'approved' => 'badge text-bg-success',
-                            'rejected' => 'badge text-bg-danger',
-                        ][$leaveRequest->status] ?? 'badge text-bg-secondary';
-                        $label = [
-                            'pending' => 'Chờ duyệt',
-                            'approved' => 'Đã duyệt',
-                            'rejected' => 'Đã từ chối',
-                        ][$leaveRequest->status] ?? $leaveRequest->status;
-                    @endphp
-                    <span class="{{ $badge }}">{{ $label }}</span>
+                    <x-status-badge :model="$leaveRequest" />
                 </div>
                 <div class="col-md-4">
                     <div class="text-muted small">Người duyệt</div>
