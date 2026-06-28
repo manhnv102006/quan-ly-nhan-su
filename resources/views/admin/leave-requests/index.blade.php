@@ -25,7 +25,10 @@
 
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
-                <h2 class="text-2xl font-bold text-slate-800">Danh sách đơn nghỉ phép</h2>
+                <div class="flex flex-wrap items-center gap-3 mb-1">
+                    <h2 class="text-2xl font-bold text-slate-800">Danh sách đơn nghỉ phép</h2>
+                    <x-view-only-badge />
+                </div>
                 <p class="text-sm text-slate-500 mt-1">
                     Xem toàn bộ đơn nghỉ phép và thống kê. Admin không có quyền duyệt/từ chối.
                 </p>
@@ -161,12 +164,17 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-slate-500 text-xs">
-                                    @if ($request->status !== 'pending' && $request->approver)
+                                    @if ($request->status === 'approved' && $request->approver)
                                         <div>
                                             <span class="font-bold text-slate-700">{{ $request->approver->name }}</span>
                                             <span class="block text-[10px] text-slate-400 mt-0.5">lúc {{ $request->approved_at?->format('H:i d/m/Y') }}</span>
                                         </div>
-                                        @if ($request->status === 'rejected' && $request->reject_reason)
+                                    @elseif ($request->status === 'rejected' && $request->rejecter)
+                                        <div>
+                                            <span class="font-bold text-slate-700">{{ $request->rejecter->name }}</span>
+                                            <span class="block text-[10px] text-slate-400 mt-0.5">lúc {{ $request->rejected_at?->format('H:i d/m/Y') }}</span>
+                                        </div>
+                                        @if ($request->reject_reason)
                                             <div class="mt-1 bg-red-50 text-red-700 border border-red-100 rounded-lg p-1.5 text-[10px] max-w-[200px] break-words" title="Lý do từ chối: {{ $request->reject_reason }}">
                                                 <strong>Lý do:</strong> {{ $request->reject_reason }}
                                             </div>
@@ -176,10 +184,7 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <a href="{{ route('admin.leave-requests.show', $request) }}"
-                                       class="inline-flex px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold transition shadow-sm">
-                                        Xem chi tiết
-                                    </a>
+                                    <x-view-only-badge :href="route('admin.leave-requests.show', $request)" />
                                 </td>
                             </tr>
                         @empty

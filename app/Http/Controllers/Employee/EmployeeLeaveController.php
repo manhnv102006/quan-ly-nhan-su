@@ -25,6 +25,7 @@ class EmployeeLeaveController extends Controller
         $employee = $this->getEmployee();
 
         $leaveRequests = LeaveRequest::where('employee_id', $employee->id)
+            ->with(['approver', 'rejecter'])
             ->latest()
             ->paginate(10);
 

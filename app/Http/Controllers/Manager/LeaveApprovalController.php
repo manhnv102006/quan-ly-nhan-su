@@ -66,7 +66,7 @@ class LeaveApprovalController extends Controller
         $manager = $this->currentManager();
         $this->authorizeForManager($leaveRequest, $manager);
 
-        $leaveRequest->load(['employee.department', 'employee.position', 'approver', 'histories.actor']);
+        $leaveRequest->load(['employee.department', 'employee.position', 'approver', 'rejecter', 'histories.actor']);
 
         return view('manager.leave-requests.show', compact('leaveRequest'));
     }
