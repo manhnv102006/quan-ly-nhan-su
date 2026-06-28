@@ -17,7 +17,7 @@ class EnsureLeaveApprovalManager
     {
         $user = $request->user();
 
-        if (! $user || ! $user->isManager()) {
+        if (! $user || $user->isAdmin() || ! $user->isManager()) {
             abort(403, 'Chỉ quản lý mới được truy cập chức năng duyệt nghỉ phép.');
         }
 

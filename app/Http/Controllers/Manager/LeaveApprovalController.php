@@ -20,6 +20,7 @@ class LeaveApprovalController extends Controller
 
     public function __construct(private readonly LeaveApprovalService $service)
     {
+        $this->middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager']);
     }
 
     public function index(Request $request): View
