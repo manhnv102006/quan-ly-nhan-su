@@ -178,6 +178,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
     Route::get('/manager/dashboard', [DashboardController::class, 'manager'])->name('manager.dashboard');
     Route::get('/manager/employees', [ManagerEmployeeController::class, 'index'])->name('manager.employees.index');
+    Route::get('/manager/employees/{employee}', [ManagerEmployeeController::class, 'show'])->name('manager.employees.show');
     Route::get('/manager/leave-requests', [LeaveRequestController::class, 'index'])->name('manager.leave-requests');
     Route::patch('/manager/leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('manager.leave-requests.approve');
     Route::patch('/manager/leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('manager.leave-requests.reject');
