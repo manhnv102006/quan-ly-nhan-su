@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\LeaveRequest;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,6 +22,7 @@ class Employee extends Model
         'user_id',
         'department_id',
         'position_id',
+        'manager_id',
         'employee_code',
         'full_name',
         'gender',
@@ -101,5 +103,38 @@ class Employee extends Model
     {
         return $this->hasMany(DepartmentTransfer::class);
 
+    }
+
+    public static function managedDepartmentIdFor(self $manager): ?int
+    {
+        return Department::query()
+            ->where('manager_id', $manager->id)
+            ->value('id');
+    }
+
+    public function isManagedBy(self $manager): bool
+    {
+        $managedDepartmentId = self::managedDepartmentIdFor($manager);
+
+        return $this->manager_id === $manager->id
+            || ($managedDepartmentId !== null && $this->department_id === $managedDepartmentId);
+    }
+
+    /**
+     * Nhân viên thuộc quyền quản lý: cấp dưới trực tiếp hoặc cùng phòng ban được giao quản lý.
+     *
+     * @param  Builder<Employee>  $query
+     */
+    public function scopeManagedByManager(Builder $query, self $manager): Builder
+    {
+        $managedDepartmentId = self::managedDepartmentIdFor($manager);
+
+        return $query->where(function (Builder $scope) use ($manager, $managedDepartmentId) {
+            $scope->where('manager_id', $manager->id);
+
+            if ($managedDepartmentId !== null) {
+                $scope->orWhere('department_id', $managedDepartmentId);
+            }
+        });
     }
 }

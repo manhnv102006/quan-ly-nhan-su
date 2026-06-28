@@ -64,7 +64,6 @@ trait ResolvesCurrentEmployee
 
     protected function managedDepartmentId(Employee $manager): ?int
     {
-        return Department::where('manager_id', $manager->id)->value('id')
-            ?? $manager->department_id;
+        return Employee::managedDepartmentIdFor($manager);
     }
 }

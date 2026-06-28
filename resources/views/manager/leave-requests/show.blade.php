@@ -18,8 +18,6 @@
                 <button class="btn btn-danger" type="button" data-bs-toggle="modal" data-bs-target="#rejectModal">
                     <i class="bi bi-x-circle"></i> Từ chối
                 </button>
-            @else
-                <span class="badge bg-secondary">Đã xử lý</span>
             @endif
         </div>
     </div>
@@ -107,29 +105,30 @@
         </div>
     </div>
 
-    <!-- Reject Modal -->
-    <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form method="POST" action="{{ route('manager.leave-requests.reject', $leaveRequest) }}">
-                    @csrf
-                    @method('PATCH')
-                    <div class="modal-header">
-                        <h5 class="modal-title">Từ chối đơn nghỉ phép</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Lý do từ chối</label>
-                            <textarea name="reject_reason" class="form-control" rows="3" required></textarea>
+    @if($leaveRequest->isPending())
+        <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="POST" action="{{ route('manager.leave-requests.reject', $leaveRequest) }}">
+                        @csrf
+                        @method('PATCH')
+                        <div class="modal-header">
+                            <h5 class="modal-title">Từ chối đơn nghỉ phép</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn btn-danger">Từ chối</button>
-                    </div>
-                </form>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Lý do từ chối</label>
+                                <textarea name="reject_reason" class="form-control" rows="3" required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-danger">Từ chối</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
+    @endif
 </x-admin-layout>
