@@ -89,18 +89,29 @@
                     <div class="text-muted small">Trạng thái</div>
                     <x-status-badge :model="$leaveRequest" />
                 </div>
-                <div class="col-md-4">
-                    <div class="text-muted small">Người duyệt</div>
-                    <div class="fw-semibold">{{ $leaveRequest->approver->name ?? '—' }}</div>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-muted small">Thời gian duyệt</div>
-                    <div class="fw-semibold">{{ optional($leaveRequest->approved_at)->format('d/m/Y H:i') ?? '—' }}</div>
-                </div>
-                <div class="col-md-12">
-                    <div class="text-muted small">Lý do từ chối</div>
-                    <div class="fw-semibold">{{ $leaveRequest->reject_reason ?? '—' }}</div>
-                </div>
+                @if($leaveRequest->status === \App\Models\LeaveRequest::STATUS_APPROVED)
+                    <div class="col-md-4">
+                        <div class="text-muted small">Người duyệt</div>
+                        <div class="fw-semibold">{{ $leaveRequest->approver->name ?? '—' }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Thời gian duyệt</div>
+                        <div class="fw-semibold">{{ optional($leaveRequest->approved_at)->format('d/m/Y H:i') ?? '—' }}</div>
+                    </div>
+                @elseif($leaveRequest->status === \App\Models\LeaveRequest::STATUS_REJECTED)
+                    <div class="col-md-4">
+                        <div class="text-muted small">Người từ chối</div>
+                        <div class="fw-semibold">{{ $leaveRequest->rejecter->name ?? '—' }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Thời gian từ chối</div>
+                        <div class="fw-semibold">{{ optional($leaveRequest->rejected_at)->format('d/m/Y H:i') ?? '—' }}</div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="text-muted small">Lý do từ chối</div>
+                        <div class="fw-semibold text-danger">{{ $leaveRequest->reject_reason ?? '—' }}</div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -118,8 +129,11 @@
                         </div>
                         <div class="modal-body">
                             <div class="mb-3">
-                                <label class="form-label">Lý do từ chối</label>
-                                <textarea name="reject_reason" class="form-control" rows="3" required></textarea>
+                                <label class="form-label">Lý do từ chối <span class="text-danger">*</span></label>
+                                <textarea name="reject_reason" class="form-control @error('reject_reason') is-invalid @enderror" rows="3" required minlength="1">{{ old('reject_reason') }}</textarea>
+                                @error('reject_reason')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -130,5 +144,16 @@
                 </div>
             </div>
         </div>
+    @endif
+
+    @if($leaveRequest->isPending() && $errors->has('reject_reason'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const modal = document.getElementById('rejectModal');
+                if (modal && window.bootstrap) {
+                    bootstrap.Modal.getOrCreateInstance(modal).show();
+                }
+            });
+        </script>
     @endif
 </x-admin-layout>

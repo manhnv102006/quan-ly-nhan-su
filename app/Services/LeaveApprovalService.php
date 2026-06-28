@@ -101,12 +101,25 @@ class LeaveApprovalService
         ?string $rejectReason = null
     ): void {
         DB::transaction(function () use ($leaveRequest, $actorId, $status, $action, $title, $content, $rejectReason) {
-            $leaveRequest->update([
-                'status' => $status,
-                'approved_by' => $actorId,
-                'approved_at' => now(),
-                'reject_reason' => $rejectReason,
-            ]);
+            if ($status === LeaveRequest::STATUS_APPROVED) {
+                $leaveRequest->update([
+                    'status' => $status,
+                    'approved_by' => $actorId,
+                    'approved_at' => now(),
+                    'reject_reason' => null,
+                    'rejected_by' => null,
+                    'rejected_at' => null,
+                ]);
+            } else {
+                $leaveRequest->update([
+                    'status' => $status,
+                    'approved_by' => null,
+                    'approved_at' => null,
+                    'reject_reason' => $rejectReason,
+                    'rejected_by' => $actorId,
+                    'rejected_at' => now(),
+                ]);
+            }
 
             LeaveRequestHistory::create([
                 'leave_request_id' => $leaveRequest->id,

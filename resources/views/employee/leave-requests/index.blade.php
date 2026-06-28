@@ -154,12 +154,17 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-slate-500 text-xs">
-                                    @if ($request->status !== 'pending' && $request->approver)
+                                    @if ($request->status === 'approved' && $request->approver)
                                         <div>
                                             <span class="font-bold text-slate-700">{{ $request->approver->name }}</span>
                                             <span class="block text-[10px] text-slate-400 mt-0.5">lúc {{ $request->approved_at?->format('H:i d/m/Y') }}</span>
                                         </div>
-                                        @if ($request->status === 'rejected' && $request->reject_reason)
+                                    @elseif ($request->status === 'rejected' && $request->rejecter)
+                                        <div>
+                                            <span class="font-bold text-slate-700">{{ $request->rejecter->name }}</span>
+                                            <span class="block text-[10px] text-slate-400 mt-0.5">lúc {{ $request->rejected_at?->format('H:i d/m/Y') }}</span>
+                                        </div>
+                                        @if ($request->reject_reason)
                                             <div class="mt-1 bg-red-50 text-red-700 border border-red-100 rounded-lg p-1.5 text-[10px]" title="Lý do từ chối: {{ $request->reject_reason }}">
                                                 <strong>Lý do từ chối:</strong> {{ $request->reject_reason }}
                                             </div>
