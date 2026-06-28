@@ -161,20 +161,23 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'manager'])->name('dashboard');
 
-    // Duyệt nghỉ phép — chỉ Manager được truy cập
-    Route::middleware('leave.approval.manager')->group(function () {
-        Route::get('/leave-requests', [LeaveApprovalController::class, 'index'])->name('leave-requests');
-        Route::get('/leave-requests/{leaveRequest}', [LeaveApprovalController::class, 'show'])->name('leave-requests.show');
-        Route::patch('/leave-requests/{leaveRequest}/approve', [LeaveApprovalController::class, 'approve'])->name('leave-requests.approve');
-        Route::patch('/leave-requests/{leaveRequest}/reject', [LeaveApprovalController::class, 'reject'])->name('leave-requests.reject');
-    });
-
     // Quản lý tăng ca theo phòng ban
     Route::get('/overtime-requests', [OvertimeApprovalController::class, 'index'])->name('overtime-requests.index');
     Route::get('/overtime-requests/{overtimeRequest}', [OvertimeApprovalController::class, 'show'])->name('overtime-requests.show');
     Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeApprovalController::class, 'approve'])->name('overtime-requests.approve');
     Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeApprovalController::class, 'reject'])->name('overtime-requests.reject');
 });
+
+// Duyệt nghỉ phép — nhóm route riêng, chỉ Manager (Admin bị chặn 403)
+Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager'])
+    ->prefix('manager/leave-requests')
+    ->name('manager.leave-requests.')
+    ->group(function () {
+        Route::get('/', [LeaveApprovalController::class, 'index'])->name('index');
+        Route::get('/{leaveRequest}', [LeaveApprovalController::class, 'show'])->name('show');
+        Route::patch('/{leaveRequest}/approve', [LeaveApprovalController::class, 'approve'])->name('approve');
+        Route::patch('/{leaveRequest}/reject', [LeaveApprovalController::class, 'reject'])->name('reject');
+    });
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
