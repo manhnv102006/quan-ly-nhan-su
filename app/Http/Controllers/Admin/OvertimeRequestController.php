@@ -7,13 +7,13 @@ use App\Http\Requests\OvertimeRequestStoreRequest;
 use App\Http\Requests\OvertimeRequestUpdateRequest;
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
-use Carbon\Carbon;
+use App\Services\OvertimeRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class OvertimeRequestController extends Controller
 {
-    public function __construct()
+    public function __construct(private readonly OvertimeRequestService $service)
     {
         $this->authorizeResource(OvertimeRequest::class, 'overtimeRequest');
     }
@@ -37,19 +37,15 @@ class OvertimeRequestController extends Controller
 
     public function create(): View
     {
-        $employees = Employee::query()
-            ->where('status', 'active')
-            ->orderBy('full_name')
-            ->get();
-
-        return view('admin.overtime-requests.create', compact('employees'));
+        return view('admin.overtime-requests.create', [
+            'employees' => $this->activeEmployees(),
+        ]);
     }
 
     public function store(OvertimeRequestStoreRequest $request): RedirectResponse
     {
-        $data = $this->normalizePayload($request->validated());
+        $data = $request->validated();
         $data['employee_id'] = $data['employee_id'] ?? $request->user()?->employee?->id;
-        $data['status'] = OvertimeRequest::STATUS_PENDING;
 
         if (! $data['employee_id']) {
             return back()
@@ -57,7 +53,7 @@ class OvertimeRequestController extends Controller
                 ->withInput();
         }
 
-        OvertimeRequest::create($data);
+        $this->service->create($data);
 
         return redirect()
             ->route('admin.overtime-requests.index')
@@ -66,34 +62,30 @@ class OvertimeRequestController extends Controller
 
     public function show(OvertimeRequest $overtimeRequest): View
     {
-        $overtimeRequest->load(['employee', 'approver']);
+        $overtimeRequest->load(['employee.department', 'approver', 'histories.actor']);
 
         return view('admin.overtime-requests.show', compact('overtimeRequest'));
     }
 
     public function edit(OvertimeRequest $overtimeRequest): View
     {
-        if ($overtimeRequest->status !== OvertimeRequest::STATUS_PENDING) {
-            abort(403, 'Chỉ được chỉnh sửa đơn ở trạng thái Pending.');
-        }
+        $this->assertPendingOrAbort($overtimeRequest, 'Chỉ được chỉnh sửa đơn ở trạng thái Pending.');
 
-        $employees = Employee::query()
-            ->where('status', 'active')
-            ->orderBy('full_name')
-            ->get();
-
-        return view('admin.overtime-requests.edit', compact('overtimeRequest', 'employees'));
+        return view('admin.overtime-requests.edit', [
+            'overtimeRequest' => $overtimeRequest,
+            'employees' => $this->activeEmployees(),
+        ]);
     }
 
     public function update(OvertimeRequestUpdateRequest $request, OvertimeRequest $overtimeRequest): RedirectResponse
     {
-        if ($overtimeRequest->status !== OvertimeRequest::STATUS_PENDING) {
+        if (! $overtimeRequest->isPending()) {
             return redirect()
                 ->route('admin.overtime-requests.show', $overtimeRequest)
                 ->with('error', 'Đơn đã duyệt/từ chối, không thể chỉnh sửa.');
         }
 
-        $overtimeRequest->update($this->normalizePayload($request->validated()));
+        $this->service->update($overtimeRequest, $request->validated());
 
         return redirect()
             ->route('admin.overtime-requests.show', $overtimeRequest)
@@ -102,7 +94,7 @@ class OvertimeRequestController extends Controller
 
     public function destroy(OvertimeRequest $overtimeRequest): RedirectResponse
     {
-        if ($overtimeRequest->status !== OvertimeRequest::STATUS_PENDING) {
+        if (! $overtimeRequest->isPending()) {
             return redirect()
                 ->route('admin.overtime-requests.show', $overtimeRequest)
                 ->with('error', 'Đơn đã duyệt/từ chối, không thể xóa.');
@@ -115,14 +107,18 @@ class OvertimeRequestController extends Controller
             ->with('success', 'Xóa yêu cầu tăng ca thành công.');
     }
 
-    private function normalizePayload(array $payload): array
+    private function activeEmployees()
     {
-        if (! isset($payload['total_hours']) || $payload['total_hours'] === null || $payload['total_hours'] === '') {
-            $start = Carbon::createFromFormat('H:i', $payload['start_time']);
-            $end = Carbon::createFromFormat('H:i', $payload['end_time']);
-            $payload['total_hours'] = round($end->diffInMinutes($start) / 60, 2);
-        }
+        return Employee::query()
+            ->where('status', 'active')
+            ->orderBy('full_name')
+            ->get();
+    }
 
-        return $payload;
+    private function assertPendingOrAbort(OvertimeRequest $overtimeRequest, string $message): void
+    {
+        if (! $overtimeRequest->isPending()) {
+            abort(403, $message);
+        }
     }
 }

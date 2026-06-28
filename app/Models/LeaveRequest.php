@@ -45,5 +45,32 @@ class LeaveRequest extends Model
     {
         return $this->hasMany(LeaveRequestHistory::class);
     }
+
+    public const STATUS_LABELS = [
+        self::STATUS_PENDING => 'Chờ duyệt',
+        self::STATUS_APPROVED => 'Đã duyệt',
+        self::STATUS_REJECTED => 'Từ chối',
+    ];
+
+    public const STATUS_BADGE_CLASSES = [
+        self::STATUS_PENDING => 'text-bg-warning',
+        self::STATUS_APPROVED => 'text-bg-success',
+        self::STATUS_REJECTED => 'text-bg-danger',
+    ];
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function statusLabel(): string
+    {
+        return self::STATUS_LABELS[$this->status] ?? ucfirst((string) $this->status);
+    }
+
+    public function statusBadgeClass(): string
+    {
+        return self::STATUS_BADGE_CLASSES[$this->status] ?? 'text-bg-secondary';
+    }
 }
 

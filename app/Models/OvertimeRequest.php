@@ -62,6 +62,39 @@ class OvertimeRequest extends Model
         return $this->hasMany(OvertimeRequestHistory::class);
     }
 
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function scopeOverlappingTime($query, int $employeeId, string $workDate, string $startTime, string $endTime, ?int $ignoreId = null)
+    {
+        return $query
+            ->where('employee_id', $employeeId)
+            ->whereDate('work_date', $workDate)
+            ->where('start_time', '<', $endTime)
+            ->where('end_time', '>', $startTime)
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId));
+    }
+
+    public function scopeFilter($query, array $filters)
+    {
+        return $query
+            ->when(! empty($filters['search']), function ($q) use ($filters) {
+                $keyword = trim((string) $filters['search']);
+                $q->whereHas('employee', function ($employeeQuery) use ($keyword) {
+                    $employeeQuery->where('full_name', 'like', '%'.$keyword.'%')
+                        ->orWhere('employee_code', 'like', '%'.$keyword.'%');
+                });
+            })
+            ->when(! empty($filters['status']), fn ($q) => $q->where('status', $filters['status']))
+            ->when(! empty($filters['work_date']), fn ($q) => $q->whereDate('work_date', $filters['work_date']))
+            ->when(! empty($filters['employee_id']), fn ($q) => $q->where('employee_id', $filters['employee_id']))
+            ->when(! empty($filters['department_id']), function ($q) use ($filters) {
+                $q->whereHas('employee', fn ($employeeQuery) => $employeeQuery->where('department_id', $filters['department_id']));
+            });
+    }
+
     public function statusLabel(): string
     {
         return self::STATUS_LABELS[$this->status] ?? ucfirst((string) $this->status);

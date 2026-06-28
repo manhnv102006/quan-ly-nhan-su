@@ -4,21 +4,21 @@ namespace App\Services;
 
 use App\Models\LeaveRequest;
 use App\Models\LeaveRequestHistory;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class LeaveApprovalService
 {
-    private const ANNUAL_LEAVE_ALLOWANCE = 12; // mặc định, có thể chuyển sang config hoặc cột employee khi cần
+    private const ANNUAL_LEAVE_ALLOWANCE = 12;
+
+    public function __construct(private readonly NotificationService $notifications)
+    {
+    }
 
     public function approve(LeaveRequest $leaveRequest, int $actorId): void
     {
-        if ($leaveRequest->status !== LeaveRequest::STATUS_PENDING) {
-            throw ValidationException::withMessages(['status' => 'Chỉ xử lý đơn ở trạng thái chờ duyệt.']);
-        }
+        $this->assertPending($leaveRequest);
 
-        // quota phép năm
         if ($leaveRequest->leave_type === 'annual') {
             $year = $leaveRequest->start_date?->year ?? now()->year;
             $used = LeaveRequest::where('employee_id', $leaveRequest->employee_id)
@@ -32,7 +32,6 @@ class LeaveApprovalService
             }
         }
 
-        // trùng thời gian
         $overlap = LeaveRequest::where('employee_id', $leaveRequest->employee_id)
             ->where('id', '!=', $leaveRequest->id)
             ->where('status', LeaveRequest::STATUS_APPROVED)
@@ -44,47 +43,68 @@ class LeaveApprovalService
             throw ValidationException::withMessages(['start_date' => 'Đơn này trùng thời gian với đơn đã duyệt khác.']);
         }
 
-        DB::transaction(function () use ($leaveRequest, $actorId) {
-            $leaveRequest->update([
-                'status' => LeaveRequest::STATUS_APPROVED,
-                'approved_by' => $actorId,
-                'approved_at' => now(),
-                'reject_reason' => null,
-            ]);
-
-            LeaveRequestHistory::create([
-                'leave_request_id' => $leaveRequest->id,
-                'actor_id' => $actorId,
-                'action' => 'approved',
-                'note' => null,
-            ]);
-        });
+        $this->processDecision(
+            leaveRequest: $leaveRequest,
+            actorId: $actorId,
+            status: LeaveRequest::STATUS_APPROVED,
+            action: 'approved',
+            title: 'Đơn nghỉ phép đã được phê duyệt',
+            content: 'Đơn nghỉ phép từ '.$leaveRequest->start_date?->format('d/m/Y').' đến '.$leaveRequest->end_date?->format('d/m/Y').' của bạn đã được phê duyệt.',
+        );
     }
 
     public function reject(LeaveRequest $leaveRequest, int $actorId, string $reason): void
     {
-        if ($leaveRequest->status !== LeaveRequest::STATUS_PENDING) {
-            throw ValidationException::withMessages(['status' => 'Chỉ xử lý đơn ở trạng thái chờ duyệt.']);
-        }
+        $this->assertPending($leaveRequest);
 
-        if (! $reason) {
-            throw ValidationException::withMessages(['reject_reason' => 'Vui lòng nhập lý do từ chối.']);
-        }
+        $this->processDecision(
+            leaveRequest: $leaveRequest,
+            actorId: $actorId,
+            status: LeaveRequest::STATUS_REJECTED,
+            action: 'rejected',
+            title: 'Đơn nghỉ phép đã bị từ chối',
+            content: 'Đơn nghỉ phép từ '.$leaveRequest->start_date?->format('d/m/Y').' đến '.$leaveRequest->end_date?->format('d/m/Y').' của bạn đã bị từ chối. Lý do: '.$reason,
+            rejectReason: $reason,
+        );
+    }
 
-        DB::transaction(function () use ($leaveRequest, $actorId, $reason) {
+    protected function assertPending(LeaveRequest $leaveRequest): void
+    {
+        if (! $leaveRequest->isPending()) {
+            throw ValidationException::withMessages([
+                'status' => 'Chỉ xử lý đơn ở trạng thái chờ duyệt.',
+            ]);
+        }
+    }
+
+    protected function processDecision(
+        LeaveRequest $leaveRequest,
+        int $actorId,
+        string $status,
+        string $action,
+        string $title,
+        string $content,
+        ?string $rejectReason = null
+    ): void {
+        DB::transaction(function () use ($leaveRequest, $actorId, $status, $action, $title, $content, $rejectReason) {
             $leaveRequest->update([
-                'status' => LeaveRequest::STATUS_REJECTED,
+                'status' => $status,
                 'approved_by' => $actorId,
                 'approved_at' => now(),
-                'reject_reason' => $reason,
+                'reject_reason' => $rejectReason,
             ]);
 
             LeaveRequestHistory::create([
                 'leave_request_id' => $leaveRequest->id,
                 'actor_id' => $actorId,
-                'action' => 'rejected',
-                'note' => $reason,
+                'action' => $action,
+                'note' => $rejectReason,
             ]);
+
+            $employeeUserId = $leaveRequest->employee?->user_id;
+            if ($employeeUserId) {
+                $this->notifications->sendToUser($employeeUserId, $title, $content, $actorId);
+            }
         });
     }
 }
