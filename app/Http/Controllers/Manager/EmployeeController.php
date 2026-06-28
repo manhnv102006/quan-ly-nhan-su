@@ -57,6 +57,54 @@ class EmployeeController extends Controller
         ));
     }
 
+    public function show(Employee $employee): View
+    {
+        $managerProfile = Employee::query()
+            ->with(['department', 'position'])
+            ->where('user_id', Auth::id())
+            ->first();
+
+        $department = $this->managedDepartment($managerProfile);
+
+        if (! $department || (int) $employee->department_id !== (int) $department->id) {
+            abort(403, 'Bạn chỉ được xem nhân viên thuộc phòng ban mình quản lý.');
+        }
+
+        $employee->load(['department', 'position', 'user']);
+
+        $attendances = $employee->attendances()
+            ->with('shift')
+            ->latest('attendance_date')
+            ->limit(8)
+            ->get();
+
+        $leaveRequests = $employee->leaveRequests()
+            ->latest()
+            ->limit(6)
+            ->get();
+
+        $kpis = $employee->employeeKpis()
+            ->with('kpi')
+            ->latest()
+            ->limit(6)
+            ->get();
+
+        $contracts = $employee->contracts()
+            ->latest('start_date')
+            ->limit(3)
+            ->get();
+
+        return view('manager.employees.show', compact(
+            'managerProfile',
+            'department',
+            'employee',
+            'attendances',
+            'leaveRequests',
+            'kpis',
+            'contracts',
+        ));
+    }
+
     private function managedDepartment(?Employee $managerProfile): ?Department
     {
         if (! $managerProfile) {

@@ -147,6 +147,7 @@
                                 <th class="px-6 py-4">Ngày vào làm</th>
                                 <th class="px-6 py-4">Tài khoản</th>
                                 <th class="px-6 py-4 text-center">Trạng thái</th>
+                                <th class="px-6 py-4 text-right">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -181,10 +182,16 @@
                                             {{ $statusLabels[$employee->status] ?? ucfirst($employee->status) }}
                                         </span>
                                     </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <a href="{{ route('manager.employees.show', $employee) }}"
+                                           class="inline-flex items-center rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">
+                                            Xem chi tiết
+                                        </a>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-12 text-center text-sm text-slate-400">Không có nhân viên nào phù hợp.</td>
+                                    <td colspan="7" class="px-6 py-12 text-center text-sm text-slate-400">Không có nhân viên nào phù hợp.</td>
                                 </tr>
                             @endforelse
                         </tbody>
