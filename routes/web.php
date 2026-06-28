@@ -28,7 +28,11 @@ use App\Http\Controllers\Admin\RecruitmentController;
 use App\Http\Controllers\Admin\ShiftController;
 
 use App\Http\Controllers\DashboardController;
+
 use App\Http\Controllers\Manager\EmployeeController as ManagerEmployeeController;
+
+use App\Http\Controllers\Manager\KPIController as ManagerKPIController;
+
 use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
@@ -187,6 +191,8 @@ Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
     Route::post('/manager/notifications', [ManagerNotificationController::class, 'store'])->name('manager.notifications.store');
     Route::patch('/manager/notifications/read-all', [ManagerNotificationController::class, 'markAllAsRead'])->name('manager.notifications.read-all');
     Route::patch('/manager/notifications/{notification}/read', [ManagerNotificationController::class, 'markAsRead'])->name('manager.notifications.read');
+    Route::get('/manager/kpis', [ManagerKPIController::class, 'index'])->name('manager.kpis.index');
+    Route::get('/manager/kpis/{assignment}', [ManagerKPIController::class, 'show'])->name('manager.kpis.show');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
