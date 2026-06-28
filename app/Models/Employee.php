@@ -50,6 +50,16 @@ class Employee extends Model
         return $this->belongsTo(Department::class);
     }
 
+    public function manager(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'manager_id');
+    }
+
+    public function managedDepartments(): HasMany
+    {
+        return $this->hasMany(Department::class, 'manager_id');
+    }
+
     public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class);
@@ -58,11 +68,6 @@ class Employee extends Model
     public function overtimeRequests(): HasMany
     {
         return $this->hasMany(OvertimeRequest::class);
-    }
-
-    public function manager(): BelongsTo
-    {
-        return $this->belongsTo(self::class, 'manager_id');
     }
 
     public function subordinates(): HasMany
@@ -107,33 +112,50 @@ class Employee extends Model
 
     public static function managedDepartmentIdFor(self $manager): ?int
     {
+        $ids = self::managedDepartmentIdsFor($manager);
+
+        return $ids[0] ?? null;
+    }
+
+    /**
+     * @return list<int>
+     */
+    public static function managedDepartmentIdsFor(self $manager): array
+    {
         return Department::query()
             ->where('manager_id', $manager->id)
-            ->value('id');
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
     }
 
     public function isManagedBy(self $manager): bool
     {
-        $managedDepartmentId = self::managedDepartmentIdFor($manager);
+        if ($this->manager_id === $manager->id) {
+            return true;
+        }
 
-        return $this->manager_id === $manager->id
-            || ($managedDepartmentId !== null && $this->department_id === $managedDepartmentId);
+        $managedDepartmentIds = self::managedDepartmentIdsFor($manager);
+
+        return $managedDepartmentIds !== []
+            && in_array((int) $this->department_id, $managedDepartmentIds, true);
     }
 
     /**
-     * Nhân viên thuộc quyền quản lý: cấp dưới trực tiếp hoặc cùng phòng ban được giao quản lý.
+     * Nhân viên thuộc quyền quản lý: cấp dưới trực tiếp (manager_id) hoặc thuộc phòng ban được giao quản lý.
      *
      * @param  Builder<Employee>  $query
      */
     public function scopeManagedByManager(Builder $query, self $manager): Builder
     {
-        $managedDepartmentId = self::managedDepartmentIdFor($manager);
+        $managedDepartmentIds = self::managedDepartmentIdsFor($manager);
 
-        return $query->where(function (Builder $scope) use ($manager, $managedDepartmentId) {
+        return $query->where(function (Builder $scope) use ($manager, $managedDepartmentIds) {
             $scope->where('manager_id', $manager->id);
 
-            if ($managedDepartmentId !== null) {
-                $scope->orWhere('department_id', $managedDepartmentId);
+            if ($managedDepartmentIds !== []) {
+                $scope->orWhereIn('department_id', $managedDepartmentIds);
             }
         });
     }

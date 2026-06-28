@@ -87,10 +87,12 @@ class LeaveApprovalService
     {
         $user = User::find($actorId);
 
+        if ($user?->isAdmin()) {
+            abort(403, 'Admin chỉ được xem đơn nghỉ phép, không được duyệt hoặc từ chối.');
+        }
+
         if (! $user?->isManager()) {
-            throw ValidationException::withMessages([
-                'status' => 'Chỉ quản lý mới được duyệt hoặc từ chối đơn nghỉ phép.',
-            ]);
+            abort(403, 'Chỉ quản lý mới được duyệt hoặc từ chối đơn nghỉ phép.');
         }
     }
 

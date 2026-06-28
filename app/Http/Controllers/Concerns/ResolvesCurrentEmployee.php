@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\Employee;
 use App\Services\ManagerEmployeeResolver;
+use App\Services\ManagerScopeService;
 use Illuminate\Support\Facades\Auth;
 
 trait ResolvesCurrentEmployee
@@ -20,6 +21,11 @@ trait ResolvesCurrentEmployee
 
     protected function managedDepartmentId(Employee $manager): ?int
     {
-        return Employee::managedDepartmentIdFor($manager);
+        return app(ManagerScopeService::class)->managedDepartmentId($manager);
+    }
+
+    protected function managedEmployeesQuery(Employee $manager): \Illuminate\Database\Eloquent\Builder
+    {
+        return app(ManagerScopeService::class)->managedEmployeesQuery($manager);
     }
 }

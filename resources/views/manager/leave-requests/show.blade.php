@@ -10,18 +10,24 @@
             <a href="{{ route('manager.leave-requests.index') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Quay lại
             </a>
-            @if($leaveRequest->isPending())
-                <form method="POST" action="{{ route('manager.leave-requests.approve', $leaveRequest) }}">
-                    @csrf
-                    @method('PATCH')
-                    <button class="btn btn-success" type="submit" onclick="return confirm('Duyệt đơn này?')">
-                        <i class="bi bi-check2-circle"></i> Duyệt
+            @can('approve', $leaveRequest)
+                @if($leaveRequest->isPending())
+                    <form method="POST" action="{{ route('manager.leave-requests.approve', $leaveRequest) }}">
+                        @csrf
+                        @method('PATCH')
+                        <button class="btn btn-success" type="submit" onclick="return confirm('Duyệt đơn này?')">
+                            <i class="bi bi-check2-circle"></i> Duyệt
+                        </button>
+                    </form>
+                @endif
+            @endcan
+            @can('reject', $leaveRequest)
+                @if($leaveRequest->isPending())
+                    <button class="btn btn-danger" type="button" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                        <i class="bi bi-x-circle"></i> Từ chối
                     </button>
-                </form>
-                <button class="btn btn-danger" type="button" data-bs-toggle="modal" data-bs-target="#rejectModal">
-                    <i class="bi bi-x-circle"></i> Từ chối
-                </button>
-            @endif
+                @endif
+            @endcan
         </div>
     </div>
 
@@ -81,6 +87,7 @@
         </div>
     @endif
 
+    @can('reject', $leaveRequest)
     @if($leaveRequest->isPending())
         <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
@@ -110,6 +117,7 @@
             </div>
         </div>
     @endif
+    @endcan
 
     @if($leaveRequest->isPending() && $errors->has('reject_reason'))
         <script>

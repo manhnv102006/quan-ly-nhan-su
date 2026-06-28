@@ -9,8 +9,15 @@ use Illuminate\View\View;
 
 class LeaveRequestController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(['auth', 'verified', 'role:admin']);
+    }
+
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', LeaveRequest::class);
+
         $statsQuery = LeaveRequest::query();
         $query = LeaveRequest::query()->with(['employee.department', 'approver', 'rejecter']);
 
@@ -39,6 +46,8 @@ class LeaveRequestController extends Controller
 
     public function show(LeaveRequest $leaveRequest): View
     {
+        $this->authorize('view', $leaveRequest);
+
         $leaveRequest->load(['employee.department', 'employee.position', 'approver', 'rejecter', 'histories.actor']);
 
         return view('admin.leave-requests.show', compact('leaveRequest'));

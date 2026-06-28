@@ -22,6 +22,8 @@ class EmployeeLeaveController extends Controller
 
     public function index()
     {
+        $this->authorize('viewAny', LeaveRequest::class);
+
         $employee = $this->getEmployee();
 
         $leaveRequests = LeaveRequest::where('employee_id', $employee->id)
@@ -34,11 +36,7 @@ class EmployeeLeaveController extends Controller
 
     public function show(LeaveRequest $leaveRequest)
     {
-        $employee = $this->getEmployee();
-
-        if ($leaveRequest->employee_id !== $employee->id) {
-            abort(403, 'Bạn không có quyền xem đơn nghỉ phép này.');
-        }
+        $this->authorize('view', $leaveRequest);
 
         $leaveRequest->load(['approver', 'rejecter', 'histories.actor']);
 
@@ -47,12 +45,16 @@ class EmployeeLeaveController extends Controller
 
     public function create()
     {
-        $this->getEmployee(); // Ensure employee profile exists
+        $this->authorize('create', LeaveRequest::class);
+        $this->getEmployee();
+
         return view('employee.leave-requests.create');
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', LeaveRequest::class);
+
         $employee = $this->getEmployee();
 
         $request->validate([
