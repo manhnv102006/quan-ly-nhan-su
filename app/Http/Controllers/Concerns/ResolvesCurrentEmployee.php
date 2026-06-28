@@ -13,6 +13,11 @@ trait ResolvesCurrentEmployee
         return app(ManagerEmployeeResolver::class)->resolveOrFail(Auth::user());
     }
 
+    protected function currentManagerOrNull(): ?Employee
+    {
+        return app(ManagerEmployeeResolver::class)->resolve(Auth::user());
+    }
+
     protected function managedDepartmentId(Employee $manager): ?int
     {
         return Employee::managedDepartmentIdFor($manager);

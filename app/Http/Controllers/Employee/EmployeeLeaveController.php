@@ -32,6 +32,19 @@ class EmployeeLeaveController extends Controller
         return view('employee.leave-requests.index', compact('leaveRequests'));
     }
 
+    public function show(LeaveRequest $leaveRequest)
+    {
+        $employee = $this->getEmployee();
+
+        if ($leaveRequest->employee_id !== $employee->id) {
+            abort(403, 'Bạn không có quyền xem đơn nghỉ phép này.');
+        }
+
+        $leaveRequest->load(['approver', 'rejecter', 'histories.actor']);
+
+        return view('employee.leave-requests.show', compact('leaveRequest'));
+    }
+
     public function create()
     {
         $this->getEmployee(); // Ensure employee profile exists

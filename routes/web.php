@@ -186,6 +186,7 @@ Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
 Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(function () {
     Route::get('/employee/leave-requests', [EmployeeLeaveController::class, 'index'])->name('employee.leave-requests');
     Route::get('/employee/leave-requests/create', [EmployeeLeaveController::class, 'create'])->name('employee.leave-requests.create');
+    Route::get('/employee/leave-requests/{leaveRequest}', [EmployeeLeaveController::class, 'show'])->name('employee.leave-requests.show');
     Route::post('/employee/leave-requests', [EmployeeLeaveController::class, 'store'])->name('employee.leave-requests.store');
 });
 

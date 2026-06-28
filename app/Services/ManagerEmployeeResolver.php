@@ -61,6 +61,6 @@ class ManagerEmployeeResolver
     public function resolveOrFail(User $user): Employee
     {
         return $this->resolve($user)
-            ?? abort(403, 'Không tìm thấy thông tin nhân viên quản lý. Vui lòng liên hệ quản trị để liên kết tài khoản với hồ sơ nhân viên.');
+            ?? abort(403, 'Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Vui lòng liên hệ quản trị để được hỗ trợ.');
     }
 }

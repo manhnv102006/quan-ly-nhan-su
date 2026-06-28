@@ -129,6 +129,7 @@
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-400">Lý do</th>
                             <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-400">Trạng thái</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-400">Người duyệt</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-400">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -164,19 +165,20 @@
                                             <span class="font-bold text-slate-700">{{ $request->rejecter->name }}</span>
                                             <span class="block text-[10px] text-slate-400 mt-0.5">lúc {{ $request->rejected_at?->format('H:i d/m/Y') }}</span>
                                         </div>
-                                        @if ($request->reject_reason)
-                                            <div class="mt-1 bg-red-50 text-red-700 border border-red-100 rounded-lg p-1.5 text-[10px]" title="Lý do từ chối: {{ $request->reject_reason }}">
-                                                <strong>Lý do từ chối:</strong> {{ $request->reject_reason }}
-                                            </div>
-                                        @endif
                                     @else
                                         <span class="text-slate-400">—</span>
                                     @endif
                                 </td>
+                                <td class="px-6 py-4 text-center">
+                                    <a href="{{ route('employee.leave-requests.show', $request) }}"
+                                       class="inline-flex items-center px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-100 text-xs font-semibold hover:bg-sky-100 transition">
+                                        Chi tiết
+                                    </a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-12 text-slate-400 text-sm">
+                                <td colspan="7" class="text-center py-12 text-slate-400 text-sm">
                                     Bạn chưa gửi đơn xin nghỉ phép nào.
                                 </td>
                             </tr>
