@@ -28,6 +28,7 @@
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Mã KPI</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Tên KPI</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Deadline</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Đã giao</th>
                             <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Người giao</th>
                             <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
@@ -46,6 +47,9 @@
                             <td class="px-6 py-4 text-slate-600">
                                 {{ $assignment->end_date->format('d/m/Y') }}
                             </td>
+                            <td class="px-6 py-4 text-center text-slate-600 font-semibold">
+                                {{ $assignment->employee_kpis_count }}
+                            </td>
                             <td class="px-6 py-4 text-center">
                                 <span class="inline-block px-3 py-1 rounded-lg text-xs font-medium {{ $assignment->status_color }}">
                                     {{ $assignment->status_label }}
@@ -55,15 +59,18 @@
                                 {{ $assignment->assignedBy->name ?? 'N/A' }}
                                 <p class="text-xs text-slate-500 mt-1">Ngày giao: {{ $assignment->created_at->format('d/m/Y') }}</p>
                             </td>
-                            <td class="px-6 py-4 text-center">
-                                <a href="#" class="px-4 py-2 bg-violet-600 text-white text-xs font-medium rounded-lg hover:bg-violet-700 transition">
+                            <td class="px-6 py-4 text-center space-x-2">
+                                <a href="{{ route('manager.kpis.show', $assignment) }}" class="px-3 py-2 bg-blue-500 text-white text-xs font-medium rounded-lg hover:bg-blue-600 transition">
+                                    Xem chi tiết
+                                </a>
+                                <a href="{{ route('manager.kpis.assign', $assignment) }}" class="px-3 py-2 bg-violet-600 text-white text-xs font-medium rounded-lg hover:bg-violet-700 transition">
                                     Giao cho nhân viên
                                 </a>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center py-12 text-slate-400">
+                            <td colspan="7" class="text-center py-12 text-slate-400">
                                 Bạn chưa được giao KPI nào.
                             </td>
                         </tr>
