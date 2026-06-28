@@ -41,6 +41,10 @@ class InterviewController extends Controller
             'pending' => Interview::where('result', 'pending')->count(),
             'passed' => Interview::where('result', 'passed')->count(),
             'failed' => Interview::where('result', 'failed')->count(),
+            'scheduled' => Interview::where('status', 'scheduled')->count(),
+            'completed' => Interview::where('status', 'completed')->count(),
+            'cancelled' => Interview::where('status', 'cancelled')->count(),
+            'no_show' => Interview::where('status', 'no_show')->count(),
         ];
 
         return view('admin.recruitment.interviews.index', compact('interviews', 'stats'));
@@ -59,16 +63,18 @@ class InterviewController extends Controller
             'interviewer_id.exists' => 'Người phỏng vấn được chọn không hợp lệ.',
             'interview_date.required' => 'Thời gian phỏng vấn là bắt buộc.',
             'interview_date.date' => 'Thời gian phỏng vấn không hợp lệ.',
-            'note.string' => 'Ghi chú không hợp lệ.',
         ]);
 
         $validated['interviewer_id'] = $validated['interviewer_id'] ?: null;
+        $validated['status'] = 'scheduled';
         $validated['result'] = 'pending';
 
         DB::transaction(function () use ($validated) {
-            $interview = Interview::create($validated);
+            $candidate = Candidate::query()->findOrFail($validated['candidate_id']);
 
-            $interview->candidate()->update([
+            Interview::create($validated);
+
+            $candidate->update([
                 'status' => 'interview',
             ]);
         });
@@ -81,17 +87,38 @@ class InterviewController extends Controller
     public function update(Request $request, Interview $interview): RedirectResponse
     {
         $validated = $request->validate([
+            'status' => ['required', 'in:scheduled,completed,cancelled,no_show'],
             'result' => ['required', 'in:pending,passed,failed'],
+            'technical_score' => ['nullable', 'integer', 'between:0,10'],
+            'attitude_score' => ['nullable', 'integer', 'between:0,10'],
+            'culture_score' => ['nullable', 'integer', 'between:0,10'],
+            'overall_score' => ['nullable', 'integer', 'between:0,10'],
+            'recommendation' => ['nullable', 'in:hire,consider,reject'],
+            'strengths' => ['nullable', 'string'],
+            'weaknesses' => ['nullable', 'string'],
             'note' => ['nullable', 'string'],
         ], [
+            'status.required' => 'Trạng thái buổi phỏng vấn là bắt buộc.',
+            'status.in' => 'Trạng thái buổi phỏng vấn không hợp lệ.',
             'result.required' => 'Kết quả phỏng vấn là bắt buộc.',
             'result.in' => 'Kết quả phỏng vấn không hợp lệ.',
-            'note.string' => 'Ghi chú không hợp lệ.',
+            'technical_score.between' => 'Điểm kỹ thuật phải từ 0 đến 10.',
+            'attitude_score.between' => 'Điểm thái độ phải từ 0 đến 10.',
+            'culture_score.between' => 'Điểm phù hợp văn hóa phải từ 0 đến 10.',
+            'overall_score.between' => 'Điểm tổng quan phải từ 0 đến 10.',
         ]);
 
         DB::transaction(function () use ($interview, $validated) {
             $interview->update([
+                'status' => $validated['status'],
                 'result' => $validated['result'],
+                'technical_score' => $validated['technical_score'] ?? null,
+                'attitude_score' => $validated['attitude_score'] ?? null,
+                'culture_score' => $validated['culture_score'] ?? null,
+                'overall_score' => $validated['overall_score'] ?? null,
+                'recommendation' => $validated['recommendation'] ?? null,
+                'strengths' => $validated['strengths'] ?? null,
+                'weaknesses' => $validated['weaknesses'] ?? null,
                 'note' => $validated['note'] ?? null,
             ]);
 
@@ -101,9 +128,13 @@ class InterviewController extends Controller
                 default => 'interview',
             };
 
-            $interview->candidate()->update([
-                'status' => $candidateStatus,
-            ]);
+            $candidate = $interview->candidate;
+
+            if ($candidate !== null) {
+                $candidate->update([
+                    'status' => $candidateStatus,
+                ]);
+            }
         });
 
         return redirect()

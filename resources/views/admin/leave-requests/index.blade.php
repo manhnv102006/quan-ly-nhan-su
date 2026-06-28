@@ -77,7 +77,7 @@
         'rejected' => 'bg-rose-50 text-rose-700 border-rose-100',
     ];
 
-    $filterRoute = $isAdmin ? route('admin.leave-requests') : route('manager.leave-requests');
+    $filterRoute = $isAdmin ? route('admin.leave-requests.index') : route('manager.leave-requests');
     $approveRouteName = $isAdmin ? 'admin.leave-requests.approve' : 'manager.leave-requests.approve';
     $rejectRouteName = $isAdmin ? 'admin.leave-requests.reject' : 'manager.leave-requests.reject';
 @endphp

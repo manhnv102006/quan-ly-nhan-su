@@ -8,6 +8,10 @@ use App\Models\Employee;
 use App\Models\LeaveRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+
+
+use Illuminate\Http\RedirectResponse;
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -82,6 +86,14 @@ class LeaveRequestController extends Controller
 
     public function show(LeaveRequest $leaveRequest): View
     {
+
+        $user = Auth::user();
+
+        if ($user->role->name === 'manager') {
+            $this->checkAccess($user, $leaveRequest);
+        }
+
+
         $leaveRequest->load([
             'employee.department',
             'employee.position',
