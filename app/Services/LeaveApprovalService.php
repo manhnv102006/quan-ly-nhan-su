@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\LeaveRequest;
 use App\Models\LeaveRequestHistory;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -17,6 +18,7 @@ class LeaveApprovalService
 
     public function approve(LeaveRequest $leaveRequest, int $actorId): void
     {
+        $this->assertManagerActor($actorId);
         $this->assertPending($leaveRequest);
 
         if ($leaveRequest->leave_type === 'annual') {
@@ -55,6 +57,7 @@ class LeaveApprovalService
 
     public function reject(LeaveRequest $leaveRequest, int $actorId, string $reason): void
     {
+        $this->assertManagerActor($actorId);
         $this->assertPending($leaveRequest);
 
         $this->processDecision(
@@ -73,6 +76,17 @@ class LeaveApprovalService
         if (! $leaveRequest->isPending()) {
             throw ValidationException::withMessages([
                 'status' => 'Chỉ xử lý đơn ở trạng thái chờ duyệt.',
+            ]);
+        }
+    }
+
+    protected function assertManagerActor(int $actorId): void
+    {
+        $user = User::find($actorId);
+
+        if (! $user?->isManager()) {
+            throw ValidationException::withMessages([
+                'status' => 'Chỉ quản lý mới được duyệt hoặc từ chối đơn nghỉ phép.',
             ]);
         }
     }
