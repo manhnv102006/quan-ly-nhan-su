@@ -82,6 +82,15 @@ class LeaveRequest extends Model
         return self::STATUS_BADGE_CLASSES[$this->status] ?? 'text-bg-secondary';
     }
 
+    public function authorizeManagerAction(Employee $manager): void
+    {
+        $this->loadMissing('employee');
+
+        if (! $this->employee?->isManagedBy($manager)) {
+            abort(403, 'Bạn không có quyền duyệt yêu cầu này.');
+        }
+    }
+
     /**
      * @param  Builder<LeaveRequest>  $query
      */
