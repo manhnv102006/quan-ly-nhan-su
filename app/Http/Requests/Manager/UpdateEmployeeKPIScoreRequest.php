@@ -25,7 +25,7 @@ class UpdateEmployeeKPIScoreRequest extends FormRequest
     {
         return [
             'score' => ['required', 'integer', 'min:0', 'max:100'],
-            'comment' => ['nullable', 'string', 'max:1000'],
+            'review' => ['nullable', 'string', 'max:1000'],
         ];
     }
 
@@ -36,7 +36,7 @@ class UpdateEmployeeKPIScoreRequest extends FormRequest
             'score.integer' => 'Điểm KPI phải là số nguyên.',
             'score.min' => 'Điểm KPI không được nhỏ hơn 0.',
             'score.max' => 'Điểm KPI không được lớn hơn 100.',
-            'comment.max' => 'Nhận xét không được vượt quá 1000 ký tự.',
+            'review.max' => 'Nhận xét không được vượt quá 1000 ký tự.',
         ];
     }
 }
