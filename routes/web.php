@@ -204,7 +204,8 @@ Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     // KPI Routes for Employee
     Route::prefix('employee/kpis')->name('employee.kpis.')->group(function () {
         Route::get('/', [EmployeeKPIController::class, 'index'])->name('index');
-
+        Route::get('/{employeeKpi}/edit', [EmployeeKPIController::class, 'edit'])->name('edit');
+        Route::put('/{employeeKpi}', [EmployeeKPIController::class, 'update'])->name('update');
     });
 });
 
