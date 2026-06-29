@@ -117,22 +117,26 @@
         </div>
 
         {{-- Filter card --}}
-        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-xl bg-sky-50 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-sm font-bold text-slate-800">Bộ lọc</p>
-                    <p class="text-xs text-slate-400">Tìm kiếm phiếu lương theo tiêu chí</p>
+        <div class="rounded-3xl shadow-sm overflow-hidden border border-sky-100">
+
+            {{-- Gradient header --}}
+            <div class="bg-gradient-to-r from-sky-500 to-sky-600 px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-white">Bộ lọc phiếu lương</p>
+                        <p class="text-xs text-sky-100 mt-0.5">Lọc theo năm, tháng hoặc trạng thái kỳ lương</p>
+                    </div>
                 </div>
                 @if ($filterYear || $filterMonth || $filterStatus)
                     <a href="{{ route('employee.payrolls.index') }}"
-                       class="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 text-rose-500 text-xs font-semibold hover:bg-rose-100 transition">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/20 text-white text-xs font-semibold hover:bg-white/30 transition border border-white/30">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                         Xóa bộ lọc
@@ -140,105 +144,149 @@
                 @endif
             </div>
 
-            <form method="GET" action="{{ route('employee.payrolls.index') }}" class="p-6">
+            {{-- Form body --}}
+            <form method="GET" action="{{ route('employee.payrolls.index') }}"
+                  class="bg-white px-6 py-5">
+
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
                     {{-- Năm --}}
-                    <div class="flex flex-col gap-2">
-                        <label class="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="group">
+                        <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
                             Năm
                         </label>
-                        <select name="year"
-                                class="w-full h-11 px-4 pr-10 rounded-2xl border border-slate-200 bg-slate-50 text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-400 focus:bg-white transition appearance-none {{ $filterYear ? 'border-sky-300 bg-sky-50 text-sky-700' : '' }}"
-                                style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 14px center;">
-                            <option value="">Tất cả năm</option>
-                            @foreach ($payrollYears as $yr)
-                                <option value="{{ $yr }}" @selected($filterYear == $yr)>{{ $yr }}</option>
-                            @endforeach
-                        </select>
+                        <div class="relative">
+                            <select name="year"
+                                    class="w-full h-12 pl-4 pr-11 rounded-2xl border-2 text-sm font-medium transition appearance-none cursor-pointer
+                                           {{ $filterYear
+                                               ? 'border-sky-400 bg-sky-50 text-sky-700 shadow-sm shadow-sky-100'
+                                               : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 focus:border-sky-400 focus:bg-white focus:shadow-sm focus:shadow-sky-100' }}
+                                           focus:outline-none focus:ring-0"
+                                    style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 14px center;">
+                                <option value="">Tất cả năm</option>
+                                @foreach ($payrollYears as $yr)
+                                    <option value="{{ $yr }}" @selected($filterYear == $yr)>{{ $yr }}</option>
+                                @endforeach
+                            </select>
+                            @if ($filterYear)
+                                <span class="absolute right-9 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-sky-500"></span>
+                            @endif
+                        </div>
                     </div>
 
                     {{-- Tháng --}}
-                    <div class="flex flex-col gap-2">
-                        <label class="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="group">
+                        <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             Tháng
                         </label>
-                        <select name="month"
-                                class="w-full h-11 px-4 pr-10 rounded-2xl border border-slate-200 bg-slate-50 text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-400 focus:bg-white transition appearance-none {{ $filterMonth ? 'border-sky-300 bg-sky-50 text-sky-700' : '' }}"
-                                style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 14px center;">
-                            <option value="">Tất cả tháng</option>
-                            @foreach (range(1, 12) as $m)
-                                <option value="{{ $m }}" @selected($filterMonth == $m)>Tháng {{ $m }}</option>
-                            @endforeach
-                        </select>
+                        <div class="relative">
+                            <select name="month"
+                                    class="w-full h-12 pl-4 pr-11 rounded-2xl border-2 text-sm font-medium transition appearance-none cursor-pointer
+                                           {{ $filterMonth
+                                               ? 'border-sky-400 bg-sky-50 text-sky-700 shadow-sm shadow-sky-100'
+                                               : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 focus:border-sky-400 focus:bg-white focus:shadow-sm focus:shadow-sky-100' }}
+                                           focus:outline-none focus:ring-0"
+                                    style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 14px center;">
+                                <option value="">Tất cả tháng</option>
+                                @foreach (range(1, 12) as $m)
+                                    <option value="{{ $m }}" @selected($filterMonth == $m)>Tháng {{ $m }}</option>
+                                @endforeach
+                            </select>
+                            @if ($filterMonth)
+                                <span class="absolute right-9 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-sky-500"></span>
+                            @endif
+                        </div>
                     </div>
 
                     {{-- Trạng thái --}}
-                    <div class="flex flex-col gap-2">
-                        <label class="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="group">
+                        <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             Trạng thái
                         </label>
-                        <select name="status"
-                                class="w-full h-11 px-4 pr-10 rounded-2xl border border-slate-200 bg-slate-50 text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-400 focus:bg-white transition appearance-none {{ $filterStatus ? 'border-sky-300 bg-sky-50 text-sky-700' : '' }}"
-                                style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 14px center;">
-                            <option value="">Tất cả trạng thái</option>
-                            <option value="open"       @selected($filterStatus === 'open')>Đang mở</option>
-                            <option value="calculated" @selected($filterStatus === 'calculated')>Đã tính lương</option>
-                            <option value="approved"   @selected($filterStatus === 'approved')>Đã duyệt</option>
-                            <option value="paid"       @selected($filterStatus === 'paid')>Đã thanh toán</option>
-                            <option value="closed"     @selected($filterStatus === 'closed')>Đã đóng</option>
-                        </select>
+                        <div class="relative">
+                            <select name="status"
+                                    class="w-full h-12 pl-4 pr-11 rounded-2xl border-2 text-sm font-medium transition appearance-none cursor-pointer
+                                           {{ $filterStatus
+                                               ? 'border-sky-400 bg-sky-50 text-sky-700 shadow-sm shadow-sky-100'
+                                               : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 focus:border-sky-400 focus:bg-white focus:shadow-sm focus:shadow-sky-100' }}
+                                           focus:outline-none focus:ring-0"
+                                    style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 14px center;">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="open"       @selected($filterStatus === 'open')>Đang mở</option>
+                                <option value="calculated" @selected($filterStatus === 'calculated')>Đã tính lương</option>
+                                <option value="approved"   @selected($filterStatus === 'approved')>Đã duyệt</option>
+                                <option value="paid"       @selected($filterStatus === 'paid')>Đã thanh toán</option>
+                                <option value="closed"     @selected($filterStatus === 'closed')>Đã đóng</option>
+                            </select>
+                            @if ($filterStatus)
+                                <span class="absolute right-9 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-sky-500"></span>
+                            @endif
+                        </div>
                     </div>
 
                 </div>
 
-                {{-- Actions --}}
-                <div class="mt-5 flex items-center justify-between gap-3">
-                    {{-- Active filter tags --}}
-                    <div class="flex flex-wrap gap-2">
-                        @if ($filterYear)
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-semibold">
-                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
-                                </svg>
-                                Năm {{ $filterYear }}
-                            </span>
-                        @endif
-                        @if ($filterMonth)
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-semibold">
-                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                                </svg>
-                                Tháng {{ $filterMonth }}
-                            </span>
-                        @endif
-                        @if ($filterStatus)
-                            @php
-                                $statusTagLabel = ['open'=>'Đang mở','calculated'=>'Đã tính lương','approved'=>'Đã duyệt','paid'=>'Đã thanh toán','closed'=>'Đã đóng'][$filterStatus] ?? $filterStatus;
-                            @endphp
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-semibold">
-                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                </svg>
-                                {{ $statusTagLabel }}
-                            </span>
-                        @endif
-                    </div>
+                {{-- Footer: active tags + submit --}}
+                <div class="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-3">
+
+                    {{-- Active tags (có nút × xóa từng cái) --}}
+                    @if ($filterYear || $filterMonth || $filterStatus)
+                        @php
+                            $statusLabels = ['open'=>'Đang mở','calculated'=>'Đã tính lương','approved'=>'Đã duyệt','paid'=>'Đã thanh toán','closed'=>'Đã đóng'];
+                            $buildUrl = fn($except) => route('employee.payrolls.index', array_filter([
+                                'year'   => $except !== 'year'   ? $filterYear   : null,
+                                'month'  => $except !== 'month'  ? $filterMonth  : null,
+                                'status' => $except !== 'status' ? $filterStatus : null,
+                            ]));
+                        @endphp
+                        <div class="flex flex-wrap items-center gap-2 flex-1">
+                            <span class="text-xs text-slate-400 font-medium">Đang lọc:</span>
+                            @if ($filterYear)
+                                <a href="{{ $buildUrl('year') }}"
+                                   class="inline-flex items-center gap-1.5 pl-2.5 pr-2 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-semibold hover:bg-sky-200 transition">
+                                    Năm {{ $filterYear }}
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </a>
+                            @endif
+                            @if ($filterMonth)
+                                <a href="{{ $buildUrl('month') }}"
+                                   class="inline-flex items-center gap-1.5 pl-2.5 pr-2 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-semibold hover:bg-sky-200 transition">
+                                    Tháng {{ $filterMonth }}
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </a>
+                            @endif
+                            @if ($filterStatus)
+                                <a href="{{ $buildUrl('status') }}"
+                                   class="inline-flex items-center gap-1.5 pl-2.5 pr-2 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-semibold hover:bg-sky-200 transition">
+                                    {{ $statusLabels[$filterStatus] ?? $filterStatus }}
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </a>
+                            @endif
+                        </div>
+                    @else
+                        <p class="flex-1 text-xs text-slate-400">Chọn tiêu chí lọc bên trên rồi bấm áp dụng.</p>
+                    @endif
 
                     <button type="submit"
-                            class="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-sky-600 text-white text-sm font-semibold shadow-sm shadow-sky-500/30 hover:bg-sky-700 active:scale-95 transition">
+                            class="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-sky-600 text-white text-sm font-bold shadow-md shadow-sky-500/25 hover:bg-sky-700 hover:shadow-sky-500/40 active:scale-95 transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
