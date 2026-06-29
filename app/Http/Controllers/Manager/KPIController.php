@@ -91,8 +91,7 @@ class KPIController extends Controller
 
         return redirect()
             ->route('manager.kpis.show', $assignment)
-            ->with('success', 'Giao mục tiêu cho nhân viên thành công.');
-    }
+            ->with('success', 'Giao mục tiêu cho nhân viên thành công.');}
 
     public function editScore(EmployeeKPI $employeeKpi): View
     {
@@ -126,10 +125,20 @@ class KPIController extends Controller
 
     private function getManagedEmployees()
     {
-        $manager = Auth::user()->employee;
-        return Employee::where('department_id', $manager->department_id)
+        $managerEmployee = Auth::user()->employee;
+
+        // Manager chỉ được giao KPI cho nhân viên (loại trừ role manager)
+        // Trường hợp manager đã được "link" sang bảng employees thì vẫn lọc ra bằng join role.
+        return Employee::query()
+            ->where('department_id', $managerEmployee->department_id)
             ->where('status', 'active')
+            ->whereHas('user', function ($q) {
+                $q->whereHas('role', function ($roleQ) {
+                    $roleQ->where('name', '!=', 'manager');
+                });
+            })
             ->get();
     }
+
 }
 
