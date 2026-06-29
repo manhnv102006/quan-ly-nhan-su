@@ -76,6 +76,84 @@
             </div>
         </div>
 
+        {{-- Filter bar --}}
+        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm px-5 py-4">
+            <form method="GET" action="{{ route('employee.payrolls.index') }}"
+                  class="flex flex-wrap items-center gap-3">
+
+                {{-- Năm --}}
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">Năm</label>
+                    <select name="year"
+                            class="h-9 px-3 pr-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-400 transition appearance-none"
+                            style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center;">
+                        <option value="">Tất cả</option>
+                        @foreach ($payrollYears as $yr)
+                            <option value="{{ $yr }}" @selected($filterYear == $yr)>{{ $yr }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="h-5 w-px bg-slate-200 hidden sm:block"></div>
+
+                {{-- Tháng --}}
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">Tháng</label>
+                    <select name="month"
+                            class="h-9 px-3 pr-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-400 transition appearance-none"
+                            style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center;">
+                        <option value="">Tất cả</option>
+                        @foreach (range(1, 12) as $m)
+                            <option value="{{ $m }}" @selected($filterMonth == $m)>Tháng {{ $m }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="h-5 w-px bg-slate-200 hidden sm:block"></div>
+
+                {{-- Trạng thái --}}
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">Trạng thái</label>
+                    <select name="status"
+                            class="h-9 px-3 pr-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-400 transition appearance-none"
+                            style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center;">
+                        <option value="">Tất cả</option>
+                        <option value="open"       @selected($filterStatus === 'open')>Đang mở</option>
+                        <option value="calculated" @selected($filterStatus === 'calculated')>Đã tính lương</option>
+                        <option value="approved"   @selected($filterStatus === 'approved')>Đã duyệt</option>
+                        <option value="paid"       @selected($filterStatus === 'paid')>Đã thanh toán</option>
+                        <option value="closed"     @selected($filterStatus === 'closed')>Đã đóng</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2 ml-auto">
+                    <button type="submit"
+                            class="h-9 px-4 rounded-xl bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700 transition flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+                        </svg>
+                        Lọc
+                    </button>
+                    @if ($filterYear || $filterMonth || $filterStatus)
+                        <a href="{{ route('employee.payrolls.index') }}"
+                           class="h-9 px-4 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                            Xóa lọc
+                        </a>
+                    @endif
+                </div>
+
+                @if ($filterYear || $filterMonth || $filterStatus)
+                    <div class="w-full text-xs text-sky-600 font-medium">
+                        Đang lọc — hiển thị {{ $payrolls->total() }} phiếu lương
+                    </div>
+                @endif
+            </form>
+        </div>
+
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
@@ -122,7 +200,11 @@
                         @empty
                             <tr>
                                 <td colspan="8" class="text-center py-12 text-slate-400 text-sm">
-                                    Bạn chưa có phiếu lương nào trong hệ thống.
+                                    @if ($filterYear || $filterMonth || $filterStatus)
+                                        Không tìm thấy phiếu lương nào phù hợp với bộ lọc.
+                                    @else
+                                        Bạn chưa có phiếu lương nào trong hệ thống.
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse
