@@ -30,8 +30,8 @@
         'draft' => 'bg-amber-50 text-amber-700 border-amber-100',
         'pending' => 'bg-amber-50 text-amber-700 border-amber-100',
     ];
-    $kpiLabels = ['pending' => 'Chờ bắt đầu', 'in_progress' => 'Đang thực hiện', 'completed' => 'Hoàn thành'];
-    $kpiClasses = ['pending' => 'bg-amber-50 text-amber-700 border-amber-100', 'in_progress' => 'bg-cyan-50 text-cyan-700 border-cyan-100', 'completed' => 'bg-emerald-50 text-emerald-700 border-emerald-100'];
+    $kpiLabels = ['pending' => 'Chờ bắt đầu', 'in_progress' => 'Đang thực hiện', 'completed' => 'Hoàn thành', 'not_completed' => 'Không hoàn thành'];
+    $kpiClasses = ['pending' => 'bg-amber-50 text-amber-700 border-amber-100', 'in_progress' => 'bg-cyan-50 text-cyan-700 border-cyan-100', 'completed' => 'bg-emerald-50 text-emerald-700 border-emerald-100', 'not_completed' => 'bg-rose-50 text-rose-700 border-rose-100'];
     $noticeLabels = ['system' => 'Hệ thống', 'leave' => 'Nghỉ phép', 'payroll' => 'Lương', 'kpi' => 'KPI'];
     $noticeClasses = ['system' => 'bg-slate-100 text-slate-700', 'leave' => 'bg-amber-100 text-amber-700', 'payroll' => 'bg-emerald-100 text-emerald-700', 'kpi' => 'bg-sky-100 text-sky-700'];
     $completionRate = ($kpiSummary->total ?? 0) > 0 ? round((($kpiSummary->completed ?? 0) / max($kpiSummary->total, 1)) * 100) : 0;
