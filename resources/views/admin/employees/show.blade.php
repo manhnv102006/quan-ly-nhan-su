@@ -579,50 +579,154 @@
 
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {{-- Bảng lương --}}
+        <div id="payroll-section" class="bg-white rounded-3xl shadow-sm border border-slate-100">
 
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-100">
-                <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-slate-800">Bảng lương gần đây</h3>
-                    <span class="text-sm text-slate-500">{{ $payrolls->count() }} kỳ lương</span>
+            {{-- Header --}}
+            <div class="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div class="flex-1">
+                    <h3 class="text-lg font-semibold text-slate-800">Bảng lương</h3>
+                    <p class="text-sm text-slate-500 mt-0.5">
+                        Hiển thị <span class="font-medium text-slate-700">{{ $payrolls->count() }}</span> phiếu lương
+                        @if ($payrollFilterYear || $payrollFilterMonth || $payrollFilterStatus)
+                            <span class="text-indigo-600 font-medium">(đang lọc)</span>
+                        @endif
+                    </p>
                 </div>
 
-                <div class="p-6 overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="text-sm text-slate-500 border-b border-slate-100">
-                                <th class="py-3 px-4 font-medium">Kỳ lương</th>
-                                <th class="py-3 px-4 font-medium">Tổng lương</th>
-                                <th class="py-3 px-4 font-medium">Trạng thái</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($payrolls as $payroll)
-                                <tr class="border-b border-slate-50 hover:bg-slate-50">
-                                    <td class="py-3 px-4 text-slate-700">{{ $payroll->payrollPeriod?->name ?? '—' }}</td>
-                                    <td class="py-3 px-4 font-medium text-slate-800">{{ number_format($payroll->total_salary, 0, ',', '.') }} ₫</td>
-                                    <td class="py-3 px-4">
-                                        @if ($payroll->status === 'paid')
-                                            <span class="inline-flex px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">Đã thanh toán</span>
-                                        @elseif ($payroll->status === 'approved')
-                                            <span class="inline-flex px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Đã duyệt</span>
-                                        @elseif ($payroll->status === 'pending')
-                                            <span class="inline-flex px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">Chờ duyệt</span>
-                                        @else
-                                            <span class="inline-flex px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">Nháp</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="py-8 text-center text-slate-400">Chưa có bảng lương nào</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                {{-- Filter form --}}
+                <form method="GET"
+                      action="{{ route('admin.employees.show', $employee) }}#payroll-section"
+                      class="flex flex-wrap items-center gap-2">
+
+                    {{-- Năm --}}
+                    <select name="payroll_year"
+                            class="h-9 px-3 pr-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition appearance-none"
+                            style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center;">
+                        <option value="">Tất cả năm</option>
+                        @foreach ($payrollYears as $yr)
+                            <option value="{{ $yr }}" @selected($payrollFilterYear == $yr)>{{ $yr }}</option>
+                        @endforeach
+                    </select>
+
+                    {{-- Tháng --}}
+                    <select name="payroll_month"
+                            class="h-9 px-3 pr-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition appearance-none"
+                            style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center;">
+                        <option value="">Tất cả tháng</option>
+                        @foreach (range(1, 12) as $m)
+                            <option value="{{ $m }}" @selected($payrollFilterMonth == $m)>Tháng {{ $m }}</option>
+                        @endforeach
+                    </select>
+
+                    {{-- Trạng thái --}}
+                    <select name="payroll_status"
+                            class="h-9 px-3 pr-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition appearance-none"
+                            style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center;">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="open"       @selected($payrollFilterStatus === 'open')>Mở</option>
+                        <option value="calculated" @selected($payrollFilterStatus === 'calculated')>Đã tính</option>
+                        <option value="approved"   @selected($payrollFilterStatus === 'approved')>Đã duyệt</option>
+                        <option value="paid"        @selected($payrollFilterStatus === 'paid')>Đã thanh toán</option>
+                        <option value="closed"      @selected($payrollFilterStatus === 'closed')>Đã đóng</option>
+                    </select>
+
+                    {{-- Nút lọc --}}
+                    <button type="submit"
+                            class="h-9 px-4 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+                        </svg>
+                        Lọc
+                    </button>
+
+                    {{-- Xóa lọc --}}
+                    @if ($payrollFilterYear || $payrollFilterMonth || $payrollFilterStatus)
+                        <a href="{{ route('admin.employees.show', $employee) }}#payroll-section"
+                           class="h-9 px-4 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium hover:bg-slate-200 transition flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                            Xóa lọc
+                        </a>
+                    @endif
+                </form>
             </div>
 
+            {{-- Bảng --}}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-sm text-slate-500 border-b border-slate-100 bg-slate-50/60">
+                            <th class="py-3 px-5 font-medium">Kỳ lương</th>
+                            <th class="py-3 px-5 font-medium">Tháng / Năm</th>
+                            <th class="py-3 px-5 font-medium text-right">Lương cơ bản</th>
+                            <th class="py-3 px-5 font-medium text-right">Phụ cấp</th>
+                            <th class="py-3 px-5 font-medium text-right">Thưởng</th>
+                            <th class="py-3 px-5 font-medium text-right">Khấu trừ</th>
+                            <th class="py-3 px-5 font-medium text-right">Thực lĩnh</th>
+                            <th class="py-3 px-5 font-medium">Trạng thái</th>
+                            <th class="py-3 px-5 font-medium"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($payrolls as $payroll)
+                            @php $period = $payroll->payrollPeriod; @endphp
+                            <tr class="border-b border-slate-50 hover:bg-slate-50/70 transition">
+                                <td class="py-3 px-5 text-slate-700 font-medium">{{ $period?->name ?? '—' }}</td>
+                                <td class="py-3 px-5 text-slate-500 text-sm">
+                                    @if ($period)
+                                        T{{ $period->month }}/{{ $period->year }}
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                <td class="py-3 px-5 text-right text-slate-700">{{ number_format($payroll->basic_salary, 0, ',', '.') }} ₫</td>
+                                <td class="py-3 px-5 text-right text-slate-700">{{ number_format($payroll->allowance, 0, ',', '.') }} ₫</td>
+                                <td class="py-3 px-5 text-right text-emerald-600">+{{ number_format($payroll->bonus, 0, ',', '.') }} ₫</td>
+                                <td class="py-3 px-5 text-right text-red-500">-{{ number_format($payroll->deduction, 0, ',', '.') }} ₫</td>
+                                <td class="py-3 px-5 text-right font-semibold text-slate-800">{{ number_format($payroll->total_salary, 0, ',', '.') }} ₫</td>
+                                <td class="py-3 px-5">
+                                    @php $status = $period?->status ?? 'open'; @endphp
+                                    @if ($status === 'paid')
+                                        <span class="inline-flex px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold whitespace-nowrap">Đã thanh toán</span>
+                                    @elseif ($status === 'approved')
+                                        <span class="inline-flex px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold whitespace-nowrap">Đã duyệt</span>
+                                    @elseif ($status === 'calculated')
+                                        <span class="inline-flex px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-semibold whitespace-nowrap">Đã tính</span>
+                                    @elseif ($status === 'closed')
+                                        <span class="inline-flex px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold whitespace-nowrap">Đã đóng</span>
+                                    @else
+                                        <span class="inline-flex px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold whitespace-nowrap">Đang mở</span>
+                                    @endif
+                                </td>
+                                <td class="py-3 px-5">
+                                    <a href="{{ route('admin.payrolls.pdf', $payroll) }}"
+                                       target="_blank"
+                                       class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium transition">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                                        </svg>
+                                        PDF
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="9" class="py-10 text-center text-slate-400">
+                                    @if ($payrollFilterYear || $payrollFilterMonth || $payrollFilterStatus)
+                                        Không tìm thấy phiếu lương nào phù hợp với bộ lọc.
+                                    @else
+                                        Chưa có bảng lương nào.
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         @include('admin.employees.partials.documents-grid', [

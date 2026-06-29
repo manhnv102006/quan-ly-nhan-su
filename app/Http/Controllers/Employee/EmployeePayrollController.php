@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\Payroll;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -22,23 +23,47 @@ class EmployeePayrollController extends Controller
         return $employee;
     }
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $employee = $this->getEmployee();
 
-        $payrolls = Payroll::query()
-            ->where('employee_id', $employee->id)
+        $filterYear   = $request->input('year');
+        $filterMonth  = $request->input('month');
+        $filterStatus = $request->input('status');
+
+        $payrollQuery = Payroll::query()
+            ->where('payrolls.employee_id', $employee->id)
             ->with(['payrollPeriod.approver', 'payrollPeriod.payer'])
             ->join('payroll_periods', 'payroll_periods.id', '=', 'payrolls.payroll_period_id')
-            ->select('payrolls.*')
+            ->select('payrolls.*');
+
+        if ($filterYear) {
+            $payrollQuery->where('payroll_periods.year', $filterYear);
+        }
+        if ($filterMonth) {
+            $payrollQuery->where('payroll_periods.month', $filterMonth);
+        }
+        if ($filterStatus) {
+            $payrollQuery->where('payroll_periods.status', $filterStatus);
+        }
+
+        $payrolls = $payrollQuery
             ->orderByDesc('payroll_periods.year')
             ->orderByDesc('payroll_periods.month')
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
         $allPayrolls = Payroll::query()
             ->where('employee_id', $employee->id)
             ->with('payrollPeriod')
             ->get();
+
+        $payrollYears = Payroll::query()
+            ->where('payrolls.employee_id', $employee->id)
+            ->join('payroll_periods', 'payroll_periods.id', '=', 'payrolls.payroll_period_id')
+            ->orderByDesc('payroll_periods.year')
+            ->distinct()
+            ->pluck('payroll_periods.year');
 
         $summary = [
             'count' => $allPayrolls->count(),
@@ -51,7 +76,10 @@ class EmployeePayrollController extends Controller
                 ->sum('total_salary'),
         ];
 
-        return view('employee.payrolls.index', compact('employee', 'payrolls', 'summary'));
+        return view('employee.payrolls.index', compact(
+            'employee', 'payrolls', 'summary',
+            'payrollYears', 'filterYear', 'filterMonth', 'filterStatus'
+        ));
     }
 
     public function show(Payroll $payroll): View
