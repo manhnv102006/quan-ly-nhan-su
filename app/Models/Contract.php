@@ -17,6 +17,13 @@ class Contract extends Model
     public const STATUS_EXPIRED = 'expired';
     public const STATUS_CANCELLED = 'cancelled';
 
+    public const STATUS_LABELS = [
+        self::STATUS_DRAFT => 'Đang soạn',
+        self::STATUS_ACTIVE => 'Đang hiệu lực',
+        self::STATUS_EXPIRED => 'Hết hiệu lực',
+        self::STATUS_CANCELLED => 'Đã hủy',
+    ];
+
     protected $fillable = [
         'employee_id',
         'department_id',
@@ -134,13 +141,7 @@ class Contract extends Model
 
     public function getStatusLabelAttribute(): string
     {
-        return match ($this->status) {
-            self::STATUS_ACTIVE => 'Đang hiệu lực',
-            self::STATUS_EXPIRED => 'Hết hiệu lực',
-            self::STATUS_DRAFT => 'Đang soạn',
-            self::STATUS_CANCELLED => 'Đã hủy',
-            default => 'Không xác định',
-        };
+        return self::STATUS_LABELS[$this->status] ?? 'Không xác định';
     }
 
     public function getStatusBadgeClassAttribute(): string
@@ -151,5 +152,40 @@ class Contract extends Model
             self::STATUS_CANCELLED => 'badge text-bg-danger',
             default => 'badge text-bg-secondary',
         };
+    }
+
+    public function getStatusTailwindClassAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_ACTIVE => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+            self::STATUS_EXPIRED => 'bg-amber-50 text-amber-700 border-amber-100',
+            self::STATUS_DRAFT => 'bg-slate-100 text-slate-700 border-slate-200',
+            self::STATUS_CANCELLED => 'bg-rose-50 text-rose-700 border-rose-100',
+            default => 'bg-slate-100 text-slate-600 border-slate-200',
+        };
+    }
+
+    public function getDisplayDepartmentNameAttribute(): string
+    {
+        return $this->department?->department_name
+            ?? $this->employee?->department?->department_name
+            ?? '—';
+    }
+
+    public function getDisplayPositionNameAttribute(): string
+    {
+        return $this->position?->position_name
+            ?? $this->employee?->position?->position_name
+            ?? '—';
+    }
+
+    public function isExpiringSoon(int $withinDays = 30): bool
+    {
+        if ($this->status !== self::STATUS_ACTIVE || ! $this->end_date) {
+            return false;
+        }
+
+        return $this->end_date->isFuture()
+            && $this->end_date->lte(Carbon::today()->addDays($withinDays));
     }
 }

@@ -43,7 +43,7 @@
 
             <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-violet-100 to-indigo-100 text-violet-700">
                 <span class="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></span>
-                Admin
+                {{ Auth::user()->role?->label() ?? 'Admin' }}
             </span>
 
             <div class="flex items-center gap-2 pl-2 sm:pl-3 sm:border-l border-slate-200/80">

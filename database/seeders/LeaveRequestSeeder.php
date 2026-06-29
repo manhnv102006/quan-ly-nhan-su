@@ -32,7 +32,7 @@ class LeaveRequestSeeder extends Seeder
                 'total_days' => 2,
                 'reason' => 'Bị sốt cao',
                 'status' => 'approved',
-                'approved_by' => 1,
+                'approved_by' => 2,
                 'approved_at' => now(),
                 'reject_reason' => null,
                 'created_at' => now(),

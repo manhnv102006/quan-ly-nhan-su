@@ -45,6 +45,8 @@ class ContractService
             $data['contract_code'] = $data['contract_code'] ?? $this->generateCode();
             $data['status'] = Contract::STATUS_ACTIVE;
             $data['created_by'] = $creatorId;
+            $data['department_id'] = $data['department_id'] ?? $employee->department_id;
+            $data['position_id'] = $data['position_id'] ?? $employee->position_id;
 
             $this->assertNoOverlap($data['employee_id'], $data['start_date'], $data['end_date']);
 
@@ -110,8 +112,8 @@ class ContractService
 
             $payload = [
                 'employee_id' => $contract->employee_id,
-                'department_id' => $contract->department_id,
-                'position_id' => $contract->position_id,
+                'department_id' => $contract->department_id ?? $contract->employee?->department_id,
+                'position_id' => $contract->position_id ?? $contract->employee?->position_id,
                 'contract_type_id' => $data['contract_type_id'] ?? $contract->contract_type_id,
                 'contract_code' => $data['contract_code'] ?? $this->generateCode(),
                 'start_date' => $data['start_date'],
