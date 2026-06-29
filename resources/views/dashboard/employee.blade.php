@@ -106,12 +106,17 @@
                     @else
                         <div class="space-y-4">
                             @foreach ($kpiItems as $item)
+                                @php
+                                    $progressWidth = min(100, max(4, (int) ($item->progress ?? 0)));
+                                @endphp
                                 <div class="rounded-3xl border border-slate-100 p-4">
                                     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                                         <div><p class="font-semibold text-slate-800">{{ $item->title }}</p><p class="mt-1 text-sm text-slate-500">Cập nhật {{ \Illuminate\Support\Carbon::parse($item->updated_at)->format('d/m/Y H:i') }}</p></div>
                                         <div class="flex flex-wrap items-center gap-2"><span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $kpiClasses[$item->status] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">{{ $kpiLabels[$item->status] ?? ucfirst($item->status) }}</span>@if (! is_null($item->score))<span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Điểm {{ number_format((float) $item->score, 1) }}</span>@endif</div>
                                     </div>
-                                    <div class="mt-4 h-2.5 rounded-full bg-slate-100"><div class="h-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" style="width: {{ min(100, max(4, (int) $item->progress)) }}%;"></div></div>
+                                    <div class="mt-4 h-2.5 rounded-full bg-slate-100">
+                                        <div class="h-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" @style(['width: ' . $progressWidth . '%'])></div>
+                                    </div>
                                     <p class="mt-2 text-sm font-semibold text-sky-700">{{ (int) $item->progress }}% hoàn thành</p>
                                 </div>
                             @endforeach
