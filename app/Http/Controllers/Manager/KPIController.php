@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AssignEmployeeKPIRequest;
 use App\Models\Employee;
+use App\Models\EmployeeKPI;
 use App\Models\KPIAssignment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,8 @@ class KPIController extends Controller
      */
     public function index(): View
     {
+        EmployeeKPI::markOverdueAsNotCompleted();
+
         $assignments = KPIAssignment::with([
                 'kpi',
                 'assignedBy',
@@ -35,6 +38,8 @@ class KPIController extends Controller
      */
     public function show(KPIAssignment $assignment): View
     {
+        EmployeeKPI::markOverdueAsNotCompleted();
+
         // Đảm bảo Manager chỉ xem KPI của chính mình
         abort_if($assignment->manager_id !== Auth::id(), 403);
 
@@ -79,7 +84,7 @@ class KPIController extends Controller
             'comment' => $validated['comment'], // Mô tả công việc
             'deadline' => $validated['deadline'],
             'progress' => 0,
-            'status' => 'pending',
+            'status' => EmployeeKPI::STATUS_PENDING,
             'score' => null,
         ]);
 

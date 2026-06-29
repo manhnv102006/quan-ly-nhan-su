@@ -89,6 +89,7 @@
         ['label' => 'KPI chờ bắt đầu', 'value' => (int) ($kpiStatus->pending ?? 0), 'tone' => 'from-amber-400 to-orange-500'],
         ['label' => 'KPI đang chạy', 'value' => (int) ($kpiStatus->in_progress ?? 0), 'tone' => 'from-cyan-400 to-sky-500'],
         ['label' => 'KPI hoàn thành', 'value' => (int) ($kpiStatus->completed ?? 0), 'tone' => 'from-emerald-400 to-teal-500'],
+        ['label' => 'KPI không hoàn thành', 'value' => (int) ($kpiStatus->not_completed ?? 0), 'tone' => 'from-rose-400 to-red-500'],
     ];
 @endphp
 

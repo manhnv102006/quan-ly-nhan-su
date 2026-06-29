@@ -13,6 +13,12 @@
                     <h6 class="m-0 font-weight-bold text-primary">Form cập nhật</h6>
                 </div>
                 <div class="card-body">
+                    @if ($employeeKpi->status === \App\Models\EmployeeKPI::STATUS_NOT_COMPLETED)
+                        <div class="alert alert-danger">
+                            KPI này đã quá hạn và được chuyển sang trạng thái không hoàn thành.
+                        </div>
+                    @endif
+
                     <form action="{{ route('employee.kpis.update', $employeeKpi) }}" method="POST">
                         @csrf
                         @method('PUT')
@@ -24,6 +30,7 @@
                                    value="{{ old('progress', $employeeKpi->progress) }}"
                                    min="0" max="100" step="1"
                                    oninput="this.value = Math.max(0, Math.min(100, Number(this.value || 0)))"
+                                   @disabled($employeeKpi->status === \App\Models\EmployeeKPI::STATUS_NOT_COMPLETED)
                                    required>
                             @error('progress')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -32,7 +39,11 @@
 
                         <div class="form-group mt-3">
                             <label for="status"><strong>Trạng thái</strong></label>
-                            <select name="status" id="status" class="form-control @error('status') is-invalid @enderror" required>
+                            <select name="status" id="status" class="form-control @error('status') is-invalid @enderror"
+                                @disabled($employeeKpi->status === \App\Models\EmployeeKPI::STATUS_NOT_COMPLETED) required>
+                                @if ($employeeKpi->status === \App\Models\EmployeeKPI::STATUS_NOT_COMPLETED)
+                                    <option selected>Không hoàn thành</option>
+                                @endif
                                 @foreach($statusOptions as $value => $label)
                                     <option value="{{ $value }}" {{ old('status', $employeeKpi->status) == $value ? 'selected' : '' }}>
                                         {{ $label }}
@@ -45,7 +56,7 @@
                         </div>
 
                         <div class="mt-4">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" @disabled($employeeKpi->status === \App\Models\EmployeeKPI::STATUS_NOT_COMPLETED)>
                                 <i class="fas fa-save"></i> Lưu tiến độ
                             </button>
                             <a href="{{ route('employee.kpis.index') }}" class="btn btn-light">
