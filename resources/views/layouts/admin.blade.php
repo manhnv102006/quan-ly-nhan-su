@@ -78,7 +78,19 @@
         <div class="flex-1 flex flex-col min-w-0 min-h-screen relative">
             @include('admin.partials.header')
 
-            <main class="flex-1 p-4 sm:p-6 lg:p-8 pb-10">
+            <main class="relative z-0 flex-1 p-4 sm:p-6 lg:p-8 pb-10">
+                {{-- Session Messages --}}
+                @if (session('success'))
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @elseif (session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        {{ session('error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
                 {{ $slot }}
             </main>
         </div>

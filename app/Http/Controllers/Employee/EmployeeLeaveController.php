@@ -5,12 +5,17 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
+use App\Services\AutoNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class EmployeeLeaveController extends Controller
 {
+    public function __construct(
+        private AutoNotificationService $autoNotifications,
+    ) {}
+
     private function getEmployee()
     {
         $employee = Employee::where('user_id', Auth::id())->first();
@@ -78,7 +83,7 @@ class EmployeeLeaveController extends Controller
         $end = Carbon::parse($request->end_date);
         $totalDays = $start->diffInDays($end) + 1;
 
-        LeaveRequest::create([
+        $leaveRequest = LeaveRequest::create([
             'employee_id' => $employee->id,
             'leave_type' => $request->leave_type,
             'start_date' => $request->start_date,
@@ -90,6 +95,8 @@ class EmployeeLeaveController extends Controller
             'approved_at' => null,
             'reject_reason' => null,
         ]);
+
+        $this->autoNotifications->leaveSubmitted($leaveRequest);
 
         return redirect()
             ->route('employee.leave-requests')

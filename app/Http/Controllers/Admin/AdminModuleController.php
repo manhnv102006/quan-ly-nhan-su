@@ -21,7 +21,7 @@ class AdminModuleController extends Controller
         $search = $request->string('search')->trim();
 
         $employees = Employee::query()
-            ->with(['department', 'position'])
+            ->with(['department', 'position', 'user'])
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('employee_code', 'like', "%{$search}%")
                     ->orWhere('full_name', 'like', "%{$search}%")
