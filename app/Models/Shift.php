@@ -25,7 +25,7 @@ class Shift extends Model
     {
         return $this->hasMany(Attendance::class);
     }
-    public function employees()
+public function employeeShifts(): HasMany
 {
     return $this->hasMany(EmployeeShift::class);
 }
