@@ -73,11 +73,8 @@
                                     <span class="badge {{ $goal->status_color }}">{{ $goal->status_label }}</span>
                                 </td>
                                 <td>
-                                    <a href="#" class="btn btn-info btn-sm" title="Xem chi tiết">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="#" class="btn btn-warning btn-sm" title="Chỉnh sửa">
-                                        <i class="fas fa-edit"></i>
+                                    <a href="{{ route('manager.kpis.employee_kpis.score.edit', $goal) }}" class="btn btn-success btn-sm" title="Chấm KPI">
+                                        <i class="fas fa-star"></i> Chấm KPI
                                     </a>
                                 </td>
                             </tr>

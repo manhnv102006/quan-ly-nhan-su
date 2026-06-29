@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AssignEmployeeKPIRequest;
+use App\Http\Requests\Manager\UpdateEmployeeKPIScoreRequest;
 use App\Models\Employee;
 use App\Models\EmployeeKPI;
 use App\Models\KPIAssignment;
@@ -93,9 +94,40 @@ class KPIController extends Controller
             ->with('success', 'Giao mục tiêu cho nhân viên thành công.');
     }
 
+    public function editScore(EmployeeKPI $employeeKpi): View
+    {
+        // Đảm bảo Manager chỉ chấm KPI của chính mình
+        $employeeKpi->load(['employee', 'kpiAssignment.kpi', 'kpiAssignment.manager']);
+
+        abort_if($employeeKpi->kpiAssignment?->manager_id !== Auth::id(), 403);
+
+        return view('manager.kpis.score', compact('employeeKpi'));
+    }
+
+    public function updateScore(
+        UpdateEmployeeKPIScoreRequest $request,
+        EmployeeKPI $employeeKpi
+    ): RedirectResponse {
+        $validated = $request->validated();
+
+        $employeeKpi->loadMissing(['kpiAssignment']);
+        abort_if($employeeKpi->kpiAssignment?->manager_id !== Auth::id(), 403);
+
+        // Chỉ cập nhật score/comment (KHÔNG đụng progress/status/target/deadline)
+        $employeeKpi->update([
+            'score' => $validated['score'],
+            'comment' => $validated['comment'] ?? null,
+        ]);
+
+        return redirect()
+            ->route('manager.kpis.index')
+            ->with('success', 'Chấm KPI thành công');
+    }
+
     private function getManagedEmployees()
     {
         $manager = Auth::user()->employee;
         return Employee::where('department_id', $manager->department_id)->where('status', 'active')->get();
     }
 }
+
