@@ -107,9 +107,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
 
     //gan ca lam viec cho nhan vien
-    Route::get('/employee-shifts',[EmployeeShiftController::class, 'index'] )->name('employee-shifts.index');
-    Route::get('/employee-shifts/create',  [EmployeeShiftController::class, 'create'] )->name('employee-shifts.create');
-    Route::post(  '/employee-shifts',  [EmployeeShiftController::class, 'store'])->name('employee-shifts.store');
+    Route::get('/employee-shifts', [EmployeeShiftController::class, 'index'])->name('employee-shifts.index');
+    Route::get('/employee-shifts/create', [EmployeeShiftController::class, 'create'])->name('employee-shifts.create');
+    Route::post('/employee-shifts', [EmployeeShiftController::class, 'store'])->name('employee-shifts.store');
 
     Route::resource('kpis', KPIController::class);
     Route::resource('kpi-assignments', KPIAssignmentController::class)->parameters(['kpi-assignments' => 'assignment']);
@@ -206,15 +206,7 @@ Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
-    Route::get(
-        '/attendance',
-        [EmployeeAttendanceController::class, 'index']
-    )->name('attendance');
 
-    Route::post(
-        '/attendance/check-in/{shift}',
-        [EmployeeAttendanceController::class, 'checkIn']
-    )->name('attendance.check-in');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(function () {
@@ -224,6 +216,8 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(fu
     Route::get('/employee/payrolls', [EmployeePayrollController::class, 'index'])->name('employee.payrolls.index');
     Route::get('/employee/payrolls/{payroll}/pdf', [EmployeePayrollController::class, 'exportPdf'])->name('employee.payrolls.pdf');
     Route::get('/employee/payrolls/{payroll}', [EmployeePayrollController::class, 'show'])->name('employee.payrolls.show');
+    Route::get('/employee/attendance', [EmployeeAttendanceController::class, 'index']) ->name('attendance.index');
+    Route::post('/attendance/check-in/{shift}', [EmployeeAttendanceController::class, 'checkIn'])->name('attendance.check-in');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
