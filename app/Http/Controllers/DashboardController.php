@@ -12,6 +12,7 @@ use App\Models\Payroll;
 use App\Models\Position;
 use App\Models\User;
 use App\Models\LeaveRequest;
+use App\Models\EmployeeKPI;
 use App\Services\AdminNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -45,6 +46,8 @@ class DashboardController extends Controller
 
     public function manager(): View
     {
+        EmployeeKPI::markOverdueAsNotCompleted();
+
         /** @var User $user */
         $user = Auth::user();
         $employeeProfile = $this->employeeProfile($user);
@@ -65,6 +68,7 @@ class DashboardController extends Controller
             'pending' => 0,
             'in_progress' => 0,
             'completed' => 0,
+            'not_completed' => 0,
             'average_progress' => 0,
         ]);
 
@@ -160,6 +164,7 @@ class DashboardController extends Controller
                     SUM(CASE WHEN employee_kpis.status = 'pending' THEN 1 ELSE 0 END) AS pending,
                     SUM(CASE WHEN employee_kpis.status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
                     SUM(CASE WHEN employee_kpis.status = 'completed' THEN 1 ELSE 0 END) AS completed,
+                    SUM(CASE WHEN employee_kpis.status = 'not_completed' THEN 1 ELSE 0 END) AS not_completed,
                     COALESCE(AVG(employee_kpis.progress), 0) AS average_progress
                 ")
                 ->first() ?? $kpiStatus;
@@ -185,6 +190,8 @@ class DashboardController extends Controller
 
     public function employee(): View
     {
+        EmployeeKPI::markOverdueAsNotCompleted();
+
         /** @var User $user */
         $user = Auth::user();
         $employeeProfile = $this->employeeProfile($user);
