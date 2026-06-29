@@ -19,6 +19,8 @@ class EmployeeKPIController extends Controller
      */
     public function index(): View
     {
+        EmployeeKPI::markOverdueAsNotCompleted();
+
         /** @var \App\Models\User $user */
         $user = Auth::user();
         $employee = $user->employee;
@@ -40,6 +42,9 @@ class EmployeeKPIController extends Controller
 
     public function edit(EmployeeKPI $employeeKpi): View
     {
+        EmployeeKPI::markOverdueAsNotCompleted();
+        $employeeKpi->refresh();
+
         $this->ensureEmployeeOwnsKpi($employeeKpi);
 
         $employeeKpi->load(['kpi', 'kpiAssignment.manager']);
@@ -50,7 +55,16 @@ class EmployeeKPIController extends Controller
 
     public function update(Request $request, EmployeeKPI $employeeKpi): RedirectResponse
     {
+        EmployeeKPI::markOverdueAsNotCompleted();
+        $employeeKpi->refresh();
+
         $this->ensureEmployeeOwnsKpi($employeeKpi);
+
+        if ($employeeKpi->status === EmployeeKPI::STATUS_NOT_COMPLETED) {
+            return redirect()
+                ->route('employee.kpis.index')
+                ->with('error', 'KPI này đã quá hạn và được chuyển sang trạng thái không hoàn thành.');
+        }
 
         $validated = $request->validate([
             'progress' => ['required', 'numeric', 'min:0', 'max:100'],
@@ -76,9 +90,9 @@ class EmployeeKPIController extends Controller
     private function statusOptions(): array
     {
         return [
-            'pending' => 'Chờ bắt đầu',
-            'in_progress' => 'Đang thực hiện',
-            'completed' => 'Hoàn thành',
+            EmployeeKPI::STATUS_PENDING => 'Chờ bắt đầu',
+            EmployeeKPI::STATUS_IN_PROGRESS => 'Đang thực hiện',
+            EmployeeKPI::STATUS_COMPLETED => 'Hoàn thành',
         ];
     }
 
