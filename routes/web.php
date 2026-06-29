@@ -37,6 +37,7 @@ use App\Http\Controllers\Manager\NotificationController as ManagerNotificationCo
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
 use App\Http\Controllers\Employee\EmployeePayrollController;
+use App\Http\Controllers\Employee\EmployeeKPIController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [DashboardController::class, 'redirect']);
@@ -199,6 +200,12 @@ Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
+
+    // KPI Routes for Employee
+    Route::prefix('employee/kpis')->name('employee.kpis.')->group(function () {
+        Route::get('/', [EmployeeKPIController::class, 'index'])->name('index');
+
+    });
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(function () {

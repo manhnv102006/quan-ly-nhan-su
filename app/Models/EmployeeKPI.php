@@ -31,7 +31,7 @@ class EmployeeKPI extends Model
         return $this->belongsTo(KPI::class);
     }
 
-    public function assignment(): BelongsTo
+    public function kpiAssignment(): BelongsTo
     {
         return $this->belongsTo(KPIAssignment::class, 'assignment_id');
     }
