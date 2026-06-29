@@ -193,6 +193,8 @@ Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
     Route::patch('/manager/notifications/{notification}/read', [ManagerNotificationController::class, 'markAsRead'])->name('manager.notifications.read');
     Route::get('/manager/kpis', [ManagerKPIController::class, 'index'])->name('manager.kpis.index');
     Route::get('/manager/kpis/{assignment}', [ManagerKPIController::class, 'show'])->name('manager.kpis.show');
+    Route::get('/manager/kpis/{assignment}/assign', [ManagerKPIController::class, 'assign'])->name('manager.kpis.assign');
+    Route::post('/manager/kpis/{assignment}/assign', [ManagerKPIController::class, 'storeAssign'])->name('manager.kpis.store_assign');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
