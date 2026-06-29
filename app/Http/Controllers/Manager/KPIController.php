@@ -113,11 +113,12 @@ class KPIController extends Controller
         $employeeKpi->loadMissing(['kpiAssignment']);
         abort_if($employeeKpi->kpiAssignment?->manager_id !== Auth::id(), 403);
 
-        // Chỉ cập nhật score + nhận xét (KHÔNG đụng mô tả gốc trong `comment`)
+        // Chỉ cập nhật score/comment (KHÔNG đụng progress/status/target/deadline)
         $employeeKpi->update([
             'score' => $validated['score'],
-            'review' => $validated['review'] ?? null,
+            'comment' => $validated['comment'] ?? null,
         ]);
+
 
         return redirect()
             ->route('manager.kpis.index')
