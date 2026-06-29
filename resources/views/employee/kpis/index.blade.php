@@ -24,6 +24,9 @@
                     <tbody>
                         @forelse ($employeeKpis as $employeeKpi)
                         <tr>
+                            @php
+                                $progress = max(0, min(100, (int) ($employeeKpi->progress ?? 0)));
+                            @endphp
                             <td>{{ $employeeKpi->kpi->code ?? 'N/A' }}</td>
                             <td>
                                 <strong>{{ $employeeKpi->target }}</strong>
@@ -31,9 +34,9 @@
                             </td>
                             <td>
                                 <div class="progress mb-2">
-                                    <div class="progress-bar" role="progressbar" style="width: {{ $employeeKpi->progress ?? 0 }}%;"
-                                        aria-valuenow="{{ $employeeKpi->progress ?? 0 }}" aria-valuemin="0"
-                                        aria-valuemax="100">{{ $employeeKpi->progress ?? 0 }}%</div>
+                                    <div class="progress-bar" role="progressbar" style="width: {{ $progress }}%;"
+                                        aria-valuenow="{{ $progress }}" aria-valuemin="0"
+                                        aria-valuemax="100">{{ $progress }}%</div>
                                 </div>
                             </td>
                             <td>{{ $employeeKpi->deadline->format('d/m/Y') }}</td>
@@ -46,6 +49,8 @@
                             <td>
                                 <a href="" class="btn btn-info btn-sm"
                                    >
+                                <a href="{{ route('employee.kpis.edit', $employeeKpi) }}" class="btn btn-primary btn-sm"
+                                   title="Cập nhật tiến độ">
                                  Cập nhật tiến độ
                                 </a>
                             </td>
