@@ -5,9 +5,8 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Concerns\ResolvesCurrentEmployee;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\OvertimeRequestRejectRequest;
-use App\Models\Department;
-use App\Models\Employee;
 use App\Models\OvertimeRequest;
+use App\Models\OvertimeRequestHistory;
 use App\Services\OvertimeApprovalService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,32 +26,68 @@ class OvertimeApprovalController extends Controller
 
     public function index(Request $request): View
     {
-        $manager = $this->currentManager();
-        $filters = $request->only(['search', 'status', 'work_date', 'employee_id', 'department_id']);
-        $managedEmployees = $this->managedEmployeesQuery($manager);
-        $managedDepartmentId = $this->managedDepartmentId($manager);
+        $manager = $this->currentManagerOrNull();
 
-        $overtimeRequests = OvertimeRequest::query()
-            ->with(['employee.department'])
-            ->whereHas('employee', fn ($query) => $query->whereIn('id', (clone $managedEmployees)->select('id')))
+        if (! $manager) {
+            return view('manager.overtime-requests.index', [
+                'managerLinked' => false,
+                'overtimeRequests' => OvertimeRequest::query()->whereRaw('0 = 1')->paginate(self::PER_PAGE),
+                'stats' => ['pending' => 0, 'approved' => 0, 'rejected' => 0],
+                'filters' => [],
+                'recentHistories' => collect(),
+            ]);
+        }
+
+        $filters = $request->only([
+            'employee_name',
+            'employee_code',
+            'status',
+            'work_date_from',
+            'work_date_to',
+        ]);
+
+        $scopedQuery = OvertimeRequest::query()->forManager($manager);
+
+        $stats = [
+            'pending' => (clone $scopedQuery)->where('status', OvertimeRequest::STATUS_PENDING)->count(),
+            'approved' => (clone $scopedQuery)->where('status', OvertimeRequest::STATUS_APPROVED)->count(),
+            'rejected' => (clone $scopedQuery)->where('status', OvertimeRequest::STATUS_REJECTED)->count(),
+        ];
+
+        $overtimeRequests = (clone $scopedQuery)
+            ->with(['employee.department', 'employee.position', 'approver'])
             ->filter($filters)
-            ->latest()
+            ->orderByDesc('created_at')
             ->paginate(self::PER_PAGE)
             ->withQueryString();
 
+        $recentHistories = OvertimeRequestHistory::query()
+            ->whereHas('overtimeRequest', fn ($query) => $query->forManager($manager))
+            ->with(['actor', 'overtimeRequest.employee'])
+            ->latest('processed_at')
+            ->limit(15)
+            ->get();
+
         return view('manager.overtime-requests.index', [
+            'managerLinked' => true,
             'overtimeRequests' => $overtimeRequests,
-            'employees' => (clone $managedEmployees)->orderBy('full_name')->get(),
-            'managedDepartment' => $managedDepartmentId ? Department::find($managedDepartmentId) : null,
+            'stats' => $stats,
             'filters' => $filters,
+            'recentHistories' => $recentHistories,
         ]);
     }
 
-    public function show(OvertimeRequest $overtimeRequest): View
+    public function show(OvertimeRequest $overtimeRequest): View|RedirectResponse
     {
+        if (! $this->currentManagerOrNull()) {
+            return redirect()
+                ->route('manager.overtime-requests.index')
+                ->with('error', 'Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Vui lòng liên hệ quản trị để được hỗ trợ.');
+        }
+
         $this->authorize('view', $overtimeRequest);
 
-        $overtimeRequest->load(['employee.department', 'approver', 'histories.actor']);
+        $overtimeRequest->load(['employee.department', 'employee.position', 'approver', 'histories.actor']);
 
         return view('manager.overtime-requests.show', compact('overtimeRequest'));
     }

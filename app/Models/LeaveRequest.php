@@ -50,6 +50,27 @@ class LeaveRequest extends Model
         return $this->belongsTo(User::class, 'rejected_by');
     }
 
+    public function approverDisplayName(): ?string
+    {
+        return $this->actorDisplayName($this->approver);
+    }
+
+    public function rejecterDisplayName(): ?string
+    {
+        return $this->actorDisplayName($this->rejecter);
+    }
+
+    protected function actorDisplayName(?User $user): ?string
+    {
+        if (! $user) {
+            return null;
+        }
+
+        $user->loadMissing('employee');
+
+        return $user->employee?->full_name ?: $user->name;
+    }
+
     public function histories(): HasMany
     {
         return $this->hasMany(LeaveRequestHistory::class);
