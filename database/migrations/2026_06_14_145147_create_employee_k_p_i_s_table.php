@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('progress')->default(0);
             $table->decimal('score', 5, 2)->nullable();
             $table->text('comment')->nullable();
-            $table->enum('status', ['pending', 'in_progress', 'completed']);
+            $table->enum('status', ['pending', 'in_progress', 'completed', 'not_completed'])->default('pending');
             $table->timestamps();
  
             $table->foreign('employee_id')->references('id')->on('employees')->cascadeOnDelete();
