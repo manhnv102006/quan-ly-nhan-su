@@ -64,7 +64,7 @@ class EmployeeController extends Controller
         return redirect()->route('admin.employees.show', $employee)->with('success', 'Thêm nhân viên thành công.');
     }
 
-    public function show(Employee $employee): View
+    public function show(Request $request, Employee $employee): View
     {
         if ($employee->clearStaleUserLink()) {
             $employee->refresh();
@@ -90,11 +90,44 @@ class EmployeeController extends Controller
             ->limit(5)
             ->get();
 
-        $payrolls = $employee->payrolls()
-            ->with('payrollPeriod')
-            ->latest()
-            ->limit(5)
+        $payrollFilterYear   = $request->input('payroll_year');
+        $payrollFilterMonth  = $request->input('payroll_month');
+        $payrollFilterStatus = $request->input('payroll_status');
+
+        $payrollQuery = $employee->payrolls()->with('payrollPeriod');
+
+        if ($payrollFilterYear || $payrollFilterMonth || $payrollFilterStatus) {
+            $payrollQuery->whereHas('payrollPeriod', function ($q) use ($payrollFilterYear, $payrollFilterMonth, $payrollFilterStatus) {
+                if ($payrollFilterYear) {
+                    $q->where('year', $payrollFilterYear);
+                }
+                if ($payrollFilterMonth) {
+                    $q->where('month', $payrollFilterMonth);
+                }
+                if ($payrollFilterStatus) {
+                    $q->where('status', $payrollFilterStatus);
+                }
+            });
+        }
+
+        $payrolls = $payrollQuery
+            ->orderByDesc(
+                \App\Models\PayrollPeriod::select('year')
+                    ->whereColumn('payroll_periods.id', 'payrolls.payroll_period_id')
+                    ->limit(1)
+            )
+            ->orderByDesc(
+                \App\Models\PayrollPeriod::select('month')
+                    ->whereColumn('payroll_periods.id', 'payrolls.payroll_period_id')
+                    ->limit(1)
+            )
             ->get();
+
+        $payrollYears = $employee->payrolls()
+            ->join('payroll_periods', 'payrolls.payroll_period_id', '=', 'payroll_periods.id')
+            ->orderByDesc('payroll_periods.year')
+            ->distinct()
+            ->pluck('payroll_periods.year');
 
         $documents = $employee->documents()
             ->latest()
@@ -128,6 +161,10 @@ class EmployeeController extends Controller
             'attendances',
             'employeeKpis',
             'payrolls',
+            'payrollYears',
+            'payrollFilterYear',
+            'payrollFilterMonth',
+            'payrollFilterStatus',
             'documents',
             'departments',
             'transferHistory',
