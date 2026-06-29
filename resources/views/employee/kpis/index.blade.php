@@ -34,7 +34,7 @@
                             </td>
                             <td>
                                 <div class="progress mb-2">
-                                    <div class="progress-bar" role="progressbar" style="width: {{ $progress }}%;"
+                                    <div class="progress-bar" role="progressbar" @style(['width: ' . $progress . '%'])
                                         aria-valuenow="{{ $progress }}" aria-valuemin="0"
                                         aria-valuemax="100">{{ $progress }}%</div>
                                 </div>

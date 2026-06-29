@@ -375,6 +375,9 @@
 
                 <div class="mt-6 space-y-4">
                     @foreach ($kpiCards as $card)
+                        @php
+                            $cardWidth = min(100, max(12, $teamCount > 0 ? round(($card['value'] / max($teamCount, 1)) * 100) : 12));
+                        @endphp
                         <div class="rounded-3xl border border-slate-100 p-4">
                             <div class="flex items-center justify-between">
                                 <p class="text-sm font-semibold text-slate-700">{{ $card['label'] }}</p>
@@ -383,7 +386,7 @@
                             <div class="mt-3 h-2 rounded-full bg-slate-100">
                                 <div
                                     class="h-2 rounded-full bg-gradient-to-r {{ $card['tone'] }}"
-                                    style="width: {{ min(100, max(12, $teamCount > 0 ? round(($card['value'] / max($teamCount, 1)) * 100) : 12)) }}%;"
+                                    @style(['width: ' . $cardWidth . '%'])
                                 ></div>
                             </div>
                         </div>
