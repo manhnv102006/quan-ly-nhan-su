@@ -13,8 +13,16 @@ class LeaveRequestController extends Controller
     {
         $this->authorize('viewAny', LeaveRequest::class);
 
+        $filters = [
+            'search' => trim((string) $request->input('search', '')),
+            'status' => $request->input('status'),
+            'leave_type' => $request->input('leave_type'),
+        ];
+
         $statsQuery = LeaveRequest::query();
-        $query = LeaveRequest::query()->with(['employee.department', 'approver', 'rejecter']);
+        $query = LeaveRequest::query()
+            ->with(['employee.department', 'approver.employee', 'rejecter.employee'])
+            ->filter($filters);
 
         $stats = [
             'total' => (clone $statsQuery)->count(),
@@ -23,27 +31,22 @@ class LeaveRequestController extends Controller
             'rejected' => (clone $statsQuery)->where('status', LeaveRequest::STATUS_REJECTED)->count(),
         ];
 
-        if ($request->filled('search')) {
-            $query->whereHas('employee', function ($q) use ($request) {
-                $q->where('full_name', 'like', '%'.$request->search.'%')
-                    ->orWhere('employee_code', 'like', '%'.$request->search.'%');
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
         $leaveRequests = $query->latest()->paginate(10)->withQueryString();
 
-        return view('admin.leave-requests.index', compact('leaveRequests', 'stats'));
+        return view('admin.leave-requests.index', compact('leaveRequests', 'stats', 'filters'));
     }
 
     public function show(LeaveRequest $leaveRequest): View
     {
         $this->authorize('view', $leaveRequest);
 
-        $leaveRequest->load(['employee.department', 'employee.position', 'approver', 'rejecter', 'histories.actor']);
+        $leaveRequest->load([
+            'employee.department',
+            'employee.position',
+            'approver.employee',
+            'rejecter.employee',
+            'histories.actor.employee',
+        ]);
 
         return view('admin.leave-requests.show', compact('leaveRequest'));
     }

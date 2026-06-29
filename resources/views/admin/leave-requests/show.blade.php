@@ -88,7 +88,7 @@
                         <tbody>
                             @foreach($leaveRequest->histories as $history)
                                 <tr>
-                                    <td>{{ $history->actor?->name ?? '—' }}</td>
+                                    <td>{{ $history->actor?->employee?->full_name ?? $history->actor?->name ?? '—' }}</td>
                                     <td><x-approval-action-badge :action="$history->action" /></td>
                                     <td>{{ optional($history->created_at)->format('d/m/Y H:i') }}</td>
                                 </tr>

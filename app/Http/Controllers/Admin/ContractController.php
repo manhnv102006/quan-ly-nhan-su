@@ -37,10 +37,22 @@ class ContractController extends Controller
             ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
             ->when($request->filled('contract_type_id'), fn($q) => $q->where('contract_type_id', $request->contract_type_id))
             ->when($request->filled('employee_id'), fn($q) => $q->where('employee_id', $request->employee_id))
-            ->when($request->filled('department_id'), fn($q) => $q->where('department_id', $request->department_id))
-            ->when($request->filled('position_id'), fn($q) => $q->where('position_id', $request->position_id))
-            ->when($request->filled('start_from'), fn($q) => $q->whereDate('start_date', '>=', $request->start_from))
-            ->when($request->filled('start_to'), fn($q) => $q->whereDate('end_date', '<=', $request->start_to));
+            ->when($request->filled('department_id'), function ($q) use ($request) {
+                $deptId = $request->department_id;
+                $q->where(function ($sub) use ($deptId) {
+                    $sub->where('department_id', $deptId)
+                        ->orWhereHas('employee', fn ($e) => $e->where('department_id', $deptId));
+                });
+            })
+            ->when($request->filled('position_id'), function ($q) use ($request) {
+                $posId = $request->position_id;
+                $q->where(function ($sub) use ($posId) {
+                    $sub->where('position_id', $posId)
+                        ->orWhereHas('employee', fn ($e) => $e->where('position_id', $posId));
+                });
+            })
+            ->when($request->filled('start_from'), fn ($q) => $q->whereDate('start_date', '>=', $request->start_from))
+            ->when($request->filled('start_to'), fn ($q) => $q->whereDate('end_date', '<=', $request->start_to));
 
         $contracts = $query
             ->orderByDesc('created_at')
@@ -48,10 +60,12 @@ class ContractController extends Controller
             ->withQueryString();
 
         $statuses = $this->statusOptions();
+        $stats = $this->contractStats();
 
         return view('admin.contracts.index', [
             'contracts' => $contracts,
             'statuses' => $statuses,
+            'stats' => $stats,
             'contractTypes' => ContractType::orderBy('contract_name')->get(),
             'employees' => Employee::orderBy('full_name')->get(),
             'departments' => Department::orderBy('department_name')->get(),
@@ -64,7 +78,10 @@ class ContractController extends Controller
     {
         return view('admin.contracts.create', [
             'contractTypes' => ContractType::orderBy('contract_name')->get(),
-            'employees' => Employee::where('status', 'active')->orderBy('full_name')->get(),
+            'employees' => Employee::with(['department', 'position'])
+                ->where('status', 'active')
+                ->orderBy('full_name')
+                ->get(),
             'departments' => Department::orderBy('department_name')->get(),
             'positions' => Position::orderBy('position_name')->get(),
             'nextCode' => $this->service->generateCode(),
@@ -86,7 +103,7 @@ class ContractController extends Controller
     public function show(int $id): View
     {
         $contract = Contract::withTrashed()
-            ->with(['employee.department', 'employee.position', 'contractType', 'creator'])
+            ->with(['employee.department', 'employee.position', 'department', 'position', 'contractType', 'creator'])
             ->findOrFail($id);
 
         $history = Contract::withTrashed()
@@ -147,7 +164,10 @@ class ContractController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('admin.contracts.trash', compact('contracts'));
+        return view('admin.contracts.trash', [
+            'contracts' => $contracts,
+            'trashCount' => Contract::onlyTrashed()->count(),
+        ]);
     }
 
     public function restore(int $id): RedirectResponse
@@ -201,11 +221,25 @@ class ContractController extends Controller
 
     private function statusOptions(): array
     {
+        return Contract::STATUS_LABELS;
+    }
+
+    private function contractStats(): array
+    {
+        $today = now()->toDateString();
+        $soonDate = now()->addDays(30)->toDateString();
+
         return [
-            Contract::STATUS_DRAFT => 'Draft',
-            Contract::STATUS_ACTIVE => 'Đang hiệu lực',
-            Contract::STATUS_EXPIRED => 'Hết hiệu lực',
-            Contract::STATUS_CANCELLED => 'Đã hủy',
+            'total' => Contract::count(),
+            'active' => Contract::where('status', Contract::STATUS_ACTIVE)->count(),
+            'expired' => Contract::where('status', Contract::STATUS_EXPIRED)->count(),
+            'expiring_soon' => Contract::query()
+                ->where('status', Contract::STATUS_ACTIVE)
+                ->whereNotNull('end_date')
+                ->whereDate('end_date', '>=', $today)
+                ->whereDate('end_date', '<=', $soonDate)
+                ->count(),
+            'trashed' => Contract::onlyTrashed()->count(),
         ];
     }
 }

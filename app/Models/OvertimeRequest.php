@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,16 +14,24 @@ class OvertimeRequest extends Model
     public const STATUS_REJECTED = 'rejected';
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_LABELS = [
-        self::STATUS_PENDING => 'Pending',
-        self::STATUS_APPROVED => 'Approved',
-        self::STATUS_REJECTED => 'Rejected',
-        self::STATUS_COMPLETED => 'Completed',
+        self::STATUS_PENDING => 'Chờ duyệt',
+        self::STATUS_APPROVED => 'Đã duyệt',
+        self::STATUS_REJECTED => 'Từ chối',
+        self::STATUS_COMPLETED => 'Hoàn thành',
     ];
+
     public const STATUS_BADGE_CLASSES = [
         self::STATUS_PENDING => 'text-bg-warning',
         self::STATUS_APPROVED => 'text-bg-success',
         self::STATUS_REJECTED => 'text-bg-danger',
         self::STATUS_COMPLETED => 'text-bg-primary',
+    ];
+
+    public const STATUS_TAILWIND_CLASSES = [
+        self::STATUS_PENDING => 'bg-amber-50 text-amber-700 border-amber-100',
+        self::STATUS_APPROVED => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+        self::STATUS_REJECTED => 'bg-rose-50 text-rose-700 border-rose-100',
+        self::STATUS_COMPLETED => 'bg-sky-50 text-sky-700 border-sky-100',
     ];
 
     protected $fillable = [
@@ -77,22 +86,40 @@ class OvertimeRequest extends Model
             ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId));
     }
 
-    public function scopeFilter($query, array $filters)
+    /**
+     * @param  Builder<OvertimeRequest>  $query
+     */
+    public function scopeForManager(Builder $query, Employee $manager): Builder
+    {
+        return $query->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->managedByManager($manager));
+    }
+
+    /**
+     * @param  Builder<OvertimeRequest>  $query
+     */
+    public function scopeFilter(Builder $query, array $filters): Builder
     {
         return $query
-            ->when(! empty($filters['search']), function ($q) use ($filters) {
+            ->when(! empty($filters['search']), function (Builder $q) use ($filters) {
                 $keyword = trim((string) $filters['search']);
-                $q->whereHas('employee', function ($employeeQuery) use ($keyword) {
+                $q->whereHas('employee', function (Builder $employeeQuery) use ($keyword) {
                     $employeeQuery->where('full_name', 'like', '%'.$keyword.'%')
                         ->orWhere('employee_code', 'like', '%'.$keyword.'%');
                 });
             })
-            ->when(! empty($filters['status']), fn ($q) => $q->where('status', $filters['status']))
-            ->when(! empty($filters['work_date']), fn ($q) => $q->whereDate('work_date', $filters['work_date']))
-            ->when(! empty($filters['employee_id']), fn ($q) => $q->where('employee_id', $filters['employee_id']))
-            ->when(! empty($filters['department_id']), function ($q) use ($filters) {
-                $q->whereHas('employee', fn ($employeeQuery) => $employeeQuery->where('department_id', $filters['department_id']));
-            });
+            ->when(! empty($filters['employee_name']), function (Builder $q) use ($filters) {
+                $name = trim((string) $filters['employee_name']);
+                $q->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->where('full_name', 'like', '%'.$name.'%'));
+            })
+            ->when(! empty($filters['employee_code']), function (Builder $q) use ($filters) {
+                $code = trim((string) $filters['employee_code']);
+                $q->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->where('employee_code', 'like', '%'.$code.'%'));
+            })
+            ->when(! empty($filters['status']), fn (Builder $q) => $q->where('status', $filters['status']))
+            ->when(! empty($filters['work_date']), fn (Builder $q) => $q->whereDate('work_date', $filters['work_date']))
+            ->when(! empty($filters['work_date_from']), fn (Builder $q) => $q->whereDate('work_date', '>=', $filters['work_date_from']))
+            ->when(! empty($filters['work_date_to']), fn (Builder $q) => $q->whereDate('work_date', '<=', $filters['work_date_to']))
+            ->when(! empty($filters['employee_id']), fn (Builder $q) => $q->where('employee_id', $filters['employee_id']));
     }
 
     public function statusLabel(): string
@@ -103,5 +130,10 @@ class OvertimeRequest extends Model
     public function statusBadgeClass(): string
     {
         return self::STATUS_BADGE_CLASSES[$this->status] ?? 'text-bg-secondary';
+    }
+
+    public function statusTailwindClass(): string
+    {
+        return self::STATUS_TAILWIND_CLASSES[$this->status] ?? 'bg-slate-100 text-slate-600 border-slate-200';
     }
 }
