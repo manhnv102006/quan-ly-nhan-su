@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AttendanceReportController;
 use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\EmployeeShiftController;
 use App\Http\Controllers\Admin\InterviewController;
 use App\Http\Controllers\Admin\JobPostController;
 use App\Http\Controllers\Admin\LeaveRequestController;
@@ -105,6 +106,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
     Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
 
+    //gan ca lam viec cho nhan vien
+    Route::get('/employee-shifts',[EmployeeShiftController::class, 'index'] )->name('employee-shifts.index');
+    Route::get('/employee-shifts/create',  [EmployeeShiftController::class, 'create'] )->name('employee-shifts.create');
+    Route::post(  '/employee-shifts',  [EmployeeShiftController::class, 'store'])->name('employee-shifts.store');
+
     Route::resource('kpis', KPIController::class);
     Route::resource('kpi-assignments', KPIAssignmentController::class)->parameters(['kpi-assignments' => 'assignment']);
     Route::patch('/kpi-assignments/{assignment}/approve', [KPIAssignmentController::class, 'approve'])->name('kpi-assignments.approve');
@@ -201,14 +207,14 @@ Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
     Route::get(
-    '/attendance',
-    [EmployeeAttendanceController::class, 'index']
-)->name('attendance');
+        '/attendance',
+        [EmployeeAttendanceController::class, 'index']
+    )->name('attendance');
 
-Route::post(
-    '/attendance/check-in/{shift}',
-    [EmployeeAttendanceController::class, 'checkIn']
-)->name('attendance.check-in');
+    Route::post(
+        '/attendance/check-in/{shift}',
+        [EmployeeAttendanceController::class, 'checkIn']
+    )->name('attendance.check-in');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(function () {
