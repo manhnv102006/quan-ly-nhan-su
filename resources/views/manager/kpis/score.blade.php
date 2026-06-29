@@ -63,15 +63,15 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="comment" class="form-label"><strong>Nhận xét</strong></label>
+                    <label for="review" class="form-label"><strong>Nhận xét</strong></label>
                     <textarea
-                        id="comment"
-                        name="comment"
+                        id="review"
+                        name="review"
                         rows="4"
-                        class="form-control @error('comment') is-invalid @enderror"
+                        class="form-control @error('review') is-invalid @enderror"
                         placeholder="Nhập nhận xét cho nhân viên..."
-                    >{{ old('comment', $employeeKpi->comment) }}</textarea>
-                    @error('comment')
+                    >{{ old('review', $employeeKpi->review) }}</textarea>
+                    @error('review')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
