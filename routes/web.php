@@ -37,6 +37,7 @@ use App\Http\Controllers\Manager\NotificationController as ManagerNotificationCo
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
 use App\Http\Controllers\Employee\EmployeePayrollController;
+use App\Http\Controllers\Employee\AttendanceController as EmployeeAttendanceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [DashboardController::class, 'redirect']);
@@ -199,6 +200,15 @@ Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
+    Route::get(
+    '/attendance',
+    [EmployeeAttendanceController::class, 'index']
+)->name('attendance');
+
+Route::post(
+    '/attendance/check-in/{shift}',
+    [EmployeeAttendanceController::class, 'checkIn']
+)->name('attendance.check-in');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(function () {
