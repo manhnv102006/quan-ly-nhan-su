@@ -24,6 +24,7 @@ class EmployeeKPI extends Model
         'status',
         'score',
         'comment',
+        'review',
     ];
 
     protected $casts = [
@@ -95,3 +96,4 @@ class EmployeeKPI extends Model
         return $this->belongsTo(Employee::class, 'employee_id');
     }
 }
+
