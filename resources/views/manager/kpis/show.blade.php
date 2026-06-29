@@ -45,6 +45,8 @@
                             <th>Nhân viên</th>
                             <th>Tên mục tiêu</th>
                             <th>Mô tả</th>
+                            <th>Điểm</th>
+                            <th>Review</th>
                             <th>Hạn chót</th>
                             <th>Tiến độ</th>
                             <th>Trạng thái</th>
@@ -63,6 +65,8 @@
                                 </td>
                                 <td>{{ $goal->target }}</td>
                                 <td>{{ Str::limit($goal->comment, 100) }}</td>
+                                <td>{{ $goal->score !== null ? $goal->score : '—' }}</td>
+                                <td>{{ Str::limit($goal->review, 100) }}</td>
                                 <td>{{ $goal->deadline->format('d/m/Y') }}</td>
                                 <td>
                                     <div class="progress">
@@ -80,7 +84,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">Chưa có mục tiêu nào được giao cho nhân viên.</td>
+                                <td colspan="9" class="text-center">Chưa có mục tiêu nào được giao cho nhân viên.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -89,3 +93,4 @@
         </div>
     </div>
 </x-app-layout>
+
