@@ -12,16 +12,16 @@ class Payroll extends Model
         'employee_id',
         'payroll_period_id',
         'generated_by',
-        'approved_by',
-        'approved_at',
-        'paid_by',
-        'paid_at',
         'basic_salary',
         'allowance',
         'bonus',
         'deduction',
         'total_salary',
         'status',
+        'approved_by',
+        'approved_at',
+        'paid_by',
+        'paid_at',
     ];
 
     protected $casts = [
@@ -49,33 +49,32 @@ class Payroll extends Model
         return $this->belongsTo(User::class, 'paid_by');
     }
 
-    public function isDraft(): bool
+    public function displayStatus(): string
     {
-        return $this->status === 'draft';
+        return $this->payrollPeriod?->status ?? $this->status;
     }
 
-    public function isPending(): bool
+    public function statusLabel(): string
     {
-        return $this->status === 'pending';
+        return match ($this->displayStatus()) {
+            'open' => 'Đang mở',
+            'calculated' => 'Đã tính lương',
+            'approved' => 'Đã duyệt',
+            'paid' => 'Đã thanh toán',
+            'closed' => 'Đã đóng',
+            'draft' => 'Nháp',
+            'pending' => 'Chờ duyệt',
+            default => 'Chưa xác định',
+        };
     }
 
-    public function isApproved(): bool
+    public function statusBadgeClass(): string
     {
-        return $this->status === 'approved';
-    }
-
-    public function isPaid(): bool
-    {
-        return $this->status === 'paid';
-    }
-
-    public function canBeApproved(): bool
-    {
-        return $this->isPending();
-    }
-
-    public function canBePaid(): bool
-    {
-        return $this->isApproved();
+        return match ($this->displayStatus()) {
+            'paid', 'closed' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+            'approved' => 'bg-sky-50 text-sky-700 border-sky-100',
+            'calculated', 'pending' => 'bg-amber-50 text-amber-700 border-amber-100',
+            default => 'bg-slate-100 text-slate-600 border-slate-200',
+        };
     }
 }

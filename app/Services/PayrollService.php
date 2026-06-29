@@ -85,7 +85,7 @@ class PayrollService
                 $totalSalary = 0; // Không thể âm thực lĩnh
             }
 
-            // F. Tạo bản ghi bảng lương ở trạng thái nháp (draft)
+            // F. Tạo bản ghi bảng lương
             Payroll::create([
                 'employee_id' => $employee->id,
                 'payroll_period_id' => $period->id,
@@ -95,9 +95,13 @@ class PayrollService
                 'bonus' => $bonus,
                 'deduction' => $deduction,
                 'total_salary' => $totalSalary,
-                'status' => 'draft',
             ]);
         }
+
+        // Cập nhật trạng thái kỳ lương sang calculated
+        $period->update([
+            'status' => 'calculated'
+        ]);
 
         return 'success';
     }

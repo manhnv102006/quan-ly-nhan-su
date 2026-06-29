@@ -106,20 +106,6 @@
                     </div>
                 </div>
 
-                <div>
-                    <label for="status" class="block text-sm font-semibold text-slate-700 mb-2">
-                        Trạng thái <span class="text-red-500">*</span>
-                    </label>
-                    <select id="status" name="status" required
-                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('status') border-red-400 @enderror">
-                        <option value="open" @selected(old('status', 'open') === 'open')>Đang mở (Open)</option>
-                        <option value="closed" @selected(old('status') === 'closed')>Đã khóa (Closed)</option>
-                    </select>
-                    @error('status')
-                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
                 <div class="flex flex-wrap gap-3 pt-2">
                     <button type="submit"
                             class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">

@@ -2,21 +2,15 @@
 
 namespace App\Models;
 
-use App\Models\LeaveRequest;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends Model
 {
-    protected function casts(): array
-    {
-        return [
-            'date_of_birth' => 'date',
-            'hire_date' => 'date',
-        ];
-    }
+    use SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -34,6 +28,14 @@ class Employee extends Model
         'hire_date',
         'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'date_of_birth' => 'date',
+            'hire_date' => 'date',
+        ];
+    }
 
     public function payrolls(): HasMany
     {
@@ -79,9 +81,10 @@ class Employee extends Model
     {
         return $this->hasMany(Attendance::class);
     }
-    public function attendance(): BelongsTo
+
+    public function leaveRequests(): HasMany
     {
-        return $this->belongsTo(Attendance::class);
+        return $this->hasMany(LeaveRequest::class);
     }
 
     public function employeeKpis(): HasMany
@@ -89,14 +92,34 @@ class Employee extends Model
         return $this->hasMany(EmployeeKPI::class);
     }
 
-
-    public function leaveRequests(): HasMany
-    {
-        return $this->hasMany(LeaveRequest::class);
-    }
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function linkedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class)->withTrashed();
+    }
+
+    public function hasLinkedAccount(): bool
+    {
+        return $this->user_id !== null && $this->user !== null;
+    }
+
+    public function clearStaleUserLink(): bool
+    {
+        if ($this->user_id === null) {
+            return false;
+        }
+
+        if (User::query()->whereKey($this->user_id)->exists()) {
+            return false;
+        }
+
+        $this->forceFill(['user_id' => null])->save();
+
+        return true;
     }
 
     public function documents(): HasMany
@@ -107,7 +130,6 @@ class Employee extends Model
     public function departmentTransfers(): HasMany
     {
         return $this->hasMany(DepartmentTransfer::class);
-
     }
 
     public static function managedDepartmentIdFor(self $manager): ?int
@@ -143,8 +165,6 @@ class Employee extends Model
     }
 
     /**
-     * Nhân viên thuộc quyền quản lý: cấp dưới trực tiếp (manager_id) hoặc thuộc phòng ban được giao quản lý.
-     *
      * @param  Builder<Employee>  $query
      */
     public function scopeManagedByManager(Builder $query, self $manager): Builder

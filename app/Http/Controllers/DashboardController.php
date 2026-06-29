@@ -12,6 +12,7 @@ use App\Models\Payroll;
 use App\Models\Position;
 use App\Models\User;
 use App\Models\LeaveRequest;
+use App\Services\AdminNotificationService;
 use App\Services\ManagerScopeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -257,12 +258,13 @@ class DashboardController extends Controller
                 ->orderByDesc('payroll_periods.year')
                 ->orderByDesc('payroll_periods.month')
                 ->first([
+                    'payrolls.id',
                     'payrolls.basic_salary',
                     'payrolls.allowance',
                     'payrolls.bonus',
                     'payrolls.deduction',
                     'payrolls.total_salary',
-                    'payrolls.status',
+                    'payroll_periods.status',
                     'payroll_periods.month',
                     'payroll_periods.year',
                 ]);
@@ -439,10 +441,7 @@ class DashboardController extends Controller
 
     private function unreadNotificationsCount(User $user): int
     {
-        return DB::table('notification_users')
-            ->where('user_id', $user->id)
-            ->where('is_read', false)
-            ->count();
+        return app(AdminNotificationService::class)->unreadCount($user);
     }
 
     private function aggregateDefaults(array $values): object

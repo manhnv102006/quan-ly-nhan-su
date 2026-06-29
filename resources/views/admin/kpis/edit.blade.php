@@ -21,10 +21,50 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+                    {{-- Mã KPI --}}
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">
+                            Mã KPI <span class="text-red-500">*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            name="code"
+                            value="{{ old('code', $kpi->code) }}"
+                            class="w-full rounded-xl border border-slate-300 focus:border-violet-500 focus:ring-violet-500"
+                            placeholder="Ví dụ: KPI001">
+
+                        @error('code')
+                            <p class="text-red-500 text-sm mt-1">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    {{-- Trạng thái --}}
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">
+                            Trạng thái <span class="text-red-500">*</span>
+                        </label>
+
+                        <select
+                            name="status"
+                            class="w-full rounded-xl border border-slate-300 focus:border-violet-500 focus:ring-violet-500">
+                            <option value="active" {{ old('status', $kpi->status) == 'active' ? 'selected' : '' }}>Hoạt động</option>
+                            <option value="inactive" {{ old('status', $kpi->status) == 'inactive' ? 'selected' : '' }}>Tạm ngưng</option>
+                        </select>
+
+                        @error('status')
+                            <p class="text-red-500 text-sm mt-1">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
                     {{-- Tên KPI --}}
                     <div class="md:col-span-2">
                         <label class="block text-sm font-semibold text-slate-700 mb-2">
-                            Tên KPI
+                            Tên KPI <span class="text-red-500">*</span>
                         </label>
 
                         <input
@@ -63,7 +103,7 @@
                     {{-- Trọng số --}}
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">
-                            Trọng số (%)
+                            Trọng số (%) <span class="text-red-500">*</span>
                         </label>
 
                         <input
@@ -85,7 +125,7 @@
                     {{-- Phòng ban --}}
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">
-                            Phòng ban
+                            Phòng ban <span class="text-red-500">*</span>
                         </label>
 
                         <select

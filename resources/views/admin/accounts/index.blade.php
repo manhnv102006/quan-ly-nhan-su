@@ -10,11 +10,20 @@
                 </p>
             </div>
 
-            <a href="{{ route('admin.accounts.create') }}"
-               class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
-                <span>+</span>
-                Thêm tài khoản
-            </a>
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="{{ route('admin.accounts.trash') }}"
+                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
+                    Thùng rác
+                    @if ($stats['trashed'] > 0)
+                        <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">{{ $stats['trashed'] }}</span>
+                    @endif
+                </a>
+                <a href="{{ route('admin.accounts.create') }}"
+                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
+                    <span>+</span>
+                    Thêm tài khoản
+                </a>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -130,6 +139,18 @@
                                                     {{ $user->status === 'active' ? '🔒' : '🔓' }}
                                                 </button>
                                             </form>
+
+                                            <form action="{{ route('admin.accounts.destroy', $user) }}"
+                                                  method="POST"
+                                                  id="delete-form-{{ $user->id }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button"
+                                                        class="js-delete-account w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200"
+                                                        data-user-id="{{ $user->id }}"
+                                                        data-username="{{ $user->username }}"
+                                                        title="Xóa mềm">🗑</button>
+                                            </form>
                                         @endif
                                     </div>
                                 </td>
@@ -182,6 +203,35 @@
         </div>
     </div>
 
+    <div id="delete-modal"
+         class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm"
+         style="display: none;">
+        <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm mx-4 p-6 text-center">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-red-100 flex items-center justify-center">
+                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+            <h3 class="mt-5 text-lg font-bold text-slate-800">Xóa tài khoản?</h3>
+            <p class="mt-2 text-sm text-slate-500">
+                Bạn có chắc muốn xóa tài khoản
+                <span id="delete-account-name" class="font-semibold text-slate-700"></span>?
+                Tài khoản sẽ được chuyển vào thùng rác.
+            </p>
+            <div class="mt-6 flex gap-3">
+                <button type="button" onclick="closeDeleteModal()"
+                        class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
+                    Hủy
+                </button>
+                <button type="button" onclick="confirmDelete()"
+                        class="flex-1 px-5 py-3 rounded-xl text-white font-medium transition"
+                        style="background-color: #dc2626;">
+                    Xóa
+                </button>
+            </div>
+        </div>
+    </div>
+
     @include('admin.accounts.partials.reset-password-modal')
 
     @if (session('success'))
@@ -210,6 +260,38 @@
 
     <script>
         let toggleTargetId = null;
+        let deleteTargetId = null;
+
+        function openDeleteModal(id, username) {
+            deleteTargetId = String(id);
+            document.getElementById('delete-account-name').textContent = username;
+
+            const modal = document.getElementById('delete-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            modal.style.display = 'flex';
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('delete-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            modal.style.display = 'none';
+            deleteTargetId = null;
+        }
+
+        function confirmDelete() {
+            if (!deleteTargetId) {
+                return;
+            }
+
+            const form = document.getElementById('delete-form-' + deleteTargetId);
+            if (form) {
+                form.submit();
+            } else {
+                closeDeleteModal();
+            }
+        }
 
         function openToggleModal(id, username, isActive) {
             toggleTargetId = id;
@@ -252,6 +334,18 @@
                 document.getElementById('toggle-form-' + toggleTargetId).submit();
             }
         }
+
+        document.querySelectorAll('.js-delete-account').forEach(function (button) {
+            button.addEventListener('click', function () {
+                openDeleteModal(this.dataset.userId, this.dataset.username);
+            });
+        });
+
+        document.getElementById('delete-modal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
 
         document.querySelectorAll('.js-toggle-status').forEach(function (button) {
             button.addEventListener('click', function () {

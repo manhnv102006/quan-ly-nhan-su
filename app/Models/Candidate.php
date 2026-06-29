@@ -12,6 +12,7 @@ class Candidate extends Model
 
     protected $fillable = [
         'job_post_id',
+        'employee_id',
         'full_name',
         'phone',
         'email',
@@ -19,12 +20,14 @@ class Candidate extends Model
         'birth_date',
         'cv_file',
         'status',
+        'converted_at',
     ];
 
     protected function casts(): array
     {
         return [
             'birth_date' => 'date',
+            'converted_at' => 'datetime',
         ];
     }
 
@@ -36,5 +39,15 @@ class Candidate extends Model
     public function interviews(): HasMany
     {
         return $this->hasMany(Interview::class);
+    }
+
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
+    }
+
+    public function emailLogs(): HasMany
+    {
+        return $this->hasMany(RecruitmentEmailLog::class);
     }
 }

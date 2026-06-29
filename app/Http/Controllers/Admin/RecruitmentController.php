@@ -14,9 +14,15 @@ class RecruitmentController extends Controller
     {
         $stats = [
             'job_posts' => JobPost::count(),
+            'open_job_posts' => JobPost::where('status', 'open')->count(),
+            'closed_job_posts' => JobPost::where('status', 'closed')->count(),
             'candidates' => Candidate::count(),
+            'pending_candidates' => Candidate::where('status', 'new')->count(),
+            'interview_candidates' => Candidate::where('status', 'interview')->count(),
             'interviews' => Interview::count(),
             'passed_candidates' => Candidate::where('status', 'passed')->count(),
+            'failed_candidates' => Candidate::where('status', 'failed')->count(),
+            'converted_candidates' => Candidate::whereNotNull('employee_id')->count(),
         ];
 
         return view('admin.recruitment.index', compact('stats'));
