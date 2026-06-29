@@ -1,131 +1,120 @@
 <x-admin-layout title="Tạo lịch phỏng vấn">
+    @php
+        $inputClass = 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10';
+    @endphp
 
-    <div class="space-y-6">
+    @include('admin.recruitment.partials.ui-contrast')
 
-        <div class="flex items-center justify-between gap-4">
-            <div>
-                <div class="flex items-center gap-2 text-sm text-slate-500">
-                    <a href="{{ route('admin.recruitment') }}" class="hover:text-amber-600 transition">Tuyển dụng</a>
-                    <span>/</span>
-                    <a href="{{ route('admin.recruitment.interviews') }}" class="hover:text-amber-600 transition">Lịch phỏng vấn</a>
-                    <span>/</span>
-                    <span class="text-slate-700 font-medium">Tạo mới</span>
-                </div>
-
-                <h2 class="mt-2 text-2xl font-bold text-slate-800">Tạo lịch phỏng vấn</h2>
-                <p class="text-sm text-slate-500 mt-1">
-                    Thiết lập lịch phỏng vấn cho ứng viên. Kết quả sẽ được để ở trạng thái chờ cập nhật.
-                </p>
-            </div>
-
-            <a href="{{ route('admin.recruitment.interviews') }}"
-               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
-                Quay lại danh sách
-            </a>
-        </div>
-
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8 max-w-4xl">
-
-            @if ($errors->any())
-                <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    <p class="font-semibold mb-1">Vui lòng kiểm tra lại thông tin:</p>
-                    <ul class="list-disc list-inside space-y-0.5">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <form action="{{ route('admin.recruitment.interviews.store') }}" method="POST" class="space-y-5">
-                @csrf
-
-                <div>
-                    <label for="candidate_id" class="block text-sm font-semibold text-slate-700 mb-2">
-                        Ứng viên <span class="text-red-500">*</span>
-                    </label>
-                    <select id="candidate_id" name="candidate_id" required
-                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition @error('candidate_id') border-red-400 @enderror">
-                        <option value="">-- Chọn ứng viên --</option>
-                        @foreach ($candidates as $candidate)
-                            <option value="{{ $candidate->id }}" @selected(old('candidate_id') == $candidate->id)>
-                                {{ $candidate->full_name }}
-                                @if ($candidate->jobPost)
-                                    - {{ $candidate->jobPost->title }}
-                                @endif
-                                ({{ $candidate->status }})
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('candidate_id')
-                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <label for="interviewer_id" class="block text-sm font-semibold text-slate-700 mb-2">
-                            Người phỏng vấn
-                        </label>
-                        <select id="interviewer_id" name="interviewer_id"
-                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition @error('interviewer_id') border-red-400 @enderror">
-                            <option value="">-- Chọn người phỏng vấn --</option>
-                            @foreach ($interviewers as $interviewer)
-                                <option value="{{ $interviewer->id }}" @selected(old('interviewer_id') == $interviewer->id)>
-                                    {{ $interviewer->full_name }} ({{ $interviewer->employee_code }})
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('interviewer_id')
-                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+    <div class="recruitment-ui max-w-5xl space-y-6">
+        <section class="recruitment-hero rounded-[2rem] border border-white/80 bg-white/90 p-5 shadow-sm shadow-slate-200/60 sm:p-6">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                        <a href="{{ route('admin.recruitment') }}" class="hover:text-cyan-600">Tuyển dụng</a>
+                        <span>/</span>
+                        <a href="{{ route('admin.recruitment.interviews') }}" class="hover:text-cyan-600">Phỏng vấn</a>
+                        <span>/</span>
+                        <span class="font-semibold text-slate-700">Tạo mới</span>
                     </div>
-
-                    <div>
-                        <label for="interview_date" class="block text-sm font-semibold text-slate-700 mb-2">
-                            Thời gian phỏng vấn <span class="text-red-500">*</span>
-                        </label>
-                        <input type="datetime-local" id="interview_date" name="interview_date"
-                               value="{{ old('interview_date') }}" required
-                               class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition @error('interview_date') border-red-400 @enderror">
-                        @error('interview_date')
-                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-
-                <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
-                    <p class="text-sm font-semibold text-amber-700">Kết quả mặc định</p>
-                    <p class="mt-1 text-sm text-amber-600">
-                        Lịch phỏng vấn mới sẽ được tạo với kết quả <strong>pending</strong>. Trạng thái ứng viên sẽ chuyển sang <strong>interview</strong>.
+                    <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Tạo lịch phỏng vấn</h2>
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                        Chọn ứng viên, người phỏng vấn và thời gian. Hệ thống sẽ tự động chuyển ứng viên sang trạng thái phỏng vấn.
                     </p>
                 </div>
 
-                <div>
-                    <label for="note" class="block text-sm font-semibold text-slate-700 mb-2">
-                        Ghi chú
-                    </label>
-                    <textarea id="note" name="note" rows="4"
-                              placeholder="Nhập ghi chú nếu cần"
-                              class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition @error('note') border-red-400 @enderror">{{ old('note') }}</textarea>
-                    @error('note')
-                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+                <a href="{{ route('admin.recruitment.interviews') }}"
+                   class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700">
+                    Quay lại danh sách
+                </a>
+            </div>
+        </section>
 
-                <div class="flex flex-wrap gap-3 pt-2">
-                    <button type="submit"
-                            class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-600 text-white font-medium shadow-lg shadow-amber-500/20 hover:bg-amber-700 transition">
-                        + Tạo lịch phỏng vấn
-                    </button>
-                    <a href="{{ route('admin.recruitment.interviews') }}"
-                       class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
-                        Hủy
-                    </a>
-                </div>
-            </form>
-        </div>
+        <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
+            <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
+                <h3 class="text-base font-black text-slate-900">Thông tin lịch phỏng vấn</h3>
+                <p class="mt-1 text-sm text-slate-500">Các trường có dấu * là bắt buộc.</p>
+            </div>
 
+            <div class="p-5 sm:p-6">
+                @if (isset($errors) && $errors->any())
+                    <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        <p class="font-bold">Vui lòng kiểm tra lại thông tin:</p>
+                        <ul class="mt-2 list-disc space-y-1 pl-5">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <form action="{{ route('admin.recruitment.interviews.store') }}" method="POST" class="space-y-5">
+                    @csrf
+
+                    <div>
+                        <label for="candidate_id" class="mb-2 block text-sm font-bold text-slate-700">Ứng viên <span class="text-red-500">*</span></label>
+                        <select id="candidate_id" name="candidate_id" required class="{{ $inputClass }} @error('candidate_id') border-red-400 @enderror">
+                            <option value="">Chọn ứng viên</option>
+                            @foreach ($candidates as $candidate)
+                                <option value="{{ $candidate->id }}" @selected(old('candidate_id') == $candidate->id)>
+                                    {{ $candidate->full_name }}
+                                    @if ($candidate->jobPost)
+                                        - {{ $candidate->jobPost->title }}
+                                    @endif
+                                    ({{ $candidate->status }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('candidate_id')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                        <div>
+                            <label for="interviewer_id" class="mb-2 block text-sm font-bold text-slate-700">Người phỏng vấn</label>
+                            <select id="interviewer_id" name="interviewer_id" class="{{ $inputClass }} @error('interviewer_id') border-red-400 @enderror">
+                                <option value="">Chưa gắn người phỏng vấn</option>
+                                @foreach ($interviewers as $interviewer)
+                                    <option value="{{ $interviewer->id }}" @selected(old('interviewer_id') == $interviewer->id)>
+                                        {{ $interviewer->full_name }} ({{ $interviewer->employee_code }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('interviewer_id')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div>
+                            <label for="interview_date" class="mb-2 block text-sm font-bold text-slate-700">Thời gian phỏng vấn <span class="text-red-500">*</span></label>
+                            <input type="datetime-local" id="interview_date" name="interview_date" value="{{ old('interview_date') }}" required
+                                   class="{{ $inputClass }} @error('interview_date') border-red-400 @enderror">
+                            @error('interview_date')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-4">
+                        <p class="text-sm font-bold text-cyan-800">Trạng thái mặc định</p>
+                        <p class="mt-1 text-sm leading-6 text-cyan-700">
+                            Lịch mới sẽ ở trạng thái chờ kết quả. Khi cập nhật Đạt hoặc Không đạt, hồ sơ ứng viên sẽ đổi trạng thái tự động.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label for="note" class="mb-2 block text-sm font-bold text-slate-700">Ghi chú</label>
+                        <textarea id="note" name="note" rows="4" placeholder="Nhập ghi chú nếu cần"
+                                  class="{{ $inputClass }} resize-y @error('note') border-red-400 @enderror">{{ old('note') }}</textarea>
+                        @error('note')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center">
+                        <a href="{{ route('admin.recruitment.interviews') }}"
+                           class="inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200">
+                            Hủy
+                        </a>
+                        <button type="submit"
+                                class="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
+                            Tạo lịch phỏng vấn
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
     </div>
-
 </x-admin-layout>

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreKPIRequest;
+use App\Http\Requests\UpdateKPIRequest;
 use App\Models\Department;
 use App\Models\KPI;
 use Illuminate\Http\Request;
@@ -13,10 +15,34 @@ class KPIController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $kpis = KPI::with('department')->paginate(10);
-        return view('admin.kpis.index', compact('kpis'));
+        $query = KPI::with('department');
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                  ->orWhere('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by department
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+
+        $kpis = $query->paginate(10);
+        $departments = Department::all();
+
+        return view('admin.kpis.index', compact('kpis', 'departments'));
     }
 
     /**
@@ -32,16 +58,9 @@ class KPIController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreKPIRequest $request)
     {
-        $request->validate([
-            'title' => 'required|max:255',
-            'description' => 'nullable',
-            'weight' => 'required|numeric|min:1|max:100',
-            'department_id' => 'required|exists:departments,id',
-        ]);
-
-        KPI::create($request->all());
+        KPI::create($request->validated());
 
         return redirect()
             ->route('admin.kpis.index')
@@ -70,18 +89,11 @@ class KPIController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(UpdateKPIRequest $request, $id)
     {
-        $request->validate([
-            'title' => 'required|max:255',
-            'description' => 'nullable',
-            'weight' => 'required|numeric|min:1|max:100',
-            'department_id' => 'required|exists:departments,id',
-        ]);
-
         $kpi = KPI::findOrFail($id);
 
-        $kpi->update($request->all());
+        $kpi->update($request->validated());
 
         return redirect()
             ->route('admin.kpis.index')
@@ -91,7 +103,7 @@ class KPIController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-      public function destroy($id)
+    public function destroy($id)
     {
         $kpi = KPI::findOrFail($id);
         $kpi->delete();
@@ -100,5 +112,5 @@ class KPIController extends Controller
             ->route('admin.kpis.index')
             ->with('success', 'Xóa KPI thành công');
     }
-  
 }
+

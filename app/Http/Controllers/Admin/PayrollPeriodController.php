@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PayrollPeriod;
+use App\Services\AutoNotificationService;
+use App\Services\PayrollService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -11,6 +13,10 @@ use Illuminate\View\View;
 
 class PayrollPeriodController extends Controller
 {
+    public function __construct(
+        private AutoNotificationService $autoNotifications,
+    ) {}
+
     public function index(Request $request): View
     {
         $periods = PayrollPeriod::query()
@@ -22,6 +28,9 @@ class PayrollPeriodController extends Controller
         $stats = [
             'total' => PayrollPeriod::count(),
             'open' => PayrollPeriod::where('status', 'open')->count(),
+            'calculated' => PayrollPeriod::where('status', 'calculated')->count(),
+            'approved' => PayrollPeriod::where('status', 'approved')->count(),
+            'paid' => PayrollPeriod::where('status', 'paid')->count(),
             'closed' => PayrollPeriod::where('status', 'closed')->count(),
         ];
 
@@ -49,7 +58,6 @@ class PayrollPeriodController extends Controller
             'year' => 'required|integer|min:2020|max:2100',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'status' => 'required|in:open,closed',
         ], [
             'name.required' => 'Tên kỳ lương là bắt buộc',
             'month.required' => 'Tháng là bắt buộc',
@@ -66,9 +74,9 @@ class PayrollPeriodController extends Controller
             'end_date.required' => 'Ngày kết thúc là bắt buộc',
             'end_date.date' => 'Ngày kết thúc không hợp lệ',
             'end_date.after_or_equal' => 'Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu',
-            'status.required' => 'Trạng thái là bắt buộc',
-            'status.in' => 'Trạng thái không hợp lệ',
         ]);
+
+        $validated['status'] = 'open';
 
         PayrollPeriod::create($validated);
 
@@ -98,7 +106,6 @@ class PayrollPeriodController extends Controller
             'year' => 'required|integer|min:2020|max:2100',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'status' => 'required|in:open,closed',
         ], [
             'name.required' => 'Tên kỳ lương là bắt buộc',
             'month.required' => 'Tháng là bắt buộc',
@@ -115,8 +122,6 @@ class PayrollPeriodController extends Controller
             'end_date.required' => 'Ngày kết thúc là bắt buộc',
             'end_date.date' => 'Ngày kết thúc không hợp lệ',
             'end_date.after_or_equal' => 'Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu',
-            'status.required' => 'Trạng thái là bắt buộc',
-            'status.in' => 'Trạng thái không hợp lệ',
         ]);
 
         $payrollPeriod->update($validated);
@@ -124,6 +129,28 @@ class PayrollPeriodController extends Controller
         return redirect()
             ->route('admin.payroll-periods.index')
             ->with('success', 'Cập nhật kỳ lương thành công.');
+    }
+
+    public function show(PayrollPeriod $payrollPeriod): View
+    {
+        $payrolls = $payrollPeriod->payrolls()
+            ->with(['employee'])
+            ->latest()
+            ->paginate(10);
+
+        $totalCount = $payrollPeriod->payrolls()->count();
+        $totalSalary = $payrollPeriod->payrolls()->sum('total_salary');
+
+        // Lương đã chi trả phụ thuộc vào trạng thái của kỳ lương (paid hoặc closed)
+        $isPaidOrClosed = in_array($payrollPeriod->status, ['paid', 'closed']);
+        $stats = [
+            'total_count' => $totalCount,
+            'total_salary' => $totalSalary,
+            'paid_salary' => $isPaidOrClosed ? $totalSalary : 0,
+            'unpaid_salary' => $isPaidOrClosed ? 0 : $totalSalary,
+        ];
+
+        return view('admin.payroll-periods.show', compact('payrollPeriod', 'payrolls', 'stats'));
     }
 
     public function destroy(PayrollPeriod $payrollPeriod): RedirectResponse
@@ -140,4 +167,71 @@ class PayrollPeriodController extends Controller
             ->route('admin.payroll-periods.index')
             ->with('success', 'Xóa kỳ lương thành công.');
     }
+
+    public function calculate(PayrollPeriod $payrollPeriod, PayrollService $payrollService): RedirectResponse
+    {
+        if (!$payrollPeriod->isOpen()) {
+            return redirect()->back()->with('error', 'Kỳ lương phải ở trạng thái mở mới có thể tính lương.');
+        }
+
+        $result = $payrollService->calculatePayrollForPeriod($payrollPeriod);
+
+        if ($result === 'already_exists') {
+            return redirect()->back()->with('error', 'Kỳ lương này đã được tính lương trước đó.');
+        }
+
+        if ($result === 'no_employees') {
+            return redirect()->back()->with('error', 'Không có nhân viên hoạt động nào trong kỳ này.');
+        }
+
+        return redirect()->back()->with('success', 'Tính lương tự động cho toàn bộ nhân viên thành công.');
+    }
+
+    public function approve(PayrollPeriod $payrollPeriod): RedirectResponse
+    {
+        if (!$payrollPeriod->isCalculated()) {
+            return redirect()->back()->with('error', 'Chỉ có thể duyệt kỳ lương sau khi đã tính lương.');
+        }
+
+        $payrollPeriod->update([
+            'status' => 'approved',
+            'approved_by' => auth()->id() ?? 1,
+            'approved_at' => now(),
+        ]);
+
+        $this->autoNotifications->payrollApproved($payrollPeriod);
+
+        return redirect()->back()->with('success', 'Đã duyệt toàn bộ kỳ lương thành công.');
+    }
+
+    public function pay(PayrollPeriod $payrollPeriod): RedirectResponse
+    {
+        if (!$payrollPeriod->isApproved()) {
+            return redirect()->back()->with('error', 'Chỉ có thể chi trả kỳ lương sau khi đã được phê duyệt.');
+        }
+
+        $payrollPeriod->update([
+            'status' => 'paid',
+            'paid_by' => auth()->id() ?? 1,
+            'paid_at' => now(),
+        ]);
+
+        $this->autoNotifications->payrollPaid($payrollPeriod);
+
+        return redirect()->back()->with('success', 'Đã thực hiện chi trả lương cho toàn bộ nhân viên.');
+    }
+
+    public function close(PayrollPeriod $payrollPeriod): RedirectResponse
+    {
+        if (!$payrollPeriod->isPaid()) {
+            return redirect()->back()->with('error', 'Chỉ có thể đóng kỳ lương sau khi đã chi trả lương.');
+        }
+
+        $payrollPeriod->update([
+            'status' => 'closed',
+        ]);
+
+        return redirect()->back()->with('success', 'Kỳ lương đã được đóng thành công.');
+    }
 }
+

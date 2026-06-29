@@ -1,4 +1,4 @@
-<header class="admin-header sticky top-0 z-30">
+<header class="admin-header sticky top-0 z-50 overflow-visible">
     <div class="flex items-center justify-between h-[72px] px-4 sm:px-6 lg:px-8">
         <div class="flex items-center gap-4 flex-1 min-w-0">
             <button
@@ -33,14 +33,7 @@
         </div>
 
         <div class="flex items-center gap-2 sm:gap-3">
-            {{-- Notification --}}
-            <button class="relative p-2.5 rounded-xl text-slate-500 hover:bg-violet-50 hover:text-violet-600 transition">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                </svg>
-                <span class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
-            </button>
-
+            @include('admin.partials.notification-dropdown')
             <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-violet-100 to-indigo-100 text-violet-700">
                 <span class="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></span>
                 {{ Auth::user()->role?->label() ?? 'Admin' }}
