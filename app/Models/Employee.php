@@ -109,4 +109,8 @@ class Employee extends Model
     {
         return $this->hasMany(DepartmentTransfer::class);
     }
+    public function shifts()
+{
+    return $this->hasMany(EmployeeShift::class);
+}
 }
