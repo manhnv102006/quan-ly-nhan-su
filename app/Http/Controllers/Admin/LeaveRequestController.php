@@ -9,11 +9,6 @@ use Illuminate\View\View;
 
 class LeaveRequestController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware(['auth', 'verified', 'role:admin']);
-    }
-
     public function index(Request $request): View
     {
         $this->authorize('viewAny', LeaveRequest::class);

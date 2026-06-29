@@ -3,6 +3,7 @@
     'subtitle' => null,
     'role' => 'manager',
     'navigation' => [],
+    'bootstrap' => false,
 ])
 
 @php
@@ -61,9 +62,15 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    @if ($bootstrap)
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    @endif
+
     <style>
         body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
     </style>
+    @stack('head')
 </head>
 <body class="staff-body staff-shell {{ $theme['shell'] }}" x-data="{ sidebarOpen: false }">
     @include('partials.page-loader')
@@ -214,5 +221,10 @@
             </main>
         </div>
     </div>
+
+    @if ($bootstrap)
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @endif
+    @stack('scripts')
 </body>
 </html>

@@ -174,9 +174,9 @@ Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager']
     ->name('manager.leave-requests.')
     ->group(function () {
         Route::get('/', [LeaveApprovalController::class, 'index'])->name('index');
-        Route::get('/{leaveRequest}', [LeaveApprovalController::class, 'show'])->name('show');
         Route::patch('/{leaveRequest}/approve', [LeaveApprovalController::class, 'approve'])->name('approve');
         Route::patch('/{leaveRequest}/reject', [LeaveApprovalController::class, 'reject'])->name('reject');
+        Route::get('/{leaveRequest}', [LeaveApprovalController::class, 'show'])->name('show');
     });
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {

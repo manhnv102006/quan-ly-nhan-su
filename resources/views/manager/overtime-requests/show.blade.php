@@ -1,4 +1,11 @@
-<x-admin-layout title="Chi tiết đơn tăng ca">
+@php($navigation = \App\Support\ManagerNavigation::items())
+
+<x-staff-layout
+    title="Chi tiết đơn tăng ca"
+    role="manager"
+    :navigation="$navigation"
+    :bootstrap="true"
+>
     <div class="container-fluid py-2">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
@@ -118,4 +125,4 @@
             }
         </script>
     @endif
-</x-admin-layout>
+</x-staff-layout>

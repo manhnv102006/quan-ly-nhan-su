@@ -18,10 +18,7 @@ class LeaveApprovalController extends Controller
 {
     use ResolvesCurrentEmployee;
 
-    public function __construct(private readonly LeaveApprovalService $service)
-    {
-        $this->middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager']);
-    }
+    public function __construct(private readonly LeaveApprovalService $service) {}
 
     public function index(Request $request): View
     {
@@ -96,7 +93,10 @@ class LeaveApprovalController extends Controller
         try {
             $this->service->approve($leaveRequest, (int) Auth::id(), $manager);
         } catch (ValidationException $e) {
-            return back()->withErrors($e->errors())->with('error', 'Không thể duyệt đơn.');
+            return redirect()
+                ->route('manager.leave-requests.show', $leaveRequest)
+                ->withErrors($e->errors())
+                ->with('error', 'Không thể duyệt đơn.');
         }
 
         return redirect()
@@ -113,7 +113,10 @@ class LeaveApprovalController extends Controller
         try {
             $this->service->reject($leaveRequest, (int) Auth::id(), $manager, $request->validated('reject_reason'));
         } catch (ValidationException $e) {
-            return back()->withErrors($e->errors())->with('error', 'Không thể từ chối đơn.');
+            return redirect()
+                ->route('manager.leave-requests.show', $leaveRequest)
+                ->withErrors($e->errors())
+                ->with('error', 'Không thể từ chối đơn.');
         }
 
         return redirect()
