@@ -10,8 +10,8 @@ use App\Models\EmployeeKPI;
 use App\Models\KPIAssignment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class KPIController extends Controller
 {
@@ -113,12 +113,11 @@ class KPIController extends Controller
         $employeeKpi->loadMissing(['kpiAssignment']);
         abort_if($employeeKpi->kpiAssignment?->manager_id !== Auth::id(), 403);
 
-        // Chỉ cập nhật score/comment (KHÔNG đụng progress/status/target/deadline)
+        // Chỉ cập nhật score/review (KHÔNG đụng progress/status/target/deadline/comment)
         $employeeKpi->update([
             'score' => $validated['score'],
-            'comment' => $validated['comment'] ?? null,
+            'review' => $validated['review'] ?? null,
         ]);
-
 
         return redirect()
             ->route('manager.kpis.index')
@@ -128,7 +127,9 @@ class KPIController extends Controller
     private function getManagedEmployees()
     {
         $manager = Auth::user()->employee;
-        return Employee::where('department_id', $manager->department_id)->where('status', 'active')->get();
+        return Employee::where('department_id', $manager->department_id)
+            ->where('status', 'active')
+            ->get();
     }
 }
 
