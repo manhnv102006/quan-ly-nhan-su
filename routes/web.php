@@ -196,6 +196,12 @@ Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
     Route::get('/manager/kpis/{assignment}', [ManagerKPIController::class, 'show'])->name('manager.kpis.show');
     Route::get('/manager/kpis/{assignment}/assign', [ManagerKPIController::class, 'assign'])->name('manager.kpis.assign');
     Route::post('/manager/kpis/{assignment}/assign', [ManagerKPIController::class, 'storeAssign'])->name('manager.kpis.store_assign');
+
+    // Manager chấm KPI cho nhân viên
+    Route::get('/manager/kpis/employee-kpis/{employeeKpi}/score', [ManagerKPIController::class, 'editScore'])
+        ->name('manager.kpis.employee_kpis.score.edit');
+    Route::put('/manager/kpis/employee-kpis/{employeeKpi}/score', [ManagerKPIController::class, 'updateScore'])
+        ->name('manager.kpis.employee_kpis.score.update');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
