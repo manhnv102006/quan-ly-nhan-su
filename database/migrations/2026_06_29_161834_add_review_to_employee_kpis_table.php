@@ -9,7 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('employee_kpis', function (Blueprint $table) {
-            $table->text('review')->nullable()->after('comment');
+            if (!Schema::hasColumn('employee_kpis', 'review')) {
+                $table->text('review')->nullable()->after('comment');
+            }
         });
     }
 
