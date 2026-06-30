@@ -5,7 +5,20 @@
     $notificationsIndexRoute = match (true) {
         $user?->isAdmin() => 'notifications.index',
         $user?->isManager() => 'manager.notifications.index',
+        $user?->isEmployee() => 'employee.notifications.index',
         default => 'notifications.index',
+    };
+    $notificationsShowRoute = match (true) {
+        $user?->isAdmin() => 'notifications.show',
+        $user?->isManager() => 'manager.notifications.show',
+        $user?->isEmployee() => 'employee.notifications.show',
+        default => null,
+    };
+    $notificationsShowAccent = match (true) {
+        $user?->isAdmin() => 'violet',
+        $user?->isManager() => 'emerald',
+        $user?->isEmployee() => 'sky',
+        default => 'sky',
     };
 @endphp
 
@@ -62,6 +75,8 @@
                     @include('admin.partials.notification-item', [
                         'notification' => $notification,
                         'compact' => true,
+                        'showRoute' => $notificationsShowRoute,
+                        'showAccent' => $notificationsShowAccent,
                     ])
                 @empty
                     <div class="px-4 py-10 text-center">

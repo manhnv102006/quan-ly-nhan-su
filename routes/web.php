@@ -29,11 +29,7 @@ use App\Http\Controllers\Admin\RecruitmentController;
 use App\Http\Controllers\Admin\ShiftController;
 
 use App\Http\Controllers\DashboardController;
-
-use App\Http\Controllers\Manager\EmployeeController as ManagerEmployeeController;
-
-use App\Http\Controllers\Manager\KPIController as ManagerKPIController;
-
+use App\Http\Controllers\Employee\NotificationController as EmployeeNotificationController;
 use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
@@ -188,30 +184,17 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/payrolls/{payroll}/pdf', [PayrollController::class, 'exportPdf'])->name('payrolls.pdf');
 });
 
-
-Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'manager'])->name('dashboard');
-
-    Route::get('/employees', [ManagerEmployeeController::class, 'index'])->name('employees.index');
-    Route::get('/employees/{employee}', [ManagerEmployeeController::class, 'show'])->name('employees.show');
-
-    Route::get('/notifications', [ManagerNotificationController::class, 'index'])->name('notifications.index');
-    Route::get('/notifications/create', [ManagerNotificationController::class, 'create'])->name('notifications.create');
-    Route::post('/notifications', [ManagerNotificationController::class, 'store'])->name('notifications.store');
-    Route::patch('/notifications/read-all', [ManagerNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
-    Route::patch('/notifications/{notification}/read', [ManagerNotificationController::class, 'markAsRead'])->name('notifications.read');
-
-    Route::get('/kpis', [ManagerKPIController::class, 'index'])->name('kpis.index');
-    Route::get('/kpis/employee-kpis/{employeeKpi}/score', [ManagerKPIController::class, 'editScore'])->name('kpis.employee_kpis.score.edit');
-    Route::put('/kpis/employee-kpis/{employeeKpi}/score', [ManagerKPIController::class, 'updateScore'])->name('kpis.employee_kpis.score.update');
-    Route::get('/kpis/{assignment}', [ManagerKPIController::class, 'show'])->name('kpis.show');
-    Route::get('/kpis/{assignment}/assign', [ManagerKPIController::class, 'assign'])->name('kpis.assign');
-    Route::post('/kpis/{assignment}/assign', [ManagerKPIController::class, 'storeAssign'])->name('kpis.store_assign');
-
-    Route::get('/overtime-requests', [OvertimeApprovalController::class, 'index'])->name('overtime-requests.index');
-    Route::get('/overtime-requests/{overtimeRequest}', [OvertimeApprovalController::class, 'show'])->name('overtime-requests.show');
-    Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeApprovalController::class, 'approve'])->name('overtime-requests.approve');
-    Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeApprovalController::class, 'reject'])->name('overtime-requests.reject');
+Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
+    Route::get('/manager/dashboard', [DashboardController::class, 'manager'])->name('manager.dashboard');
+    Route::get('/manager/leave-requests', [LeaveRequestController::class, 'index'])->name('manager.leave-requests');
+    Route::patch('/manager/leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('manager.leave-requests.approve');
+    Route::patch('/manager/leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('manager.leave-requests.reject');
+    Route::get('/manager/notifications', [ManagerNotificationController::class, 'index'])->name('manager.notifications.index');
+    Route::get('/manager/notifications/create', [ManagerNotificationController::class, 'create'])->name('manager.notifications.create');
+    Route::get('/manager/notifications/{notification}', [ManagerNotificationController::class, 'show'])->name('manager.notifications.show');
+    Route::post('/manager/notifications', [ManagerNotificationController::class, 'store'])->name('manager.notifications.store');
+    Route::patch('/manager/notifications/read-all', [ManagerNotificationController::class, 'markAllAsRead'])->name('manager.notifications.read-all');
+    Route::patch('/manager/notifications/{notification}/read', [ManagerNotificationController::class, 'markAsRead'])->name('manager.notifications.read');
 });
 
 Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager'])
@@ -226,12 +209,10 @@ Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager']
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
-
-    Route::prefix('employee/kpis')->name('employee.kpis.')->group(function () {
-        Route::get('/', [EmployeeKPIController::class, 'index'])->name('index');
-        Route::get('/{employeeKpi}/edit', [EmployeeKPIController::class, 'edit'])->name('edit');
-        Route::put('/{employeeKpi}', [EmployeeKPIController::class, 'update'])->name('update');
-    });
+    Route::get('/employee/notifications', [EmployeeNotificationController::class, 'index'])->name('employee.notifications.index');
+    Route::get('/employee/notifications/{notification}', [EmployeeNotificationController::class, 'show'])->name('employee.notifications.show');
+    Route::patch('/employee/notifications/read-all', [EmployeeNotificationController::class, 'markAllAsRead'])->name('employee.notifications.read-all');
+    Route::patch('/employee/notifications/{notification}/read', [EmployeeNotificationController::class, 'markAsRead'])->name('employee.notifications.read');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(function () {
@@ -252,6 +233,7 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(fu
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/notifications', [UserNotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/{notification}', [UserNotificationController::class, 'show'])->name('notifications.show');
     Route::patch('/notifications/read-all', [UserNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::patch('/notifications/{notification}/read', [UserNotificationController::class, 'markAsRead'])->name('notifications.read');
 });
