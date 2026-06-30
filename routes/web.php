@@ -38,8 +38,13 @@ use App\Http\Controllers\Manager\NotificationController as ManagerNotificationCo
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
 use App\Http\Controllers\Employee\EmployeePayrollController;
+
+use App\Http\Controllers\Manager\LeaveApprovalController;
+use App\Http\Controllers\Manager\OvertimeApprovalController;
+
 use App\Http\Controllers\Employee\AttendanceController as EmployeeAttendanceController;
 use App\Http\Controllers\Employee\OvertimeController as EmployeeOvertimeController;
+
 
 use Illuminate\Support\Facades\Route;
 
@@ -129,25 +134,16 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/shifts/{shift}/edit', [ShiftController::class, 'edit'])->name('shifts.edit');
     Route::put('/shifts/{shift}', [ShiftController::class, 'update'])->name('shifts.update');
     Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy'])->name('shifts.destroy');
-    Route::get('/leave-requests', [LeaveRequestController::class, 'index'])->name('leave-requests.index');
+    Route::get('/leave-requests', [LeaveRequestController::class, 'index'])->name('leave-requests');
     Route::get('/leave-requests/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('leave-requests.show');
-    Route::patch('/leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('leave-requests.approve');
-    Route::patch('/leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('leave-requests.reject');
-    Route::get('/overtime-requests', [OvertimeRequestController::class, 'index'])->name('overtime-requests.index');
-    Route::get('/overtime-requests/{overtimeRequest}', [OvertimeRequestController::class, 'show'])->name('overtime-requests.show');
-    Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeRequestController::class, 'approve'])->name('overtime-requests.approve');
-    Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeRequestController::class, 'reject'])->name('overtime-requests.reject');
+    Route::resource('overtime-requests', OvertimeRequestController::class);
     Route::get('/attendance-reports', [AttendanceReportController::class, 'index'])->name('attendance-reports.index');
 
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
-
     Route::post('/payroll-periods/{payrollPeriod}/calculate', [PayrollPeriodController::class, 'calculate'])->name('payroll-periods.calculate');
     Route::post('/payroll-periods/{payrollPeriod}/approve', [PayrollPeriodController::class, 'approve'])->name('payroll-periods.approve');
     Route::post('/payroll-periods/{payrollPeriod}/pay', [PayrollPeriodController::class, 'pay'])->name('payroll-periods.pay');
     Route::post('/payroll-periods/{payrollPeriod}/close', [PayrollPeriodController::class, 'close'])->name('payroll-periods.close');
-    Route::get('/payrolls/{payroll}/pdf', [PayrollController::class, 'exportPdf'])->name('payrolls.pdf');
-    Route::get('/contracts', [AdminModuleController::class, 'contracts'])->name('contracts');
-
     Route::post('/payrolls/generate', [PayrollController::class, 'generate'])->name('payrolls.generate');
     Route::post('/payrolls/{payroll}/submit', [PayrollController::class, 'submit'])->name('payrolls.submit');
     Route::post('/payrolls/{payroll}/approve', [PayrollController::class, 'approve'])->name('payrolls.approve');
@@ -158,12 +154,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/contract-types/{id}/restore', [ContractTypeController::class, 'restore'])->name('contract-types.restore');
 
     Route::get('/contracts/trash', [ContractController::class, 'trash'])->name('contracts.trashed');
-    Route::post('/contracts/{id}/restore', [ContractController::class, 'restore'])->name('contracts.restore');
-    Route::delete('/contracts/{id}/force-delete', [ContractController::class, 'forceDelete'])->name('contracts.forceDelete');
-    Route::post('/contracts/{contract}/extend', [ContractController::class, 'extend'])->name('contracts.extend');
-    Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate');
+    Route::post('/contracts/{contract}/restore', [ContractController::class, 'restore'])->name('contracts.restore');
+    Route::delete('/contracts/{contract}/force-delete', [ContractController::class, 'forceDelete'])->name('contracts.forceDelete');
+    Route::get('/contracts/{contract}/extend', [ContractController::class, 'extendForm'])->name('contracts.extend.form');
+    Route::post('/contracts/{contract}/extend', [ContractController::class, 'extendStore'])->name('contracts.extend');
+    Route::post('/contracts/{contract}/cancel', [ContractController::class, 'cancel'])->name('contracts.cancel');
     Route::resource('contracts', ContractController::class);
-
 
     Route::get('/recruitment', [RecruitmentController::class, 'index'])->name('recruitment');
     Route::get('/recruitment/job-posts', [JobPostController::class, 'index'])->name('recruitment.job-posts');
@@ -188,23 +184,39 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/payrolls/{payroll}/pdf', [PayrollController::class, 'exportPdf'])->name('payrolls.pdf');
 });
 
-Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
-    Route::get('/manager/dashboard', [DashboardController::class, 'manager'])->name('manager.dashboard');
-    Route::get('/manager/employees', [ManagerEmployeeController::class, 'index'])->name('manager.employees.index');
-    Route::get('/manager/employees/{employee}', [ManagerEmployeeController::class, 'show'])->name('manager.employees.show');
-    Route::get('/manager/leave-requests', [LeaveRequestController::class, 'index'])->name('manager.leave-requests');
-    Route::patch('/manager/leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('manager.leave-requests.approve');
-    Route::patch('/manager/leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('manager.leave-requests.reject');
-    Route::get('/manager/notifications', [ManagerNotificationController::class, 'index'])->name('manager.notifications.index');
-    Route::get('/manager/notifications/create', [ManagerNotificationController::class, 'create'])->name('manager.notifications.create');
-    Route::post('/manager/notifications', [ManagerNotificationController::class, 'store'])->name('manager.notifications.store');
-    Route::patch('/manager/notifications/read-all', [ManagerNotificationController::class, 'markAllAsRead'])->name('manager.notifications.read-all');
-    Route::patch('/manager/notifications/{notification}/read', [ManagerNotificationController::class, 'markAsRead'])->name('manager.notifications.read');
-    Route::get('/manager/kpis', [ManagerKPIController::class, 'index'])->name('manager.kpis.index');
-    Route::get('/manager/kpis/{assignment}', [ManagerKPIController::class, 'show'])->name('manager.kpis.show');
-    Route::get('/manager/kpis/{assignment}/assign', [ManagerKPIController::class, 'assign'])->name('manager.kpis.assign');
-    Route::post('/manager/kpis/{assignment}/assign', [ManagerKPIController::class, 'storeAssign'])->name('manager.kpis.store_assign');
+Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'manager'])->name('dashboard');
+
+    Route::get('/employees', [ManagerEmployeeController::class, 'index'])->name('employees.index');
+    Route::get('/employees/{employee}', [ManagerEmployeeController::class, 'show'])->name('employees.show');
+
+    Route::get('/notifications', [ManagerNotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/create', [ManagerNotificationController::class, 'create'])->name('notifications.create');
+    Route::post('/notifications', [ManagerNotificationController::class, 'store'])->name('notifications.store');
+    Route::patch('/notifications/read-all', [ManagerNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::patch('/notifications/{notification}/read', [ManagerNotificationController::class, 'markAsRead'])->name('notifications.read');
+
+    Route::get('/kpis', [ManagerKPIController::class, 'index'])->name('kpis.index');
+    Route::get('/kpis/{assignment}', [ManagerKPIController::class, 'show'])->name('kpis.show');
+    Route::get('/kpis/{assignment}/assign', [ManagerKPIController::class, 'assign'])->name('kpis.assign');
+    Route::post('/kpis/{assignment}/assign', [ManagerKPIController::class, 'storeAssign'])->name('kpis.store_assign');
+
+    Route::get('/overtime-requests', [OvertimeApprovalController::class, 'index'])->name('overtime-requests.index');
+    Route::get('/overtime-requests/{overtimeRequest}', [OvertimeApprovalController::class, 'show'])->name('overtime-requests.show');
+    Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeApprovalController::class, 'approve'])->name('overtime-requests.approve');
+    Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeApprovalController::class, 'reject'])->name('overtime-requests.reject');
 });
+
+// Duyệt nghỉ phép — nhóm route riêng, chỉ Manager (Admin bị chặn 403)
+Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager'])
+    ->prefix('manager/leave-requests')
+    ->name('manager.leave-requests.')
+    ->group(function () {
+        Route::get('/', [LeaveApprovalController::class, 'index'])->name('index');
+        Route::patch('/{leaveRequest}/approve', [LeaveApprovalController::class, 'approve'])->name('approve');
+        Route::patch('/{leaveRequest}/reject', [LeaveApprovalController::class, 'reject'])->name('reject');
+        Route::get('/{leaveRequest}', [LeaveApprovalController::class, 'show'])->name('show');
+    });
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
@@ -214,6 +226,7 @@ Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
 Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(function () {
     Route::get('/employee/leave-requests', [EmployeeLeaveController::class, 'index'])->name('employee.leave-requests');
     Route::get('/employee/leave-requests/create', [EmployeeLeaveController::class, 'create'])->name('employee.leave-requests.create');
+    Route::get('/employee/leave-requests/{leaveRequest}', [EmployeeLeaveController::class, 'show'])->name('employee.leave-requests.show');
     Route::post('/employee/leave-requests', [EmployeeLeaveController::class, 'store'])->name('employee.leave-requests.store');
     Route::get('/employee/payrolls', [EmployeePayrollController::class, 'index'])->name('employee.payrolls.index');
     Route::get('/employee/payrolls/{payroll}/pdf', [EmployeePayrollController::class, 'exportPdf'])->name('employee.payrolls.pdf');
