@@ -102,6 +102,43 @@ class AttendanceController extends Controller
         return back()->with('success', 'Chấm công vào giờ thành công.');
     }
 
+    public function checkOut($shift): RedirectResponse
+    {
+        $employee = Employee::where('user_id', Auth::id())->firstOrFail();
+        $now      = Carbon::now();
+        $today    = Carbon::today();
+
+        $attendance = Attendance::where('employee_id', $employee->id)
+            ->whereDate('attendance_date', $today)
+            ->first();
+
+        if (! $attendance) {
+            return back()->with('error', 'Bạn chưa chấm công vào hôm nay.');
+        }
+
+        $shiftModel = $attendance->shift;
+        $isFullDay  = $this->isFullDayShift($shiftModel);
+
+        if ($isFullDay) {
+            if ($attendance->morning_check_in && ! $attendance->morning_check_out) {
+                $attendance->morning_check_out = $now;
+            } elseif ($attendance->afternoon_check_in && ! $attendance->afternoon_check_out) {
+                $attendance->afternoon_check_out = $now;
+            } else {
+                return back()->with('error', 'Không xác định được buổi cần chấm công ra.');
+            }
+        } else {
+            if (! $attendance->check_in) {
+                return back()->with('error', 'Bạn chưa chấm công vào.');
+            }
+            $attendance->check_out = $now;
+        }
+
+        $attendance->work_hours = $this->calculateWorkHours($attendance, $isFullDay);
+        $attendance->save();
+
+        return back()->with('success', 'Chấm công ra giờ thành công.');
+    }
 
     private function isFullDayShift($shift): bool
     {
