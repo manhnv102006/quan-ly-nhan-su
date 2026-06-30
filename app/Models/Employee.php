@@ -109,4 +109,15 @@ class Employee extends Model
     {
         return $this->hasMany(DepartmentTransfer::class);
     }
+    public function employeeShifts(): HasMany
+    {
+        return $this->hasMany(EmployeeShift::class);
+    }
+   public function todayShift()
+{
+    return $this->employeeShifts()
+        ->whereDate('work_date', today())
+        ->with('shift')
+        ->first();
+}
 }

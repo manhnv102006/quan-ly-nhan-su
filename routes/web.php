@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AttendanceReportController;
 use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\EmployeeShiftController;
 use App\Http\Controllers\Admin\InterviewController;
 use App\Http\Controllers\Admin\JobPostController;
 use App\Http\Controllers\Admin\LeaveRequestController;
@@ -37,6 +38,9 @@ use App\Http\Controllers\Manager\NotificationController as ManagerNotificationCo
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
 use App\Http\Controllers\Employee\EmployeePayrollController;
+use App\Http\Controllers\Employee\AttendanceController as EmployeeAttendanceController;
+use App\Http\Controllers\Employee\OvertimeController as EmployeeOvertimeController;
+
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [DashboardController::class, 'redirect']);
@@ -103,6 +107,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
     Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
     Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
+
+    //gan ca lam viec cho nhan vien
+    Route::get('/employee-shifts', [EmployeeShiftController::class, 'index'])->name('employee-shifts.index');
+    Route::get('/employee-shifts/create', [EmployeeShiftController::class, 'create'])->name('employee-shifts.create');
+    Route::post('/employee-shifts', [EmployeeShiftController::class, 'store'])->name('employee-shifts.store');
 
     Route::resource('kpis', KPIController::class);
     Route::resource('kpi-assignments', KPIAssignmentController::class)->parameters(['kpi-assignments' => 'assignment']);
@@ -199,6 +208,7 @@ Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
+
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(function () {
@@ -208,6 +218,12 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(fu
     Route::get('/employee/payrolls', [EmployeePayrollController::class, 'index'])->name('employee.payrolls.index');
     Route::get('/employee/payrolls/{payroll}/pdf', [EmployeePayrollController::class, 'exportPdf'])->name('employee.payrolls.pdf');
     Route::get('/employee/payrolls/{payroll}', [EmployeePayrollController::class, 'show'])->name('employee.payrolls.show');
+    Route::get('/employee/attendance', [EmployeeAttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('/attendance/check-in/{shift}', [EmployeeAttendanceController::class, 'checkIn'])->name('attendance.check-in');
+    Route::post('/attendance/check-out/{shift}', [EmployeeAttendanceController::class, 'checkOut'])->name('attendance.check-out');
+    Route::get('/employee/overtime-requests', [EmployeeOvertimeController::class, 'index'])->name('employee.overtime-requests');
+Route::get('/employee/overtime-requests/create', [EmployeeOvertimeController::class, 'create'])->name('employee.overtime-requests.create');
+Route::post('/employee/overtime-requests', [EmployeeOvertimeController::class, 'store'])->name('employee.overtime-requests.store');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
