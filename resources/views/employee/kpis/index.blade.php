@@ -1,4 +1,8 @@
-<x-app-layout title="KPI của tôi">
+@php
+    $navigation = \App\Support\EmployeeNavigation::items();
+@endphp
+
+<x-staff-layout title="KPI của tôi" subtitle="Theo dõi và cập nhật tiến độ mục tiêu được giao." role="employee" :navigation="$navigation" :bootstrap="true">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">KPI của tôi</h1>
     </div>
@@ -88,4 +92,4 @@
             @endif
         </div>
     </div>
-</x-app-layout>
+</x-staff-layout>
