@@ -27,23 +27,39 @@ class EmployeeLeaveController extends Controller
 
     public function index()
     {
+        $this->authorize('viewAny', LeaveRequest::class);
+
         $employee = $this->getEmployee();
 
         $leaveRequests = LeaveRequest::where('employee_id', $employee->id)
+            ->with(['approver', 'rejecter'])
             ->latest()
             ->paginate(10);
 
         return view('employee.leave-requests.index', compact('leaveRequests'));
     }
 
+    public function show(LeaveRequest $leaveRequest)
+    {
+        $this->authorize('view', $leaveRequest);
+
+        $leaveRequest->load(['approver', 'rejecter', 'histories.actor']);
+
+        return view('employee.leave-requests.show', compact('leaveRequest'));
+    }
+
     public function create()
     {
-        $this->getEmployee(); // Ensure employee profile exists
+        $this->authorize('create', LeaveRequest::class);
+        $this->getEmployee();
+
         return view('employee.leave-requests.create');
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', LeaveRequest::class);
+
         $employee = $this->getEmployee();
 
         $request->validate([
