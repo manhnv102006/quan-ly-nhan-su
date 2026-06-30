@@ -1,4 +1,8 @@
-<x-app-layout :title="'Cập nhật tiến độ: ' . $employeeKpi->target">
+@php
+    $navigation = \App\Support\EmployeeNavigation::items();
+@endphp
+
+<x-staff-layout :title="'Cập nhật tiến độ: ' . $employeeKpi->target" subtitle="Cập nhật tiến độ và trạng thái KPI." role="employee" :navigation="$navigation" :bootstrap="true">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Cập nhật tiến độ KPI</h1>
         <a href="{{ route('employee.kpis.index') }}" class="btn btn-secondary btn-sm">
@@ -136,4 +140,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-staff-layout>
