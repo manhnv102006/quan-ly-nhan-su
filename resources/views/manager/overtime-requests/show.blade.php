@@ -12,8 +12,8 @@
 >
     <div class="space-y-6">
         @if (session('success'))
-            <div class="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-sm">
-                <p class="text-sm font-medium text-emerald-800">{{ session('success') }}</p>
+            <div class="flex items-center gap-3 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4 shadow-sm">
+                <p class="text-sm font-medium text-violet-800">{{ session('success') }}</p>
             </div>
         @endif
 
@@ -35,7 +35,7 @@
 
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-600">Chi tiết yêu cầu</p>
+                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Chi tiết yêu cầu</p>
                 <h2 class="mt-1 text-xl font-bold text-slate-800">Đơn tăng ca #{{ $overtimeRequest->id }}</h2>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -49,7 +49,7 @@
                             @csrf
                             @method('PATCH')
                             <button type="submit" onclick="return confirm('Duyệt đơn tăng ca này?')"
-                                    class="inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-500/20 transition hover:bg-emerald-700">
+                                    class="inline-flex items-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-violet-900/20 transition hover:bg-violet-700">
                                 Duyệt đơn
                             </button>
                         </form>

@@ -12,21 +12,23 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('employee_kpis', function (Blueprint $table) {
-            $table->foreignId('assignment_id')
-                  ->after('id')
-                  ->constrained('kpi_assignments')
-                  ->onDelete('cascade');
+            if (! Schema::hasColumn('employee_kpis', 'assignment_id')) {
+                $table->foreignId('assignment_id')
+                    ->nullable()
+                    ->after('id')
+                    ->constrained('kpi_assignments')
+                    ->nullOnDelete();
+            }
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('employee_kpis', function (Blueprint $table) {
-            $table->dropForeign(['assignment_id']);
-            $table->dropColumn('assignment_id');
+            if (Schema::hasColumn('employee_kpis', 'assignment_id')) {
+                $table->dropForeign(['assignment_id']);
+                $table->dropColumn('assignment_id');
+            }
         });
     }
 };
