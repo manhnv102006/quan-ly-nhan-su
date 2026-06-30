@@ -157,8 +157,17 @@
                     @endif
                 </div>
             @endif
-@endif
 
+            {{-- Tổng kết: trễ giờ --}}
+            @if ($attendance)
+                <div class="mt-5 pt-5 border-t border-slate-100 flex justify-between text-sm">
+                    <span class="text-slate-500">Tổng thời gian đi muộn</span>
+                    <span class="font-semibold {{ $attendance->late_minutes > 0 ? 'text-rose-600' : 'text-emerald-600' }}">
+                        {{ $attendance->late_text }}
+                    </span>
+                </div>
+            @endif
+        </div>
     </div>
 
 </x-staff-layout>
