@@ -3,26 +3,31 @@
 namespace App\Providers;
 
 use App\Models\Candidate;
+use App\Models\LeaveRequest;
+use App\Models\OvertimeRequest;
 use App\Observers\CandidateObserver;
+use App\Policies\LeaveRequestPolicy;
+use App\Policies\OvertimeRequestPolicy;
 use App\Services\AdminNotificationService;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
+        Paginator::useBootstrapFive();
+
+        Gate::policy(OvertimeRequest::class, OvertimeRequestPolicy::class);
+        Gate::policy(LeaveRequest::class, LeaveRequestPolicy::class);
+
         Candidate::observe(CandidateObserver::class);
 
         View::composer(['admin.partials.notification-dropdown', 'partials.notification-dropdown'], function ($view) {

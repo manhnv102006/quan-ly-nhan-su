@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Services\ManagerEmployeeResolver;
+use App\Services\ManagerScopeService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,6 +27,25 @@ class User extends Authenticatable
     public function employee()
     {
         return $this->hasOne(Employee::class);
+    }
+
+    public function managerEmployeeProfile(): ?Employee
+    {
+        return app(ManagerEmployeeResolver::class)->resolve($this);
+    }
+
+    /**
+     * Danh sách nhân viên thuộc quyền quản lý (cấp dưới trực tiếp hoặc phòng ban được giao).
+     */
+    public function managedEmployeesQuery(): ?\Illuminate\Database\Eloquent\Builder
+    {
+        $manager = $this->managerEmployeeProfile();
+
+        if (! $manager) {
+            return null;
+        }
+
+        return app(ManagerScopeService::class)->managedEmployeesQuery($manager);
     }
 
     public function hasRole(string ...$roles): bool

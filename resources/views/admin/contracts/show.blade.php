@@ -1,163 +1,181 @@
 <x-admin-layout title="Chi tiết hợp đồng">
     <div class="space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-                <h2 class="text-2xl font-bold text-slate-800">Chi tiết hợp đồng</h2>
-                <p class="text-sm text-slate-500 mt-1">Thông tin chi tiết hợp đồng và lịch sử.</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-3">
-                <a href="{{ route('admin.contracts.index') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">Quay lại danh sách</a>
-                <a href="{{ route('admin.contracts.edit', $contract) }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-100 text-amber-700 font-medium hover:bg-amber-200 transition">Chỉnh sửa hợp đồng</a>
-            </div>
-        </div>
-
-        <div class="grid gap-6 xl:grid-cols-3">
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 xl:col-span-2">
-                <div class="grid gap-6 sm:grid-cols-2">
-                    <div>
-                        <p class="text-xs uppercase tracking-widest text-slate-400">Mã hợp đồng</p>
-                        <p class="mt-2 text-lg font-semibold text-slate-800">{{ $contract->contract_code }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs uppercase tracking-widest text-slate-400">Nhân viên</p>
-                        <p class="mt-2 text-lg font-semibold text-slate-800">{{ $contract->employee->full_name ?? '—' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs uppercase tracking-widest text-slate-400">Loại hợp đồng</p>
-                        <p class="mt-2 text-lg font-semibold text-slate-800">{{ $contract->contractType->contract_name ?? '—' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs uppercase tracking-widest text-slate-400">Trạng thái</p>
-                        <span class="inline-flex px-3 py-1 rounded-full text-sm font-semibold {{ $contract->status === 'active' ? 'bg-emerald-100 text-emerald-700' : ($contract->status === 'expired' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600') }}">{{ $contract->status_label }}</span>
-                    </div>
-                </div>
-
-                <div class="mt-6 grid gap-6 sm:grid-cols-2">
-                    <div class="rounded-3xl bg-slate-50 p-5 border border-slate-100">
-                        <p class="text-xs uppercase tracking-widest text-slate-400">Ngày bắt đầu</p>
-                        <p class="mt-3 text-lg font-semibold text-slate-800">{{ optional($contract->start_date)->format('d/m/Y') }}</p>
-                    </div>
-                    <div class="rounded-3xl bg-slate-50 p-5 border border-slate-100">
-                        <p class="text-xs uppercase tracking-widest text-slate-400">Ngày kết thúc</p>
-                        <p class="mt-3 text-lg font-semibold text-slate-800">{{ optional($contract->end_date)->format('d/m/Y') ?? 'Không xác định' }}</p>
-                    </div>
-                </div>
-
-                <div class="mt-6 grid gap-6 sm:grid-cols-2">
-                    <div class="rounded-3xl bg-slate-50 p-5 border border-slate-100">
-                        <p class="text-xs uppercase tracking-widest text-slate-400">Ngày ký</p>
-                        <p class="mt-3 text-lg font-semibold text-slate-800">{{ optional($contract->signed_date)->format('d/m/Y') ?? '—' }}</p>
-                    </div>
-                    <div class="rounded-3xl bg-slate-50 p-5 border border-slate-100">
-                        <p class="text-xs uppercase tracking-widest text-slate-400">Lương</p>
-                        <p class="mt-3 text-lg font-semibold text-slate-800">{{ number_format($contract->salary, 0, ',', '.') }} ₫</p>
-                    </div>
-                </div>
-
-                @if($contract->note)
-                    <div class="mt-6 rounded-3xl bg-slate-50 p-5 border border-slate-100">
-                        <p class="text-xs uppercase tracking-widest text-slate-400">Ghi chú</p>
-                        <p class="mt-3 text-sm text-slate-700 whitespace-pre-line">{{ $contract->note }}</p>
-                    </div>
-                @endif
-
-                <div class="mt-6 rounded-3xl bg-slate-50 p-5 border border-slate-100">
-                    <p class="text-xs uppercase tracking-widest text-slate-400">Tệp hợp đồng</p>
-                    @if($contract->file_path)
-                        <p class="mt-3 text-sm text-slate-700"><a href="{{ asset('storage/'.$contract->file_path) }}" target="_blank" class="text-violet-600 hover:underline">Tải xuống / Xem tệp</a></p>
-                    @else
-                        <p class="mt-3 text-sm text-slate-500">Chưa có tệp đính kèm.</p>
+                <div class="mb-2 flex flex-wrap items-center gap-3">
+                    <h2 class="text-2xl font-bold text-slate-800">Chi tiết hợp đồng</h2>
+                    @include('admin.contracts.partials.status-badge', ['contract' => $contract])
+                    @if($contract->isExpiringSoon())
+                        <span class="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700">Sắp hết hạn</span>
                     @endif
                 </div>
+                <p class="text-sm text-slate-500">
+                    Mã <span class="font-semibold text-violet-600">{{ $contract->contract_code }}</span>
+                    · {{ $contract->employee->full_name ?? '—' }}
+                </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('admin.contracts.index') }}" class="admin-btn-secondary">Danh sách</a>
+                @if($contract->isEditable())
+                    <a href="{{ route('admin.contracts.edit', $contract) }}" class="admin-btn-secondary">Sửa</a>
+                    <a href="{{ route('admin.contracts.extend.form', $contract) }}" class="admin-btn-violet">Gia hạn</a>
+                @endif
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+            {{-- Thông tin chính --}}
+            <div class="space-y-6 xl:col-span-2">
+                <div class="admin-card p-5 sm:p-6">
+                    <h3 class="mb-4 text-sm font-bold text-slate-800">Thông tin hợp đồng</h3>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        @foreach ([
+                            ['label' => 'Nhân viên', 'value' => $contract->employee->full_name ?? '—'],
+                            ['label' => 'Mã nhân viên', 'value' => $contract->employee->employee_code ?? '—'],
+                            ['label' => 'Phòng ban', 'value' => $contract->display_department_name],
+                            ['label' => 'Chức vụ', 'value' => $contract->display_position_name],
+                            ['label' => 'Loại hợp đồng', 'value' => $contract->contractType->contract_name ?? '—'],
+                            ['label' => 'Người tạo', 'value' => $contract->creator->name ?? '—'],
+                            ['label' => 'Ngày bắt đầu', 'value' => optional($contract->start_date)->format('d/m/Y') ?? '—'],
+                            ['label' => 'Ngày kết thúc', 'value' => optional($contract->end_date)->format('d/m/Y') ?? 'Không xác định'],
+                            ['label' => 'Ngày ký', 'value' => optional($contract->signed_date)->format('d/m/Y') ?? '—'],
+                            ['label' => 'Lương cơ bản', 'value' => number_format($contract->salary, 0, ',', '.') . '₫'],
+                            ['label' => 'Phụ cấp', 'value' => number_format($contract->allowance ?? 0, 0, ',', '.') . '₫'],
+                        ] as $field)
+                            <div>
+                                <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">{{ $field['label'] }}</p>
+                                <p class="mt-1 text-sm font-semibold text-slate-800">{{ $field['value'] }}</p>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="mt-5 grid grid-cols-1 gap-4 border-t border-slate-100 pt-5">
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Mô tả</p>
+                            <p class="mt-1 text-sm text-slate-700">{{ $contract->description ?: '—' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Ghi chú</p>
+                            <p class="mt-1 text-sm text-slate-700">{{ $contract->note ?: '—' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">File hợp đồng</p>
+                            @if($contract->file_path)
+                                <a href="{{ Storage::url($contract->file_path) }}" target="_blank"
+                                   class="mt-2 inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-100">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12M12 16.5V3" />
+                                    </svg>
+                                    Tải xuống / Xem
+                                </a>
+                            @else
+                                <p class="mt-1 text-sm text-slate-400">Chưa có tệp đính kèm</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Lịch sử --}}
+                <div class="admin-card overflow-hidden">
+                    <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
+                        <h3 class="text-sm font-bold text-slate-800">Lịch sử hợp đồng của nhân viên</h3>
+                        <p class="text-xs text-slate-500">Các hợp đồng trước và sau của {{ $contract->employee->full_name ?? 'nhân viên' }}</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[640px]">
+                            <thead>
+                                <tr class="bg-slate-50">
+                                    <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Mã HĐ</th>
+                                    <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Bắt đầu</th>
+                                    <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Kết thúc</th>
+                                    <th class="px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @forelse($history as $item)
+                                    <tr class="{{ $item->id === $contract->id ? 'bg-violet-50/60' : 'hover:bg-slate-50/60' }}">
+                                        <td class="px-5 py-3 text-sm font-semibold text-slate-800">
+                                            {{ $item->contract_code }}
+                                            @if($item->id === $contract->id)
+                                                <span class="ml-1 text-[10px] font-bold text-violet-600">(hiện tại)</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-5 py-3 text-sm text-slate-700">{{ optional($item->start_date)->format('d/m/Y') }}</td>
+                                        <td class="px-5 py-3 text-sm text-slate-700">{{ optional($item->end_date)->format('d/m/Y') ?? '—' }}</td>
+                                        <td class="px-5 py-3 text-center">
+                                            @include('admin.contracts.partials.status-badge', ['contract' => $item])
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="px-5 py-8 text-center text-sm text-slate-500">Chưa có lịch sử.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
+            {{-- Hành động --}}
             <div class="space-y-6">
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
-                    <h3 class="text-lg font-semibold text-slate-800">Gia hạn hợp đồng</h3>
-                    <form action="{{ route('admin.contracts.extend', $contract) }}" method="POST" class="space-y-4 mt-4">
-                        @csrf
-                        <div>
-                            <label for="new_end_date" class="block text-sm font-semibold text-slate-700">Ngày kết thúc mới</label>
-                            <input id="new_end_date" name="new_end_date" type="date" value="{{ old('new_end_date') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none" required>
-                            @error('new_end_date') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                <div class="admin-card p-5 sm:p-6">
+                    <h3 class="mb-4 text-sm font-bold text-slate-800">Hành động</h3>
+
+                    @if($contract->isEditable())
+                        <div class="space-y-3">
+                            <a href="{{ route('admin.contracts.extend.form', $contract) }}"
+                               class="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                                Gia hạn hợp đồng
+                            </a>
+
+                            <details class="rounded-xl border border-rose-100 bg-rose-50/50">
+                                <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-rose-700">
+                                    Hủy hợp đồng
+                                </summary>
+                                <form method="POST" action="{{ route('admin.contracts.cancel', $contract) }}" class="space-y-3 border-t border-rose-100 px-4 py-4">
+                                    @csrf
+                                    <div>
+                                        <label for="cancel_end_date" class="admin-label">Ngày hủy hiệu lực</label>
+                                        <input type="date" id="cancel_end_date" name="end_date" class="admin-field"
+                                               value="{{ old('end_date', now()->format('Y-m-d')) }}">
+                                        @error('end_date')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+                                    </div>
+                                    <div>
+                                        <label for="cancel_note" class="admin-label">Lý do / ghi chú</label>
+                                        <textarea id="cancel_note" name="note" rows="2" class="admin-field" placeholder="Lý do hủy hợp đồng">{{ old('note') }}</textarea>
+                                        @error('note')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+                                    </div>
+                                    <button type="submit"
+                                            onclick="return confirm('Xác nhận hủy hợp đồng này?')"
+                                            class="w-full rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700">
+                                        Xác nhận hủy
+                                    </button>
+                                </form>
+                            </details>
                         </div>
-                        <div>
-                            <label for="extend_note" class="block text-sm font-semibold text-slate-700">Ghi chú</label>
-                            <textarea id="extend_note" name="note" rows="3" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">{{ old('note') }}</textarea>
-                            @error('note') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
-                        <button type="submit" class="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition">Gia hạn hợp đồng</button>
-                    </form>
+                    @else
+                        <p class="text-sm text-slate-500">Hợp đồng không ở trạng thái cho phép sửa hoặc hủy.</p>
+                    @endif
+
+                    @if($contract->isDeletable())
+                        <form method="POST" action="{{ route('admin.contracts.destroy', $contract) }}" class="mt-4"
+                              onsubmit="return confirm('Chuyển hợp đồng vào thùng rác?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="admin-btn-secondary w-full justify-center text-rose-600 hover:bg-rose-50">
+                                Xóa mềm (thùng rác)
+                            </button>
+                        </form>
+                    @endif
                 </div>
 
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
-                    <h3 class="text-lg font-semibold text-slate-800">Thanh lý hợp đồng</h3>
-                    <form action="{{ route('admin.contracts.terminate', $contract) }}" method="POST" enctype="multipart/form-data" class="space-y-4 mt-4">
-                        @csrf
-                        <div>
-                            <label for="terminate_end_date" class="block text-sm font-semibold text-slate-700">Ngày thanh lý</label>
-                            <input id="terminate_end_date" name="end_date" type="date" value="{{ old('end_date') }}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none" required>
-                            @error('end_date') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label for="terminate_file" class="block text-sm font-semibold text-slate-700">Biên bản thanh lý</label>
-                            <input id="terminate_file" name="file" type="file" class="mt-2 w-full text-sm text-slate-700">
-                            @error('file') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label for="terminate_note" class="block text-sm font-semibold text-slate-700">Ghi chú</label>
-                            <textarea id="terminate_note" name="note" rows="3" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:ring-violet-100 focus:outline-none">{{ old('note') }}</textarea>
-                            @error('note') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
-                        <button type="submit" class="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition">Thanh lý hợp đồng</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
-            <h3 class="text-lg font-semibold text-slate-800">Lịch sử gia hạn</h3>
-            <div class="mt-4 space-y-4">
-                @forelse($contract->extensions as $extension)
-                    <div class="rounded-3xl bg-slate-50 p-4 border border-slate-100">
-                        <p class="text-sm font-semibold text-slate-800">{{ optional($extension->created_at)->format('d/m/Y H:i') }}</p>
-                        <p class="text-sm text-slate-600">Từ {{ optional($extension->old_end_date)->format('d/m/Y') ?? '—' }} đến {{ optional($extension->new_end_date)->format('d/m/Y') }}</p>
-                        <p class="text-sm text-slate-500 mt-2">{{ $extension->note ?: 'Không có ghi chú' }}</p>
+                @if($contract->trashed())
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        Hợp đồng này đang nằm trong thùng rác.
                     </div>
-                @empty
-                    <p class="text-sm text-slate-500">Chưa có lịch sử gia hạn.</p>
-                @endforelse
-            </div>
-        </div>
-
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
-            <h3 class="text-lg font-semibold text-slate-800">Lịch sử thanh lý</h3>
-            <div class="mt-4 space-y-4">
-                @forelse($contract->terminations as $termination)
-                    <div class="rounded-3xl bg-slate-50 p-4 border border-slate-100">
-                        <p class="text-sm font-semibold text-slate-800">{{ optional($termination->created_at)->format('d/m/Y H:i') }}</p>
-                        <p class="text-sm text-slate-600">Ngày thanh lý: {{ optional($termination->end_date)->format('d/m/Y') }}</p>
-                        <p class="text-sm text-slate-500 mt-2">{{ $termination->note ?: 'Không có ghi chú' }}</p>
-                        @if($termination->file_path)
-                            <p class="mt-3 text-sm text-violet-600"><a href="{{ asset('storage/'.$termination->file_path) }}" target="_blank" class="hover:underline">Tải biên bản</a></p>
-                        @endif
-                    </div>
-                @empty
-                    <p class="text-sm text-slate-500">Chưa có lịch sử thanh lý.</p>
-                @endforelse
+                @endif
             </div>
         </div>
     </div>
-
-    @if(session('success'))
-        <div id="success-toast" class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-emerald-200 shadow-lg rounded-2xl px-5 py-4 max-w-sm">
-            <p class="text-sm font-medium text-slate-700">{{ session('success') }}</p>
-        </div>
-        <script>
-            setTimeout(function () {
-                const toast = document.getElementById('success-toast');
-                if (toast) toast.remove();
-            }, 4000);
-        </script>
-    @endif
 </x-admin-layout>

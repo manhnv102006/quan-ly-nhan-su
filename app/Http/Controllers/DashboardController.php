@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\LeaveRequest;
 use App\Models\EmployeeKPI;
 use App\Services\AdminNotificationService;
+use App\Services\ManagerScopeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +38,7 @@ class DashboardController extends Controller
                     ->whereNotNull('end_date')
                     ->whereBetween('end_date', [today()->toDateString(), today()->addDays(30)->toDateString()])
                     ->count(), 'color' => 'rose', 'route' => 'admin.contracts.index'],
-                ['label' => 'Đơn nghỉ phép', 'value' => LeaveRequest::count(), 'color' => 'amber', 'route' => 'admin.leave-requests.index'],
+                ['label' => 'Đơn nghỉ phép', 'value' => LeaveRequest::count(), 'color' => 'amber', 'route' => 'admin.leave-requests'],
                 ['label' => 'Ứng viên', 'value' => Candidate::count(), 'color' => 'rose', 'route' => 'admin.recruitment'],
             ],
             'recentJobs' => JobPost::query()->latest()->take(5)->get(),
@@ -50,7 +51,11 @@ class DashboardController extends Controller
 
         /** @var User $user */
         $user = Auth::user();
-        $employeeProfile = $this->employeeProfile($user);
+        $scope = app(ManagerScopeService::class);
+        $managerEmployee = $scope->resolveManagerEmployee($user);
+        $employeeProfile = $managerEmployee
+            ? $this->employeeProfileFromModel($managerEmployee)
+            : $this->employeeProfile($user);
         $department = $this->managedDepartment($employeeProfile);
         $unreadNotifications = $this->unreadNotificationsCount($user);
 
@@ -72,48 +77,47 @@ class DashboardController extends Controller
             'average_progress' => 0,
         ]);
 
-        if ($department) {
-            $teamCount = DB::table('employees')
-                ->where('department_id', $department->id)
-                ->count();
+        if ($managerEmployee) {
+            $managedEmployeeIds = $scope->managedEmployeesQuery($managerEmployee)->pluck('id');
+            $managedDepartmentIds = $scope->managedDepartmentIds($managerEmployee);
+
+            $teamCount = $managedEmployeeIds->count();
 
             $activeCount = DB::table('employees')
-                ->where('department_id', $department->id)
+                ->whereIn('id', $managedEmployeeIds)
                 ->where('status', 'active')
                 ->count();
 
             $pendingLeaves = DB::table('leave_requests')
-                ->join('employees', 'employees.id', '=', 'leave_requests.employee_id')
-                ->where('employees.department_id', $department->id)
-                ->where('leave_requests.status', 'pending')
+                ->whereIn('employee_id', $managedEmployeeIds)
+                ->where('status', 'pending')
                 ->count();
 
             $totalLeaves = DB::table('leave_requests')
-                ->join('employees', 'employees.id', '=', 'leave_requests.employee_id')
-                ->where('employees.department_id', $department->id)
+                ->whereIn('employee_id', $managedEmployeeIds)
                 ->count();
 
             $kpiInProgress = DB::table('employee_kpis')
-                ->join('employees', 'employees.id', '=', 'employee_kpis.employee_id')
-                ->where('employees.department_id', $department->id)
-                ->whereIn('employee_kpis.status', ['pending', 'in_progress'])
+                ->whereIn('employee_id', $managedEmployeeIds)
+                ->whereIn('status', ['pending', 'in_progress'])
                 ->count();
 
-            $openJobs = DB::table('job_posts')
-                ->where('department_id', $department->id)
-                ->where('status', 'open')
-                ->count();
+            if ($managedDepartmentIds !== []) {
+                $openJobs = DB::table('job_posts')
+                    ->whereIn('department_id', $managedDepartmentIds)
+                    ->where('status', 'open')
+                    ->count();
+            }
 
             $todayCheckIns = DB::table('attendances')
-                ->join('employees', 'employees.id', '=', 'attendances.employee_id')
-                ->where('employees.department_id', $department->id)
-                ->whereDate('attendances.attendance_date', today()->toDateString())
-                ->whereIn('attendances.status', ['present', 'late'])
+                ->whereIn('employee_id', $managedEmployeeIds)
+                ->whereDate('attendance_date', today()->toDateString())
+                ->whereIn('status', ['present', 'late'])
                 ->count();
 
             $teamMembers = DB::table('employees')
                 ->leftJoin('positions', 'positions.id', '=', 'employees.position_id')
-                ->where('employees.department_id', $department->id)
+                ->whereIn('employees.id', $managedEmployeeIds)
                 ->orderByDesc('employees.hire_date')
                 ->limit(6)
                 ->get([
@@ -127,7 +131,7 @@ class DashboardController extends Controller
 
             $approvalQueue = DB::table('leave_requests')
                 ->join('employees', 'employees.id', '=', 'leave_requests.employee_id')
-                ->where('employees.department_id', $department->id)
+                ->whereIn('employees.id', $managedEmployeeIds)
                 ->orderByRaw("
                     CASE leave_requests.status
                         WHEN 'pending' THEN 0
@@ -146,26 +150,34 @@ class DashboardController extends Controller
                     'leave_requests.created_at',
                 ]);
 
-            $recruitmentPosts = DB::table('job_posts')
-                ->where('department_id', $department->id)
-                ->latest()
-                ->limit(3)
-                ->get([
-                    'title',
-                    'quantity',
-                    'status',
-                    'created_at',
-                ]);
+            if ($managedDepartmentIds !== []) {
+                $recruitmentPosts = DB::table('job_posts')
+                    ->whereIn('department_id', $managedDepartmentIds)
+                    ->latest()
+                    ->limit(3)
+                    ->get([
+                        'title',
+                        'quantity',
+                        'status',
+                        'created_at',
+                    ]);
+            }
 
             $kpiStatus = DB::table('employee_kpis')
-                ->join('employees', 'employees.id', '=', 'employee_kpis.employee_id')
-                ->where('employees.department_id', $department->id)
+                ->whereIn('employee_id', $managedEmployeeIds)
                 ->selectRaw("
+
                     SUM(CASE WHEN employee_kpis.status = 'pending' THEN 1 ELSE 0 END) AS pending,
                     SUM(CASE WHEN employee_kpis.status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
                     SUM(CASE WHEN employee_kpis.status = 'completed' THEN 1 ELSE 0 END) AS completed,
                     SUM(CASE WHEN employee_kpis.status = 'not_completed' THEN 1 ELSE 0 END) AS not_completed,
                     COALESCE(AVG(employee_kpis.progress), 0) AS average_progress
+
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+                    SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
+                    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
+                    COALESCE(AVG(progress), 0) AS average_progress
+
                 ")
                 ->first() ?? $kpiStatus;
         }
@@ -368,6 +380,30 @@ class DashboardController extends Controller
             ->leftJoin('departments', 'departments.id', '=', 'employees.department_id')
             ->leftJoin('positions', 'positions.id', '=', 'employees.position_id')
             ->where('employees.user_id', $user->id)
+            ->first([
+                'employees.id',
+                'employees.user_id',
+                'employees.department_id',
+                'employees.position_id',
+                'employees.employee_code',
+                'employees.full_name',
+                'employees.email',
+                'employees.phone',
+                'employees.address',
+                'employees.hire_date',
+                'employees.status as employee_status',
+                'departments.department_code',
+                'departments.department_name',
+                'positions.position_name',
+            ]);
+    }
+
+    private function employeeProfileFromModel(Employee $employee): ?object
+    {
+        return DB::table('employees')
+            ->leftJoin('departments', 'departments.id', '=', 'employees.department_id')
+            ->leftJoin('positions', 'positions.id', '=', 'employees.position_id')
+            ->where('employees.id', $employee->id)
             ->first([
                 'employees.id',
                 'employees.user_id',
