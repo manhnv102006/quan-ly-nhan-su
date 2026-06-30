@@ -111,7 +111,12 @@
                             <div><p class="font-semibold text-slate-800">{{ $item->kpi?->title ?? 'KPI' }}</p><p class="mt-1 text-sm text-slate-500">{{ $kpiLabels[$item->status] ?? ucfirst($item->status) }}</p></div>
                             <span class="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700">{{ (int) $item->progress }}%</span>
                         </div>
-                        <div class="mt-3 h-2.5 rounded-full bg-slate-100"><div class="h-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500" style="width: {{ min(100, max(4, (int) $item->progress)) }}%"></div></div>
+                        @php
+                            $progressWidth = min(100, max(4, (int) ($item->progress ?? 0)));
+                        @endphp
+                        <div class="mt-3 h-2.5 rounded-full bg-slate-100">
+                            <div class="h-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500" @style(['width: ' . $progressWidth . '%'])></div>
+                        </div>
                     </div>
                 @empty
                     <p class="text-sm text-slate-400">Chưa có KPI nào.</p>

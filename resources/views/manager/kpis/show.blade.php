@@ -45,6 +45,8 @@
                             <th>Nhân viên</th>
                             <th>Tên mục tiêu</th>
                             <th>Mô tả</th>
+                            <th>Điểm</th>
+                            <th>Review</th>
                             <th>Hạn chót</th>
                             <th>Tiến độ</th>
                             <th>Trạng thái</th>
@@ -54,34 +56,35 @@
                     <tbody>
                         @forelse ($assignment->employeeKpis as $goal)
                             <tr>
+                                @php
+                                    $progress = max(0, min(100, (int) ($goal->progress ?? 0)));
+                                @endphp
                                 <td>
                                     {{ $goal->employee->full_name ?? 'N/A' }}
                                     <p class="text-muted text-sm mb-0">{{ $goal->employee->employee_code ?? '' }}</p>
                                 </td>
                                 <td>{{ $goal->target }}</td>
                                 <td>{{ Str::limit($goal->comment, 100) }}</td>
+                                <td>{{ $goal->score !== null ? $goal->score : '—' }}</td>
+                                <td>{{ Str::limit($goal->review, 100) }}</td>
                                 <td>{{ $goal->deadline->format('d/m/Y') }}</td>
                                 <td>
                                     <div class="progress">
-                                        <div class="progress-bar" role="progressbar" style="width: {{ $goal->progress ?? 0 }}%;" aria-valuenow="{{ $goal->progress ?? 0 }}" aria-valuemin="0" aria-valuemax="100">{{ $goal->progress ?? 0 }}%</div>
+                                        <div class="progress-bar" role="progressbar" @style(['width: ' . $progress . '%']) aria-valuenow="{{ $progress }}" aria-valuemin="0" aria-valuemax="100">{{ $progress }}%</div>
                                     </div>
                                 </td>
                                 <td>
-                                    {{-- Bạn có thể thêm class màu cho trạng thái sau này --}}
-                                    <span class="badge bg-secondary">{{ $goal->status }}</span>
+                                    <span class="badge {{ $goal->status_color }}">{{ $goal->status_label }}</span>
                                 </td>
                                 <td>
-                                    <a href="#" class="btn btn-info btn-sm" title="Xem chi tiết">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="#" class="btn btn-warning btn-sm" title="Chỉnh sửa">
-                                        <i class="fas fa-edit"></i>
+                                    <a href="{{ route('manager.kpis.employee_kpis.score.edit', $goal) }}" class="btn btn-success btn-sm" title="Chấm KPI">
+                                        <i class="fas fa-star"></i> Chấm KPI
                                     </a>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">Chưa có mục tiêu nào được giao cho nhân viên.</td>
+                                <td colspan="9" class="text-center">Chưa có mục tiêu nào được giao cho nhân viên.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -90,3 +93,4 @@
         </div>
     </div>
 </x-app-layout>
+

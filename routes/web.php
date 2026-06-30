@@ -39,11 +39,15 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
 use App\Http\Controllers\Employee\EmployeePayrollController;
 
+use App\Http\Controllers\Employee\EmployeeKPIController;
+
+
 use App\Http\Controllers\Manager\LeaveApprovalController;
 use App\Http\Controllers\Manager\OvertimeApprovalController;
 
 use App\Http\Controllers\Employee\AttendanceController as EmployeeAttendanceController;
 use App\Http\Controllers\Employee\OvertimeController as EmployeeOvertimeController;
+
 
 
 use Illuminate\Support\Facades\Route;
@@ -184,6 +188,30 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/payrolls/{payroll}/pdf', [PayrollController::class, 'exportPdf'])->name('payrolls.pdf');
 });
 
+
+Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
+    Route::get('/manager/dashboard', [DashboardController::class, 'manager'])->name('manager.dashboard');
+    Route::get('/manager/employees', [ManagerEmployeeController::class, 'index'])->name('manager.employees.index');
+    Route::get('/manager/employees/{employee}', [ManagerEmployeeController::class, 'show'])->name('manager.employees.show');
+    Route::get('/manager/leave-requests', [LeaveRequestController::class, 'index'])->name('manager.leave-requests');
+    Route::patch('/manager/leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('manager.leave-requests.approve');
+    Route::patch('/manager/leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('manager.leave-requests.reject');
+    Route::get('/manager/notifications', [ManagerNotificationController::class, 'index'])->name('manager.notifications.index');
+    Route::get('/manager/notifications/create', [ManagerNotificationController::class, 'create'])->name('manager.notifications.create');
+    Route::post('/manager/notifications', [ManagerNotificationController::class, 'store'])->name('manager.notifications.store');
+    Route::patch('/manager/notifications/read-all', [ManagerNotificationController::class, 'markAllAsRead'])->name('manager.notifications.read-all');
+    Route::patch('/manager/notifications/{notification}/read', [ManagerNotificationController::class, 'markAsRead'])->name('manager.notifications.read');
+    Route::get('/manager/kpis', [ManagerKPIController::class, 'index'])->name('manager.kpis.index');
+    Route::get('/manager/kpis/{assignment}', [ManagerKPIController::class, 'show'])->name('manager.kpis.show');
+    Route::get('/manager/kpis/{assignment}/assign', [ManagerKPIController::class, 'assign'])->name('manager.kpis.assign');
+    Route::post('/manager/kpis/{assignment}/assign', [ManagerKPIController::class, 'storeAssign'])->name('manager.kpis.store_assign');
+
+    // Manager chấm KPI cho nhân viên
+    Route::get('/manager/kpis/employee-kpis/{employeeKpi}/score', [ManagerKPIController::class, 'editScore'])
+        ->name('manager.kpis.employee_kpis.score.edit');
+    Route::put('/manager/kpis/employee-kpis/{employeeKpi}/score', [ManagerKPIController::class, 'updateScore'])
+        ->name('manager.kpis.employee_kpis.score.update');
+
 Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'manager'])->name('dashboard');
 
@@ -205,6 +233,7 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::get('/overtime-requests/{overtimeRequest}', [OvertimeApprovalController::class, 'show'])->name('overtime-requests.show');
     Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeApprovalController::class, 'approve'])->name('overtime-requests.approve');
     Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeApprovalController::class, 'reject'])->name('overtime-requests.reject');
+
 });
 
 // Duyệt nghỉ phép — nhóm route riêng, chỉ Manager (Admin bị chặn 403)
@@ -220,6 +249,14 @@ Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager']
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
+
+
+    // KPI Routes for Employee
+    Route::prefix('employee/kpis')->name('employee.kpis.')->group(function () {
+        Route::get('/', [EmployeeKPIController::class, 'index'])->name('index');
+        Route::get('/{employeeKpi}/edit', [EmployeeKPIController::class, 'edit'])->name('edit');
+        Route::put('/{employeeKpi}', [EmployeeKPIController::class, 'update'])->name('update');
+    });
 
 });
 

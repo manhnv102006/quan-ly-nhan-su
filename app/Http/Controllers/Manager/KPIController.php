@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AssignEmployeeKPIRequest;
+use App\Http\Requests\Manager\UpdateEmployeeKPIScoreRequest;
 use App\Models\Employee;
+use App\Models\EmployeeKPI;
 use App\Models\KPIAssignment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class KPIController extends Controller
 {
@@ -18,6 +20,8 @@ class KPIController extends Controller
      */
     public function index(): View
     {
+        EmployeeKPI::markOverdueAsNotCompleted();
+
         $assignments = KPIAssignment::with([
                 'kpi',
                 'assignedBy',
@@ -35,6 +39,8 @@ class KPIController extends Controller
      */
     public function show(KPIAssignment $assignment): View
     {
+        EmployeeKPI::markOverdueAsNotCompleted();
+
         // Đảm bảo Manager chỉ xem KPI của chính mình
         abort_if($assignment->manager_id !== Auth::id(), 403);
 
@@ -79,18 +85,60 @@ class KPIController extends Controller
             'comment' => $validated['comment'], // Mô tả công việc
             'deadline' => $validated['deadline'],
             'progress' => 0,
-            'status' => 'pending',
+            'status' => EmployeeKPI::STATUS_PENDING,
             'score' => null,
         ]);
 
         return redirect()
             ->route('manager.kpis.show', $assignment)
-            ->with('success', 'Giao mục tiêu cho nhân viên thành công.');
+            ->with('success', 'Giao mục tiêu cho nhân viên thành công.');}
+
+    public function editScore(EmployeeKPI $employeeKpi): View
+    {
+        // Đảm bảo Manager chỉ chấm KPI của chính mình
+        $employeeKpi->load(['employee', 'kpiAssignment.kpi', 'kpiAssignment.manager']);
+
+        abort_if($employeeKpi->kpiAssignment?->manager_id !== Auth::id(), 403);
+
+        return view('manager.kpis.score', compact('employeeKpi'));
+    }
+
+    public function updateScore(
+        UpdateEmployeeKPIScoreRequest $request,
+        EmployeeKPI $employeeKpi
+    ): RedirectResponse {
+        $validated = $request->validated();
+
+        $employeeKpi->loadMissing(['kpiAssignment']);
+        abort_if($employeeKpi->kpiAssignment?->manager_id !== Auth::id(), 403);
+
+        // Chỉ cập nhật score/review (KHÔNG đụng progress/status/target/deadline/comment)
+        $employeeKpi->update([
+            'score' => $validated['score'],
+            'review' => $validated['review'] ?? null,
+        ]);
+
+        return redirect()
+            ->route('manager.kpis.index')
+            ->with('success', 'Chấm KPI thành công');
     }
 
     private function getManagedEmployees()
     {
-        $manager = Auth::user()->employee;
-        return Employee::where('department_id', $manager->department_id)->where('status', 'active')->get();
+        $managerEmployee = Auth::user()->employee;
+
+        // Manager chỉ được giao KPI cho nhân viên (loại trừ role manager)
+        // Trường hợp manager đã được "link" sang bảng employees thì vẫn lọc ra bằng join role.
+        return Employee::query()
+            ->where('department_id', $managerEmployee->department_id)
+            ->where('status', 'active')
+            ->whereHas('user', function ($q) {
+                $q->whereHas('role', function ($roleQ) {
+                    $roleQ->where('name', '!=', 'manager');
+                });
+            })
+            ->get();
     }
+
 }
+
