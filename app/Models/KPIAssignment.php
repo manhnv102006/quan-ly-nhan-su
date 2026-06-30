@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class KPIAssignment extends Model
 {
@@ -39,6 +40,11 @@ class KPIAssignment extends Model
     public function assignedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by')->withTrashed();
+    }
+
+    public function employeeKpis(): HasMany
+    {
+        return $this->hasMany(EmployeeKPI::class, 'assignment_id');
     }
 
     public function getManagerNameAttribute(): string

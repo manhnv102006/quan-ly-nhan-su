@@ -3,61 +3,74 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ContractRequest;
+use App\Http\Requests\ContractCancelRequest;
+use App\Http\Requests\ContractExtendRequest;
+use App\Http\Requests\ContractStoreRequest;
+use App\Http\Requests\ContractUpdateRequest;
 use App\Models\Contract;
-use App\Models\ContractExtension;
-use App\Models\ContractTermination;
 use App\Models\ContractType;
+use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Position;
+use App\Services\ContractService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ContractController extends Controller
 {
+    public function __construct(private readonly ContractService $service)
+    {
+    }
+
     public function index(Request $request): View
     {
-        $query = Contract::with(['employee', 'contractType']);
-
-        if ($request->filled('search')) {
-            $query->where(function ($query) use ($request) {
-                $query->where('contract_code', 'like', '%'.$request->search.'%')
-                    ->orWhereHas('employee', function ($query) use ($request) {
-                        $query->where('full_name', 'like', '%'.$request->search.'%')
-                            ->orWhere('employee_code', 'like', '%'.$request->search.'%');
+        $query = Contract::with(['employee.department', 'employee.position', 'department', 'position', 'contractType', 'creator'])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $term = $request->string('search')->trim();
+                $q->where('contract_code', 'like', "%{$term}%")
+                    ->orWhereHas('employee', function ($sub) use ($term) {
+                        $sub->where('full_name', 'like', "%{$term}%")
+                            ->orWhere('employee_code', 'like', "%{$term}%");
                     });
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('contract_type_id')) {
-            $query->where('contract_type_id', $request->contract_type_id);
-        }
-
-        if ($request->filled('employee_id')) {
-            $query->where('employee_id', $request->employee_id);
-        }
+            })
+            ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
+            ->when($request->filled('contract_type_id'), fn($q) => $q->where('contract_type_id', $request->contract_type_id))
+            ->when($request->filled('employee_id'), fn($q) => $q->where('employee_id', $request->employee_id))
+            ->when($request->filled('department_id'), function ($q) use ($request) {
+                $deptId = $request->department_id;
+                $q->where(function ($sub) use ($deptId) {
+                    $sub->where('department_id', $deptId)
+                        ->orWhereHas('employee', fn ($e) => $e->where('department_id', $deptId));
+                });
+            })
+            ->when($request->filled('position_id'), function ($q) use ($request) {
+                $posId = $request->position_id;
+                $q->where(function ($sub) use ($posId) {
+                    $sub->where('position_id', $posId)
+                        ->orWhereHas('employee', fn ($e) => $e->where('position_id', $posId));
+                });
+            })
+            ->when($request->filled('start_from'), fn ($q) => $q->whereDate('start_date', '>=', $request->start_from))
+            ->when($request->filled('start_to'), fn ($q) => $q->whereDate('end_date', '<=', $request->start_to));
 
         $contracts = $query
-            ->orderByDesc('start_date')
-            ->paginate(10)
+            ->orderByDesc('created_at')
+            ->paginate(15)
             ->withQueryString();
 
-        $statuses = [
-            'active' => 'Đang hiệu lực',
-            'expired' => 'Đã hết hạn',
-            'terminated' => 'Đã thanh lý',
-        ];
+        $statuses = $this->statusOptions();
+        $stats = $this->contractStats();
 
         return view('admin.contracts.index', [
             'contracts' => $contracts,
             'statuses' => $statuses,
+            'stats' => $stats,
             'contractTypes' => ContractType::orderBy('contract_name')->get(),
             'employees' => Employee::orderBy('full_name')->get(),
+            'departments' => Department::orderBy('department_name')->get(),
+            'positions' => Position::orderBy('position_name')->get(),
+            'filters' => $request->only(['search', 'status', 'contract_type_id', 'employee_id', 'department_id', 'position_id', 'start_from', 'start_to']),
         ]);
     }
 
@@ -65,195 +78,168 @@ class ContractController extends Controller
     {
         return view('admin.contracts.create', [
             'contractTypes' => ContractType::orderBy('contract_name')->get(),
-            'employees' => Employee::orderBy('full_name')->get(),
-            'statuses' => [
-                'active' => 'Đang hiệu lực',
-                'expired' => 'Đã hết hạn',
-                'terminated' => 'Đã thanh lý',
-            ],
+            'employees' => Employee::with(['department', 'position'])
+                ->where('status', 'active')
+                ->orderBy('full_name')
+                ->get(),
+            'departments' => Department::orderBy('department_name')->get(),
+            'positions' => Position::orderBy('position_name')->get(),
+            'nextCode' => $this->service->generateCode(),
         ]);
     }
 
-    public function store(ContractRequest $request): RedirectResponse
+    public function store(ContractStoreRequest $request): RedirectResponse
     {
-        $data = $this->prepareContractData($request);
+        $data = $request->validated();
+        $data['created_by'] = $request->user()?->id;
 
-        Contract::create($data);
+        $this->service->create($data, $request->user()?->id);
 
         return redirect()
             ->route('admin.contracts.index')
-            ->with('success', 'Hợp đồng đã được tạo thành công.');
+            ->with('success', 'Tạo hợp đồng thành công.');
     }
 
-    public function show(int $contract): View
+    public function show(int $id): View
     {
         $contract = Contract::withTrashed()
-            ->with(['employee', 'contractType', 'extensions', 'terminations'])
-            ->findOrFail($contract);
+            ->with(['employee.department', 'employee.position', 'department', 'position', 'contractType', 'creator'])
+            ->findOrFail($id);
+
+        $history = Contract::withTrashed()
+            ->where('employee_id', $contract->employee_id)
+            ->orderByDesc('start_date')
+            ->get();
 
         return view('admin.contracts.show', [
             'contract' => $contract,
+            'history' => $history,
+            'statuses' => $this->statusOptions(),
         ]);
     }
 
     public function edit(Contract $contract): View
     {
+        abort_unless($contract->isEditable(), 403, 'Chỉ cho phép sửa hợp đồng Draft hoặc Active.');
+
         return view('admin.contracts.edit', [
             'contract' => $contract,
             'contractTypes' => ContractType::orderBy('contract_name')->get(),
-            'employees' => Employee::orderBy('full_name')->get(),
-            'statuses' => [
-                'active' => 'Đang hiệu lực',
-                'expired' => 'Đã hết hạn',
-                'terminated' => 'Đã thanh lý',
-            ],
+            'employees' => Employee::where('status', 'active')->orderBy('full_name')->get(),
+            'departments' => Department::orderBy('department_name')->get(),
+            'positions' => Position::orderBy('position_name')->get(),
         ]);
     }
 
-    public function update(ContractRequest $request, Contract $contract): RedirectResponse
+    public function update(ContractUpdateRequest $request, Contract $contract): RedirectResponse
     {
-        $data = $this->prepareContractData($request, $contract);
-
-        $contract->update($data);
+        $this->service->update($contract, $request->validated());
 
         return redirect()
             ->route('admin.contracts.index')
-            ->with('success', 'Hợp đồng đã được cập nhật thành công.');
+            ->with('success', 'Cập nhật hợp đồng thành công.');
     }
 
     public function destroy(Contract $contract): RedirectResponse
     {
-        $contract->delete();
+        $this->service->softDelete($contract);
 
         return redirect()
             ->route('admin.contracts.index')
-            ->with('success', 'Hợp đồng đã được xóa mềm. Bạn có thể khôi phục sau.');
+            ->with('success', 'Đã chuyển hợp đồng vào thùng rác.');
     }
 
     public function trash(Request $request): View
     {
-        $query = Contract::onlyTrashed()->with(['employee', 'contractType']);
-
-        if ($request->filled('search')) {
-            $query->where(function ($query) use ($request) {
-                $query->where('contract_code', 'like', '%'.$request->search.'%')
-                    ->orWhereHas('employee', function ($query) use ($request) {
-                        $query->where('full_name', 'like', '%'.$request->search.'%')
-                            ->orWhere('employee_code', 'like', '%'.$request->search.'%');
+        $contracts = Contract::onlyTrashed()
+            ->with(['employee', 'contractType'])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $term = $request->string('search')->trim();
+                $q->where('contract_code', 'like', "%{$term}%")
+                    ->orWhereHas('employee', function ($sub) use ($term) {
+                        $sub->where('full_name', 'like', "%{$term}%");
                     });
-            });
-        }
-
-        $contracts = $query
+            })
             ->orderByDesc('deleted_at')
-            ->paginate(10)
+            ->paginate(15)
             ->withQueryString();
 
-        return view('admin.contracts.trash', compact('contracts'));
+        return view('admin.contracts.trash', [
+            'contracts' => $contracts,
+            'trashCount' => Contract::onlyTrashed()->count(),
+        ]);
     }
 
     public function restore(int $id): RedirectResponse
     {
         $contract = Contract::onlyTrashed()->findOrFail($id);
-        $contract->restore();
+        $this->service->restore($contract);
 
         return redirect()
             ->route('admin.contracts.trashed')
-            ->with('success', 'Hợp đồng đã được khôi phục thành công.');
+            ->with('success', 'Khôi phục hợp đồng thành công.');
     }
 
     public function forceDelete(int $id): RedirectResponse
     {
         $contract = Contract::onlyTrashed()->findOrFail($id);
-
-        if ($contract->file_path) {
-            Storage::disk('public')->delete($contract->file_path);
-        }
-
-        $contract->forceDelete();
+        $this->service->forceDelete($contract);
 
         return redirect()
             ->route('admin.contracts.trashed')
-            ->with('success', 'Hợp đồng đã được xóa vĩnh viễn.');
+            ->with('success', 'Đã xóa vĩnh viễn hợp đồng.');
     }
 
-    public function extend(Request $request, Contract $contract): RedirectResponse
+    public function extendForm(Contract $contract): View
     {
-        $request->validate([
-            'new_end_date' => ['required', 'date', 'after_or_equal:'.$contract->end_date?->toDateString() ?: $contract->start_date->toDateString()],
-            'note' => ['nullable', 'string', 'max:500'],
-        ], [
-            'new_end_date.required' => 'Ngày gia hạn là bắt buộc.',
-            'new_end_date.date' => 'Ngày gia hạn không hợp lệ.',
-            'new_end_date.after_or_equal' => 'Ngày gia hạn phải bằng hoặc sau ngày kết thúc hiện tại.',
-        ]);
+        abort_unless($contract->isEditable(), 403, 'Chỉ gia hạn hợp đồng Draft hoặc Active.');
 
-        ContractExtension::create([
-            'contract_id' => $contract->id,
-            'old_end_date' => $contract->end_date,
-            'new_end_date' => $request->new_end_date,
-            'note' => $request->note,
+        return view('admin.contracts.extend', [
+            'contract' => $contract,
+            'contractTypes' => ContractType::orderBy('contract_name')->get(),
+            'nextCode' => $this->service->generateCode(),
         ]);
+    }
 
-        $contract->update([
-            'end_date' => $request->new_end_date,
-            'status' => $contract->status === 'terminated' ? 'terminated' : 'active',
-        ]);
+    public function extendStore(ContractExtendRequest $request, Contract $contract): RedirectResponse
+    {
+        $this->service->extend($contract, $request->validated(), $request->user()?->id);
 
         return redirect()
-            ->route('admin.contracts.show', $contract)
-            ->with('success', 'Hợp đồng đã được gia hạn thành công.');
+            ->route('admin.contracts.index')
+            ->with('success', 'Gia hạn hợp đồng thành công.');
     }
 
-    public function terminate(Request $request, Contract $contract): RedirectResponse
+    public function cancel(ContractCancelRequest $request, Contract $contract): RedirectResponse
     {
-        $request->validate([
-            'end_date' => ['required', 'date', 'after_or_equal:'.$contract->start_date->toDateString()],
-            'note' => ['nullable', 'string', 'max:500'],
-            'file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
-        ], [
-            'end_date.required' => 'Ngày thanh lý là bắt buộc.',
-            'end_date.date' => 'Ngày thanh lý không hợp lệ.',
-            'end_date.after_or_equal' => 'Ngày thanh lý phải bằng hoặc sau ngày bắt đầu.',
-            'file.mimes' => 'Biên bản thanh lý phải là PDF, DOC hoặc DOCX.',
-            'file.max' => 'Biên bản thanh lý không được vượt quá 10MB.',
-        ]);
-
-        $filePath = null;
-        if ($request->hasFile('file')) {
-            $filePath = $request->file('file')->store('contract-terminations', 'public');
-        }
-
-        ContractTermination::create([
-            'contract_id' => $contract->id,
-            'end_date' => $request->end_date,
-            'note' => $request->note,
-            'file_path' => $filePath,
-        ]);
-
-        $contract->update([
-            'end_date' => $request->end_date,
-            'status' => 'terminated',
-        ]);
+        $this->service->cancel($contract, $request->validated());
 
         return redirect()
-            ->route('admin.contracts.show', $contract)
-            ->with('success', 'Hợp đồng đã được thanh lý thành công.');
+            ->route('admin.contracts.index')
+            ->with('success', 'Hủy hợp đồng thành công.');
     }
 
-    private function prepareContractData(ContractRequest $request, ?Contract $contract = null): array
+    private function statusOptions(): array
     {
-        $data = $request->validated();
-        unset($data['contract_file']);
+        return Contract::STATUS_LABELS;
+    }
 
-        if ($request->hasFile('contract_file')) {
-            if ($contract?->file_path) {
-                Storage::disk('public')->delete($contract->file_path);
-            }
+    private function contractStats(): array
+    {
+        $today = now()->toDateString();
+        $soonDate = now()->addDays(30)->toDateString();
 
-            $data['file_path'] = $request->file('contract_file')->store('contracts', 'public');
-        }
-
-        return $data;
+        return [
+            'total' => Contract::count(),
+            'active' => Contract::where('status', Contract::STATUS_ACTIVE)->count(),
+            'expired' => Contract::where('status', Contract::STATUS_EXPIRED)->count(),
+            'expiring_soon' => Contract::query()
+                ->where('status', Contract::STATUS_ACTIVE)
+                ->whereNotNull('end_date')
+                ->whereDate('end_date', '>=', $today)
+                ->whereDate('end_date', '<=', $soonDate)
+                ->count(),
+            'trashed' => Contract::onlyTrashed()->count(),
+        ];
     }
 }

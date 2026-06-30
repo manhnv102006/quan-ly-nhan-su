@@ -13,9 +13,20 @@ class Shift extends Model
         'start_time',
         'end_time'
     ];
+    protected function casts(): array
+    {
+        return [
+            'start_time' => 'datetime:H:i:s',
+            'end_time' => 'datetime:H:i:s',
+        ];
+    }
 
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);
     }
+public function employeeShifts(): HasMany
+{
+    return $this->hasMany(EmployeeShift::class);
+}
 }
