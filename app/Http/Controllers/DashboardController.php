@@ -166,18 +166,11 @@ class DashboardController extends Controller
             $kpiStatus = DB::table('employee_kpis')
                 ->whereIn('employee_id', $managedEmployeeIds)
                 ->selectRaw("
-
                     SUM(CASE WHEN employee_kpis.status = 'pending' THEN 1 ELSE 0 END) AS pending,
                     SUM(CASE WHEN employee_kpis.status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
                     SUM(CASE WHEN employee_kpis.status = 'completed' THEN 1 ELSE 0 END) AS completed,
                     SUM(CASE WHEN employee_kpis.status = 'not_completed' THEN 1 ELSE 0 END) AS not_completed,
                     COALESCE(AVG(employee_kpis.progress), 0) AS average_progress
-
-                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
-                    SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
-                    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
-                    COALESCE(AVG(progress), 0) AS average_progress
-
                 ")
                 ->first() ?? $kpiStatus;
         }
