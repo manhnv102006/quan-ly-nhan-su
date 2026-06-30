@@ -1,0 +1,91 @@
+<x-app-layout title="KPI của tôi">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">KPI của tôi</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Danh sách mục tiêu KPI ({{ $employeeKpis->total() }})</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Mã KPI</th>
+                            <th>Tên mục tiêu</th>
+                            <th>Mô tả công việc</th>
+                            <th>Tiến độ</th>
+                            <th>Hạn chót</th>
+                            <th>Trạng thái</th>
+                            <th>Điểm</th>
+                            <th>Đánh giá</th>
+                            <th>Người giao</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($employeeKpis as $employeeKpi)
+                        <tr>
+                            @php
+                            $progress = max(0, min(100, (int) ($employeeKpi->progress ?? 0)));
+                            @endphp
+                            <td>{{ $employeeKpi->kpi->code ?? 'N/A' }}</td>
+                            <td>
+                                <strong>{{ $employeeKpi->target }}</strong>
+                               
+                            </td>
+                            <td>{{ Str::limit($employeeKpi->comment, 100) }}</td>
+                            <td>
+                                <div class="progress mb-2">
+                                    <div class="progress-bar" role="progressbar" @style(['width: ' . $progress . ' %'])
+                                        aria-valuenow="{{ $progress }}" aria-valuemin="0"
+                                        aria-valuemax="100">{{ $progress }}%</div>
+                                </div>
+                            </td>
+                            <td>{{ $employeeKpi->deadline->format('d/m/Y') }}</td>
+                            <td>
+                                <span class="badge {{ $employeeKpi->status_color }}">{{ $employeeKpi->status_label }}</span>
+                            </td>
+                            <td>
+                                @if($employeeKpi->score !== null)
+                                {{ number_format($employeeKpi->score, 0) }}/100
+                                @else
+                                <span class="text-muted">Chưa đánh giá</span>
+                                @endif
+                            </td>
+
+                            <td>
+                                {{ $employeeKpi->review ?? 'Chưa có nhận xét' }}
+                            </td>
+                            <td>
+                                {{ $employeeKpi->kpiAssignment->manager->name ?? 'N/A' }}
+                            </td>
+                            <td>
+                                @if($employeeKpi->score === null)
+                                <a href="{{ route('employee.kpis.edit', $employeeKpi) }}"
+                                    class="btn btn-primary">
+                                    Cập nhật tiến độ
+                                </a>
+                                @else
+                                <span class="text-success">Đã được đánh giá</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="7" class="text-center py-4">Bạn chưa được giao mục tiêu KPI nào.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if ($employeeKpis->hasPages())
+            <div class="d-flex justify-content-center mt-3">
+                {{ $employeeKpis->links() }}
+            </div>
+            @endif
+        </div>
+    </div>
+</x-app-layout>

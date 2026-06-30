@@ -12,6 +12,7 @@ $maxWidth = [
     'xl' => 'sm:max-w-xl',
     '2xl' => 'sm:max-w-2xl',
 ][$maxWidth];
+$display = $show ? 'block' : 'none';
 @endphp
 
 <div
@@ -47,7 +48,7 @@ $maxWidth = [
     x-on:keydown.shift.tab.prevent="prevFocusable().focus()"
     x-show="show"
     class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50"
-    style="display: {{ $show ? 'block' : 'none' }};"
+    @style(['display: ' . $display])
 >
     <div
         x-show="show"
