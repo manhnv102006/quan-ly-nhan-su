@@ -12,6 +12,8 @@ class ContractSeeder extends Seeder
         DB::table('contracts')->insert([
             [
                 'employee_id' => 1,
+                'department_id' => 1,
+                'position_id' => 1,
                 'contract_type_id' => 5,
                 'contract_code' => 'HD001',
                 'start_date' => '2025-01-01',
@@ -25,6 +27,8 @@ class ContractSeeder extends Seeder
             ],
             [
                 'employee_id' => 2,
+                'department_id' => 2,
+                'position_id' => 2,
                 'contract_type_id' => 3,
                 'contract_code' => 'HD002',
                 'start_date' => '2025-02-01',
@@ -38,6 +42,8 @@ class ContractSeeder extends Seeder
             ],
             [
                 'employee_id' => 3,
+                'department_id' => 3,
+                'position_id' => 3,
                 'contract_type_id' => 2,
                 'contract_code' => 'HD003',
                 'start_date' => '2025-03-01',
