@@ -132,6 +132,7 @@ class Employee extends Model
         return $this->hasMany(DepartmentTransfer::class);
     }
 
+
     public static function managedDepartmentIdFor(self $manager): ?int
     {
         $ids = self::managedDepartmentIdsFor($manager);
@@ -179,4 +180,17 @@ class Employee extends Model
             }
         });
     }
+
+    public function employeeShifts(): HasMany
+    {
+        return $this->hasMany(EmployeeShift::class);
+    }
+   public function todayShift()
+{
+    return $this->employeeShifts()
+        ->whereDate('work_date', today())
+        ->with('shift')
+        ->first();
+}
+
 }
