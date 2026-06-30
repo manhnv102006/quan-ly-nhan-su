@@ -4,13 +4,13 @@
     $managerName = $employeeProfile?->full_name ?? Auth::user()->name;
     $departmentName = $department?->department_name ?? 'Chưa gắn phòng ban';
     $statusClasses = [
-        'active' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+        'active' => 'bg-blue-50 text-blue-700 border-blue-100',
         'inactive' => 'bg-slate-100 text-slate-600 border-slate-200',
         'resigned' => 'bg-rose-50 text-rose-700 border-rose-100',
         'pending' => 'bg-amber-50 text-amber-700 border-amber-100',
-        'approved' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+        'approved' => 'bg-blue-50 text-blue-700 border-blue-100',
         'rejected' => 'bg-rose-50 text-rose-700 border-rose-100',
-        'open' => 'bg-cyan-50 text-cyan-700 border-cyan-100',
+        'open' => 'bg-indigo-50 text-indigo-700 border-indigo-100',
         'closed' => 'bg-slate-100 text-slate-600 border-slate-200',
     ];
     $employeeStatusLabels = [
@@ -34,8 +34,8 @@
     ];
     $kpiCards = [
         ['label' => 'KPI chờ bắt đầu', 'value' => (int) ($kpiStatus->pending ?? 0), 'tone' => 'from-amber-400 to-orange-500'],
-        ['label' => 'KPI đang chạy', 'value' => (int) ($kpiStatus->in_progress ?? 0), 'tone' => 'from-cyan-400 to-sky-500'],
-        ['label' => 'KPI hoàn thành', 'value' => (int) ($kpiStatus->completed ?? 0), 'tone' => 'from-emerald-400 to-teal-500'],
+        ['label' => 'KPI đang chạy', 'value' => (int) ($kpiStatus->in_progress ?? 0), 'tone' => 'from-violet-400 to-indigo-500'],
+        ['label' => 'KPI hoàn thành', 'value' => (int) ($kpiStatus->completed ?? 0), 'tone' => 'from-indigo-400 to-blue-500'],
         ['label' => 'KPI không hoàn thành', 'value' => (int) ($kpiStatus->not_completed ?? 0), 'tone' => 'from-rose-400 to-red-500'],
     ];
 @endphp
@@ -46,9 +46,10 @@
     role="manager"
     :navigation="$navigation"
 >
-    <section id="overview" class="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-400 p-6 text-white shadow-xl shadow-emerald-400/15 sm:p-8">
-        <div class="absolute -right-16 top-0 h-48 w-48 rounded-full bg-white/10 blur-3xl"></div>
-        <div class="absolute bottom-0 left-0 h-40 w-40 -translate-x-1/4 translate-y-1/4 rounded-full bg-cyan-300/20 blur-3xl"></div>
+    <section id="overview" class="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 via-violet-900 to-indigo-800 p-6 text-white shadow-2xl shadow-violet-900/20 sm:p-8">
+        <div class="absolute -right-16 top-0 h-56 w-56 rounded-full bg-violet-500/20 blur-3xl"></div>
+        <div class="absolute bottom-0 left-0 h-44 w-44 -translate-x-1/4 translate-y-1/4 rounded-full bg-indigo-400/15 blur-3xl"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.08),transparent_45%)]"></div>
 
         <div class="relative flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
             <div class="max-w-3xl">
@@ -59,12 +60,12 @@
                 <h2 class="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
                     Chào {{ $firstName }}, hôm nay mình kiểm soát nhịp vận hành của {{ $department?->department_code ? $departmentName.' ('.$department->department_code.')' : $departmentName }}.
                 </h2>
-                <p class="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90 sm:text-base">
+                <p class="mt-3 max-w-2xl text-sm leading-6 text-violet-100/90 sm:text-base">
                     Không gian manager được tối ưu để bạn nắm nhanh tiến độ đội ngũ, hồ sơ chờ phê duyệt và các hạng mục KPI cần theo dõi trong ngày.
                 </p>
 
                 <div class="mt-6 flex flex-wrap gap-3">
-                    <a href="#approvals" class="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-emerald-700 shadow-lg shadow-emerald-900/10 transition hover:-translate-y-0.5">
+                    <a href="#approvals" class="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-violet-700 shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-violet-50">
                         Xem hàng đợi phê duyệt
                     </a>
                     <a href="#team" class="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15">
@@ -75,19 +76,19 @@
 
             <div class="grid gap-3 sm:grid-cols-3 xl:w-[420px] xl:grid-cols-1">
                 <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-100">Người phụ trách</p>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-200">Người phụ trách</p>
                     <p class="mt-2 text-lg font-bold">{{ $managerName }}</p>
-                    <p class="mt-1 text-sm text-emerald-50/85">{{ $employeeProfile?->position_name ?? 'Manager' }}</p>
+                    <p class="mt-1 text-sm text-violet-100/85">{{ $employeeProfile?->position_name ?? 'Manager' }}</p>
                 </div>
                 <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-100">Đơn đang chờ / Tổng đơn</p>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-200">Đơn đang chờ / Tổng đơn</p>
                     <p class="mt-2 text-lg font-bold">{{ number_format($pendingLeaves) }} / {{ number_format($totalLeaves) }}</p>
-                    <p class="mt-1 text-sm text-emerald-50/85">Cần ưu tiên xử lý trong hôm nay</p>
+                    <p class="mt-1 text-sm text-violet-100/85">Cần ưu tiên xử lý trong hôm nay</p>
                 </div>
                 <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-100">Thông báo mới</p>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-200">Thông báo mới</p>
                     <p class="mt-2 text-lg font-bold">{{ number_format($unreadNotifications) }}</p>
-                    <p class="mt-1 text-sm text-emerald-50/85">Tin nhắn nội bộ chưa đọc</p>
+                    <p class="mt-1 text-sm text-violet-100/85">Tin nhắn nội bộ chưa đọc</p>
                 </div>
             </div>
         </div>
@@ -110,27 +111,27 @@
     @endif
 
     <section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <div class="staff-stat-card border border-emerald-100/80 bg-white/90">
+        <div class="staff-stat-card border border-violet-100/80 bg-white/90">
             <div class="flex items-start justify-between">
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-200">
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-200">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                 </div>
-                <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-700">Team</span>
+                <span class="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-violet-700">Team</span>
             </div>
             <p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format($teamCount) }}</p>
             <p class="mt-1 text-sm font-medium text-slate-500">Nhân sự trong phòng ban</p>
         </div>
 
-        <div class="staff-stat-card border border-cyan-100/80 bg-white/90">
+        <div class="staff-stat-card border border-indigo-100/80 bg-white/90">
             <div class="flex items-start justify-between">
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-600 text-white shadow-lg shadow-cyan-200">
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-lg shadow-indigo-200">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
                     </svg>
                 </div>
-                <span class="rounded-full bg-cyan-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-700">Active</span>
+                <span class="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-indigo-700">Active</span>
             </div>
             <p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format($activeCount) }}</p>
             <p class="mt-1 text-sm font-medium text-slate-500">Nhân sự đang hoạt động</p>
@@ -164,7 +165,7 @@
 
         <div class="staff-stat-card border border-indigo-100/80 bg-white/90">
             <div class="flex items-start justify-between">
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-600 text-white shadow-lg shadow-indigo-200">
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-600 text-white shadow-lg shadow-fuchsia-200">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -182,14 +183,14 @@
                 <div class="border-b border-slate-100 px-6 py-5 sm:px-7">
                     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                         <div>
-                            <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-600">Đội ngũ phòng ban</p>
+                            <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Đội ngũ phòng ban</p>
                             <h3 class="mt-2 text-2xl font-bold tracking-tight text-slate-800">{{ $departmentName }}</h3>
                             <p class="mt-1 text-sm text-slate-500">
                                 {{ $department?->description ?: 'Khu vực này giúp manager theo dõi thành viên mới nhất và trạng thái làm việc của cả đội.' }}
                             </p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                            <span class="inline-flex items-center gap-2 rounded-full border border-violet-100 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700">
                                 {{ number_format($teamCount) }} thành viên
                             </span>
                             <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold {{ $statusClasses[$department?->status ?? 'inactive'] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">
@@ -235,7 +236,7 @@
                             @foreach ($teamMembers as $member)
                                 <div class="flex flex-col gap-4 rounded-3xl border border-slate-100 bg-white px-4 py-4 shadow-sm shadow-slate-100 sm:flex-row sm:items-center sm:justify-between">
                                     <div class="flex items-center gap-3">
-                                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-cyan-100 text-sm font-bold text-emerald-700">
+                                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-100 text-sm font-bold text-violet-700">
                                             {{ strtoupper(mb_substr($member->full_name, 0, 1)) }}
                                         </div>
                                         <div>
@@ -307,7 +308,7 @@
             <section id="kpi" class="staff-card p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-600">Nhịp KPI</p>
+                        <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Nhịp KPI</p>
                         <h3 class="mt-2 text-xl font-bold text-slate-800">Sức khỏe mục tiêu</h3>
                         <p class="mt-1 text-sm text-slate-500">Tỷ lệ hoàn thành giúp bạn nhìn nhanh nhịp độ đội nhóm.</p>
                     </div>
@@ -339,7 +340,7 @@
             </section>
 
             <section class="staff-card p-6">
-                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-600">Hồ sơ quản lý</p>
+                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Hồ sơ quản lý</p>
                 <h3 class="mt-2 text-xl font-bold text-slate-800">Tóm tắt tài khoản</h3>
 
                 <div class="mt-6 space-y-4">
@@ -361,7 +362,7 @@
             </section>
 
             <section id="recruitment" class="staff-card p-6">
-                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-600">Tuyển dụng</p>
+                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-indigo-600">Tuyển dụng</p>
                 <h3 class="mt-2 text-xl font-bold text-slate-800">Tin tuyển của phòng ban</h3>
                 <p class="mt-1 text-sm text-slate-500">Theo dõi những vị trí đang mở và nhu cầu bổ sung nhân sự.</p>
 

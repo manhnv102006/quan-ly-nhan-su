@@ -10,7 +10,7 @@
         ['label' => 'Hồ sơ', 'href' => route('profile.edit'), 'icon' => 'M15.75 6.75a3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z', 'note' => 'Thông tin tài khoản'],
     ];
 
-    $statusClasses = ['active' => 'bg-emerald-50 text-emerald-700 border-emerald-100', 'inactive' => 'bg-slate-100 text-slate-600 border-slate-200', 'resigned' => 'bg-rose-50 text-rose-700 border-rose-100'];
+    $statusClasses = ['active' => 'bg-blue-50 text-blue-700 border-blue-100', 'inactive' => 'bg-slate-100 text-slate-600 border-slate-200', 'resigned' => 'bg-rose-50 text-rose-700 border-rose-100'];
     $statusLabels = ['active' => 'Đang làm việc', 'inactive' => 'Tạm ngưng', 'resigned' => 'Đã nghỉ'];
     $attendanceLabels = ['present' => 'Đúng giờ', 'late' => 'Đi muộn', 'absent' => 'Vắng mặt', 'leave' => 'Nghỉ phép'];
     $leaveLabels = ['pending' => 'Chờ duyệt', 'approved' => 'Đã duyệt', 'rejected' => 'Từ chối'];
@@ -19,7 +19,7 @@
 
 <x-staff-layout title="Chi tiết nhân viên" subtitle="Xem hồ sơ nhân viên thuộc phòng ban bạn quản lý." role="manager" :navigation="$navigation">
     <div class="space-y-6">
-        <section class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 p-6 text-white shadow-xl shadow-emerald-500/20 sm:p-8">
+        <section class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 via-violet-800 to-indigo-700 p-6 text-white shadow-xl shadow-violet-900/20 sm:p-8">
             <div class="absolute -right-16 top-0 h-48 w-48 rounded-full bg-white/10 blur-3xl"></div>
             <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div class="flex items-center gap-4">
@@ -31,12 +31,12 @@
                         @endif
                     </div>
                     <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.24em] text-emerald-100">Hồ sơ đội ngũ</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.24em] text-violet-200">Hồ sơ đội ngũ</p>
                         <h2 class="mt-2 text-3xl font-extrabold tracking-tight">{{ $employee->full_name }}</h2>
-                        <p class="mt-1 text-sm text-emerald-50">{{ $employee->employee_code }} · {{ $employee->position?->position_name ?? 'Chưa có chức vụ' }}</p>
+                        <p class="mt-1 text-sm text-violet-100">{{ $employee->employee_code }} · {{ $employee->position?->position_name ?? 'Chưa có chức vụ' }}</p>
                     </div>
                 </div>
-                <a href="{{ route('manager.employees.index') }}" class="inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-bold text-emerald-700 shadow-lg shadow-emerald-900/10 hover:bg-emerald-50">← Danh sách đội ngũ</a>
+                <a href="{{ route('manager.employees.index') }}" class="inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-bold text-violet-700 shadow-lg shadow-violet-900/10 hover:bg-violet-50">← Danh sách đội ngũ</a>
             </div>
         </section>
 
@@ -63,7 +63,7 @@
                 <section class="staff-card p-6">
                     <h3 class="text-lg font-bold text-slate-800">Tóm tắt</h3>
                     <div class="mt-5 grid grid-cols-2 gap-3">
-                        <div class="rounded-2xl bg-emerald-50 p-4 text-center"><p class="text-2xl font-extrabold text-emerald-700">{{ $attendances->count() }}</p><p class="mt-1 text-xs font-semibold text-emerald-700">Chấm công gần đây</p></div>
+                        <div class="rounded-2xl bg-violet-50 p-4 text-center"><p class="text-2xl font-extrabold text-violet-700">{{ $attendances->count() }}</p><p class="mt-1 text-xs font-semibold text-violet-700">Chấm công gần đây</p></div>
                         <div class="rounded-2xl bg-sky-50 p-4 text-center"><p class="text-2xl font-extrabold text-sky-700">{{ $kpis->count() }}</p><p class="mt-1 text-xs font-semibold text-sky-700">KPI</p></div>
                         <div class="rounded-2xl bg-amber-50 p-4 text-center"><p class="text-2xl font-extrabold text-amber-700">{{ $leaveRequests->count() }}</p><p class="mt-1 text-xs font-semibold text-amber-700">Đơn nghỉ</p></div>
                         <div class="rounded-2xl bg-slate-50 p-4 text-center"><p class="text-2xl font-extrabold text-slate-700">{{ $contracts->count() }}</p><p class="mt-1 text-xs font-semibold text-slate-600">Hợp đồng</p></div>
@@ -115,7 +115,7 @@
                             $progressWidth = min(100, max(4, (int) ($item->progress ?? 0)));
                         @endphp
                         <div class="mt-3 h-2.5 rounded-full bg-slate-100">
-                            <div class="h-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500" @style(['width: ' . $progressWidth . '%'])></div>
+                            <div class="h-2.5 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500" @style(['width: ' . $progressWidth . '%'])></div>
                         </div>
                     </div>
                 @empty
