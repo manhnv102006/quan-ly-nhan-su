@@ -10,6 +10,6 @@
         'readRoute' => 'manager.notifications.read',
         'createRoute' => $managedDepartment ? 'manager.notifications.create' : null,
         'showRoute' => 'manager.notifications.show',
-        'showAccent' => 'emerald',
+        'showaccent' => 'violet',
     ])
 </x-staff-layout>

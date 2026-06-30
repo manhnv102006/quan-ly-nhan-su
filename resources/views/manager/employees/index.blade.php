@@ -55,7 +55,7 @@
     ];
 
     $statusClasses = [
-        'active' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+        'active' => 'bg-blue-50 text-blue-700 border-blue-100',
         'inactive' => 'bg-slate-100 text-slate-600 border-slate-200',
         'resigned' => 'bg-rose-50 text-rose-700 border-rose-100',
     ];
@@ -68,17 +68,17 @@
 
 <x-staff-layout title="Nhân viên phòng ban" subtitle="Xem danh sách nhân viên thuộc phòng ban bạn quản lý." role="manager" :navigation="$navigation">
     <div class="space-y-6">
-        <section class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 p-6 text-white shadow-xl shadow-emerald-500/20 sm:p-8">
+        <section class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 via-violet-800 to-indigo-700 p-6 text-white shadow-xl shadow-violet-900/20 sm:p-8">
             <div class="absolute -right-16 top-0 h-48 w-48 rounded-full bg-white/10 blur-3xl"></div>
             <div class="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                     <span class="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur">Manager Team</span>
                     <h2 class="mt-4 text-3xl font-extrabold tracking-tight">Nhân viên thuộc phòng ban mình</h2>
-                    <p class="mt-2 max-w-2xl text-sm leading-6 text-emerald-50/90">
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-violet-100/90">
                         {{ $department ? 'Phòng ban: '.$department->department_name : 'Tài khoản manager chưa được gắn với phòng ban nào.' }}
                     </p>
                 </div>
-                <a href="{{ route('manager.dashboard') }}" class="inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-bold text-emerald-700 shadow-lg shadow-emerald-900/10 hover:bg-emerald-50">
+                <a href="{{ route('manager.dashboard') }}" class="inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-bold text-violet-700 shadow-lg shadow-violet-900/10 hover:bg-violet-50">
                     ← Dashboard
                 </a>
             </div>
@@ -95,9 +95,9 @@
                     <p class="text-sm font-medium text-slate-500">Tổng nhân viên</p>
                     <p class="mt-3 text-3xl font-extrabold text-slate-800">{{ number_format($stats['total']) }}</p>
                 </div>
-                <div class="staff-stat-card border border-emerald-100 bg-white/90">
+                <div class="staff-stat-card border border-violet-100 bg-white/90">
                     <p class="text-sm font-medium text-slate-500">Đang làm việc</p>
-                    <p class="mt-3 text-3xl font-extrabold text-emerald-600">{{ number_format($stats['active']) }}</p>
+                    <p class="mt-3 text-3xl font-extrabold text-violet-600">{{ number_format($stats['active']) }}</p>
                 </div>
                 <div class="staff-stat-card border border-slate-100 bg-white/90">
                     <p class="text-sm font-medium text-slate-500">Tạm ngưng</p>
@@ -114,18 +114,18 @@
                     <div class="md:col-span-2">
                         <label class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Tìm kiếm</label>
                         <input type="text" name="search" value="{{ $search }}" placeholder="Tên, mã NV, email hoặc số điện thoại..."
-                               class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                               class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100">
                     </div>
                     <div>
                         <label class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Trạng thái</label>
                         <div class="flex gap-2">
-                            <select name="status" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                            <select name="status" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100">
                                 <option value="">Tất cả</option>
                                 <option value="active" @selected($status === 'active')>Đang làm việc</option>
                                 <option value="inactive" @selected($status === 'inactive')>Tạm ngưng</option>
                                 <option value="resigned" @selected($status === 'resigned')>Đã nghỉ</option>
                             </select>
-                            <button class="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-700">Lọc</button>
+                            <button class="rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white hover:bg-violet-700">Lọc</button>
                         </div>
                     </div>
                 </form>
@@ -155,7 +155,7 @@
                                 <tr class="hover:bg-slate-50/70">
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
-                                            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-cyan-100 font-bold text-emerald-700">
+                                            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-100 font-bold text-violet-700">
                                                 {{ strtoupper(mb_substr($employee->full_name, 0, 1)) }}
                                             </div>
                                             <div>
@@ -172,7 +172,7 @@
                                     <td class="px-6 py-4 text-sm text-slate-600">{{ $employee->hire_date?->format('d/m/Y') ?? '—' }}</td>
                                     <td class="px-6 py-4 text-sm text-slate-600">
                                         @if ($employee->user)
-                                            <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Đã liên kết</span>
+                                            <span class="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">Đã liên kết</span>
                                         @else
                                             <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">Chưa liên kết</span>
                                         @endif
@@ -184,7 +184,7 @@
                                     </td>
                                     <td class="px-6 py-4 text-right">
                                         <a href="{{ route('manager.employees.show', $employee) }}"
-                                           class="inline-flex items-center rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">
+                                           class="inline-flex items-center rounded-xl bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-100">
                                             Xem chi tiết
                                         </a>
                                     </td>

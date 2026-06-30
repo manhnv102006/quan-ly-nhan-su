@@ -1,6 +1,6 @@
 @php
     $actionLabels = [
-        'approved' => ['label' => 'Phê duyệt', 'class' => 'bg-emerald-50 text-emerald-700 border-emerald-100'],
+        'approved' => ['label' => 'Phê duyệt', 'class' => 'bg-blue-50 text-blue-700 border-blue-100'],
         'rejected' => ['label' => 'Từ chối', 'class' => 'bg-rose-50 text-rose-700 border-rose-100'],
     ];
 
