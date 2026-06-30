@@ -22,8 +22,8 @@
         'draft' => 'bg-amber-50 text-amber-700 border-amber-100',
         'pending' => 'bg-amber-50 text-amber-700 border-amber-100',
     ];
-    $kpiLabels = ['pending' => 'Chờ bắt đầu', 'in_progress' => 'Đang thực hiện', 'completed' => 'Hoàn thành'];
-    $kpiClasses = ['pending' => 'bg-amber-50 text-amber-700 border-amber-100', 'in_progress' => 'bg-cyan-50 text-cyan-700 border-cyan-100', 'completed' => 'bg-emerald-50 text-emerald-700 border-emerald-100'];
+    $kpiLabels = ['pending' => 'Chờ bắt đầu', 'in_progress' => 'Đang thực hiện', 'completed' => 'Hoàn thành', 'not_completed' => 'Không hoàn thành'];
+    $kpiClasses = ['pending' => 'bg-amber-50 text-amber-700 border-amber-100', 'in_progress' => 'bg-cyan-50 text-cyan-700 border-cyan-100', 'completed' => 'bg-emerald-50 text-emerald-700 border-emerald-100', 'not_completed' => 'bg-rose-50 text-rose-700 border-rose-100'];
     $noticeLabels = ['system' => 'Hệ thống', 'leave' => 'Nghỉ phép', 'payroll' => 'Lương', 'kpi' => 'KPI'];
     $noticeClasses = ['system' => 'bg-slate-100 text-slate-700', 'leave' => 'bg-amber-100 text-amber-700', 'payroll' => 'bg-emerald-100 text-emerald-700', 'kpi' => 'bg-sky-100 text-sky-700'];
     $completionRate = ($kpiSummary->total ?? 0) > 0 ? round((($kpiSummary->completed ?? 0) / max($kpiSummary->total, 1)) * 100) : 0;
@@ -98,12 +98,17 @@
                     @else
                         <div class="space-y-4">
                             @foreach ($kpiItems as $item)
+                                @php
+                                    $progressWidth = min(100, max(4, (int) ($item->progress ?? 0)));
+                                @endphp
                                 <div class="rounded-3xl border border-slate-100 p-4">
                                     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                                         <div><p class="font-semibold text-slate-800">{{ $item->title }}</p><p class="mt-1 text-sm text-slate-500">Cập nhật {{ \Illuminate\Support\Carbon::parse($item->updated_at)->format('d/m/Y H:i') }}</p></div>
                                         <div class="flex flex-wrap items-center gap-2"><span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $kpiClasses[$item->status] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">{{ $kpiLabels[$item->status] ?? ucfirst($item->status) }}</span>@if (! is_null($item->score))<span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Điểm {{ number_format((float) $item->score, 1) }}</span>@endif</div>
                                     </div>
-                                    <div class="mt-4 h-2.5 rounded-full bg-slate-100"><div class="h-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" style="width: {{ min(100, max(4, (int) $item->progress)) }}%;"></div></div>
+                                    <div class="mt-4 h-2.5 rounded-full bg-slate-100">
+                                        <div class="h-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" @style(['width: ' . $progressWidth . '%'])></div>
+                                    </div>
                                     <p class="mt-2 text-sm font-semibold text-sky-700">{{ (int) $item->progress }}% hoàn thành</p>
                                 </div>
                             @endforeach
@@ -123,6 +128,10 @@
                             <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"><span class="text-slate-500">Lương cơ bản</span><span class="font-semibold text-slate-800">{{ number_format((float) $latestPayroll->basic_salary, 0, ',', '.') }}đ</span></div>
                             <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"><span class="text-slate-500">Phụ cấp</span><span class="font-semibold text-slate-800">{{ number_format((float) $latestPayroll->allowance, 0, ',', '.') }}đ</span></div>
                             <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"><span class="text-slate-500">Thưởng / khấu trừ</span><span class="font-semibold text-slate-800">{{ number_format((float) $latestPayroll->bonus, 0, ',', '.') }}đ / {{ number_format((float) $latestPayroll->deduction, 0, ',', '.') }}đ</span></div>
+                        </div>
+                        <div class="mt-5 flex flex-wrap gap-3">
+                            <a href="{{ route('employee.payrolls.index') }}" class="inline-flex items-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">Xem tất cả phiếu lương</a>
+                            <a href="{{ route('employee.payrolls.pdf', ['payroll' => $latestPayroll->id ?? 0]) }}" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Tải phiếu hiện tại</a>
                         </div>
                     @else
                         <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center"><p class="text-sm font-semibold text-slate-700">Chưa có phiếu lương để hiển thị.</p></div>

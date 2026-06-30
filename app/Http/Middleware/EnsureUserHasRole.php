@@ -15,10 +15,56 @@ class EnsureUserHasRole
     {
         $user = $request->user();
 
-        if (! $user || ! $user->role || ! in_array($user->role->name, $roles, true)) {
-            abort(403, 'Bạn không có quyền truy cập trang này.');
+        if (! $user || ! $user->role) {
+            abort(403, 'Tài khoản chưa được gán vai trò. Vui lòng liên hệ quản trị viên.');
         }
 
-        return $next($request);
+        if (in_array($user->role->name, $roles, true)) {
+            return $next($request);
+        }
+
+        if ($request->is('admin', 'admin/*')) {
+            return $this->redirectAwayFromAdmin($user);
+        }
+
+        if ($request->is('manager', 'manager/*')) {
+            return $this->redirectAwayFromManager($user);
+        }
+
+        abort(403, 'Bạn không có quyền truy cập trang này.');
+    }
+
+    private function redirectAwayFromAdmin($user): Response
+    {
+        if ($user->isManager()) {
+            return redirect()
+                ->route('manager.dashboard')
+                ->with('error', 'Tài khoản Quản lý không có quyền truy cập khu vực Admin. Hãy dùng menu Manager hoặc đăng nhập bằng tài khoản Admin (ví dụ: admin / datlethanh).');
+        }
+
+        if ($user->isEmployee()) {
+            return redirect()
+                ->route('employee.dashboard')
+                ->with('error', 'Nhân viên không có quyền truy cập khu vực Admin.');
+        }
+
+        abort(403, 'Bạn không có quyền truy cập trang này.');
+    }
+
+    private function redirectAwayFromManager($user): Response
+    {
+        if ($user->isAdmin()) {
+            return redirect()
+                ->route('admin.dashboard')
+                ->with('error', 'Admin không truy cập trực tiếp khu vực Manager. Dùng menu Admin để xem toàn hệ thống.');
+        }
+
+        if ($user->isEmployee()) {
+            return redirect()
+                ->route('employee.dashboard')
+                ->with('error', 'Nhân viên không có quyền truy cập khu vực Manager.');
+        }
+
+        abort(403, 'Bạn không có quyền truy cập trang này.');
     }
 }
