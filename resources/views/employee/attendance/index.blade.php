@@ -168,6 +168,29 @@
                 </div>
             @endif
         </div>
+
+        {{-- Gợi ý tạo đơn tăng ca --}}
+        @if ($overtimeInfo)
+            <div class="bg-amber-50 border border-amber-200 rounded-3xl p-6 flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <p class="text-sm font-semibold text-amber-800">
+                        Bạn đã làm thêm {{ $overtimeInfo['minutes'] }} phút sau giờ kết ca ({{ $overtimeInfo['start_time'] }} - {{ $overtimeInfo['end_time'] }}).
+                    </p>
+                    <p class="text-xs text-amber-700 mt-1">Hãy gửi đơn tăng ca để được ghi nhận và phê duyệt.</p>
+                </div>
+                
+                    href="{{ route('employee.overtime-requests.create', [
+                        'date' => $overtimeInfo['date'],
+                        'start_time' => $overtimeInfo['start_time'],
+                        'end_time' => $overtimeInfo['end_time'],
+                    ]) }}"
+                    class="px-4 py-2.5 rounded-xl bg-amber-600 text-white text-xs font-semibold shadow-sm hover:bg-amber-700 transition"
+                >
+                    Tạo đơn tăng ca
+                </a>
+            </div>
+        @endif
+
     </div>
 
 </x-staff-layout>
