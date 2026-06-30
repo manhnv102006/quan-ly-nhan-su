@@ -1,12 +1,17 @@
 @php
     $navigation = [
         ['label' => 'Dashboard', 'href' => route('employee.dashboard'), 'route' => 'employee.dashboard', 'icon' => 'M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z', 'note' => 'Không gian cá nhân'],
+
+        ['label' => 'Chấm công', 'href' => route('employee.dashboard') . '#attendance', 'icon' => 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z', 'note' => 'Lịch sử gần đây'],
+        ['label' => 'KPI', 'href' => route('employee.kpis.index'), 'route' => 'employee.kpis.*', 'icon' => 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z', 'note' => 'Mục tiêu công việc'],
+
         ['label' => 'Chấm công',
  'href' => route('attendance.index'),
  'route' => 'attendance.*',
  'icon' => 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z',
  'note' => 'Chấm công hôm nay'],
         ['label' => 'KPI', 'href' => route('employee.dashboard') . '#kpi', 'icon' => 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z', 'note' => 'Mục tiêu công việc'],
+
         ['label' => 'Bảng lương', 'href' => route('employee.payrolls.index'), 'route' => 'employee.payrolls.*', 'icon' => 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'note' => 'Phiếu lương của bạn'],
         ['label' => 'Nghỉ phép', 'href' => route('employee.leave-requests'), 'route' => 'employee.leave-requests*', 'icon' => 'M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zM12 16.5h.008v.008H12V16.5z', 'note' => 'Đơn xin nghỉ phép'],
         ['label' => 'Thông báo', 'href' => route('employee.dashboard') . '#notices', 'icon' => 'M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0', 'note' => 'Tin nội bộ'],
@@ -34,8 +39,8 @@
         'draft' => 'bg-amber-50 text-amber-700 border-amber-100',
         'pending' => 'bg-amber-50 text-amber-700 border-amber-100',
     ];
-    $kpiLabels = ['pending' => 'Chờ bắt đầu', 'in_progress' => 'Đang thực hiện', 'completed' => 'Hoàn thành'];
-    $kpiClasses = ['pending' => 'bg-amber-50 text-amber-700 border-amber-100', 'in_progress' => 'bg-cyan-50 text-cyan-700 border-cyan-100', 'completed' => 'bg-emerald-50 text-emerald-700 border-emerald-100'];
+    $kpiLabels = ['pending' => 'Chờ bắt đầu', 'in_progress' => 'Đang thực hiện', 'completed' => 'Hoàn thành', 'not_completed' => 'Không hoàn thành'];
+    $kpiClasses = ['pending' => 'bg-amber-50 text-amber-700 border-amber-100', 'in_progress' => 'bg-cyan-50 text-cyan-700 border-cyan-100', 'completed' => 'bg-emerald-50 text-emerald-700 border-emerald-100', 'not_completed' => 'bg-rose-50 text-rose-700 border-rose-100'];
     $noticeLabels = ['system' => 'Hệ thống', 'leave' => 'Nghỉ phép', 'payroll' => 'Lương', 'kpi' => 'KPI'];
     $noticeClasses = ['system' => 'bg-slate-100 text-slate-700', 'leave' => 'bg-amber-100 text-amber-700', 'payroll' => 'bg-emerald-100 text-emerald-700', 'kpi' => 'bg-sky-100 text-sky-700'];
     $completionRate = ($kpiSummary->total ?? 0) > 0 ? round((($kpiSummary->completed ?? 0) / max($kpiSummary->total, 1)) * 100) : 0;
@@ -110,12 +115,17 @@
                     @else
                         <div class="space-y-4">
                             @foreach ($kpiItems as $item)
+                                @php
+                                    $progressWidth = min(100, max(4, (int) ($item->progress ?? 0)));
+                                @endphp
                                 <div class="rounded-3xl border border-slate-100 p-4">
                                     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                                         <div><p class="font-semibold text-slate-800">{{ $item->title }}</p><p class="mt-1 text-sm text-slate-500">Cập nhật {{ \Illuminate\Support\Carbon::parse($item->updated_at)->format('d/m/Y H:i') }}</p></div>
                                         <div class="flex flex-wrap items-center gap-2"><span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $kpiClasses[$item->status] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">{{ $kpiLabels[$item->status] ?? ucfirst($item->status) }}</span>@if (! is_null($item->score))<span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Điểm {{ number_format((float) $item->score, 1) }}</span>@endif</div>
                                     </div>
-                                    <div class="mt-4 h-2.5 rounded-full bg-slate-100"><div class="h-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" style="width: {{ min(100, max(4, (int) $item->progress)) }}%;"></div></div>
+                                    <div class="mt-4 h-2.5 rounded-full bg-slate-100">
+                                        <div class="h-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" @style(['width: ' . $progressWidth . '%'])></div>
+                                    </div>
                                     <p class="mt-2 text-sm font-semibold text-sky-700">{{ (int) $item->progress }}% hoàn thành</p>
                                 </div>
                             @endforeach

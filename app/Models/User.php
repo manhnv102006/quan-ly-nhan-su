@@ -8,9 +8,9 @@ use App\Services\ManagerScopeService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['role_id', 'username', 'name', 'email', 'password', 'status', 'email_verified_at'])]
 #[Hidden(['password', 'remember_token'])]
