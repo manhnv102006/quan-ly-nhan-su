@@ -14,9 +14,9 @@
                 </div>
                 <div class="card-body">
                     @if ($employeeKpi->status === \App\Models\EmployeeKPI::STATUS_NOT_COMPLETED)
-                        <div class="alert alert-danger">
-                            KPI này đã quá hạn và được chuyển sang trạng thái không hoàn thành.
-                        </div>
+                    <div class="alert alert-danger">
+                        KPI này đã quá hạn và được chuyển sang trạng thái không hoàn thành.
+                    </div>
                     @endif
 
                     <form action="{{ route('employee.kpis.update', $employeeKpi) }}" method="POST">
@@ -26,32 +26,69 @@
                         <div class="form-group">
                             <label for="progress"><strong>Tiến độ (%)</strong></label>
                             <input type="number" name="progress" id="progress"
-                                   class="form-control @error('progress') is-invalid @enderror"
-                                   value="{{ old('progress', $employeeKpi->progress) }}"
-                                   min="0" max="100" step="1"
-                                   oninput="this.value = Math.max(0, Math.min(100, Number(this.value || 0)))"
-                                   @disabled($employeeKpi->status === \App\Models\EmployeeKPI::STATUS_NOT_COMPLETED)
-                                   required>
+                                class="form-control @error('progress') is-invalid @enderror"
+                                value="{{ old('progress', $employeeKpi->progress) }}"
+                                min="0" max="100" step="1"
+                                oninput="this.value = Math.max(0, Math.min(100, Number(this.value || 0)))"
+                                @disabled($employeeKpi->status === \App\Models\EmployeeKPI::STATUS_NOT_COMPLETED)
+                            required>
                             @error('progress')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-
                         <div class="form-group mt-3">
                             <label for="status"><strong>Trạng thái</strong></label>
-                            <select name="status" id="status" class="form-control @error('status') is-invalid @enderror"
-                                @disabled($employeeKpi->status === \App\Models\EmployeeKPI::STATUS_NOT_COMPLETED) required>
+
+                            <select
+                                name="status"
+                                id="status"
+                                class="form-control @error('status') is-invalid @enderror"
+                                @disabled($employeeKpi->status === \App\Models\EmployeeKPI::STATUS_NOT_COMPLETED)
+                                required
+                                >
                                 @if ($employeeKpi->status === \App\Models\EmployeeKPI::STATUS_NOT_COMPLETED)
-                                    <option selected>Không hoàn thành</option>
+                                <option selected>Không hoàn thành</option>
                                 @endif
+
                                 @foreach($statusOptions as $value => $label)
-                                    <option value="{{ $value }}" {{ old('status', $employeeKpi->status) == $value ? 'selected' : '' }}>
-                                        {{ $label }}
-                                    </option>
+
+                                @php
+                                $disabled = false;
+
+                                // Đang thực hiện -> không được quay về Chờ bắt đầu
+                                if (
+                                $employeeKpi->status === \App\Models\EmployeeKPI::STATUS_IN_PROGRESS &&
+                                $value === \App\Models\EmployeeKPI::STATUS_PENDING
+                                ) {
+                                $disabled = true;
+                                }
+
+                                // Hoàn thành -> không được quay về Chờ bắt đầu hoặc Đang thực hiện
+                                if (
+                                $employeeKpi->status === \App\Models\EmployeeKPI::STATUS_COMPLETED &&
+                                in_array($value, [
+                                \App\Models\EmployeeKPI::STATUS_PENDING,
+                                \App\Models\EmployeeKPI::STATUS_IN_PROGRESS,
+                                ])
+                                ) {
+                                $disabled = true;
+                                }
+                                @endphp
+
+                                <option
+                                    value="{{ $value }}"
+                                    {{ old('status', $employeeKpi->status) == $value ? 'selected' : '' }}
+                                    @disabled($disabled)>
+                                    {{ $label }}
+                                </option>
+
                                 @endforeach
                             </select>
-                             @error('status')
-                                <div class="invalid-feedback">{{ $message }}</div>
+
+                            @error('status')
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
                             @enderror
                         </div>
 
