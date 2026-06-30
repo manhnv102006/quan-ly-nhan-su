@@ -39,8 +39,8 @@
                 <h2 class="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">Chào {{ $firstName }}, mọi cập nhật công việc của bạn đều có mặt tại đây.</h2>
                 <p class="mt-3 max-w-2xl text-sm leading-6 text-sky-50/90 sm:text-base">Dashboard này ưu tiên tốc độ theo dõi hằng ngày: bạn có thể xem lịch sử chấm công, tiến độ KPI, bảng lương và tin nội bộ mà không phải chuyển nhiều màn hình.</p>
                 <div class="mt-6 flex flex-wrap gap-3">
-                    <a href="#attendance" class="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-sky-700 shadow-lg shadow-sky-900/10 transition hover:-translate-y-0.5">Xem chấm công</a>
-                    <a href="#payroll" class="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15">Mở bảng lương</a>
+                    <a href="{{ route('attendance.index') }}" class="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-sky-700 shadow-lg shadow-sky-900/10 transition hover:-translate-y-0.5">Xem chấm công</a>
+                    <a href="{{ route('employee.payrolls.index') }}" class="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15">Mở bảng lương</a>
                 </div>
             </div>
             <div class="grid gap-3 sm:grid-cols-3 xl:w-[440px] xl:grid-cols-1">
