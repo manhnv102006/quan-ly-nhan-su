@@ -91,7 +91,8 @@ class KPIController extends Controller
 
         return redirect()
             ->route('manager.kpis.show', $assignment)
-            ->with('success', 'Giao mục tiêu cho nhân viên thành công.');}
+            ->with('success', 'Giao mục tiêu cho nhân viên thành công.');
+    }
 
     public function editScore(EmployeeKPI $employeeKpi): View
     {
