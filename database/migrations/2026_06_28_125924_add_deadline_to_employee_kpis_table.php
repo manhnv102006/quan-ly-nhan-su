@@ -8,14 +8,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('employee_kpis', function (Blueprint $table) {
-            $table->date('deadline')->nullable()->after('comment');
+            if (! Schema::hasColumn('employee_kpis', 'deadline')) {
+                $table->date('deadline')->nullable()->after('comment');
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('employee_kpis', function (Blueprint $table) {
-            $table->dropColumn('deadline');
+            if (Schema::hasColumn('employee_kpis', 'deadline')) {
+                $table->dropColumn('deadline');
+            }
         });
     }
 };

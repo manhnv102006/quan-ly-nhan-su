@@ -12,13 +12,13 @@
 >
     <div class="space-y-6">
         @if (session('success'))
-            <div class="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-sm">
-                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                    <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center gap-3 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4 shadow-sm">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100">
+                    <svg class="h-4 w-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                     </svg>
                 </div>
-                <p class="text-sm font-medium text-emerald-800">{{ session('success') }}</p>
+                <p class="text-sm font-medium text-violet-800">{{ session('success') }}</p>
             </div>
         @endif
 
@@ -63,14 +63,14 @@
                     <p class="mt-1 text-sm font-medium text-slate-500">Đơn chờ duyệt</p>
                 </div>
 
-                <div class="staff-stat-card border border-emerald-100/80 bg-white/90">
+                <div class="staff-stat-card border border-violet-100/80 bg-white/90">
                     <div class="flex items-start justify-between">
-                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-200">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-200">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
-                        <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-700">OK</span>
+                        <span class="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-violet-700">OK</span>
                     </div>
                     <p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format($stats['approved']) }}</p>
                     <p class="mt-1 text-sm font-medium text-slate-500">Đã duyệt</p>
@@ -92,7 +92,7 @@
 
             <section class="staff-card overflow-hidden">
                 <div class="border-b border-slate-100 px-6 py-5 sm:px-7">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-600">Bộ lọc</p>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Bộ lọc</p>
                     <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-800">Tìm kiếm đơn tăng ca</h3>
                 </div>
                 <div class="px-6 py-5 sm:px-7">
@@ -101,17 +101,17 @@
                             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Tên nhân viên</label>
                             <input type="text" name="employee_name" value="{{ $filters['employee_name'] ?? '' }}"
                                    placeholder="Nhập tên nhân viên"
-                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/30">
+                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-violet-500/30">
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Mã nhân viên</label>
                             <input type="text" name="employee_code" value="{{ $filters['employee_code'] ?? '' }}"
                                    placeholder="Nhập mã nhân viên"
-                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/30">
+                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-violet-500/30">
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Trạng thái</label>
-                            <select name="status" class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-emerald-500/30">
+                            <select name="status" class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-violet-500/30">
                                 <option value="">Tất cả</option>
                                 @foreach($statusLabels as $value => $label)
                                     <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
@@ -121,15 +121,15 @@
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Tăng ca từ ngày</label>
                             <input type="date" name="work_date_from" value="{{ $filters['work_date_from'] ?? '' }}"
-                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-emerald-500/30">
+                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-violet-500/30">
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Tăng ca đến ngày</label>
                             <input type="date" name="work_date_to" value="{{ $filters['work_date_to'] ?? '' }}"
-                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-emerald-500/30">
+                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-violet-500/30">
                         </div>
                         <div class="flex flex-wrap items-end justify-end gap-2 md:col-span-2 xl:col-span-3">
-                            <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-500/20 transition hover:bg-emerald-700">
+                            <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-violet-900/20 transition hover:bg-violet-700">
                                 Tìm kiếm
                             </button>
                             @if(collect($filters)->filter()->isNotEmpty())
@@ -144,7 +144,7 @@
 
             <section class="staff-card overflow-hidden">
                 <div class="border-b border-slate-100 px-6 py-5 sm:px-7">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-600">Danh sách</p>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-indigo-600">Danh sách</p>
                     <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-800">Đơn tăng ca cấp dưới</h3>
                 </div>
                 <div class="overflow-x-auto">
@@ -180,7 +180,7 @@
                                     </td>
                                     <td class="px-6 py-4 text-center">
                                         <a href="{{ route('manager.overtime-requests.show', $item) }}"
-                                           class="inline-flex items-center rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100">
+                                           class="inline-flex items-center rounded-lg border border-violet-100 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100">
                                             Chi tiết
                                         </a>
                                     </td>

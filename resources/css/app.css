@@ -115,10 +115,10 @@
 
     .staff-shell-manager {
         background:
-            radial-gradient(ellipse 85% 55% at 15% -10%, rgba(16, 185, 129, 0.16), transparent),
-            radial-gradient(ellipse 60% 45% at 90% 15%, rgba(34, 211, 238, 0.14), transparent),
-            radial-gradient(ellipse 55% 35% at 50% 100%, rgba(14, 165, 233, 0.08), transparent),
-            linear-gradient(180deg, #f8fafc 0%, #eefbf7 100%);
+            radial-gradient(ellipse 85% 55% at 12% -8%, rgba(124, 58, 237, 0.14), transparent),
+            radial-gradient(ellipse 58% 42% at 92% 12%, rgba(99, 102, 241, 0.12), transparent),
+            radial-gradient(ellipse 50% 32% at 50% 100%, rgba(15, 23, 42, 0.06), transparent),
+            linear-gradient(180deg, #f8fafc 0%, #f5f3ff 100%);
     }
 
     .staff-shell-employee {
@@ -150,7 +150,7 @@
     }
 
     .staff-menu-item-active-manager {
-        @apply bg-gradient-to-r from-emerald-600 to-cyan-600 text-white shadow-lg shadow-emerald-500/20;
+        @apply bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/25;
     }
 
     .staff-menu-item-active-employee {
