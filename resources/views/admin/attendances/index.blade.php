@@ -229,7 +229,7 @@
                                 </td>
 
                                 <td class="px-6 py-4">
-                                    {{ $attendance->shift?->shift_name ?? '-' }}
+                                    {{ $attendance->employeeShift?->shift?->shift_name ?? '-' }}
                                 </td>
 
                                 <td class="px-6 py-4">

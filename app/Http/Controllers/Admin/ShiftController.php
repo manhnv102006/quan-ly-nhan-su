@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Shift;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
 class ShiftController extends Controller
@@ -55,12 +56,23 @@ class ShiftController extends Controller
             ->with('success', 'Cập nhật ca làm việc thành công');
     }
 
-    public function destroy(Shift $shift)
-    {
+public function destroy(Shift $shift)
+{
+    try {
         $shift->delete();
 
         return redirect()
             ->route('admin.shifts.index')
             ->with('success', 'Xóa ca làm việc thành công');
+    } catch (QueryException $e) {
+        // Lỗi khóa ngoại (Foreign Key)
+        if ($e->getCode() == '23000') {
+            return redirect()
+                ->route('admin.shifts.index')
+                ->with('error', 'Không thể xóa ca làm việc vì đang có nhân viên hoặc dữ liệu chấm công sử dụng ca này.');
+        }
+
+        throw $e;
     }
+}
 }
