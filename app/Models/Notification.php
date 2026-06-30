@@ -14,7 +14,26 @@ class Notification extends Model
         'sender_id',
         'type',
         'department_id',
+        'delivery_status',
+        'scheduled_at',
+        'sent_at',
+        'schedule_payload',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'scheduled_at' => 'datetime',
+            'sent_at' => 'datetime',
+            'schedule_payload' => 'array',
+        ];
+    }
+
+    public const STATUS_SCHEDULED = 'scheduled';
+
+    public const STATUS_SENT = 'sent';
+
+    public const STATUS_FAILED = 'failed';
 
     public function department(): BelongsTo
     {
