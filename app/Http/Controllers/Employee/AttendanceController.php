@@ -54,7 +54,56 @@ class AttendanceController extends Controller
         ));
     }
 
-        private function isFullDayShift($shift): bool
+    public function checkIn($shift): RedirectResponse
+    {
+        $employee = Employee::where('user_id', Auth::id())->firstOrFail();
+        $now      = Carbon::now();
+        $today    = Carbon::today();
+
+        $todayShift = $employee->todayShift();
+        if (! $todayShift || ! $todayShift->shift) {
+            return back()->with('error', 'Bạn chưa được gán ca làm hôm nay.');
+        }
+
+        $shiftModel = $todayShift->shift;
+        $isFullDay  = $this->isFullDayShift($shiftModel);
+
+        $attendance             = Attendance::firstOrNew([
+            'employee_id'     => $employee->id,
+            'attendance_date' => $today,
+        ]);
+        $attendance->shift_id   = $shiftModel->id;
+
+        if ($isFullDay) {
+            $noon = Carbon::today()->setTime(12, 30);
+
+            if ($now->lt($noon) && ! $attendance->morning_check_in) {
+                $attendance->morning_check_in = $now;
+                $sessionStart = Carbon::today()->setTime(8, 0);
+            } elseif (! $attendance->afternoon_check_in) {
+                $attendance->afternoon_check_in = $now;
+                $sessionStart = Carbon::today()->setTime(13, 0);
+            } else {
+                return back()->with('error', 'Bạn đã chấm công đủ 2 buổi hôm nay.');
+            }
+        } else {
+            if ($attendance->check_in) {
+                return back()->with('error', 'Bạn đã chấm công vào hôm nay.');
+            }
+            $attendance->check_in = $now;
+            $sessionStart         = Carbon::parse($shiftModel->start_time)->setDateFrom($today);
+        }
+
+        $lateMinutes              = max(0, (int) $sessionStart->diffInMinutes($now, false));
+        $attendance->late_minutes = ($attendance->late_minutes ?? 0) + $lateMinutes;
+        $attendance->status       = $lateMinutes > 0 ? 'late' : 'present';
+        $attendance->save();
+
+        return back()->with('success', 'Chấm công vào giờ thành công.');
+    }
+
+
+    private function isFullDayShift($shift): bool
     {
         return $shift && str_contains(mb_strtolower($shift->shift_name), 'hành chính');
     }
