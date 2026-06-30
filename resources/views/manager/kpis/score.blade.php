@@ -52,7 +52,7 @@
                         type="number"
                         name="score"
                         class="form-control @error('score') is-invalid @enderror"
-                        value="{{ old('score', $employeeKpi->score) }}"
+                     value="{{ old('score', (int) $employeeKpi->score) }}"
                         min="0"
                         max="100"
                         required
