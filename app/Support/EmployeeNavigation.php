@@ -16,19 +16,22 @@ class EmployeeNavigation
             ],
             [
                 'label' => 'Chấm công',
-                'href' => route('employee.dashboard').'#attendance',
+                'href' => route('attendance.index'),
+                'route' => 'attendance.*',
                 'icon' => 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z',
-                'note' => 'Lịch sử gần đây',
+                'note' => 'Check-in / Check-out',
             ],
             [
                 'label' => 'KPI',
-                'href' => route('employee.dashboard').'#kpi',
+                'href' => route('employee.kpis.index'),
+                'route' => 'employee.kpis.*',
                 'icon' => 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z',
                 'note' => 'Mục tiêu công việc',
             ],
             [
                 'label' => 'Bảng lương',
-                'href' => route('employee.dashboard').'#payroll',
+                'href' => route('employee.payrolls.index'),
+                'route' => 'employee.payrolls.*',
                 'icon' => 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
                 'note' => 'Tổng thu nhập',
             ],
@@ -40,6 +43,13 @@ class EmployeeNavigation
                 'note' => 'Đơn xin nghỉ phép',
             ],
             [
+                'label' => 'Tăng ca',
+                'href' => route('employee.overtime-requests'),
+                'route' => 'employee.overtime-requests*',
+                'icon' => 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z',
+                'note' => 'Đơn xin tăng ca',
+            ],
+            [
                 'label' => 'Thông báo',
                 'href' => route('employee.notifications.index'),
                 'route' => 'employee.notifications*',
@@ -49,6 +59,7 @@ class EmployeeNavigation
             [
                 'label' => 'Hồ sơ',
                 'href' => route('profile.edit'),
+                'route' => 'profile.*',
                 'icon' => 'M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z',
                 'note' => 'Thông tin cá nhân',
             ],
