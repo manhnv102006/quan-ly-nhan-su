@@ -41,6 +41,8 @@ class Attendance extends Model
         'work_hours',
 
         'late_minutes',
+        'morning_late_minutes',
+        'afternoon_late_minutes',
 
         'is_overtime',
         'overtime_hours',
@@ -55,16 +57,17 @@ class Attendance extends Model
         return $this->belongsTo(Shift::class);
     }
     public function getLateTextAttribute(): string
-{
-    return $this->late_minutes > 0
-        ? $this->late_minutes . ' phút'
-        : 'Đúng giờ';
-}
+    {
+        return $this->late_minutes > 0
+            ? $this->late_minutes . ' phút'
+            : 'Đúng giờ';
+    }
 
     public function getOvertimeTextAttribute(): string
-{
-    return $this->is_overtime
-        ? $this->overtime_hours . ' giờ'
-        : 'Không';
-}
+    {
+        return $this->is_overtime
+            ? $this->overtime_hours . ' giờ'
+            : 'Không';
+    }
+
 }
