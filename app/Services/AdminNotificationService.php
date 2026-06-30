@@ -47,6 +47,20 @@ class AdminNotificationService
         ];
     }
 
+    public function findForUser(User $user, int $notificationId): ?object
+    {
+        return $this->baseQuery($user)
+            ->leftJoin('users as senders', 'senders.id', '=', 'notifications.sender_id')
+            ->leftJoin('departments', 'departments.id', '=', 'notifications.department_id')
+            ->addSelect([
+                'senders.name as sender_name',
+                'notification_users.read_at',
+                'departments.department_name',
+            ])
+            ->where('notifications.id', $notificationId)
+            ->first();
+    }
+
     public function markAsRead(User $user, int $notificationId): bool
     {
         if (! $this->userCanAccessNotification($user, $notificationId)) {
@@ -81,11 +95,18 @@ class AdminNotificationService
         if ($user->isManager()) {
             $departmentId = ManagerDepartmentResolver::managedDepartmentId($user);
 
-            if (! $departmentId) {
-                return 0;
-            }
+            $query->whereHas('notification', function ($inner) use ($departmentId) {
+                if ($departmentId) {
+                    $inner->where(function ($scope) use ($departmentId) {
+                        $scope->where('department_id', $departmentId)
+                            ->orWhereNull('department_id');
+                    });
 
-            $query->whereHas('notification', fn ($inner) => $inner->where('department_id', $departmentId));
+                    return;
+                }
+
+                $inner->whereNull('department_id');
+            });
         }
 
         return $query->update([
@@ -99,6 +120,70 @@ class AdminNotificationService
         return $this->persistNotification(array_merge($data, [
             'sender_id' => $sender->id,
         ]), $userIds);
+    }
+
+    public function schedule(User $sender, array $data, array $schedulePayload, \DateTimeInterface $scheduledAt): Notification
+    {
+        return Notification::create([
+            'title' => $data['title'],
+            'content' => $data['content'],
+            'type' => $data['type'],
+            'sender_id' => $sender->id,
+            'department_id' => $data['department_id'] ?? null,
+            'delivery_status' => Notification::STATUS_SCHEDULED,
+            'scheduled_at' => $scheduledAt,
+            'schedule_payload' => $schedulePayload,
+        ]);
+    }
+
+    /**
+     * @return Collection<int, Notification>
+     */
+    public function pendingScheduledForUser(User $user): Collection
+    {
+        return Notification::query()
+            ->where('sender_id', $user->id)
+            ->where('delivery_status', Notification::STATUS_SCHEDULED)
+            ->orderBy('scheduled_at')
+            ->get();
+    }
+
+    /**
+     * @return array{sent: int, failed: int}
+     */
+    public function dispatchDueScheduledNotifications(): array
+    {
+        $sent = 0;
+        $failed = 0;
+
+        DB::transaction(function () use (&$sent, &$failed) {
+            Notification::query()
+                ->where('delivery_status', Notification::STATUS_SCHEDULED)
+                ->where('scheduled_at', '<=', now())
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->each(function (Notification $notification) use (&$sent, &$failed) {
+                    $recipientIds = $this->resolveRecipientsFromSchedulePayload($notification);
+
+                    if ($recipientIds === []) {
+                        $notification->update(['delivery_status' => Notification::STATUS_FAILED]);
+                        $failed++;
+
+                        return;
+                    }
+
+                    $this->attachRecipients($notification, $recipientIds);
+                    $notification->update([
+                        'delivery_status' => Notification::STATUS_SENT,
+                        'sent_at' => now(),
+                    ]);
+
+                    $sent++;
+                });
+        });
+
+        return compact('sent', 'failed');
     }
 
     public function createSystem(array $data, array $userIds): ?Notification
@@ -230,26 +315,58 @@ class AdminNotificationService
                 'type' => $data['type'],
                 'sender_id' => $data['sender_id'] ?? null,
                 'department_id' => $data['department_id'] ?? null,
+                'delivery_status' => Notification::STATUS_SENT,
+                'sent_at' => now(),
             ]);
 
-            $now = now();
-            $rows = collect($userIds)
-                ->unique()
-                ->values()
-                ->map(fn ($userId) => [
-                    'notification_id' => $notification->id,
-                    'user_id' => (int) $userId,
-                    'is_read' => false,
-                    'read_at' => null,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ])
-                ->all();
-
-            NotificationUser::insert($rows);
+            $this->attachRecipients($notification, $userIds);
 
             return $notification;
         });
+    }
+
+    private function attachRecipients(Notification $notification, array $userIds): void
+    {
+        $userIds = $this->filterActiveUserIds($userIds);
+
+        if ($userIds === []) {
+            throw new \InvalidArgumentException('Không có người nhận hợp lệ.');
+        }
+
+        $now = now();
+        $rows = collect($userIds)
+            ->unique()
+            ->values()
+            ->map(fn ($userId) => [
+                'notification_id' => $notification->id,
+                'user_id' => (int) $userId,
+                'is_read' => false,
+                'read_at' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])
+            ->all();
+
+        NotificationUser::insert($rows);
+    }
+
+    private function resolveRecipientsFromSchedulePayload(Notification $notification): array
+    {
+        $payload = $notification->schedule_payload ?? [];
+        $audience = $payload['audience'] ?? 'all';
+
+        if ($audience === 'all' && $notification->department_id) {
+            return $this->recipientIdsForDepartments([$notification->department_id]);
+        }
+
+        return match ($audience) {
+            'all' => $this->activeRecipientIds('all'),
+            'departments' => $this->recipientIdsForDepartments($payload['department_ids'] ?? []),
+            'selected' => $notification->department_id
+                ? $this->filterDepartmentRecipientIds($notification->department_id, $payload['user_ids'] ?? [])
+                : $this->activeRecipientIds('selected', $payload['user_ids'] ?? []),
+            default => [],
+        };
     }
 
     private function baseQuery(User $user)
@@ -270,16 +387,26 @@ class AdminNotificationService
             ->orderByDesc('notifications.created_at');
 
         if ($user->isManager()) {
-            $departmentId = ManagerDepartmentResolver::managedDepartmentId($user);
-
-            if (! $departmentId) {
-                return $query->whereRaw('1 = 0');
-            }
-
-            $query->where('notifications.department_id', $departmentId);
+            $this->applyManagerNotificationScope($query, $user);
         }
 
         return $query;
+    }
+
+    private function applyManagerNotificationScope($query, User $user): void
+    {
+        $departmentId = ManagerDepartmentResolver::managedDepartmentId($user);
+
+        if ($departmentId) {
+            $query->where(function ($inner) use ($departmentId) {
+                $inner->where('notifications.department_id', $departmentId)
+                    ->orWhereNull('notifications.department_id');
+            });
+
+            return;
+        }
+
+        $query->whereNull('notifications.department_id');
     }
 
     private function applyFilters($query, array $filters)
@@ -307,19 +434,31 @@ class AdminNotificationService
 
     private function userCanAccessNotification(User $user, int $notificationId): bool
     {
+        $hasPivot = NotificationUser::query()
+            ->where('user_id', $user->id)
+            ->where('notification_id', $notificationId)
+            ->exists();
+
+        if (! $hasPivot) {
+            return false;
+        }
+
         if (! $user->isManager()) {
             return true;
         }
 
         $departmentId = ManagerDepartmentResolver::managedDepartmentId($user);
+        $notificationQuery = Notification::query()->whereKey($notificationId);
 
-        if (! $departmentId) {
-            return false;
+        if ($departmentId) {
+            $notificationQuery->where(function ($inner) use ($departmentId) {
+                $inner->where('department_id', $departmentId)
+                    ->orWhereNull('department_id');
+            });
+        } else {
+            $notificationQuery->whereNull('department_id');
         }
 
-        return Notification::query()
-            ->whereKey($notificationId)
-            ->where('department_id', $departmentId)
-            ->exists();
+        return $notificationQuery->exists();
     }
 }

@@ -2,16 +2,29 @@
     $typeMeta = \App\Support\NotificationTypeMeta::all();
     $compact = $compact ?? false;
     $readRoute = $readRoute ?? 'notifications.read';
+    $showRoute = $showRoute ?? null;
+    $showAccent = $showAccent ?? 'sky';
     $meta = $typeMeta[$notification->type] ?? $typeMeta['system'];
     $isRead = (bool) $notification->is_read;
+    $wrapperTag = $showRoute ? 'a' : 'div';
+    $wrapperClass = $showRoute
+        ? 'group flex gap-3 transition hover:bg-slate-50 block'
+        : 'group flex gap-3 transition hover:bg-slate-50';
 @endphp
 
-<div @class([
-    'group flex gap-3 transition hover:bg-slate-50',
-    'px-4 py-3.5' => $compact,
-    'px-6 py-5' => ! $compact,
-    'bg-violet-50/40' => ! $isRead,
-])>
+<{{ $wrapperTag }}
+    @if ($showRoute)
+        href="{{ route($showRoute, $notification->id) }}"
+    @endif
+    @class([
+        $wrapperClass,
+        'px-4 py-3.5' => $compact,
+        'px-6 py-5' => ! $compact,
+        'bg-violet-50/40' => ! $isRead && (! $showRoute || $showAccent === 'violet'),
+        'bg-sky-50/40' => ! $isRead && $showRoute && $showAccent === 'sky',
+        'bg-emerald-50/40' => ! $isRead && $showRoute && $showAccent === 'emerald',
+    ])
+>
     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $meta['icon'] }}">
         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="{{ $meta['path'] }}" />
@@ -24,14 +37,17 @@
                     'font-semibold text-slate-800 leading-snug',
                     'text-sm' => $compact,
                     'text-base' => ! $compact,
-                    'text-violet-900' => ! $isRead,
+                    'text-violet-900' => ! $isRead && (! $showRoute || $showAccent === 'violet'),
+                    'text-sky-900' => ! $isRead && $showRoute && $showAccent === 'sky',
+                    'text-emerald-900' => ! $isRead && $showRoute && $showAccent === 'emerald',
                 ])>
                     {{ $notification->title }}
                 </p>
                 <p @class([
                     'mt-1 text-slate-600 leading-relaxed',
                     'text-xs line-clamp-2' => $compact,
-                    'text-sm' => ! $compact,
+                    'text-sm line-clamp-2' => ! $compact && $showRoute,
+                    'text-sm' => ! $compact && ! $showRoute,
                 ])>
                     {{ $notification->content }}
                 </p>
@@ -51,8 +67,17 @@
                     {{ \Illuminate\Support\Carbon::parse($notification->created_at)->format('d/m/Y H:i') }}
                 @endif
             </span>
-            @if (! $compact && ! $isRead && $notification->notification_user_id)
-                <form action="{{ route($readRoute, $notification->id) }}" method="POST" class="ml-auto">
+            @if ($showRoute && ! $compact)
+                <span @class([
+                    'ml-auto text-xs font-medium',
+                    'text-violet-600 group-hover:text-violet-700' => $showAccent === 'violet',
+                    'text-sky-600 group-hover:text-sky-700' => $showAccent === 'sky',
+                    'text-emerald-600 group-hover:text-emerald-700' => $showAccent === 'emerald',
+                ])>
+                    Xem chi tiết →
+                </span>
+            @elseif (! $compact && ! $isRead && $notification->notification_user_id && ! $showRoute)
+                <form action="{{ route($readRoute, $notification->id) }}" method="POST" class="ml-auto" @click.stop>
                     @csrf
                     @method('PATCH')
                     <button type="submit" class="text-xs font-medium text-violet-600 hover:text-violet-700">
@@ -62,4 +87,4 @@
             @endif
         </div>
     </div>
-</div>
+</{{ $wrapperTag }}>

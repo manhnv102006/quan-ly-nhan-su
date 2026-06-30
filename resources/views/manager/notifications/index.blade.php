@@ -9,5 +9,7 @@
         'readAllRoute' => 'manager.notifications.read-all',
         'readRoute' => 'manager.notifications.read',
         'createRoute' => $managedDepartment ? 'manager.notifications.create' : null,
+        'showRoute' => 'manager.notifications.show',
+        'showAccent' => 'emerald',
     ])
 </x-staff-layout>

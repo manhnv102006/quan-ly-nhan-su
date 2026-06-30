@@ -4,6 +4,8 @@
     $readAllRoute = $readAllRoute ?? 'notifications.read-all';
     $readRoute = $readRoute ?? 'notifications.read';
     $createRoute = $createRoute ?? null;
+    $showRoute = $showRoute ?? null;
+    $showAccent = $showAccent ?? null;
 @endphp
 
 <div class="space-y-6">
@@ -12,9 +14,9 @@
             <h2 class="text-2xl font-bold text-slate-800">Tất cả thông báo</h2>
             <p class="text-sm text-slate-500 mt-1">
                 @if (auth()->user()?->isManager() && ($managedDepartment ?? null))
-                    Chỉ hiển thị thông báo thuộc phòng ban <span class="font-semibold text-emerald-600">{{ $managedDepartment->department_name }}</span>
+                    Thông báo phòng ban <span class="font-semibold text-emerald-600">{{ $managedDepartment->department_name }}</span> và thông báo chung từ admin
                 @elseif (auth()->user()?->isManager())
-                    Bạn chưa được gắn phòng ban quản lý nên chưa có thông báo phòng ban.
+                    Thông báo chung từ admin và hệ thống
                 @else
                     Theo dõi cập nhật hệ thống, nghỉ phép, lương và KPI
                 @endif
@@ -126,6 +128,8 @@
                     @include('admin.partials.notification-item', [
                         'notification' => $notification,
                         'readRoute' => $readRoute,
+                        'showRoute' => $showRoute,
+                        'showAccent' => $showAccent,
                     ])
                 @endforeach
             </div>
