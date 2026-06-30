@@ -23,7 +23,12 @@ class StoreManagerNotificationRequest extends FormRequest
             'content' => ['required', 'string', 'max:5000'],
             'audience' => ['required', Rule::in(['all', 'selected'])],
             'send_mode' => ['required', Rule::in(['immediate', 'scheduled'])],
-            'scheduled_at' => ['required_if:send_mode,scheduled', 'date', 'after:now'],
+            'scheduled_at' => [
+                Rule::excludeIf(fn () => $this->input('send_mode') !== 'scheduled'),
+                'required',
+                'date',
+                'after:now',
+            ],
             'user_ids' => ['required_if:audience,selected', 'array', 'min:1'],
             'user_ids.*' => ['integer', 'exists:users,id'],
         ];
