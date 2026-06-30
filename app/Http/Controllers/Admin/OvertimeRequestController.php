@@ -3,80 +3,122 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\OvertimeRequestStoreRequest;
+use App\Http\Requests\OvertimeRequestUpdateRequest;
+use App\Models\Employee;
 use App\Models\OvertimeRequest;
-use App\Services\AutoNotificationService;
+use App\Services\OvertimeRequestService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class OvertimeRequestController extends Controller
 {
-    public function __construct(
-        private AutoNotificationService $autoNotifications,
-    ) {}
-
-    public function index()
+    public function __construct(private readonly OvertimeRequestService $service)
     {
-        $overtimeRequests = OvertimeRequest::with([
-            'employee.department'
-        ])
-        ->latest()
-        ->paginate(10);
+        $this->authorizeResource(OvertimeRequest::class, 'overtimeRequest');
+    }
+
+    public function index(): View
+    {
+        $overtimeRequests = OvertimeRequest::with(['employee', 'approver'])
+            ->latest()
+            ->paginate(10);
 
         $stats = [
             'total' => OvertimeRequest::count(),
-            'pending' => OvertimeRequest::where('status','pending')->count(),
-            'approved' => OvertimeRequest::where('status','approved')->count(),
-            'rejected' => OvertimeRequest::where('status','rejected')->count(),
+            'pending' => OvertimeRequest::where('status', OvertimeRequest::STATUS_PENDING)->count(),
+            'approved' => OvertimeRequest::where('status', OvertimeRequest::STATUS_APPROVED)->count(),
+            'rejected' => OvertimeRequest::where('status', OvertimeRequest::STATUS_REJECTED)->count(),
+            'completed' => OvertimeRequest::where('status', OvertimeRequest::STATUS_COMPLETED)->count(),
         ];
 
-        return view(
-            'admin.overtime-requests.index',
-            compact(
-                'overtimeRequests',
-                'stats'
-            )
-        );
+        return view('admin.overtime-requests.index', compact('overtimeRequests', 'stats'));
     }
 
-    public function show(
-        OvertimeRequest $overtimeRequest
-    ) {
-        $overtimeRequest->load([
-            'employee.department',
-            'employee.position'
+    public function create(): View
+    {
+        return view('admin.overtime-requests.create', [
+            'employees' => $this->activeEmployees(),
         ]);
-
-        return view(
-            'admin.overtime-requests.show',
-            compact('overtimeRequest')
-        );
     }
 
-    public function approve(
-        OvertimeRequest $overtimeRequest
-    ) {
-        $overtimeRequest->update([
-            'status' => 'approved'
-        ]);
+    public function store(OvertimeRequestStoreRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
+        $data['employee_id'] = $data['employee_id'] ?? $request->user()?->employee?->id;
 
-        $this->autoNotifications->overtimeApproved($overtimeRequest);
+        if (! $data['employee_id']) {
+            return back()
+                ->withErrors(['employee_id' => 'Không xác định được nhân viên tạo đơn.'])
+                ->withInput();
+        }
 
-        return back()->with(
-            'success',
-            'Đã duyệt đơn tăng ca'
-        );
+        $this->service->create($data);
+
+        return redirect()
+            ->route('admin.overtime-requests.index')
+            ->with('success', 'Tạo yêu cầu tăng ca thành công.');
     }
 
-    public function reject(
-        OvertimeRequest $overtimeRequest
-    ) {
-        $overtimeRequest->update([
-            'status' => 'rejected'
+    public function show(OvertimeRequest $overtimeRequest): View
+    {
+        $overtimeRequest->load(['employee.department', 'approver', 'histories.actor']);
+
+        return view('admin.overtime-requests.show', compact('overtimeRequest'));
+    }
+
+    public function edit(OvertimeRequest $overtimeRequest): View
+    {
+        $this->assertPendingOrAbort($overtimeRequest, 'Chỉ được chỉnh sửa đơn ở trạng thái Pending.');
+
+        return view('admin.overtime-requests.edit', [
+            'overtimeRequest' => $overtimeRequest,
+            'employees' => $this->activeEmployees(),
         ]);
+    }
 
-        $this->autoNotifications->overtimeRejected($overtimeRequest);
+    public function update(OvertimeRequestUpdateRequest $request, OvertimeRequest $overtimeRequest): RedirectResponse
+    {
+        if (! $overtimeRequest->isPending()) {
+            return redirect()
+                ->route('admin.overtime-requests.show', $overtimeRequest)
+                ->with('error', 'Đơn đã duyệt/từ chối, không thể chỉnh sửa.');
+        }
 
-        return back()->with(
-            'success',
-            'Đã từ chối đơn tăng ca'
-        );
+        $this->service->update($overtimeRequest, $request->validated());
+
+        return redirect()
+            ->route('admin.overtime-requests.show', $overtimeRequest)
+            ->with('success', 'Cập nhật yêu cầu tăng ca thành công.');
+    }
+
+    public function destroy(OvertimeRequest $overtimeRequest): RedirectResponse
+    {
+        if (! $overtimeRequest->isPending()) {
+            return redirect()
+                ->route('admin.overtime-requests.show', $overtimeRequest)
+                ->with('error', 'Đơn đã duyệt/từ chối, không thể xóa.');
+        }
+
+        $overtimeRequest->delete();
+
+        return redirect()
+            ->route('admin.overtime-requests.index')
+            ->with('success', 'Xóa yêu cầu tăng ca thành công.');
+    }
+
+    private function activeEmployees()
+    {
+        return Employee::query()
+            ->where('status', 'active')
+            ->orderBy('full_name')
+            ->get();
+    }
+
+    private function assertPendingOrAbort(OvertimeRequest $overtimeRequest, string $message): void
+    {
+        if (! $overtimeRequest->isPending()) {
+            abort(403, $message);
+        }
     }
 }

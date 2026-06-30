@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Models\EmployeeShift;
 
 class AttendanceController extends Controller
 {
@@ -19,7 +20,6 @@ class AttendanceController extends Controller
             ->with([
                 'employee.department',
                 'employee.position',
-                'shift'
             ])
             ->when($search, function ($query) use ($search) {
                 $query->whereHas('employee', function ($employee) use ($search) {
@@ -36,6 +36,15 @@ class AttendanceController extends Controller
             ->latest()
             ->paginate(10)
             ->withQueryString();
+        $attendances->getCollection()->transform(function ($attendance) {
+
+            $attendance->employeeShift = EmployeeShift::with('shift')
+                ->where('employee_id', $attendance->employee_id)
+                ->whereDate('work_date', $attendance->attendance_date)
+                ->first();
+
+            return $attendance;
+        });
 
         $stats = [
             'total' => Attendance::count(),
@@ -61,8 +70,11 @@ class AttendanceController extends Controller
         $attendance->load([
             'employee.department',
             'employee.position',
-            'shift'
         ]);
+        $attendance->employeeShift = EmployeeShift::with('shift')
+            ->where('employee_id', $attendance->employee_id)
+            ->whereDate('work_date', $attendance->attendance_date)
+            ->first();
 
         return view(
             'admin.attendances.show',
@@ -75,8 +87,11 @@ class AttendanceController extends Controller
         $attendance->load([
             'employee.department',
             'employee.position',
-            'shift'
         ]);
+        $attendance->employeeShift = EmployeeShift::with('shift')
+            ->where('employee_id', $attendance->employee_id)
+            ->whereDate('work_date', $attendance->attendance_date)
+            ->first();
 
         return view(
             'admin.attendances.edit',
@@ -87,17 +102,16 @@ class AttendanceController extends Controller
     public function update(
         Request $request,
         Attendance $attendance
-    )
-    {
+    ) {
         $data = $request->validate([
             'status' => ['required'],
             'check_in' => ['nullable'],
             'check_out' => ['nullable'],
             'work_hours' => ['nullable', 'numeric'],
         ]);
-    
+
         $attendance->update($data);
-    
+
         return redirect()
             ->route(
                 'admin.attendances.show',
