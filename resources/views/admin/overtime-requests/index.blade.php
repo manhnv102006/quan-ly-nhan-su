@@ -1,113 +1,73 @@
-<x-admin-layout>
-
-    <div class="space-y-6">
-
-        <div>
-            <h1 class="text-2xl font-bold">
-                Duyệt đơn tăng ca
-            </h1>
-
-            <p class="text-slate-500">
-                Quản lý các đơn đăng ký tăng ca
-            </p>
+<x-admin-layout title="Danh sách đơn tăng ca">
+    <div class="container-fluid py-2">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4 class="mb-1">Danh sách đơn tăng ca</h4>
+                <p class="text-muted mb-0">Quản lý đơn tăng ca của nhân viên.</p>
+            </div>
+            <a href="{{ route('admin.overtime-requests.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Tạo đơn
+            </a>
         </div>
 
-        <div class="grid grid-cols-4 gap-4">
+        <x-flash-messages />
 
-            <div class="bg-white p-5 rounded-xl border">
-                <p>Tổng đơn</p>
-                <h3 class="text-3xl font-bold">
-                    {{ $stats['total'] }}
-                </h3>
+        <x-request-stats-cards :stats="$stats" :completed="$stats['completed']" />
+
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nhân viên</th>
+                            <th>Ngày tăng ca</th>
+                            <th>Giờ bắt đầu</th>
+                            <th>Giờ kết thúc</th>
+                            <th>Tổng giờ</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($overtimeRequests as $item)
+                            <tr>
+                                <td>{{ $item->employee?->full_name ?? '—' }}</td>
+                                <td>{{ optional($item->work_date)->format('d/m/Y') }}</td>
+                                <td>{{ $item->start_time }}</td>
+                                <td>{{ $item->end_time }}</td>
+                                <td>{{ $item->total_hours }}</td>
+                                <td>
+                                    <x-status-badge :model="$item" />
+                                </td>
+                                <td>{{ optional($item->created_at)->format('d/m/Y H:i') }}</td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ route('admin.overtime-requests.show', $item) }}" class="btn btn-outline-primary">Xem</a>
+                                        @if($item->isPending())
+                                            <a href="{{ route('admin.overtime-requests.edit', $item) }}" class="btn btn-outline-warning">Sửa</a>
+                                            <form action="{{ route('admin.overtime-requests.destroy', $item) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa đơn này?')">Xóa</button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">Chưa có đơn tăng ca nào.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-
-            <div class="bg-yellow-50 p-5 rounded-xl border">
-                <p>Chờ duyệt</p>
-                <h3 class="text-3xl font-bold">
-                    {{ $stats['pending'] }}
-                </h3>
-            </div>
-
-            <div class="bg-green-50 p-5 rounded-xl border">
-                <p>Đã duyệt</p>
-                <h3 class="text-3xl font-bold">
-                    {{ $stats['approved'] }}
-                </h3>
-            </div>
-
-            <div class="bg-red-50 p-5 rounded-xl border">
-                <p>Từ chối</p>
-                <h3 class="text-3xl font-bold">
-                    {{ $stats['rejected'] }}
-                </h3>
-            </div>
-
+            @if($overtimeRequests->hasPages())
+                <div class="card-footer">
+                    {{ $overtimeRequests->links() }}
+                </div>
+            @endif
         </div>
-
-        <div class="bg-white rounded-xl border overflow-hidden">
-
-            <table class="w-full">
-
-                <thead class="bg-slate-50">
-                    <tr>
-                        <th class="p-3 text-left">Nhân viên</th>
-                        <th class="p-3 text-left">Ngày</th>
-                        <th class="p-3 text-left">Giờ bắt đầu</th>
-                        <th class="p-3 text-left">Giờ kết thúc</th>
-                        <th class="p-3 text-left">Trạng thái</th>
-                        <th class="p-3 text-center">Thao tác</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    @foreach($overtimeRequests as $item)
-
-                    <tr class="border-t">
-
-                        <td class="p-3">
-                            {{ $item->employee?->full_name }}
-                        </td>
-
-                        <td class="p-3">
-                            {{ $item->overtime_date?->format('d/m/Y') }}
-                        </td>
-
-                        <td class="p-3">
-                            {{ $item->start_time }}
-                        </td>
-
-                        <td class="p-3">
-                            {{ $item->end_time }}
-                        </td>
-
-                        <td class="p-3">
-                            {{ $item->status }}
-                        </td>
-
-                        <td class="p-3 text-center">
-
-                            <a href="{{ route('admin.overtime-requests.show',$item) }}"
-                                class="text-blue-600">
-
-                                Chi tiết
-
-                            </a>
-
-                        </td>
-
-                    </tr>
-
-                    @endforeach
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-        {{ $overtimeRequests->links() }}
-
     </div>
-
 </x-admin-layout>
