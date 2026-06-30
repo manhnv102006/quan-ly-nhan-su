@@ -23,7 +23,7 @@ class KPIAssignmentController extends Controller
      */
     public function index(Request $request)
     {
-        $query = KPIAssignment::with(['kpi', 'manager', 'assignedBy']);
+        $query = KPIAssignment::with(['kpi', 'manager', 'assignedBy'])->withCount('employeeKpis');
 
         // Search functionality
         if ($request->filled('search')) {
@@ -153,11 +153,8 @@ class KPIAssignmentController extends Controller
      */
     public function destroy(KPIAssignment $assignment)
     {
-        $assignment->delete();
-
-        return redirect()
-            ->route('admin.kpi-assignments.index')
-            ->with('success', 'Xóa giao KPI thành công');
+        // Chức năng xóa đã bị vô hiệu hóa để đảm bảo toàn vẹn dữ liệu.
+        abort(404);
     }
 
     /**

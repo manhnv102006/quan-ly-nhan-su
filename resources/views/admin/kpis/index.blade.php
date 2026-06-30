@@ -211,28 +211,35 @@
 
                                 <div class="flex justify-center gap-1">
 
+                                    @php
+                                        $hasAssignments = $kpi->assignments_count > 0;
+                                    @endphp
+
                                     <a href="{{ route('admin.kpis.edit', $kpi->id) }}"
                                         class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200 transition"
                                         title="Sửa">
                                         ✏️
                                     </a>
 
-                                    <form action="{{ route('admin.kpis.destroy', $kpi->id) }}"
-                                        method="POST"
-                                        id="delete-form-{{ $kpi->id }}"
-                                        style="display: inline;">
-
-                                        @csrf
-                                        @method('DELETE')
-
+                                    <div @if($hasAssignments)
+                                            title="KPI đã được giao nên không thể xóa."
+                                            class="cursor-not-allowed"
+                                        @endif>
+                                        <form action="{{ route('admin.kpis.destroy', $kpi->id) }}"
+                                            method="POST"
+                                            id="delete-form-{{ $kpi->id }}"
+                                            style="display: inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                        </form>
                                         <button type="button"
-                                            onclick="openDeleteModal('{{ $kpi->id }}', '{{ $kpi->title }}')"
-                                            class="w-9 h-9 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition"
-                                            title="Xóa">
+                                            onclick="{{ $hasAssignments ? '' : "openDeleteModal('{$kpi->id}', '{$kpi->title}')" }}"
+                                            class="w-9 h-9 rounded-lg flex items-center justify-center transition {{ $hasAssignments ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-red-100 text-red-600 hover:bg-red-200' }}"
+                                            title="{{ $hasAssignments ? 'KPI đã được giao nên không thể xóa.' : 'Xóa' }}"
+                                            @if($hasAssignments) disabled @endif>
                                             🗑
                                         </button>
-
-                                    </form>
+                                    </div>
 
                                 </div>
 

@@ -225,15 +225,6 @@
                                         ✏️
                                     </a>
 
-                                    <form action="{{ route('admin.kpi-assignments.destroy', $assignment) }}" method="POST" style="display: inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="w-9 h-9 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition" title="Xóa"
-                                            onclick="return confirm('Bạn chắc chắn muốn xóa?')">
-                                            🗑
-                                        </button>
-                                    </form>
-
                                 </div>
 
                             </td>

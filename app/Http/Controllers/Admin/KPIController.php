@@ -17,7 +17,7 @@ class KPIController extends Controller
      */
     public function index(Request $request)
     {
-        $query = KPI::with('department');
+        $query = KPI::with('department')->withCount('assignments');
 
         // Search functionality
         if ($request->filled('search')) {
@@ -106,6 +106,13 @@ class KPIController extends Controller
     public function destroy($id)
     {
         $kpi = KPI::findOrFail($id);
+
+        if ($kpi->assignments()->exists()) {
+            return redirect()
+                ->route('admin.kpis.index')
+                ->with('error', 'KPI đã được giao nên không thể xóa.');
+        }
+
         $kpi->delete();
 
         return redirect()
@@ -113,4 +120,3 @@ class KPIController extends Controller
             ->with('success', 'Xóa KPI thành công');
     }
 }
-
