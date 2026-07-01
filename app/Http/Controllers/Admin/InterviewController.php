@@ -10,8 +10,10 @@ use App\Models\Interview;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
+use Throwable;
 
 class InterviewController extends Controller
 {
@@ -91,16 +93,33 @@ class InterviewController extends Controller
             if (filled($interview->candidate?->email)) {
                 $mail = new CandidateInterviewInvitationMail($interview);
 
-                Mail::to($interview->candidate->email)
-                    ->send($mail);
+                try {
+                    Mail::to($interview->candidate->email)
+                        ->send($mail);
 
-                $interview->candidate->emailLogs()->create([
-                    'email' => $interview->candidate->email,
-                    'type' => 'interview_invitation',
-                    'status' => 'sent',
-                    'subject' => $mail->subjectText(),
-                    'sent_at' => now(),
-                ]);
+                    $interview->candidate->emailLogs()->create([
+                        'email' => $interview->candidate->email,
+                        'type' => 'interview_invitation',
+                        'status' => 'sent',
+                        'subject' => $mail->subjectText(),
+                        'sent_at' => now(),
+                    ]);
+                } catch (Throwable $exception) {
+                    $interview->candidate->emailLogs()->create([
+                        'email' => $interview->candidate->email,
+                        'type' => 'interview_invitation',
+                        'status' => 'failed',
+                        'subject' => $mail->subjectText(),
+                        'error_message' => $exception->getMessage(),
+                    ]);
+
+                    Log::warning('Unable to send interview invitation email to candidate.', [
+                        'candidate_id' => $interview->candidate->id,
+                        'candidate_email' => $interview->candidate->email,
+                        'interview_id' => $interview->id,
+                        'error' => $exception->getMessage(),
+                    ]);
+                }
             }
         });
 
