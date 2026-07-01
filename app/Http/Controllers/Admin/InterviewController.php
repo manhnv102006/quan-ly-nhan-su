@@ -53,13 +53,14 @@ class InterviewController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'candidate_id' => ['required', 'exists:candidates,id'],
+            'candidate_id' => ['required', 'exists:candidates,id', 'unique:interviews,candidate_id'],
             'interviewer_id' => ['nullable', 'exists:employees,id'],
             'interview_date' => ['required', 'date'],
             'note' => ['nullable', 'string'],
         ], [
             'candidate_id.required' => 'Ứng viên là bắt buộc.',
             'candidate_id.exists' => 'Ứng viên được chọn không hợp lệ.',
+            'candidate_id.unique' => 'Đã tạo lịch phỏng vấn cho ứng viên này rồi.',
             'interviewer_id.exists' => 'Người phỏng vấn được chọn không hợp lệ.',
             'interview_date.required' => 'Thời gian phỏng vấn là bắt buộc.',
             'interview_date.date' => 'Thời gian phỏng vấn không hợp lệ.',
