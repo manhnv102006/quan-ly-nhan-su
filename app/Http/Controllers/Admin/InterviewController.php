@@ -89,8 +89,18 @@ class InterviewController extends Controller
             $interview->loadMissing(['candidate.jobPost', 'interviewer']);
 
             if (filled($interview->candidate?->email)) {
+                $mail = new CandidateInterviewInvitationMail($interview);
+
                 Mail::to($interview->candidate->email)
-                    ->send(new CandidateInterviewInvitationMail($interview));
+                    ->send($mail);
+
+                $interview->candidate->emailLogs()->create([
+                    'email' => $interview->candidate->email,
+                    'type' => 'interview_invitation',
+                    'status' => 'sent',
+                    'subject' => $mail->subjectText(),
+                    'sent_at' => now(),
+                ]);
             }
         });
 
