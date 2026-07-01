@@ -3,12 +3,21 @@
 namespace App\Services;
 
 use App\Models\OvertimeRequest;
+use App\Support\TimeInput;
 use Carbon\Carbon;
 
 class OvertimeRequestService
 {
     public function normalizePayload(array $payload): array
     {
+        if (isset($payload['start_time'])) {
+            $payload['start_time'] = TimeInput::normalize($payload['start_time']);
+        }
+
+        if (isset($payload['end_time'])) {
+            $payload['end_time'] = TimeInput::normalize($payload['end_time']);
+        }
+
         if (! isset($payload['total_hours']) || $payload['total_hours'] === null || $payload['total_hours'] === '') {
             $start = Carbon::createFromFormat('H:i', $payload['start_time']);
             $end = Carbon::createFromFormat('H:i', $payload['end_time']);

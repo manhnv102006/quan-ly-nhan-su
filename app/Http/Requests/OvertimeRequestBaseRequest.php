@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\OvertimeRequest;
+use App\Support\TimeInput;
 use Illuminate\Foundation\Http\FormRequest;
 
 abstract class OvertimeRequestBaseRequest extends FormRequest
@@ -10,6 +11,23 @@ abstract class OvertimeRequestBaseRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $merge = [];
+
+        if ($this->has('start_time')) {
+            $merge['start_time'] = TimeInput::forInput($this->input('start_time'));
+        }
+
+        if ($this->has('end_time')) {
+            $merge['end_time'] = TimeInput::forInput($this->input('end_time'));
+        }
+
+        if ($merge !== []) {
+            $this->merge($merge);
+        }
     }
 
     protected function baseRules(bool $employeeRequired): array
@@ -32,7 +50,9 @@ abstract class OvertimeRequestBaseRequest extends FormRequest
             'work_date.required' => 'Vui lòng chọn ngày tăng ca.',
             'work_date.after_or_equal' => 'Ngày tăng ca không được nhỏ hơn ngày hiện tại.',
             'start_time.required' => 'Vui lòng nhập giờ bắt đầu.',
+            'start_time.date_format' => 'Giờ bắt đầu phải đúng định dạng HH:MM (24 giờ).',
             'end_time.required' => 'Vui lòng nhập giờ kết thúc.',
+            'end_time.date_format' => 'Giờ kết thúc phải đúng định dạng HH:MM (24 giờ).',
             'end_time.after' => 'Giờ kết thúc phải lớn hơn giờ bắt đầu.',
             'reason.required' => 'Vui lòng nhập lý do tăng ca.',
         ];
