@@ -74,6 +74,7 @@ class OvertimeSettlementService
             ->where('employee_id', $employee->id)
             ->whereDate('work_date', $workDate)
             ->where('status', OvertimeRequest::STATUS_APPROVED)
+            ->whereNull('actual_check_in')
             ->first();
 
         if (! $overtimeRequest) {

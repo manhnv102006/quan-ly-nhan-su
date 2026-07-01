@@ -45,6 +45,8 @@ class OvertimeRequest extends Model
         'approved_by',
         'approved_at',
         'reject_reason',
+        'actual_check_in',
+        'actual_check_out',
     ];
 
     protected function casts(): array
@@ -52,6 +54,8 @@ class OvertimeRequest extends Model
         return [
             'work_date' => 'date',
             'approved_at' => 'datetime',
+            'actual_check_in' => 'datetime',
+            'actual_check_out' => 'datetime',
             'total_hours' => 'decimal:2',
         ];
     }
