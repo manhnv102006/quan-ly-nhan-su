@@ -100,6 +100,17 @@
                     </select>
                 </div>
 
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Tài khoản liên kết</label>
+                    <select name="user_id" class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
+                        <option value="">-- Chọn tài khoản để liên kết --</option>
+                        @foreach ($users as $usr)
+                            <option value="{{ $usr->id }}" @selected(old('user_id') == $usr->id)>{{ $usr->name }} ({{ $usr->email }})</option>
+                        @endforeach
+                    </select>
+                    @error('user_id') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
+                </div>
+
                 @include('admin.employees.partials.document-upload-fields')
 
                 <div class="md:col-span-2 flex items-center justify-end gap-3 mt-4">

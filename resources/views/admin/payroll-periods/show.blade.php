@@ -134,6 +134,7 @@
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Lương cơ bản</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Phụ cấp</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Thưởng (KPI)</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Nghỉ phép</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Khấu trừ</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Thực lĩnh</th>
                             <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
@@ -157,6 +158,10 @@
                                 <td class="px-6 py-4 font-medium text-emerald-600">
                                     @if($payroll->bonus > 0)+@endif{{ number_format($payroll->bonus, 0, ',', '.') }} ₫
                                 </td>
+                                <td class="px-6 py-4 text-slate-600">
+                                    <span class="text-emerald-600 font-semibold" title="Nghỉ phép có phép (hưởng lương)">{{ $payroll->paid_leave_days }}P</span> / 
+                                    <span class="text-rose-500 font-semibold" title="Nghỉ phép không lương / vắng mặt">{{ $payroll->unpaid_leave_days }}KP</span>
+                                </td>
                                 <td class="px-6 py-4 text-red-500">
                                     -{{ number_format($payroll->deduction, 0, ',', '.') }} ₫
                                 </td>
@@ -175,7 +180,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-12 text-slate-400">
+                                <td colspan="9" class="px-6 py-10 text-center text-slate-500">
                                     Kỳ lương này chưa được tính hoặc chưa có nhân sự nào được lập bảng lương.
                                 </td>
                             </tr>

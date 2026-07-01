@@ -39,7 +39,7 @@ class PayrollController extends Controller
         }
 
         $payrolls = $query->latest()->paginate(10)->withQueryString();
-        $periods = PayrollPeriod::orderBy('year', 'desc')->orderBy('month', 'desc')->get();
+        $periods = PayrollPeriod::orderBy('year', 'desc')->orderBy('month', 'asc')->get();
 
         return view('admin.payrolls.index', compact('payrolls', 'periods'));
     }

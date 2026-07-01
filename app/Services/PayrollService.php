@@ -10,9 +10,15 @@ use Illuminate\Support\Facades\Auth;
 
 class PayrollService
 {
+
+    // Cấu hình số buổi nghỉ phép hưởng lương tối đa trong 1 tháng
+    private const MAX_PAID_LEAVES_PER_MONTH = 1;
+
+
     private const STANDARD_MONTHLY_HOURS = 176;
 
     private const OVERTIME_RATE_MULTIPLIER = 1.5;
+
     /**
      * Tự động tính lương cho toàn bộ nhân viên hoạt động trong một kỳ lương.
      *
@@ -50,38 +56,76 @@ class PayrollService
                 $basicSalary = $employee->position->base_salary;
             }
 
-            // B. Phụ cấp: Tính theo số ngày đi làm (status = 'present') trong kỳ
-            // Công thức: 100.000 VND / ngày đi làm
-            $presentDays = $employee->attendances()
-                ->whereBetween('attendance_date', [$startDate, $endDate])
-                ->where('status', 'present')
-                ->count();
+            // B. Phụ cấp: Mặc định mỗi nhân viên được nhận 1,5 triệu VNĐ
+            $allowance = 1500000;
 
-            $allowance = $presentDays * 100000;
-
-            // C. Khấu trừ: Đi trễ (50.000 VND / lần) + Vắng mặt (300.000 VND / ngày) trong kỳ
+            // C. Khấu trừ: Đi trễ (50.000 VND / lần) + Vắng mặt vượt phép (300.000 VND / ngày)
             $lateDays = $employee->attendances()
                 ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->where('status', 'late')
                 ->count();
 
-            $absentDays = $employee->attendances()
+            $absentRecords = $employee->attendances()
                 ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->where('status', 'absent')
-                ->count();
+                ->get();
 
-            $deduction = ($lateDays * 50000) + ($absentDays * 300000);
+            $approvedPaidLeavesCount = 0;
+            $unapprovedAbsences = 0;
 
-            // D. Thưởng KPI: Tính điểm KPI trung bình trong kỳ của nhân viên
-            // Công thức: Điểm KPI trung bình * 200.000 VND
+            foreach ($absentRecords as $record) {
+                // Kiểm tra xem ngày vắng mặt này có đơn nghỉ phép có lương (annual, sick) được duyệt không
+                $hasLeave = $employee->leaveRequests()
+                    ->where('status', 'approved')
+                    ->whereIn('leave_type', ['annual', 'sick'])
+                    ->whereDate('start_date', '<=', $record->attendance_date)
+                    ->whereDate('end_date', '>=', $record->attendance_date)
+                    ->exists();
+
+                if ($hasLeave) {
+                    $approvedPaidLeavesCount++;
+                } else {
+                    $unapprovedAbsences++;
+                }
+            }
+
+            // Tính số ngày nghỉ có lương và không lương thực tế
+            $paidLeaveDays = min($approvedPaidLeavesCount, self::MAX_PAID_LEAVES_PER_MONTH);
+            $excessPaidLeaves = max(0, $approvedPaidLeavesCount - self::MAX_PAID_LEAVES_PER_MONTH);
+
+            // Số ngày nghỉ bị trừ tiền = nghỉ không phép + nghỉ có phép vượt quá hạn mức
+            $unpaidLeaveDays = $unapprovedAbsences + $excessPaidLeaves;
+
+            $deduction = ($lateDays * 50000) + ($unpaidLeaveDays * 300000);
+
+            // D. Thưởng KPI: Tính điểm KPI trung bình và quy đổi thưởng
             $averageKpiScore = $employee->employeeKpis()
                 ->whereHas('kpi')
                 ->avg('score');
 
             $bonus = 0;
             if ($averageKpiScore !== null) {
-                $bonus = $averageKpiScore * 200000;
+                // Nhận dạng thang điểm 10 hay 100
+                $kpiPercentage = $averageKpiScore <= 10 ? $averageKpiScore * 10 : $averageKpiScore;
+
+                if ($kpiPercentage < 70) {
+                    $bonus = 0;
+                } elseif ($kpiPercentage >= 70 && $kpiPercentage < 80) {
+                    $bonus = 300000;
+                } elseif ($kpiPercentage >= 80 && $kpiPercentage < 90) {
+                    $bonus = 700000;
+                } elseif ($kpiPercentage >= 90 && $kpiPercentage < 100) {
+                    $bonus = 1200000;
+                } else { // >= 100
+                    $bonus = 2000000;
+                }
             }
+
+
+
+
+            // E. Thực lĩnh = Lương cơ bản + Phụ cấp + Thưởng KPI - Khấu trừ
+            $totalSalary = $basicSalary + $allowance + $bonus - $deduction;
 
             // F. Lương tăng ca: tổng giờ OT đã hoàn thành trong kỳ * hệ số 1.5
             $overtimeHours = (float) OvertimeRequest::query()
@@ -95,6 +139,7 @@ class PayrollService
 
             // G. Thực lĩnh = Lương cơ bản + Phụ cấp + Thưởng KPI + Lương tăng ca - Khấu trừ
             $totalSalary = $basicSalary + $allowance + $bonus + $overtimePay - $deduction;
+
             if ($totalSalary < 0) {
                 $totalSalary = 0; // Không thể âm thực lĩnh
             }
@@ -110,6 +155,8 @@ class PayrollService
                 'overtime_hours' => $overtimeHours,
                 'overtime_pay' => $overtimePay,
                 'deduction' => $deduction,
+                'paid_leave_days' => $paidLeaveDays,
+                'unpaid_leave_days' => $unpaidLeaveDays,
                 'total_salary' => $totalSalary,
             ]);
         }
