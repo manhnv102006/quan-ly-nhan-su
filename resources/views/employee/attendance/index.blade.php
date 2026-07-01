@@ -50,102 +50,39 @@
 
         {{-- Trạng thái + nút chấm công --}}
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
-            <h2 class="text-base font-semibold text-slate-800 mb-4">Trạng thái hôm nay</h2>
+            <h2 class="text-base font-semibold text-slate-800 mb-1">Trạng thái hôm nay</h2>
+            <p class="text-xs text-slate-500 mb-4">
+                Check-in đúng giờ ca · Miễn trừ {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút đi muộn · Tự check-out sau {{ \App\Services\EmployeeAttendanceService::AUTO_CHECKOUT_MINUTES }} phút kết ca
+            </p>
 
-            @if ($isFullDayShift)
-                {{-- Buổi sáng --}}
-                <div class="mb-5 pb-5 border-b border-slate-100">
-                    <p class="text-xs font-bold uppercase text-slate-400 mb-2">Buổi sáng (08:00 - 12:00)</p>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span class="text-slate-500 block mb-1">Giờ vào</span>
-                            <span class="font-medium text-slate-800">
-                                {{ $attendance?->morning_check_in ? $attendance->morning_check_in->format('H:i:s') : '--:--' }}
-                            </span>
-                        </div>
-                        <div>
-                            <span class="text-slate-500 block mb-1">Giờ ra</span>
-                            <span class="font-medium text-slate-800">
-                                {{ $attendance?->morning_check_out ? $attendance->morning_check_out->format('H:i:s') : '--:--' }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="mt-3 flex gap-2">
-                        @if (!$attendance?->morning_check_in)
-                            <form method="POST" action="{{ route('attendance.check-in', $todayShift->shift->id) }}">
-                                @csrf
-                                <button class="px-4 py-2 rounded-xl bg-sky-600 text-white text-xs font-semibold">Check-in sáng</button>
-                            </form>
-                        @elseif (!$attendance?->morning_check_out)
-                            <form method="POST" action="{{ route('attendance.check-out', $todayShift->shift->id) }}">
-                                @csrf
-                                <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold">Check-out sáng</button>
-                            </form>
-                        @endif
-                    </div>
-                </div>
+            @if ($isFullDayShift && $attendanceSessions)
+                @include('employee.attendance.partials.session-block', [
+                    'title' => 'Buổi sáng (08:00 - 12:00)',
+                    'session' => $attendanceSessions['morning'],
+                    'checkInRoute' => $todayShift ? route('attendance.check-in', $todayShift->shift->id) : null,
+                    'checkOutRoute' => $todayShift ? route('attendance.check-out', $todayShift->shift->id) : null,
+                    'checkInLabel' => 'Check-in sáng',
+                    'checkOutLabel' => 'Check-out sáng',
+                    'class' => 'mb-5 pb-5 border-b border-slate-100',
+                ])
 
-                {{-- Buổi chiều --}}
-                <div>
-                    <p class="text-xs font-bold uppercase text-slate-400 mb-2">Buổi chiều (13:00 - 17:00)</p>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span class="text-slate-500 block mb-1">Giờ vào</span>
-                            <span class="font-medium text-slate-800">
-                                {{ $attendance?->afternoon_check_in ? $attendance->afternoon_check_in->format('H:i:s') : '--:--' }}
-                            </span>
-                        </div>
-                        <div>
-                            <span class="text-slate-500 block mb-1">Giờ ra</span>
-                            <span class="font-medium text-slate-800">
-                                {{ $attendance?->afternoon_check_out ? $attendance->afternoon_check_out->format('H:i:s') : '--:--' }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="mt-3 flex gap-2">
-                        @if ($attendance?->morning_check_out && !$attendance?->afternoon_check_in)
-                            <form method="POST" action="{{ route('attendance.check-in', $todayShift->shift->id) }}">
-                                @csrf
-                                <button class="px-4 py-2 rounded-xl bg-sky-600 text-white text-xs font-semibold">Check-in chiều</button>
-                            </form>
-                        @elseif ($attendance?->afternoon_check_in && !$attendance?->afternoon_check_out)
-                            <form method="POST" action="{{ route('attendance.check-out', $todayShift->shift->id) }}">
-                                @csrf
-                                <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold">Check-out chiều</button>
-                            </form>
-                        @endif
-                    </div>
-                </div>
-            @else
-                <div class="grid grid-cols-2 gap-4 text-sm mb-4">
-                    <div>
-                        <span class="text-slate-500 block mb-1">Giờ vào</span>
-                        <span class="font-medium text-slate-800">
-                            {{ $attendance?->check_in ? $attendance->check_in->format('H:i:s') : '--:--' }}
-                        </span>
-                    </div>
-                    <div>
-                        <span class="text-slate-500 block mb-1">Giờ ra</span>
-                        <span class="font-medium text-slate-800">
-                            {{ $attendance?->check_out ? $attendance->check_out->format('H:i:s') : '--:--' }}
-                        </span>
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    @if ($todayShift && $todayShift->shift)
-                        @if (!$attendance?->check_in)
-                            <form method="POST" action="{{ route('attendance.check-in', $todayShift->shift->id) }}">
-                                @csrf
-                                <button class="px-4 py-2 rounded-xl bg-sky-600 text-white text-xs font-semibold">Check-in</button>
-                            </form>
-                        @elseif (!$attendance?->check_out)
-                            <form method="POST" action="{{ route('attendance.check-out', $todayShift->shift->id) }}">
-                                @csrf
-                                <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold">Check-out</button>
-                            </form>
-                        @endif
-                    @endif
-                </div>
+                @include('employee.attendance.partials.session-block', [
+                    'title' => 'Buổi chiều (13:00 - 17:00)',
+                    'session' => $attendanceSessions['afternoon'],
+                    'checkInRoute' => $todayShift ? route('attendance.check-in', $todayShift->shift->id) : null,
+                    'checkOutRoute' => $todayShift ? route('attendance.check-out', $todayShift->shift->id) : null,
+                    'checkInLabel' => 'Check-in chiều',
+                    'checkOutLabel' => 'Check-out chiều',
+                ])
+            @elseif ($regularSession && $todayShift?->shift)
+                @include('employee.attendance.partials.session-block', [
+                    'title' => $todayShift->shift->shift_name . ' (' . \Carbon\Carbon::parse($todayShift->shift->start_time)->format('H:i') . ' - ' . \Carbon\Carbon::parse($todayShift->shift->end_time)->format('H:i') . ')',
+                    'session' => $regularSession,
+                    'checkInRoute' => route('attendance.check-in', $todayShift->shift->id),
+                    'checkOutRoute' => route('attendance.check-out', $todayShift->shift->id),
+                ])
+            @elseif (! $todayShift?->shift)
+                <p class="text-sm text-rose-600 font-medium">Bạn chưa được gán ca làm hôm nay.</p>
             @endif
 
             {{-- Tổng kết: trễ giờ --}}

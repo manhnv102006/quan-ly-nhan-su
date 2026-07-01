@@ -4,65 +4,29 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Models\Department;
+use App\Models\EmployeeShift;
+use App\Support\DepartmentSummaryBuilder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use App\Models\EmployeeShift;
 
 class AttendanceController extends Controller
 {
-    public function index(Request $request): View
+    public function index(): View
     {
-        $search = $request->search;
-        $status = $request->status;
-        $date = $request->date;
+        return view('admin.attendances.index', [
+            'departmentSummaries' => DepartmentSummaryBuilder::forAttendanceManagement(),
+        ]);
+    }
 
-        $attendances = Attendance::query()
-            ->with([
-                'employee.department',
-                'employee.position',
-            ])
-            ->when($search, function ($query) use ($search) {
-                $query->whereHas('employee', function ($employee) use ($search) {
-                    $employee->where('employee_code', 'like', "%{$search}%")
-                        ->orWhere('full_name', 'like', "%{$search}%");
-                });
-            })
-            ->when($status, function ($query) use ($status) {
-                $query->where('status', $status);
-            })
-            ->when($date, function ($query) use ($date) {
-                $query->whereDate('attendance_date', $date);
-            })
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
-        $attendances->getCollection()->transform(function ($attendance) {
-
-            $attendance->employeeShift = EmployeeShift::with('shift')
-                ->where('employee_id', $attendance->employee_id)
-                ->whereDate('work_date', $attendance->attendance_date)
-                ->first();
-
-            return $attendance;
-        });
-
-        $stats = [
-            'total' => Attendance::count(),
-            'present' => Attendance::where('status', 'present')->count(),
-            'late' => Attendance::where('status', 'late')->count(),
-            'leave' => Attendance::where('status', 'leave')->count(),
-        ];
-
-        return view(
-            'admin.attendances.index',
-            compact(
-                'attendances',
-                'stats',
-                'search',
-                'status',
-                'date'
-            )
-        );
+    public function department(Request $request, Department $department): View
+    {
+        return view('admin.attendances.department', [
+            ...$this->buildListData($request, $department->id),
+            'selectedDepartment' => $department,
+            'scopeLabel' => $department->department_name,
+            'showDepartmentColumn' => false,
+        ]);
     }
 
     public function show(Attendance $attendance): View
@@ -121,5 +85,59 @@ class AttendanceController extends Controller
                 'success',
                 'Cập nhật chấm công thành công'
             );
+    }
+
+    /**
+     * @return array{
+     *     attendances: \Illuminate\Contracts\Pagination\LengthAwarePaginator,
+     *     stats: array{total: int, present: int, late: int, leave: int},
+     *     filters: array{search: string, status: mixed, date: mixed}
+     * }
+     */
+    private function buildListData(Request $request, int $departmentId): array
+    {
+        $filters = [
+            'search' => trim((string) $request->input('search', '')),
+            'status' => $request->input('status'),
+            'date' => $request->input('date'),
+        ];
+
+        $scopedQuery = Attendance::query()
+            ->whereHas('employee', fn ($employeeQuery) => $employeeQuery->where('department_id', $departmentId));
+
+        $stats = [
+            'total' => (clone $scopedQuery)->count(),
+            'present' => (clone $scopedQuery)->where('status', 'present')->count(),
+            'late' => (clone $scopedQuery)->where('status', 'late')->count(),
+            'leave' => (clone $scopedQuery)->where('status', 'leave')->count(),
+        ];
+
+        $attendances = (clone $scopedQuery)
+            ->with([
+                'employee.department',
+                'employee.position',
+            ])
+            ->when($filters['search'], function ($query) use ($filters) {
+                $query->whereHas('employee', function ($employee) use ($filters) {
+                    $employee->where('employee_code', 'like', "%{$filters['search']}%")
+                        ->orWhere('full_name', 'like', "%{$filters['search']}%");
+                });
+            })
+            ->when($filters['status'], fn ($query) => $query->where('status', $filters['status']))
+            ->when($filters['date'], fn ($query) => $query->whereDate('attendance_date', $filters['date']))
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        $attendances->getCollection()->transform(function ($attendance) {
+            $attendance->employeeShift = EmployeeShift::with('shift')
+                ->where('employee_id', $attendance->employee_id)
+                ->whereDate('work_date', $attendance->attendance_date)
+                ->first();
+
+            return $attendance;
+        });
+
+        return compact('attendances', 'stats', 'filters');
     }
 }
