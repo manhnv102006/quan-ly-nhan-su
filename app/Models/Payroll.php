@@ -15,6 +15,8 @@ class Payroll extends Model
         'basic_salary',
         'allowance',
         'bonus',
+        'overtime_hours',
+        'overtime_pay',
         'deduction',
         'total_salary',
         'status',

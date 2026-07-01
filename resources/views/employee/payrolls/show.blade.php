@@ -8,7 +8,7 @@
         : \App\Support\EmployeeNavigation::items();
 
     $period = $payroll->payrollPeriod;
-    $income = (float) $payroll->basic_salary + (float) $payroll->allowance + (float) $payroll->bonus;
+    $income = (float) $payroll->basic_salary + (float) $payroll->allowance + (float) $payroll->bonus + (float) ($payroll->overtime_pay ?? 0);
 @endphp
 
 <x-staff-layout title="Chi tiết phiếu lương" subtitle="Xem đầy đủ các khoản lương của kỳ đã chọn." :role="$isManager ? 'manager' : 'employee'" :navigation="$navigation">
@@ -171,6 +171,23 @@
                     </div>
                     <span class="text-sm font-bold text-emerald-600">+{{ number_format((float) $payroll->bonus, 0, ',', '.') }}đ</span>
                 </div>
+
+                @if ((float) ($payroll->overtime_pay ?? 0) > 0)
+                <div class="flex items-center justify-between rounded-2xl bg-amber-50 px-5 py-4 hover:bg-amber-100 transition">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0">
+                            <svg class="text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:18px;height:18px">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-amber-700">Lương tăng ca</p>
+                            <p class="text-xs text-amber-600">{{ number_format((float) ($payroll->overtime_hours ?? 0), 1) }} giờ OT (x1.5)</p>
+                        </div>
+                    </div>
+                    <span class="text-sm font-bold text-amber-700">+{{ number_format((float) $payroll->overtime_pay, 0, ',', '.') }}đ</span>
+                </div>
+                @endif
 
                 {{-- Khấu trừ --}}
                 <div class="flex items-center justify-between rounded-2xl bg-rose-50 px-5 py-4 hover:bg-rose-100 transition">
