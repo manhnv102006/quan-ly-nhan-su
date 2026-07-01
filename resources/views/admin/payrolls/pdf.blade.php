@@ -177,6 +177,10 @@
                             <td class="label">Chức vụ:</td>
                             <td class="value">{{ $payroll->employee?->position?->name ?: '—' }}</td>
                         </tr>
+                        <tr>
+                            <td class="label">Số ngày nghỉ:</td>
+                            <td class="value">{{ $payroll->paid_leave_days }} phép / {{ $payroll->unpaid_leave_days }} vắng</td>
+                        </tr>
                     </table>
                 </td>
                 <td style="width: 50%; padding-left: 20px; vertical-align: top;">
@@ -236,7 +240,7 @@
                     <td class="text-right">{{ number_format($payroll->basic_salary, 0, ',', '.') }} ₫</td>
                 </tr>
                 <tr>
-                    <td>Phụ cấp (Tính theo chấm công ngày đi làm)</td>
+                    <td>Phụ cấp (Cố định hàng tháng)</td>
                     <td class="text-right">{{ number_format($payroll->allowance, 0, ',', '.') }} ₫</td>
                 </tr>
                 <tr>
