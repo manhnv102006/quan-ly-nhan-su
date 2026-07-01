@@ -75,13 +75,15 @@ class KPIAssignmentController extends Controller
      */
     public function create()
     {
-        $kpis = KPI::where('status', 'active')
+        $kpis = KPI::with('departments')
+            ->where('status', 'active')
             ->whereDoesntHave('assignments', function ($query) {
                 $query->whereIn('status', ['pending', 'active']);
             })
             ->get();
 
         $managers = User::query()
+            ->with('employee.department')
             ->whereHas('role', fn ($q) => $q->where('name', Role::MANAGER))
             ->orderBy('name')
             ->get();
@@ -121,9 +123,10 @@ class KPIAssignmentController extends Controller
      */
     public function edit(KPIAssignment $assignment)
     {
-        $assignment->load(['kpi', 'manager']);
-        $kpis = KPI::where('status', 'active')->get();
+        $assignment->load(['kpi.departments', 'manager']);
+        $kpis = KPI::with('departments')->where('status', 'active')->get();
         $managers = User::query()
+            ->with('employee.department')
             ->whereHas('role', fn ($q) => $q->where('name', Role::MANAGER))
             ->orderBy('name')
             ->get();
