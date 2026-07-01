@@ -3,14 +3,21 @@
 namespace App\Services;
 
 use App\Models\Employee;
+use App\Models\OvertimeRequest;
 use App\Models\Payroll;
 use App\Models\PayrollPeriod;
 use Illuminate\Support\Facades\Auth;
 
 class PayrollService
 {
+
     // Cấu hình số buổi nghỉ phép hưởng lương tối đa trong 1 tháng
     private const MAX_PAID_LEAVES_PER_MONTH = 1;
+
+
+    private const STANDARD_MONTHLY_HOURS = 176;
+
+    private const OVERTIME_RATE_MULTIPLIER = 1.5;
 
     /**
      * Tự động tính lương cho toàn bộ nhân viên hoạt động trong một kỳ lương.
@@ -116,8 +123,23 @@ class PayrollService
 
 
 
+
             // E. Thực lĩnh = Lương cơ bản + Phụ cấp + Thưởng KPI - Khấu trừ
             $totalSalary = $basicSalary + $allowance + $bonus - $deduction;
+
+            // F. Lương tăng ca: tổng giờ OT đã hoàn thành trong kỳ * hệ số 1.5
+            $overtimeHours = (float) OvertimeRequest::query()
+                ->where('employee_id', $employee->id)
+                ->where('status', OvertimeRequest::STATUS_COMPLETED)
+                ->whereBetween('work_date', [$startDate, $endDate])
+                ->sum('total_hours');
+
+            $hourlyRate = $basicSalary > 0 ? ($basicSalary / self::STANDARD_MONTHLY_HOURS) : 0;
+            $overtimePay = round($overtimeHours * $hourlyRate * self::OVERTIME_RATE_MULTIPLIER, 0);
+
+            // G. Thực lĩnh = Lương cơ bản + Phụ cấp + Thưởng KPI + Lương tăng ca - Khấu trừ
+            $totalSalary = $basicSalary + $allowance + $bonus + $overtimePay - $deduction;
+
             if ($totalSalary < 0) {
                 $totalSalary = 0; // Không thể âm thực lĩnh
             }
@@ -130,6 +152,8 @@ class PayrollService
                 'basic_salary' => $basicSalary,
                 'allowance' => $allowance,
                 'bonus' => $bonus,
+                'overtime_hours' => $overtimeHours,
+                'overtime_pay' => $overtimePay,
                 'deduction' => $deduction,
                 'paid_leave_days' => $paidLeaveDays,
                 'unpaid_leave_days' => $unpaidLeaveDays,

@@ -1,9 +1,3 @@
-<body>
+@props(['title' => null])
 
-    <h1 style="font-size:100px;color:red">
-        TEST LAYOUT
-    </h1>
-    
-    {{ $slot }}
-    
-    </body>
+@include('layouts.admin', ['title' => $title, 'slot' => $slot])

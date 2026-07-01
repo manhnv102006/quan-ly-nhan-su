@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class KPIAssignment extends Model
 {
@@ -25,28 +27,47 @@ class KPIAssignment extends Model
         'target' => 'decimal:2',
     ];
 
-    /**
-     * Get the KPI for this assignment.
-     */
-    public function kpi()
+    public function kpi(): BelongsTo
     {
         return $this->belongsTo(KPI::class, 'kpi_id');
     }
 
-    /**
-     * Get the manager assigned.
-     */
-    public function manager()
+    public function manager(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'manager_id');
+        return $this->belongsTo(User::class, 'manager_id')->withTrashed();
     }
 
-    /**
-     * Get the admin who assigned this KPI.
-     */
-    public function assignedBy()
+    public function assignedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_by');
+        return $this->belongsTo(User::class, 'assigned_by')->withTrashed();
+    }
+
+    public function employeeKpis(): HasMany
+    {
+        return $this->hasMany(EmployeeKPI::class, 'assignment_id');
+    }
+
+    public function getManagerNameAttribute(): string
+    {
+        if (! $this->manager) {
+            return '—';
+        }
+
+        if ($this->manager->trashed()) {
+            return $this->manager->name.' (đã xóa)';
+        }
+
+        return $this->manager->name;
+    }
+
+    public function getKpiCodeAttribute(): string
+    {
+        return $this->kpi?->code ?? '—';
+    }
+
+    public function getKpiTitleAttribute(): string
+    {
+        return $this->kpi?->title ?? '—';
     }
 
     /**

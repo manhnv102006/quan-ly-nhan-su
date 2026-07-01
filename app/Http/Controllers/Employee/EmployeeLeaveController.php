@@ -5,12 +5,17 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
+use App\Services\AutoNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class EmployeeLeaveController extends Controller
 {
+    public function __construct(
+        private AutoNotificationService $autoNotifications,
+    ) {}
+
     private function getEmployee()
     {
         $employee = Employee::where('user_id', Auth::id())->first();
@@ -22,23 +27,39 @@ class EmployeeLeaveController extends Controller
 
     public function index()
     {
+        $this->authorize('viewAny', LeaveRequest::class);
+
         $employee = $this->getEmployee();
 
         $leaveRequests = LeaveRequest::where('employee_id', $employee->id)
+            ->with(['approver', 'rejecter'])
             ->latest()
             ->paginate(10);
 
         return view('employee.leave-requests.index', compact('leaveRequests'));
     }
 
+    public function show(LeaveRequest $leaveRequest)
+    {
+        $this->authorize('view', $leaveRequest);
+
+        $leaveRequest->load(['approver', 'rejecter', 'histories.actor']);
+
+        return view('employee.leave-requests.show', compact('leaveRequest'));
+    }
+
     public function create()
     {
-        $this->getEmployee(); // Ensure employee profile exists
+        $this->authorize('create', LeaveRequest::class);
+        $this->getEmployee();
+
         return view('employee.leave-requests.create');
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', LeaveRequest::class);
+
         $employee = $this->getEmployee();
 
         $request->validate([
@@ -62,7 +83,7 @@ class EmployeeLeaveController extends Controller
         $end = Carbon::parse($request->end_date);
         $totalDays = $start->diffInDays($end) + 1;
 
-        LeaveRequest::create([
+        $leaveRequest = LeaveRequest::create([
             'employee_id' => $employee->id,
             'leave_type' => $request->leave_type,
             'start_date' => $request->start_date,
@@ -74,6 +95,8 @@ class EmployeeLeaveController extends Controller
             'approved_at' => null,
             'reject_reason' => null,
         ]);
+
+        $this->autoNotifications->leaveSubmitted($leaveRequest);
 
         return redirect()
             ->route('employee.leave-requests')
