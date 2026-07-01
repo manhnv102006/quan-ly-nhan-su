@@ -138,9 +138,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy'])->name('shifts.destroy');
     Route::get('/leave-requests', [LeaveRequestController::class, 'index'])->name('leave-requests');
     Route::get('/leave-requests/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('leave-requests.show');
-    Route::resource('overtime-requests', OvertimeRequestController::class);
-    Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeRequestController::class, 'approve'])->name('overtime-requests.approve');
-    Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeRequestController::class, 'reject'])->name('overtime-requests.reject');
+    Route::resource('overtime-requests', OvertimeRequestController::class)
+        ->parameters(['overtime-requests' => 'overtime_request']);
+    Route::patch('/overtime-requests/{overtime_request}/approve', [OvertimeRequestController::class, 'approve'])->name('overtime-requests.approve');
+    Route::patch('/overtime-requests/{overtime_request}/reject', [OvertimeRequestController::class, 'reject'])->name('overtime-requests.reject');
     Route::get('/attendance-reports', [AttendanceReportController::class, 'index'])->name('attendance-reports.index');
 
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
