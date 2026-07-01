@@ -14,6 +14,7 @@ class CandidateInterviewInvitationMail extends Mailable
 
     public function __construct(public Interview $interview)
     {
+        $this->interview->loadMissing(['candidate.jobPost', 'interviewer']);
     }
 
     public function envelope(): Envelope
