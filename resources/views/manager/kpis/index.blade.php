@@ -1,4 +1,13 @@
-<x-app-layout title="KPI Được Giao">
+@php
+    $navigation = \App\Support\ManagerNavigation::items();
+@endphp
+
+<x-staff-layout
+    title="KPI được giao"
+    subtitle="Các KPI bạn phụ trách và giao cho nhân viên trong phòng ban."
+    role="manager"
+    :navigation="$navigation"
+>
     <div class="space-y-6">
 
         {{-- Header --}}
@@ -102,4 +111,4 @@
             @endif
         </div>
     </div>
-</x-app-layout>
+</x-staff-layout>
