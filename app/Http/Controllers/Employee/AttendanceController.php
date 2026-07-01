@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Employee;
+use App\Models\OvertimeRequest;
+use App\Services\OvertimeSettlementService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +14,10 @@ use Illuminate\View\View;
 
 class AttendanceController extends Controller
 {
+    public function __construct(private readonly OvertimeSettlementService $overtimeSettlement)
+    {
+    }
+
     public function index(): View
     {
         $employee   = Employee::where('user_id', Auth::id())->firstOrFail();
@@ -24,7 +30,7 @@ class AttendanceController extends Controller
 
         $isFullDayShift = $todayShift && $this->isFullDayShift($todayShift->shift);
 
-        // Kiểm tra vượt giờ ca -> gợi ý tạo đơn tăng ca
+        // Gợi ý tạo đơn nếu làm quá giờ mà chưa có đơn chờ duyệt/đã duyệt
         $overtimeInfo = null;
         if ($attendance && $todayShift && $todayShift->shift) {
             $lastCheckOut = $isFullDayShift
@@ -35,12 +41,23 @@ class AttendanceController extends Controller
                 $shiftEnd = Carbon::parse($todayShift->shift->end_time)->setDateFrom($today);
 
                 if ($lastCheckOut->gt($shiftEnd->copy()->addMinutes(15))) {
-                    $overtimeInfo = [
-                        'date'       => $today->format('Y-m-d'),
-                        'start_time' => $shiftEnd->format('H:i'),
-                        'end_time'   => $lastCheckOut->format('H:i'),
-                        'minutes'    => (int) round($shiftEnd->diffInMinutes($lastCheckOut)),
-                    ];
+                    $hasOpenRequest = OvertimeRequest::query()
+                        ->where('employee_id', $employee->id)
+                        ->whereDate('work_date', $today)
+                        ->whereIn('status', [
+                            OvertimeRequest::STATUS_PENDING,
+                            OvertimeRequest::STATUS_APPROVED,
+                        ])
+                        ->exists();
+
+                    if (! $hasOpenRequest) {
+                        $overtimeInfo = [
+                            'date' => $today->format('Y-m-d'),
+                            'start_time' => $shiftEnd->format('H:i'),
+                            'end_time' => $lastCheckOut->format('H:i'),
+                            'minutes' => (int) round($shiftEnd->diffInMinutes($lastCheckOut)),
+                        ];
+                    }
                 }
             }
         }
@@ -140,6 +157,15 @@ class AttendanceController extends Controller
 
         $attendance->work_hours = $this->calculateWorkHours($attendance, $isFullDay);
         $attendance->save();
+
+        $settled = $this->overtimeSettlement->settleAfterCheckout($employee, $attendance->fresh(), $isFullDay);
+
+        if ($settled && $settled->status === OvertimeRequest::STATUS_COMPLETED) {
+            return back()->with(
+                'success',
+                'Chấm công ra giờ thành công. Đã ghi nhận '.$settled->total_hours.' giờ tăng ca.'
+            );
+        }
 
         return back()->with('success', 'Chấm công ra giờ thành công.');
     }

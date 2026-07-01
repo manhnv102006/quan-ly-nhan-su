@@ -69,6 +69,10 @@ class OvertimeRequestPolicy
 
     public function approve(User $user, OvertimeRequest $overtimeRequest): bool
     {
+        if ($user->isAdmin()) {
+            return true;
+        }
+
         if (! $user->isManager()) {
             return false;
         }

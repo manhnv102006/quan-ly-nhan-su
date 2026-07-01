@@ -7,6 +7,16 @@
             </div>
             <div class="d-flex gap-2">
                 @if($overtimeRequest->isPending())
+                    @can('approve', $overtimeRequest)
+                        <form action="{{ route('admin.overtime-requests.approve', $overtimeRequest) }}" method="POST" class="d-inline">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="btn btn-success" onclick="return confirm('Duyệt đơn tăng ca này?')">Duyệt</button>
+                        </form>
+                    @endcan
+                    @can('reject', $overtimeRequest)
+                        <button type="button" class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#reject-form">Từ chối</button>
+                    @endcan
                     <a href="{{ route('admin.overtime-requests.edit', $overtimeRequest) }}" class="btn btn-warning">Sửa</a>
                 @endif
                 <a href="{{ route('admin.overtime-requests.index') }}" class="btn btn-outline-secondary">Quay lại</a>
@@ -14,6 +24,25 @@
         </div>
 
         <x-flash-messages />
+
+        @can('reject', $overtimeRequest)
+            @if($overtimeRequest->isPending())
+                <div id="reject-form" class="collapse mb-3">
+                    <div class="card border-danger">
+                        <div class="card-body">
+                            <form action="{{ route('admin.overtime-requests.reject', $overtimeRequest) }}" method="POST">
+                                @csrf
+                                @method('PATCH')
+                                <label class="form-label">Lý do từ chối</label>
+                                <textarea name="reject_reason" rows="3" class="form-control mb-3" required>{{ old('reject_reason') }}</textarea>
+                                @error('reject_reason')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
+                                <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        @endcan
 
         <div class="card">
             <div class="card-body">
