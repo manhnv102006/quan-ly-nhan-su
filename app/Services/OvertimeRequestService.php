@@ -28,7 +28,8 @@ class OvertimeRequestService
 
     public function update(OvertimeRequest $overtimeRequest, array $data): OvertimeRequest
     {
-        $overtimeRequest->update($this->normalizePayload($data));
+        $payload = $this->normalizePayload($data);
+        $overtimeRequest->update($payload);
 
         return $overtimeRequest;
     }

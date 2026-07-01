@@ -21,7 +21,7 @@ class OvertimeRequestController extends Controller
         private readonly OvertimeRequestService $service,
         private readonly OvertimeApprovalService $approvalService,
     ) {
-        $this->authorizeResource(OvertimeRequest::class, 'overtimeRequest');
+        $this->authorizeResource(OvertimeRequest::class, 'overtime_request');
     }
 
     public function index(): View
@@ -75,8 +75,6 @@ class OvertimeRequestController extends Controller
 
     public function edit(OvertimeRequest $overtimeRequest): View
     {
-        $this->assertPendingOrAbort($overtimeRequest, 'Chỉ được chỉnh sửa đơn ở trạng thái Pending.');
-
         return view('admin.overtime-requests.edit', [
             'overtimeRequest' => $overtimeRequest,
             'employees' => $this->activeEmployees(),
@@ -85,13 +83,17 @@ class OvertimeRequestController extends Controller
 
     public function update(OvertimeRequestUpdateRequest $request, OvertimeRequest $overtimeRequest): RedirectResponse
     {
-        if (! $overtimeRequest->isPending()) {
-            return redirect()
-                ->route('admin.overtime-requests.show', $overtimeRequest)
-                ->with('error', 'Đơn đã duyệt/từ chối, không thể chỉnh sửa.');
+        $data = $request->validated();
+
+        if (isset($data['status']) && $data['status'] !== $overtimeRequest->status) {
+            $data['approved_by'] = Auth::id();
+            $data['approved_at'] = now();
+            if ($data['status'] !== OvertimeRequest::STATUS_REJECTED) {
+                $data['reject_reason'] = null;
+            }
         }
 
-        $this->service->update($overtimeRequest, $request->validated());
+        $this->service->update($overtimeRequest, $data);
 
         return redirect()
             ->route('admin.overtime-requests.show', $overtimeRequest)
@@ -100,12 +102,6 @@ class OvertimeRequestController extends Controller
 
     public function destroy(OvertimeRequest $overtimeRequest): RedirectResponse
     {
-        if (! $overtimeRequest->isPending()) {
-            return redirect()
-                ->route('admin.overtime-requests.show', $overtimeRequest)
-                ->with('error', 'Đơn đã duyệt/từ chối, không thể xóa.');
-        }
-
         $overtimeRequest->delete();
 
         return redirect()
@@ -145,12 +141,5 @@ class OvertimeRequestController extends Controller
             ->where('status', 'active')
             ->orderBy('full_name')
             ->get();
-    }
-
-    private function assertPendingOrAbort(OvertimeRequest $overtimeRequest, string $message): void
-    {
-        if (! $overtimeRequest->isPending()) {
-            abort(403, $message);
-        }
     }
 }

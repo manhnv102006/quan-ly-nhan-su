@@ -56,6 +56,28 @@
     </div>
 @endif
 
+@if($showStatus ?? false)
+    <div class="col-md-4">
+        <label for="status" class="form-label fw-semibold">Trạng thái</label>
+        <select id="status" name="status" class="form-select @error('status') is-invalid @enderror" required>
+            @foreach(\App\Models\OvertimeRequest::STATUS_LABELS as $value => $label)
+                <option value="{{ $value }}" @selected(old('status', $model?->status) === $value)>{{ $label }}</option>
+            @endforeach
+        </select>
+        @error('status')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+    <div class="col-12" id="reject-reason-wrap">
+        <label for="reject_reason" class="form-label fw-semibold">Lý do từ chối</label>
+        <textarea id="reject_reason" name="reject_reason" rows="3" class="form-control @error('reject_reason') is-invalid @enderror"
+                  placeholder="Bắt buộc khi chọn trạng thái Từ chối">{{ old('reject_reason', $model?->reject_reason) }}</textarea>
+        @error('reject_reason')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+@endif
+
 <div class="col-12">
     <label for="reason" class="form-label fw-semibold">Lý do</label>
     <textarea id="reason" name="reason" rows="4" class="form-control @error('reason') is-invalid @enderror"
