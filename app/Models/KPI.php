@@ -15,7 +15,6 @@ class KPI extends Model
 
     public const POSITIONS = [
         'employee' => 'Nhân viên',
-        'leader' => 'Leader',
         'manager' => 'Manager',
     ];
 
