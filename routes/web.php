@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AttendanceReportController;
 use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\EmployeeShiftController;
 use App\Http\Controllers\Admin\InterviewController;
 use App\Http\Controllers\Admin\JobPostController;
 use App\Http\Controllers\Admin\LeaveRequestController;
@@ -19,6 +20,8 @@ use App\Http\Controllers\Admin\ContractTypeController;
 
 
 use App\Http\Controllers\Admin\KPIController;
+use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\NotificationController as UserNotificationController;
 
 use App\Http\Controllers\Admin\PayrollPeriodController;
 use App\Http\Controllers\Admin\PositionController;
@@ -26,8 +29,25 @@ use App\Http\Controllers\Admin\RecruitmentController;
 use App\Http\Controllers\Admin\ShiftController;
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Employee\NotificationController as EmployeeNotificationController;
+use App\Http\Controllers\Manager\EmployeeController as ManagerEmployeeController;
+use App\Http\Controllers\Manager\KPIController as ManagerKPIController;
+use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
+use App\Http\Controllers\Employee\EmployeePayrollController;
+
+use App\Http\Controllers\Employee\EmployeeKPIController;
+
+
+use App\Http\Controllers\Manager\LeaveApprovalController;
+use App\Http\Controllers\Manager\OvertimeApprovalController;
+
+use App\Http\Controllers\Employee\AttendanceController as EmployeeAttendanceController;
+use App\Http\Controllers\Employee\OvertimeController as EmployeeOvertimeController;
+
+
+
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [DashboardController::class, 'redirect']);
@@ -38,14 +58,22 @@ Route::get('/dashboard', [DashboardController::class, 'redirect'])
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+    Route::get('/notifications/create', [NotificationController::class, 'create'])->name('notifications.create');
+    Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
     Route::get('/accounts', [AccountController::class, 'index'])->name('accounts');
+    Route::get('/accounts/trash', [AccountController::class, 'trash'])->name('accounts.trash');
     Route::get('/accounts/create', [AccountController::class, 'create'])->name('accounts.create');
     Route::post('/accounts', [AccountController::class, 'store'])->name('accounts.store');
     Route::get('/accounts/{user}', [AccountController::class, 'show'])->name('accounts.show');
     Route::get('/accounts/{user}/edit', [AccountController::class, 'edit'])->name('accounts.edit');
     Route::put('/accounts/{user}', [AccountController::class, 'update'])->name('accounts.update');
+    Route::delete('/accounts/{user}', [AccountController::class, 'destroy'])->name('accounts.destroy');
+    Route::post('/accounts/{id}/restore', [AccountController::class, 'restore'])->name('accounts.restore');
+    Route::delete('/accounts/{id}/force-delete', [AccountController::class, 'forceDelete'])->name('accounts.forceDelete');
     Route::patch('/accounts/{user}/toggle-status', [AccountController::class, 'toggleStatus'])->name('accounts.toggle-status');
     Route::patch('/accounts/{user}/reset-password', [AccountController::class, 'resetPassword'])->name('accounts.reset-password');
+    Route::patch('/accounts/{user}/link-employee', [AccountController::class, 'linkEmployee'])->name('accounts.link-employee');
+    Route::patch('/accounts/{user}/unlink-employee', [AccountController::class, 'unlinkEmployee'])->name('accounts.unlink-employee');
     Route::get('/departments', [DepartmentController::class, 'index'])->name('departments');
     Route::get('/departments/create', [DepartmentController::class, 'create'])->name('departments.create');
     Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
@@ -72,15 +100,25 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::resource('payroll-periods', PayrollPeriodController::class);
 
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
+    Route::get('/employees/trash', [EmployeeController::class, 'trash'])->name('employees.trash');
+    Route::post('/employees/{id}/restore', [EmployeeController::class, 'restore'])->name('employees.restore');
+    Route::delete('/employees/{id}/force-delete', [EmployeeController::class, 'forceDelete'])->name('employees.forceDelete');
     Route::get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create');
     Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
     Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
     Route::get('/employees/{employee}/documents/download-all', [EmployeeController::class, 'downloadAllDocuments'])->name('employees.documents.download-all');
     Route::get('/employees/{employee}/documents/{document}/download', [EmployeeController::class, 'downloadDocument'])->name('employees.documents.download');
     Route::patch('/employees/{employee}/transfer-department', [EmployeeController::class, 'transferDepartment'])->name('employees.transfer-department');
+    Route::patch('/employees/{employee}/link-account', [EmployeeController::class, 'linkAccount'])->name('employees.link-account');
+    Route::patch('/employees/{employee}/unlink-account', [EmployeeController::class, 'unlinkAccount'])->name('employees.unlink-account');
     Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
     Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
     Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
+
+    //gan ca lam viec cho nhan vien
+    Route::get('/employee-shifts', [EmployeeShiftController::class, 'index'])->name('employee-shifts.index');
+    Route::get('/employee-shifts/create', [EmployeeShiftController::class, 'create'])->name('employee-shifts.create');
+    Route::post('/employee-shifts', [EmployeeShiftController::class, 'store'])->name('employee-shifts.store');
 
     Route::resource('kpis', KPIController::class);
     Route::resource('kpi-assignments', KPIAssignmentController::class)->parameters(['kpi-assignments' => 'assignment']);
@@ -89,6 +127,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::patch('/kpi-assignments/{assignment}/complete', [KPIAssignmentController::class, 'complete'])->name('kpi-assignments.complete');
 
     Route::get('/attendances', [AttendanceController::class, 'index'])->name('attendances');
+    Route::get('/attendances/departments/{department}', [AttendanceController::class, 'department'])->name('attendances.department');
     Route::get('/attendances/{attendance}', [AttendanceController::class, 'show'])->name('attendances.show');
     Route::get('/attendances/{attendance}/edit', [AttendanceController::class, 'edit'])->name('attendances.edit');
     Route::put('/attendances/{attendance}', [AttendanceController::class, 'update'])->name('attendances.update');
@@ -98,26 +137,27 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/shifts/{shift}/edit', [ShiftController::class, 'edit'])->name('shifts.edit');
     Route::put('/shifts/{shift}', [ShiftController::class, 'update'])->name('shifts.update');
     Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy'])->name('shifts.destroy');
-    Route::get('/leave-requests', [LeaveRequestController::class, 'index'])->name('leave-requests.index');
+    Route::get('/leave-requests', [LeaveRequestController::class, 'index'])->name('leave-requests');
+    Route::get('/leave-requests/departments/{department}', [LeaveRequestController::class, 'department'])->name('leave-requests.department');
     Route::get('/leave-requests/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('leave-requests.show');
-    Route::patch('/leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('leave-requests.approve');
-    Route::patch('/leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('leave-requests.reject');
-    Route::get('/overtime-requests', [OvertimeRequestController::class, 'index'])->name('overtime-requests.index');
-    Route::get('/overtime-requests/{overtimeRequest}', [OvertimeRequestController::class, 'show'])->name('overtime-requests.show');
-    Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeRequestController::class, 'approve'])->name('overtime-requests.approve');
-    Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeRequestController::class, 'reject'])->name('overtime-requests.reject');
+    Route::get('/overtime-requests/departments/{department}', [OvertimeRequestController::class, 'department'])->name('overtime-requests.department');
+    Route::resource('overtime-requests', OvertimeRequestController::class)
+        ->parameters(['overtime-requests' => 'overtime_request']);
+    Route::patch('/overtime-requests/{overtime_request}/approve', [OvertimeRequestController::class, 'approve'])->name('overtime-requests.approve');
+    Route::patch('/overtime-requests/{overtime_request}/reject', [OvertimeRequestController::class, 'reject'])->name('overtime-requests.reject');
+    Route::patch('/overtime-requests/{overtime_request}/status', [OvertimeRequestController::class, 'updateStatus'])->name('overtime-requests.status');
     Route::get('/attendance-reports', [AttendanceReportController::class, 'index'])->name('attendance-reports.index');
+    Route::get('/attendance-reports/departments/{department}', [AttendanceReportController::class, 'department'])->name('attendance-reports.department');
 
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
+
+
 
 
     Route::post('/payroll-periods/{payrollPeriod}/calculate', [PayrollPeriodController::class, 'calculate'])->name('payroll-periods.calculate');
     Route::post('/payroll-periods/{payrollPeriod}/approve', [PayrollPeriodController::class, 'approve'])->name('payroll-periods.approve');
     Route::post('/payroll-periods/{payrollPeriod}/pay', [PayrollPeriodController::class, 'pay'])->name('payroll-periods.pay');
     Route::post('/payroll-periods/{payrollPeriod}/close', [PayrollPeriodController::class, 'close'])->name('payroll-periods.close');
-    Route::get('/payrolls/{payroll}/pdf', [PayrollController::class, 'exportPdf'])->name('payrolls.pdf');
-    Route::get('/contracts', [AdminModuleController::class, 'contracts'])->name('contracts');
-
     Route::post('/payrolls/generate', [PayrollController::class, 'generate'])->name('payrolls.generate');
     Route::post('/payrolls/{payroll}/submit', [PayrollController::class, 'submit'])->name('payrolls.submit');
     Route::post('/payrolls/{payroll}/approve', [PayrollController::class, 'approve'])->name('payrolls.approve');
@@ -128,12 +168,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/contract-types/{id}/restore', [ContractTypeController::class, 'restore'])->name('contract-types.restore');
 
     Route::get('/contracts/trash', [ContractController::class, 'trash'])->name('contracts.trashed');
-    Route::post('/contracts/{id}/restore', [ContractController::class, 'restore'])->name('contracts.restore');
-    Route::delete('/contracts/{id}/force-delete', [ContractController::class, 'forceDelete'])->name('contracts.forceDelete');
-    Route::post('/contracts/{contract}/extend', [ContractController::class, 'extend'])->name('contracts.extend');
-    Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate');
+    Route::post('/contracts/{contract}/restore', [ContractController::class, 'restore'])->name('contracts.restore');
+    Route::delete('/contracts/{contract}/force-delete', [ContractController::class, 'forceDelete'])->name('contracts.forceDelete');
+    Route::get('/contracts/{contract}/extend', [ContractController::class, 'extendForm'])->name('contracts.extend.form');
+    Route::post('/contracts/{contract}/extend', [ContractController::class, 'extendStore'])->name('contracts.extend');
+    Route::post('/contracts/{contract}/cancel', [ContractController::class, 'cancel'])->name('contracts.cancel');
     Route::resource('contracts', ContractController::class);
-
 
     Route::get('/recruitment', [RecruitmentController::class, 'index'])->name('recruitment');
     Route::get('/recruitment/job-posts', [JobPostController::class, 'index'])->name('recruitment.job-posts');
@@ -158,21 +198,80 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/payrolls/{payroll}/pdf', [PayrollController::class, 'exportPdf'])->name('payrolls.pdf');
 });
 
-Route::middleware(['auth', 'verified', 'role:manager'])->group(function () {
-    Route::get('/manager/dashboard', [DashboardController::class, 'manager'])->name('manager.dashboard');
-    Route::get('/manager/leave-requests', [LeaveRequestController::class, 'index'])->name('manager.leave-requests');
-    Route::patch('/manager/leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('manager.leave-requests.approve');
-    Route::patch('/manager/leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('manager.leave-requests.reject');
+Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'manager'])->name('dashboard');
+
+    Route::get('/employees', [ManagerEmployeeController::class, 'index'])->name('employees.index');
+    Route::get('/employees/{employee}', [ManagerEmployeeController::class, 'show'])->name('employees.show');
+
+    Route::get('/notifications', [ManagerNotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/create', [ManagerNotificationController::class, 'create'])->name('notifications.create');
+    Route::post('/notifications', [ManagerNotificationController::class, 'store'])->name('notifications.store');
+    Route::get('/notifications/{notification}', [ManagerNotificationController::class, 'show'])->name('notifications.show');
+    Route::patch('/notifications/read-all', [ManagerNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::patch('/notifications/{notification}/read', [ManagerNotificationController::class, 'markAsRead'])->name('notifications.read');
+
+    Route::get('/kpis', [ManagerKPIController::class, 'index'])->name('kpis.index');
+    Route::get('/kpis/employee-kpis/{employeeKpi}/score', [ManagerKPIController::class, 'editScore'])->name('kpis.employee_kpis.score.edit');
+    Route::put('/kpis/employee-kpis/{employeeKpi}/score', [ManagerKPIController::class, 'updateScore'])->name('kpis.employee_kpis.score.update');
+    Route::get('/kpis/{assignment}', [ManagerKPIController::class, 'show'])->name('kpis.show');
+    Route::get('/kpis/{assignment}/assign', [ManagerKPIController::class, 'assign'])->name('kpis.assign');
+    Route::post('/kpis/{assignment}/assign', [ManagerKPIController::class, 'storeAssign'])->name('kpis.store_assign');
+
+    Route::get('/overtime-requests', [OvertimeApprovalController::class, 'index'])->name('overtime-requests.index');
+    Route::get('/overtime-requests/{overtimeRequest}', [OvertimeApprovalController::class, 'show'])->name('overtime-requests.show');
+    Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeApprovalController::class, 'approve'])->name('overtime-requests.approve');
+    Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeApprovalController::class, 'reject'])->name('overtime-requests.reject');
 });
+
+Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager'])
+    ->prefix('manager/leave-requests')
+    ->name('manager.leave-requests.')
+    ->group(function () {
+        Route::get('/', [LeaveApprovalController::class, 'index'])->name('index');
+        Route::patch('/{leaveRequest}/approve', [LeaveApprovalController::class, 'approve'])->name('approve');
+        Route::patch('/{leaveRequest}/reject', [LeaveApprovalController::class, 'reject'])->name('reject');
+        Route::get('/{leaveRequest}', [LeaveApprovalController::class, 'show'])->name('show');
+    });
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
+
+    Route::prefix('employee/kpis')->name('employee.kpis.')->group(function () {
+        Route::get('/', [EmployeeKPIController::class, 'index'])->name('index');
+        Route::get('/{employeeKpi}/edit', [EmployeeKPIController::class, 'edit'])->name('edit');
+        Route::put('/{employeeKpi}', [EmployeeKPIController::class, 'update'])->name('update');
+    });
+
+    Route::get('/employee/notifications', [EmployeeNotificationController::class, 'index'])->name('employee.notifications.index');
+    Route::get('/employee/notifications/{notification}', [EmployeeNotificationController::class, 'show'])->name('employee.notifications.show');
+    Route::patch('/employee/notifications/read-all', [EmployeeNotificationController::class, 'markAllAsRead'])->name('employee.notifications.read-all');
+    Route::patch('/employee/notifications/{notification}/read', [EmployeeNotificationController::class, 'markAsRead'])->name('employee.notifications.read');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(function () {
     Route::get('/employee/leave-requests', [EmployeeLeaveController::class, 'index'])->name('employee.leave-requests');
     Route::get('/employee/leave-requests/create', [EmployeeLeaveController::class, 'create'])->name('employee.leave-requests.create');
+    Route::get('/employee/leave-requests/{leaveRequest}', [EmployeeLeaveController::class, 'show'])->name('employee.leave-requests.show');
     Route::post('/employee/leave-requests', [EmployeeLeaveController::class, 'store'])->name('employee.leave-requests.store');
+    Route::get('/employee/payrolls', [EmployeePayrollController::class, 'index'])->name('employee.payrolls.index');
+    Route::get('/employee/payrolls/{payroll}/pdf', [EmployeePayrollController::class, 'exportPdf'])->name('employee.payrolls.pdf');
+    Route::get('/employee/payrolls/{payroll}', [EmployeePayrollController::class, 'show'])->name('employee.payrolls.show');
+    Route::get('/employee/attendance', [EmployeeAttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('/attendance/check-in/{shift}', [EmployeeAttendanceController::class, 'checkIn'])->name('attendance.check-in');
+    Route::post('/attendance/check-out/{shift}', [EmployeeAttendanceController::class, 'checkOut'])->name('attendance.check-out');
+    Route::post('/attendance/overtime/{overtime_request}/check-in', [EmployeeAttendanceController::class, 'overtimeCheckIn'])->name('attendance.overtime.check-in');
+    Route::post('/attendance/overtime/{overtime_request}/check-out', [EmployeeAttendanceController::class, 'overtimeCheckOut'])->name('attendance.overtime.check-out');
+    Route::get('/employee/overtime-requests', [EmployeeOvertimeController::class, 'index'])->name('employee.overtime-requests');
+    Route::get('/employee/overtime-requests/create', [EmployeeOvertimeController::class, 'create'])->name('employee.overtime-requests.create');
+    Route::post('/employee/overtime-requests', [EmployeeOvertimeController::class, 'store'])->name('employee.overtime-requests.store');
+});
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/notifications', [UserNotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/{notification}', [UserNotificationController::class, 'show'])->name('notifications.show');
+    Route::patch('/notifications/read-all', [UserNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::patch('/notifications/{notification}/read', [UserNotificationController::class, 'markAsRead'])->name('notifications.read');
 });
 
 Route::middleware('auth')->group(function () {

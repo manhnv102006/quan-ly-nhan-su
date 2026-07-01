@@ -113,28 +113,28 @@
                 </div>
 
                 @if ($documents->isNotEmpty())
-                    <div class="md:col-span-2 border-t border-slate-100 pt-6 mt-2">
-                        <h3 class="text-base font-semibold text-slate-800 mb-4">Tài liệu hiện có</h3>
-                        <div class="space-y-3">
+                    <div class="md:col-span-2 rounded-3xl border border-slate-200 bg-slate-50/50 p-6">
+                        <h3 class="text-base font-bold text-slate-800 mb-4">Tài liệu hiện có</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             @foreach ($documents as $document)
-                                <div class="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                                    <div>
-                                        <p class="font-medium text-slate-800">{{ $document->document_name }}</p>
-                                        <p class="text-sm text-slate-500">{{ $document->typeLabel() }} · {{ $document->created_at?->format('d/m/Y') }}</p>
+                                <div class="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                                    <div class="min-w-0">
+                                        <p class="font-semibold text-slate-800 truncate">{{ $document->document_name }}</p>
+                                        <p class="text-sm text-slate-500 mt-0.5">{{ $document->typeLabel() }} · {{ $document->created_at?->format('d/m/Y') }}</p>
                                     </div>
-                                    <div class="flex items-center gap-4">
+                                    <div class="flex items-center gap-3 shrink-0">
                                         @if ($document->existsOnDisk())
                                             <a href="{{ route('admin.employees.documents.download', [$employee, $document]) }}"
-                                               class="text-sm text-violet-600 hover:text-violet-700 font-medium">
+                                               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-100 text-violet-700 text-xs font-semibold hover:bg-violet-200 transition">
                                                 Tải xuống
                                             </a>
                                         @else
-                                            <span class="text-sm text-slate-400">File không tồn tại</span>
+                                            <span class="text-xs text-slate-400">File không tồn tại</span>
                                         @endif
-                                        <label class="inline-flex items-center gap-2 text-sm text-red-600 cursor-pointer">
+                                        <label class="inline-flex items-center gap-2 text-xs text-red-600 cursor-pointer font-medium">
                                             <input type="checkbox" name="remove_documents[]" value="{{ $document->id }}"
                                                    class="rounded border-slate-300 text-red-600 focus:ring-red-500">
-                                            Xóa tài liệu
+                                            Xóa
                                         </label>
                                     </div>
                                 </div>

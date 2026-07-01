@@ -3,6 +3,7 @@
     'subtitle' => null,
     'role' => 'manager',
     'navigation' => [],
+    'bootstrap' => false,
 ])
 
 @php
@@ -11,17 +12,17 @@
     $theme = $isManager
         ? [
             'shell' => 'staff-shell-manager',
-            'brand' => 'from-emerald-500 via-teal-500 to-cyan-600',
-            'avatar' => 'from-emerald-500 via-teal-500 to-cyan-500',
-            'badge' => 'from-emerald-100 to-cyan-100 text-emerald-700',
-            'badgeDot' => 'bg-emerald-500',
+            'brand' => 'from-violet-600 via-indigo-600 to-blue-600',
+            'avatar' => 'from-violet-500 via-indigo-500 to-blue-500',
+            'badge' => 'from-violet-100 to-indigo-100 text-violet-700',
+            'badgeDot' => 'bg-violet-500',
             'activeMenu' => 'staff-menu-item-active-manager',
-            'accentText' => 'text-emerald-600',
-            'ghost' => 'hover:bg-emerald-50 hover:text-emerald-700',
-            'searchFocus' => 'focus:ring-emerald-500/30',
-            'support' => 'from-emerald-600 to-cyan-700',
-            'glowOne' => 'bg-emerald-400/15',
-            'glowTwo' => 'bg-cyan-400/15',
+            'accentText' => 'text-violet-600',
+            'ghost' => 'hover:bg-violet-50 hover:text-violet-700',
+            'searchFocus' => 'focus:ring-violet-500/30',
+            'support' => 'from-slate-800 via-violet-900 to-indigo-900',
+            'glowOne' => 'bg-violet-400/15',
+            'glowTwo' => 'bg-indigo-400/12',
             'roleLabel' => 'Manager',
             'eyebrow' => 'Không gian điều hành',
             'helper' => 'Theo dõi đội ngũ, phê duyệt và tiến độ của phòng ban.',
@@ -61,9 +62,15 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    @if ($bootstrap)
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    @endif
+
     <style>
         body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
     </style>
+    @stack('head')
 </head>
 <body class="staff-body staff-shell {{ $theme['shell'] }}" x-data="{ sidebarOpen: false }">
     @include('partials.page-loader')
@@ -142,7 +149,7 @@
         ></div>
 
         <div class="relative flex min-h-screen min-w-0 flex-1 flex-col">
-            <header class="staff-header sticky top-0 z-30">
+            <header class="staff-header sticky top-0 z-50 overflow-visible">
                 <div class="flex h-[74px] items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div class="flex min-w-0 flex-1 items-center gap-4">
                         <button
@@ -177,6 +184,8 @@
                     </div>
 
                     <div class="flex items-center gap-2 sm:gap-3">
+                        @include('admin.partials.notification-dropdown')
+
                         <div class="hidden rounded-2xl border border-white/70 bg-white/75 px-3 py-2 text-right shadow-sm shadow-slate-200/50 sm:block">
                             <p class="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Hôm nay</p>
                             <p class="text-sm font-semibold text-slate-700">{{ now()->format('d/m/Y') }}</p>
@@ -209,10 +218,15 @@
                 </div>
             </header>
 
-            <main class="flex-1 p-4 pb-10 sm:p-6 lg:p-8">
+            <main class="relative z-0 flex-1 p-4 pb-10 sm:p-6 lg:p-8">
                 {{ $slot }}
             </main>
         </div>
     </div>
+
+    @if ($bootstrap)
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @endif
+    @stack('scripts')
 </body>
 </html>

@@ -7,12 +7,14 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmployeeDocument;
 use App\Models\Position;
+use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -66,6 +68,10 @@ class EmployeeController extends Controller
 
     public function show(Employee $employee): View
     {
+        if ($employee->clearStaleUserLink()) {
+            $employee->refresh();
+        }
+
         $employee->load(['department', 'position', 'user.role']);
 
         $contracts = $employee->contracts()
@@ -107,6 +113,17 @@ class EmployeeController extends Controller
             ->limit(10)
             ->get();
 
+        $linkedUserIds = Employee::query()
+            ->whereNotNull('user_id')
+            ->whereIn('user_id', User::query()->select('id'))
+            ->pluck('user_id');
+
+        $availableAccounts = User::query()
+            ->with('role')
+            ->whereNotIn('id', $linkedUserIds)
+            ->orderBy('username')
+            ->get(['id', 'username', 'name', 'email', 'role_id', 'status']);
+
         return view('admin.employees.show', compact(
             'employee',
             'contracts',
@@ -116,6 +133,7 @@ class EmployeeController extends Controller
             'documents',
             'departments',
             'transferHistory',
+            'availableAccounts',
         ));
     }
 
@@ -205,6 +223,62 @@ class EmployeeController extends Controller
             ->with('success', "Đã điều chuyển nhân viên từ {$fromDepartmentName} sang {$toDepartment->department_name}.");
     }
 
+    public function linkAccount(Request $request, Employee $employee): RedirectResponse
+    {
+        $employee->clearStaleUserLink();
+        $employee->refresh();
+
+        if ($employee->hasLinkedAccount()) {
+            return redirect()
+                ->route('admin.employees.show', $employee)
+                ->with('error', 'Nhân viên này đã được liên kết với một tài khoản.');
+        }
+
+        $validated = $request->validate([
+            'user_id' => [
+                'required',
+                'integer',
+                Rule::exists('users', 'id'),
+                Rule::unique('employees', 'user_id')->ignore($employee->id),
+            ],
+        ], [
+            'user_id.required' => 'Vui lòng chọn tài khoản để liên kết.',
+            'user_id.exists' => 'Tài khoản không tồn tại.',
+            'user_id.unique' => 'Tài khoản này đã được liên kết với nhân viên khác.',
+        ]);
+
+        $user = User::query()->findOrFail($validated['user_id']);
+
+        if ($user->employee && $user->employee->id !== $employee->id) {
+            return redirect()
+                ->route('admin.employees.show', $employee)
+                ->with('error', 'Tài khoản này đã được liên kết với nhân viên khác.');
+        }
+
+        $employee->update(['user_id' => $user->id]);
+
+        return redirect()
+            ->route('admin.employees.show', $employee)
+            ->with('success', "Đã liên kết tài khoản {$user->username} với nhân viên {$employee->full_name}.");
+    }
+
+    public function unlinkAccount(Employee $employee): RedirectResponse
+    {
+        if (! $employee->user_id) {
+            return redirect()
+                ->route('admin.employees.show', $employee)
+                ->with('error', 'Nhân viên này chưa liên kết tài khoản nào.');
+        }
+
+        $username = $employee->linkedUser?->username ?? 'tài khoản';
+
+        $employee->update(['user_id' => null]);
+
+        return redirect()
+            ->route('admin.employees.show', $employee)
+            ->with('success', "Đã gỡ liên kết tài khoản {$username} khỏi nhân viên {$employee->full_name}.");
+    }
+
     public function downloadDocument(Employee $employee, EmployeeDocument $document): StreamedResponse|RedirectResponse
     {
         if ($document->employee_id !== $employee->id) {
@@ -280,23 +354,90 @@ class EmployeeController extends Controller
         return response()->download($tempZipPath, $zipFileName)->deleteFileAfterSend(true);
     }
 
+    public function trash(Request $request): View
+    {
+        $search = $request->string('search')->trim();
+
+        $employees = Employee::onlyTrashed()
+            ->with(['department', 'position'])
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
+                $query->where('employee_code', 'like', "%{$search}%")
+                    ->orWhere('full_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            }))
+            ->orderByDesc('deleted_at')
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('admin.employees.trash', compact('employees', 'search'));
+    }
+
     public function destroy(Employee $employee): RedirectResponse
     {
+        Department::where('manager_id', $employee->id)->update(['manager_id' => null]);
+
+        if ($employee->user_id !== null) {
+            $employee->update(['user_id' => null]);
+        }
+
+        $employee->delete();
+
+        return redirect()
+            ->route('admin.employees')
+            ->with('success', "Đã chuyển nhân viên {$employee->full_name} vào thùng rác.");
+    }
+
+    public function restore(int $id): RedirectResponse
+    {
+        $employee = Employee::onlyTrashed()->findOrFail($id);
+
+        if ($error = $this->restoreConflictMessage($employee)) {
+            return redirect()
+                ->back()
+                ->with('error', $error);
+        }
+
+        $employee->restore();
+
+        return redirect()
+            ->route('admin.employees.trash')
+            ->with('success', "Đã khôi phục nhân viên {$employee->full_name}.");
+    }
+
+    public function forceDelete(int $id): RedirectResponse
+    {
+        $employee = Employee::onlyTrashed()->findOrFail($id);
+        $employeeName = $employee->full_name;
+
         try {
             Department::where('manager_id', $employee->id)->update(['manager_id' => null]);
 
             $employee->documents()->get()->each(fn (EmployeeDocument $document) => $document->deleteFile());
 
-            $employee->delete();
+            $employee->forceDelete();
         } catch (QueryException) {
             return redirect()
                 ->back()
-                ->with('error', 'Không thể xóa nhân viên vì còn dữ liệu liên quan trong hệ thống.');
+                ->with('error', 'Không thể xóa vĩnh viễn nhân viên vì còn dữ liệu liên quan trong hệ thống.');
         }
 
         return redirect()
-            ->route('admin.employees')
-            ->with('success', 'Đã xóa nhân viên thành công.');
+            ->route('admin.employees.trash')
+            ->with('success', "Đã xóa vĩnh viễn nhân viên {$employeeName}.");
+    }
+
+    private function restoreConflictMessage(Employee $employee): ?string
+    {
+        if (Employee::where('employee_code', $employee->employee_code)->where('id', '!=', $employee->id)->exists()) {
+            return 'Không thể khôi phục vì mã nhân viên đã được sử dụng bởi hồ sơ khác.';
+        }
+
+        if (Employee::where('email', $employee->email)->where('id', '!=', $employee->id)->exists()) {
+            return 'Không thể khôi phục vì email đã được sử dụng bởi hồ sơ khác.';
+        }
+
+        return null;
     }
 
     private function storeUploadedDocuments(Employee $employee, Request $request): void

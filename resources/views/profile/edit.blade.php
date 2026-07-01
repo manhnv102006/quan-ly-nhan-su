@@ -1,29 +1,21 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
-                </div>
-            </div>
-
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
-                </div>
-            </div>
-
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
-                </div>
-            </div>
-        </div>
-    </div>
-</x-app-layout>
+@if ($layout === 'admin')
+    <x-admin-layout title="Hồ sơ cá nhân">
+        @include('profile.partials.content')
+    </x-admin-layout>
+@elseif ($layout === 'manager')
+    <x-staff-layout
+        title="Hồ sơ cá nhân"
+        subtitle="Quản lý thông tin tài khoản và bảo mật đăng nhập."
+        role="manager"
+        :navigation="$navigation">
+        @include('profile.partials.content')
+    </x-staff-layout>
+@else
+    <x-staff-layout
+        title="Hồ sơ cá nhân"
+        subtitle="Cập nhật thông tin cá nhân và mật khẩu của bạn."
+        role="employee"
+        :navigation="$navigation">
+        @include('profile.partials.content')
+    </x-staff-layout>
+@endif

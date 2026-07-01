@@ -14,9 +14,7 @@
                 </p>
             </div>
 
-            <a
-                href="{{ route('admin.shifts.create') }}"
-                class="px-4 py-2 bg-violet-600 text-white rounded-xl">
+            <a href="{{ route('admin.shifts.create') }}" class="px-4 py-2 bg-violet-600 text-white rounded-xl">
 
                 + Thêm ca làm việc
 
@@ -46,70 +44,71 @@
 
                     @forelse($shifts as $index => $shift)
 
-                        <tr class="border-t">
+                    <tr class="border-t">
 
-                            <td class="px-5 py-4">
-                                {{ $shifts->firstItem() + $index }}
-                            </td>
+                        <td class="px-5 py-4">
+                            {{ $shifts->firstItem() + $index }}
+                        </td>
 
-                            <td class="px-5 py-4 font-medium">
-                                {{ $shift->shift_name }}
-                            </td>
+                        <td class="px-5 py-4 font-medium">
+                            {{ $shift->shift_name }}
+                        </td>
 
-                            <td class="px-5 py-4">
-                                {{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }}
-                            </td>
+                        <td class="px-5 py-4">
+                            {{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }}
+                        </td>
 
-                            <td class="px-5 py-4">
-                                {{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }}
-                            </td>
+                        <td class="px-5 py-4">
+                            {{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }}
+                        </td>
 
-                            <td class="px-5 py-4">
+                        <td class="px-5 py-4">
 
-                                <div class="flex justify-center gap-2">
+                            <div class="flex justify-center gap-2">
 
-                                    <a
-                                        href="{{ route('admin.shifts.edit', $shift) }}"
-                                        class="px-3 py-1 bg-yellow-500 text-white rounded-lg">
+                                <a href="{{ route('admin.shifts.edit', $shift) }}"
+                                    class="px-3 py-1 bg-yellow-500 text-white rounded-lg">
 
-                                        Sửa
+                                    Sửa
 
-                                    </a>
+                                </a>
+                                <a href="{{ route('admin.employee-shifts.index') }}" class="px-3 py-1 bg-blue-600 text-white rounded-lg">
+                                    Gán ca làm
+                                </a>
 
-                                    <form
-                                       action="{{ route('admin.shifts.destroy', $shift) }}"
-                                        method="POST">
 
-                                        @csrf
-                                        @method('DELETE')
+                                <form action="{{ route('admin.shifts.destroy', $shift) }}" method="POST">
 
-                                        <button
-                                            onclick="return confirm('Xóa ca làm việc này?')"
-                                            class="px-3 py-1 bg-red-600 text-white rounded-lg">
+                                    @csrf
+                                    @method('DELETE')
 
-                                            Xóa
+                                    <button onclick="return confirm('Xóa ca làm việc này?')"
+                                        class="px-3 py-1 bg-red-600 text-white rounded-lg">
 
-                                        </button>
+                                        Xóa
 
-                                    </form>
+                                    </button>
 
-                                </div>
 
-                            </td>
+                                </form>
 
-                        </tr>
+                            </div>
+
+                        </td>
+
+                    </tr>
 
                     @empty
 
-                        <tr>
+                    <tr>
 
-                            <td colspan="5" class="text-center py-8 text-slate-500">
+                        <td colspan="5" class="text-center py-8 text-slate-500">
 
-                                Chưa có ca làm việc
+                            Chưa có ca làm việc
 
-                            </td>
+                        </td>
 
-                        </tr>
+                    </tr>
 
                     @endforelse
 
