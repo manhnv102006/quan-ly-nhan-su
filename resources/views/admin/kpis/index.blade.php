@@ -192,9 +192,15 @@
                             </td>
 
                             <td class="px-6 py-4">
-                                <span class="inline-block px-3 py-1 rounded-lg bg-blue-100 text-blue-700 text-sm font-medium">
-                                    {{ $kpi->department?->department_name ?? 'N/A' }}
-                                </span>
+                                <div class="flex flex-wrap gap-1">
+                                    @forelse($kpi->departments as $dept)
+                                        <span class="inline-block px-3 py-1 rounded-lg bg-blue-100 text-blue-700 text-sm font-medium">
+                                            {{ $dept->department_name }}
+                                        </span>
+                                    @empty
+                                        <span class="text-slate-400 text-sm">N/A</span>
+                                    @endforelse
+                                </div>
                             </td>
 
                             <td class="px-6 py-4 text-center">
