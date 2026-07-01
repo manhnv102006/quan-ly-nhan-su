@@ -128,11 +128,16 @@ class KPIController extends Controller
     {
         $managerEmployee = Auth::user()->employee;
 
-        // Manager chỉ được giao KPI cho nhân viên (loại trừ role manager)
-        // Trường hợp manager đã được "link" sang bảng employees thì vẫn lọc ra bằng join role.
+        if (! $managerEmployee) {
+            return collect();
+        }
+
+        // Chỉ nhân viên ĐÃ có tài khoản đăng nhập (role khác manager),
+        // cùng phòng ban với manager và đang hoạt động mới được giao KPI.
         return Employee::query()
             ->where('department_id', $managerEmployee->department_id)
             ->where('status', 'active')
+            ->where('id', '!=', $managerEmployee->id)
             ->whereHas('user', function ($q) {
                 $q->whereHas('role', function ($roleQ) {
                     $roleQ->where('name', '!=', 'manager');
