@@ -59,6 +59,7 @@
             </div>
 
         </div>
+
         <div class="bg-white rounded-2xl border shadow-sm p-5">
 
             <form method="GET">
@@ -71,7 +72,14 @@
                             name="search"
                             value="{{ request('search') }}"
                             placeholder="Tìm nhân viên..."
+                            list="employees-list"
+                            autocomplete="off"
                             class="w-full border rounded-xl px-4 py-2">
+                        <datalist id="employees-list">
+                            @foreach($employees as $emp)
+                                <option value="{{ $emp->full_name }}">{{ $emp->employee_code }}</option>
+                            @endforeach
+                        </datalist>
                     </div>
         
                     <div>

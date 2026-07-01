@@ -44,6 +44,8 @@ class AttendanceController extends Controller
             'leave' => Attendance::where('status', 'leave')->count(),
         ];
 
+        $employees = \App\Models\Employee::select('full_name', 'employee_code')->get();
+
         return view(
             'admin.attendances.index',
             compact(
@@ -51,7 +53,8 @@ class AttendanceController extends Controller
                 'stats',
                 'search',
                 'status',
-                'date'
+                'date',
+                'employees'
             )
         );
     }

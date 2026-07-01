@@ -33,8 +33,9 @@ class EmployeeController extends Controller
     {
         $departments = Department::query()->orderBy('department_name')->get(['id', 'department_name']);
         $positions = Position::query()->orderBy('position_name')->get(['id', 'position_name']);
+        $users = \App\Models\User::orderBy('name')->get();
 
-        return view('admin.employees.create', compact('departments', 'positions'));
+        return view('admin.employees.create', compact('departments', 'positions', 'users'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -51,6 +52,7 @@ class EmployeeController extends Controller
             'position_id' => ['nullable', 'exists:positions,id'],
             'hire_date' => ['required', 'date'],
             'status' => ['required', 'in:active,inactive,resigned'],
+            'user_id' => ['nullable', 'exists:users,id'],
         ], self::DOCUMENT_RULES));
 
         $validated['employee_code'] = strtoupper($validated['employee_code']);
@@ -122,8 +124,9 @@ class EmployeeController extends Controller
         $departments = Department::query()->orderBy('department_name')->get(['id', 'department_name']);
         $positions = Position::query()->orderBy('position_name')->get(['id', 'position_name']);
         $documents = $employee->documents()->latest()->get();
+        $users = \App\Models\User::orderBy('name')->get();
 
-        return view('admin.employees.edit', compact('employee', 'departments', 'positions', 'documents'));
+        return view('admin.employees.edit', compact('employee', 'departments', 'positions', 'documents', 'users'));
     }
 
     public function update(Request $request, Employee $employee): RedirectResponse
@@ -140,6 +143,7 @@ class EmployeeController extends Controller
             'position_id' => ['nullable', 'exists:positions,id'],
             'hire_date' => ['required', 'date'],
             'status' => ['required', 'in:active,inactive,resigned'],
+            'user_id' => ['nullable', 'exists:users,id'],
         ], self::DOCUMENT_RULES));
 
         $validated['employee_code'] = strtoupper($validated['employee_code']);
