@@ -14,7 +14,6 @@ class KPI extends Model
     public const PERIOD_YEAR = 'year';
 
     public const POSITIONS = [
-        'employee' => 'Nhân viên',
         'manager' => 'Manager',
     ];
 
