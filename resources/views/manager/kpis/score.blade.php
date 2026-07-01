@@ -1,86 +1,116 @@
-<x-app-layout :title="'Chấm KPI cho ' . ($employeeKpi->employee->full_name ?? '')">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Chấm KPI</h1>
+@php
+    $navigation = \App\Support\ManagerNavigation::items();
+@endphp
 
-        <div>
-            <a href="{{ route('manager.kpis.index') }}" class="btn btn-secondary btn-sm">
-                <i class="fas fa-arrow-left"></i> Quay lại danh sách
+<x-staff-layout
+    :title="'Chấm KPI cho ' . ($employeeKpi->employee->full_name ?? '')"
+    subtitle="Nhập điểm và nhận xét cho mục tiêu KPI của nhân viên."
+    role="manager"
+    :navigation="$navigation"
+>
+    <div class="max-w-3xl mx-auto space-y-6">
+
+        {{-- Header --}}
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Chấm KPI</h2>
+                <p class="text-sm text-slate-500 mt-1">
+                    Nhân viên: {{ $employeeKpi->employee->full_name ?? 'N/A' }}
+                </p>
+            </div>
+
+            <a href="{{ route('manager.kpis.index') }}"
+               class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition">
+                ← Quay lại
             </a>
         </div>
-    </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Thông tin KPI</h6>
-        </div>
-
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Nhân viên:</strong> {{ $employeeKpi->employee->full_name ?? 'N/A' }}</p>
-                    <p><strong>Mã nhân viên:</strong> {{ $employeeKpi->employee->employee_code ?? '' }}</p>
-                    <p><strong>Tên mục tiêu:</strong> {{ $employeeKpi->target }}</p>
+        {{-- Thông tin KPI --}}
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100">
+                <h3 class="font-semibold text-slate-800">Thông tin mục tiêu</h3>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                <div class="flex justify-between border-b border-slate-50 pb-2">
+                    <span class="text-slate-500">Nhân viên</span>
+                    <span class="font-semibold text-slate-800">{{ $employeeKpi->employee->full_name ?? 'N/A' }}</span>
                 </div>
-                <div class="col-md-6">
-                    <p><strong>Hạn chót:</strong> {{ optional($employeeKpi->deadline)->format('d/m/Y') ?? '—' }}</p>
-                    <p><strong>Tiến độ hiện tại:</strong>
-                        @php $progress = max(0, min(100, (int) ($employeeKpi->progress ?? 0))); @endphp
-                        {{ $progress }}%
-                    </p>
-                    <p><strong>Trạng thái:</strong>
-                        <span class="badge {{ $employeeKpi->status_color ?? 'badge-secondary' }}">{{ $employeeKpi->status_label ?? '—' }}</span>
-                    </p>
+                <div class="flex justify-between border-b border-slate-50 pb-2">
+                    <span class="text-slate-500">Mã nhân viên</span>
+                    <span class="font-semibold text-slate-800">{{ $employeeKpi->employee->employee_code ?? '—' }}</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-50 pb-2">
+                    <span class="text-slate-500">Tên mục tiêu</span>
+                    <span class="font-semibold text-slate-800">{{ $employeeKpi->target }}</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-50 pb-2">
+                    <span class="text-slate-500">Hạn chót</span>
+                    <span class="font-semibold text-slate-800">{{ optional($employeeKpi->deadline)->format('d/m/Y') ?? '—' }}</span>
+                </div>
+                @php $progress = max(0, min(100, (int) ($employeeKpi->progress ?? 0))); @endphp
+                <div class="flex justify-between border-b border-slate-50 pb-2">
+                    <span class="text-slate-500">Tiến độ hiện tại</span>
+                    <span class="font-semibold text-slate-800">{{ $progress }}%</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-50 pb-2">
+                    <span class="text-slate-500">Trạng thái</span>
+                    <span class="inline-block px-3 py-1 rounded-lg text-xs font-medium
+                        @class([
+                            'bg-amber-100 text-amber-700' => $employeeKpi->status === 'pending',
+                            'bg-blue-100 text-blue-700' => $employeeKpi->status === 'in_progress',
+                            'bg-green-100 text-green-700' => $employeeKpi->status === 'completed',
+                            'bg-red-100 text-red-700' => $employeeKpi->status === 'not_completed',
+                        ])">
+                        {{ $employeeKpi->status_label ?? '—' }}
+                    </span>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Nhập điểm & nhận xét</h6>
-        </div>
+        {{-- Form chấm điểm --}}
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+            <h3 class="font-semibold text-slate-800 mb-5">Nhập điểm &amp; nhận xét</h3>
 
-        <div class="card-body">
-            <form method="POST" action="{{ route('manager.kpis.employee_kpis.score.update', $employeeKpi) }}">
+            <form method="POST" action="{{ route('manager.kpis.employee_kpis.score.update', $employeeKpi) }}" class="space-y-6">
                 @csrf
                 @method('PUT')
 
-                <div class="mb-3">
-                    <label for="score" class="form-label"><strong>Điểm (0–100)</strong></label>
-                    <input
-                        id="score"
-                        type="number"
-                        name="score"
-                        class="form-control @error('score') is-invalid @enderror"
-                     value="{{ old('score', (int) $employeeKpi->score) }}"
-                        min="0"
-                        max="100"
-                        required
-                    >
+                <div>
+                    <label for="score" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Điểm (0–100) <span class="text-red-500">*</span>
+                    </label>
+                    <input id="score" type="number" name="score" min="0" max="100" required
+                        value="{{ old('score', $employeeKpi->score !== null ? (int) $employeeKpi->score : '') }}"
+                        class="w-full rounded-xl border @error('score') border-red-400 @else border-slate-300 @enderror focus:border-violet-500 focus:ring-violet-500">
                     @error('score')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <div class="mb-3">
-                    <label for="review" class="form-label"><strong>Nhận xét</strong></label>
-                    <textarea
-                        id="review"
-                        name="review"
-                        rows="4"
-                        class="form-control @error('review') is-invalid @enderror"
+                <div>
+                    <label for="review" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Nhận xét
+                    </label>
+                    <textarea id="review" name="review" rows="4"
                         placeholder="Nhập nhận xét cho nhân viên..."
-                    >{{ old('review', $employeeKpi->review) }}</textarea>
+                        class="w-full rounded-xl border @error('review') border-red-400 @else border-slate-300 @enderror focus:border-violet-500 focus:ring-violet-500">{{ old('review', $employeeKpi->review) }}</textarea>
                     @error('review')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <button type="submit" class="btn btn-success">
-                    <i class="fas fa-save"></i> Lưu
-                </button>
+                <div class="flex justify-end gap-3 pt-2">
+                    <a href="{{ route('manager.kpis.index') }}"
+                       class="px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
+                        Hủy
+                    </a>
+                    <button type="submit"
+                        class="px-6 py-3 rounded-xl bg-emerald-600 text-white font-medium shadow-lg shadow-emerald-500/20 hover:bg-emerald-700 transition">
+                        Lưu điểm
+                    </button>
+                </div>
             </form>
         </div>
-    </div>
-</x-app-layout>
 
+    </div>
+</x-staff-layout>
