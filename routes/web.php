@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\ContractTypeController;
 
 
 use App\Http\Controllers\Admin\KPIController;
+use App\Http\Controllers\Admin\EmployeeKPIController as AdminEmployeeKPIController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\NotificationController as UserNotificationController;
 
@@ -121,6 +122,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/employee-shifts', [EmployeeShiftController::class, 'store'])->name('employee-shifts.store');
 
     Route::resource('kpis', KPIController::class);
+
+    // Giao KPI cho nhân viên
+    Route::get('/employee-kpis', [AdminEmployeeKPIController::class, 'index'])->name('employee-kpis.index');
+    Route::get('/employee-kpis/create', [AdminEmployeeKPIController::class, 'create'])->name('employee-kpis.create');
+    Route::post('/employee-kpis', [AdminEmployeeKPIController::class, 'store'])->name('employee-kpis.store');
+
     Route::resource('kpi-assignments', KPIAssignmentController::class)->parameters(['kpi-assignments' => 'assignment']);
     Route::patch('/kpi-assignments/{assignment}/approve', [KPIAssignmentController::class, 'approve'])->name('kpi-assignments.approve');
     Route::patch('/kpi-assignments/{assignment}/reject', [KPIAssignmentController::class, 'reject'])->name('kpi-assignments.reject');

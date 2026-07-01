@@ -71,6 +71,7 @@ class KPIController extends Controller
         // Giữ department_id (phòng ban chính) để tương thích ngược
         $data['department_id'] = $departmentIds[0];
         $data['max_score'] = $data['max_score'] ?? 100;
+        $data['positions'] = $data['positions'] ?? [];
 
         $kpi = KPI::create($data);
 
@@ -118,6 +119,8 @@ class KPIController extends Controller
 
         $data['department_id'] = $departmentIds[0];
         $data['max_score'] = $data['max_score'] ?? 100;
+        // Nếu bỏ chọn hết chức vụ áp dụng thì xóa dữ liệu cũ
+        $data['positions'] = $data['positions'] ?? [];
 
         $kpi->update($data);
         $kpi->departments()->sync($departmentIds);
