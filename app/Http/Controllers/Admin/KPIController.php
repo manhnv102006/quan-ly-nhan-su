@@ -17,7 +17,7 @@ class KPIController extends Controller
      */
     public function index(Request $request)
     {
-        $query = KPI::with('department');
+        $query = KPI::with('departments');
 
         // Search functionality
         if ($request->filled('search')) {
@@ -34,12 +34,15 @@ class KPIController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Filter by department
+        // Filter by department (nhiều - nhiều)
         if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
+            $departmentId = $request->department_id;
+            $query->whereHas('departments', function ($q) use ($departmentId) {
+                $q->where('departments.id', $departmentId);
+            });
         }
 
-        $kpis = $query->paginate(10);
+        $kpis = $query->latest()->paginate(10);
         $departments = Department::all();
 
         return view('admin.kpis.index', compact('kpis', 'departments'));
@@ -60,7 +63,21 @@ class KPIController extends Controller
      */
     public function store(StoreKPIRequest $request)
     {
-        KPI::create($request->validated());
+        $data = $request->validated();
+
+        $departmentIds = $data['departments'];
+        unset($data['departments']);
+
+        // Giữ department_id (phòng ban chính) để tương thích ngược
+        $data['department_id'] = $departmentIds[0];
+        $data['max_score'] = $data['max_score'] ?? 100;
+
+        $kpi = KPI::create($data);
+
+        // Tự sinh mã KPI dựa trên id để đảm bảo duy nhất
+        $kpi->update(['code' => 'KPI' . str_pad((string) $kpi->id, 4, '0', STR_PAD_LEFT)]);
+
+        $kpi->departments()->sync($departmentIds);
 
         return redirect()
             ->route('admin.kpis.index')
@@ -80,10 +97,11 @@ class KPIController extends Controller
      */
     public function edit($id)
     {
-        $kpi = KPI::findOrFail($id);
+        $kpi = KPI::with('departments')->findOrFail($id);
         $departments = Department::all();
+        $selectedDepartments = $kpi->departments->pluck('id')->all();
 
-        return view('admin.kpis.edit', compact('kpi', 'departments'));
+        return view('admin.kpis.edit', compact('kpi', 'departments', 'selectedDepartments'));
     }
 
     /**
@@ -93,7 +111,16 @@ class KPIController extends Controller
     {
         $kpi = KPI::findOrFail($id);
 
-        $kpi->update($request->validated());
+        $data = $request->validated();
+
+        $departmentIds = $data['departments'];
+        unset($data['departments']);
+
+        $data['department_id'] = $departmentIds[0];
+        $data['max_score'] = $data['max_score'] ?? 100;
+
+        $kpi->update($data);
+        $kpi->departments()->sync($departmentIds);
 
         return redirect()
             ->route('admin.kpis.index')
