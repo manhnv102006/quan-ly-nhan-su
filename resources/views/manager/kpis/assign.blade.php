@@ -1,50 +1,74 @@
-<x-app-layout title="Giao KPI cho nhân viên">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Giao KPI: {{ $assignment->kpi_title }}</h1>
-        <a href="{{ route('manager.kpis.show', $assignment) }}" class="btn btn-secondary btn-sm">
-            <i class="fas fa-arrow-left"></i> Quay lại
-        </a>
-    </div>
+@php
+    $navigation = \App\Support\ManagerNavigation::items();
+@endphp
 
-    @if ($errors->any())
-        <div class="alert alert-danger">
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+<x-staff-layout
+    title="Giao KPI cho nhân viên"
+    subtitle="Giao mục tiêu KPI cho nhân viên trong phòng ban."
+    role="manager"
+    :navigation="$navigation"
+>
+    <div class="max-w-3xl mx-auto space-y-6">
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Thông tin KPI gốc (Manager)</h6>
+        {{-- Header --}}
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">
+                    Giao mục tiêu cho nhân viên
+                </h2>
+                <p class="text-sm text-slate-500 mt-1">
+                    KPI: {{ $assignment->kpi_code }} — {{ $assignment->kpi_title }}
+                </p>
+            </div>
+
+            <a href="{{ route('manager.kpis.show', $assignment) }}"
+               class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition">
+                ← Quay lại
+            </a>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Mã KPI:</strong> {{ $assignment->kpi_code }}</p>
-                    <p><strong>Mô tả:</strong> {{ $assignment->kpi->description ?? 'N/A' }}</p>
-                    <p><strong>Mục tiêu của Manager:</strong> {{ number_format($assignment->target) }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Ngày bắt đầu:</strong> {{ $assignment->start_date->format('d/m/Y') }}</p>
-                    <p><strong>Ngày kết thúc:</strong> {{ $assignment->end_date->format('d/m/Y') }}</p>
-                </div>
+
+        @if ($errors->any())
+            <div class="rounded-2xl border border-red-200 bg-red-50 p-4">
+                <ul class="list-disc list-inside text-sm text-red-600 space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        {{-- Thông tin KPI gốc --}}
+        <div class="bg-violet-50 rounded-2xl p-5 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+            <div class="flex justify-between">
+                <span class="text-slate-500">Mục tiêu của Manager</span>
+                <span class="font-semibold text-slate-800">{{ number_format($assignment->target) }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-slate-500">Người giao</span>
+                <span class="font-semibold text-slate-800">{{ $assignment->assignedBy->name ?? 'N/A' }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-slate-500">Ngày bắt đầu</span>
+                <span class="font-semibold text-slate-800">{{ $assignment->start_date->format('d/m/Y') }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-slate-500">Ngày kết thúc</span>
+                <span class="font-semibold text-slate-800">{{ $assignment->end_date->format('d/m/Y') }}</span>
             </div>
         </div>
-    </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Form giao KPI cho nhân viên</h6>
-        </div>
-        <div class="card-body">
-            <form action="{{ route('manager.kpis.store_assign', $assignment) }}" method="POST">
+        {{-- Form giao KPI --}}
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+            <form action="{{ route('manager.kpis.store_assign', $assignment) }}" method="POST" class="space-y-6">
                 @csrf
-                <div class="form-group">
-                    <label for="employee_id"><strong>Chọn nhân viên</strong></label>
-                    <select name="employee_id" id="employee_id" class="form-control" required>
+
+                {{-- Nhân viên --}}
+                <div>
+                    <label for="employee_id" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Chọn nhân viên <span class="text-red-500">*</span>
+                    </label>
+                    <select name="employee_id" id="employee_id" required
+                        class="w-full rounded-xl border border-slate-300 focus:border-violet-500 focus:ring-violet-500">
                         <option value="">-- Chọn nhân viên trong phòng ban --</option>
                         @forelse($employeesInDepartment as $employee)
                             <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ? 'selected' : '' }}>
@@ -54,25 +78,66 @@
                             <option disabled>Không có nhân viên nào trong phòng ban của bạn.</option>
                         @endforelse
                     </select>
+                    @error('employee_id')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
-                <div class="form-group mt-3">
-                    <label for="target">Tên mục tiêu</label>
-                    <input type="text" name="target" id="target" class="form-control" value="{{ old('target') }}" placeholder="Ví dụ: Hoàn thành CRUD User" required>
+                {{-- Tên mục tiêu --}}
+                <div>
+                    <label for="target" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Tên mục tiêu <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="target" id="target" value="{{ old('target') }}" required
+                        placeholder="Ví dụ: Hoàn thành CRUD User"
+                        class="w-full rounded-xl border border-slate-300 focus:border-violet-500 focus:ring-violet-500">
+                    @error('target')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
-                <div class="form-group mt-3">
-                    <label for="comment">Mô tả công việc</label>
-                    <textarea name="comment" id="comment" class="form-control" rows="3" placeholder="Ví dụ: Hoàn thành CRUD User, Validate, Search.">{{ old('comment') }}</textarea>
+                {{-- Mô tả công việc --}}
+                <div>
+                    <label for="comment" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Mô tả công việc
+                    </label>
+                    <textarea name="comment" id="comment" rows="3"
+                        placeholder="Ví dụ: Hoàn thành CRUD User, Validate, Search."
+                        class="w-full rounded-xl border border-slate-300 focus:border-violet-500 focus:ring-violet-500">{{ old('comment') }}</textarea>
+                    @error('comment')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
-                <div class="form-group mt-3">
-                    <label for="deadline">Hạn chót</label>
-                    <input type="date" name="deadline" id="deadline" class="form-control" value="{{ old('deadline') }}" required>
+                {{-- Hạn chót --}}
+                <div>
+                    <label for="deadline" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Hạn chót <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" name="deadline" id="deadline" value="{{ old('deadline') }}" required
+                        min="{{ now()->format('Y-m-d') }}"
+                        max="{{ $assignment->end_date->format('Y-m-d') }}"
+                        class="w-full rounded-xl border border-slate-300 focus:border-violet-500 focus:ring-violet-500">
+                    <p class="text-xs text-slate-500 mt-1">
+                        Hạn chót phải từ hôm nay đến trước ngày kết thúc KPI ({{ $assignment->end_date->format('d/m/Y') }}).
+                    </p>
+                    @error('deadline')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
-                <button type="submit" class="btn btn-primary mt-4"><i class="fas fa-paper-plane"></i> Giao mục tiêu</button>
+                <div class="flex justify-end gap-3 pt-2">
+                    <a href="{{ route('manager.kpis.show', $assignment) }}"
+                       class="px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
+                        Hủy
+                    </a>
+                    <button type="submit"
+                        class="px-6 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
+                        Giao mục tiêu
+                    </button>
+                </div>
             </form>
         </div>
+
     </div>
-</x-app-layout>
+</x-staff-layout>
