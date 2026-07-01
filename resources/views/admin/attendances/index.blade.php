@@ -301,7 +301,7 @@
 
                                         Chi tiết
 
-                                    </>
+                                    </a>
 
                                 </td>
 
@@ -332,6 +332,7 @@
                 {{ $attendances->links() }}
             </div>
 
+        </div>
 
         <div>
             <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Quản lý chấm công</p>
