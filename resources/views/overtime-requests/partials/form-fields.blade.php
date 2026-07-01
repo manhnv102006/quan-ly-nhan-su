@@ -1,4 +1,5 @@
 @php
+    use App\Support\TimeInput;
     $model = $overtimeRequest ?? null;
     $employeeRequired = $employeeRequired ?? false;
 @endphp
@@ -30,7 +31,7 @@
 <div class="col-md-4">
     <label for="start_time" class="form-label fw-semibold">Giờ bắt đầu</label>
     <input type="time" id="start_time" name="start_time" class="form-control @error('start_time') is-invalid @enderror"
-           value="{{ old('start_time', $model?->start_time) }}" required>
+           value="{{ old('start_time', TimeInput::forInput($model?->start_time)) }}" required>
     @error('start_time')
         <div class="invalid-feedback">{{ $message }}</div>
     @enderror
@@ -39,7 +40,7 @@
 <div class="col-md-4">
     <label for="end_time" class="form-label fw-semibold">Giờ kết thúc</label>
     <input type="time" id="end_time" name="end_time" class="form-control @error('end_time') is-invalid @enderror"
-           value="{{ old('end_time', $model?->end_time) }}" required>
+           value="{{ old('end_time', TimeInput::forInput($model?->end_time)) }}" required>
     @error('end_time')
         <div class="invalid-feedback">{{ $message }}</div>
     @enderror

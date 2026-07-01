@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\OvertimeRequestRejectRequest;
 use App\Http\Requests\OvertimeRequestStoreRequest;
 use App\Http\Requests\OvertimeRequestUpdateRequest;
+use App\Http\Requests\UpdateOvertimeStatusRequest;
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
 use App\Services\OvertimeApprovalService;
@@ -133,6 +134,43 @@ class OvertimeRequestController extends Controller
         }
 
         return back()->with('success', 'Từ chối đơn tăng ca thành công.');
+    }
+
+    public function updateStatus(UpdateOvertimeStatusRequest $request, OvertimeRequest $overtimeRequest): RedirectResponse
+    {
+        $this->authorize('update', $overtimeRequest);
+
+        $status = $request->validated('status');
+        $rejectReason = $request->validated('reject_reason');
+
+        if ($status === OvertimeRequest::STATUS_APPROVED && $overtimeRequest->isPending()) {
+            try {
+                $this->approvalService->approve($overtimeRequest, (int) Auth::id());
+            } catch (ValidationException $e) {
+                return back()->withErrors($e->errors())->with('error', 'Không thể phê duyệt đơn tăng ca.');
+            }
+
+            return back()->with('success', 'Đã duyệt đơn tăng ca.');
+        }
+
+        if ($status === OvertimeRequest::STATUS_REJECTED && $overtimeRequest->isPending()) {
+            try {
+                $this->approvalService->reject($overtimeRequest, (int) Auth::id(), (string) $rejectReason);
+            } catch (ValidationException $e) {
+                return back()->withErrors($e->errors())->with('error', 'Không thể từ chối đơn tăng ca.');
+            }
+
+            return back()->with('success', 'Đã từ chối đơn tăng ca.');
+        }
+
+        $overtimeRequest->update([
+            'status' => $status,
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+            'reject_reason' => $status === OvertimeRequest::STATUS_REJECTED ? $rejectReason : null,
+        ]);
+
+        return back()->with('success', 'Đã cập nhật trạng thái đơn tăng ca.');
     }
 
     private function activeEmployees()
