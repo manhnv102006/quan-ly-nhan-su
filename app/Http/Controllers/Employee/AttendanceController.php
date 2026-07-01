@@ -6,16 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
+use App\Services\OvertimeAttendanceService;
 use App\Services\OvertimeSettlementService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AttendanceController extends Controller
 {
-    public function __construct(private readonly OvertimeSettlementService $overtimeSettlement)
-    {
+    public function __construct(
+        private readonly OvertimeSettlementService $overtimeSettlement,
+        private readonly OvertimeAttendanceService $overtimeAttendance,
+    ) {
     }
 
     public function index(): View
@@ -62,13 +66,45 @@ class AttendanceController extends Controller
             }
         }
 
+        $overtimeSessions = $this->overtimeAttendance->sessionsForDate($employee, $today);
+
         return view('employee.attendance.index', compact(
             'employee',
             'todayShift',
             'attendance',
             'isFullDayShift',
-            'overtimeInfo'
+            'overtimeInfo',
+            'overtimeSessions',
         ));
+    }
+
+    public function overtimeCheckIn(OvertimeRequest $overtimeRequest): RedirectResponse
+    {
+        $employee = Employee::where('user_id', Auth::id())->firstOrFail();
+
+        try {
+            $this->overtimeAttendance->checkIn($overtimeRequest, $employee);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', $e->validator->errors()->first());
+        }
+
+        return back()->with('success', 'Check-in tăng ca thành công.');
+    }
+
+    public function overtimeCheckOut(OvertimeRequest $overtimeRequest): RedirectResponse
+    {
+        $employee = Employee::where('user_id', Auth::id())->firstOrFail();
+
+        try {
+            $completed = $this->overtimeAttendance->checkOut($overtimeRequest, $employee);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', $e->validator->errors()->first());
+        }
+
+        return back()->with(
+            'success',
+            'Check-out tăng ca thành công. Đã ghi nhận '.$completed->total_hours.' giờ.'
+        );
     }
 
     public function checkIn($shift): RedirectResponse

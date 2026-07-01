@@ -18,10 +18,16 @@ class OvertimeRequestService
             $payload['end_time'] = TimeInput::normalize($payload['end_time']);
         }
 
-        if (! isset($payload['total_hours']) || $payload['total_hours'] === null || $payload['total_hours'] === '') {
+        if (isset($payload['start_time'], $payload['end_time'])) {
             $start = Carbon::createFromFormat('H:i', $payload['start_time']);
             $end = Carbon::createFromFormat('H:i', $payload['end_time']);
-            $payload['total_hours'] = round($end->diffInMinutes($start) / 60, 2);
+            $minutes = $start->diffInMinutes($end, false);
+
+            if ($minutes < 0) {
+                $minutes += 24 * 60;
+            }
+
+            $payload['total_hours'] = round($minutes / 60, 2);
         }
 
         return $payload;
