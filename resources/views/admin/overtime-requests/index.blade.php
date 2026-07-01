@@ -1,73 +1,31 @@
 <x-admin-layout title="Danh sách đơn tăng ca">
-    <div class="container-fluid py-2">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
-                <h4 class="mb-1">Danh sách đơn tăng ca</h4>
-                <p class="text-muted mb-0">Quản lý đơn tăng ca của nhân viên.</p>
+                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Quản lý chấm công</p>
+                <h2 class="mt-1 text-2xl font-bold text-slate-800">Duyệt tăng ca</h2>
+                <p class="mt-1 text-sm text-slate-500">
+                    Theo dõi và duyệt đơn tăng ca —
+                    <span class="font-semibold text-slate-700">Toàn công ty</span>
+                </p>
             </div>
-            <a href="{{ route('admin.overtime-requests.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i> Tạo đơn
+            <a href="{{ route('admin.overtime-requests.create') }}"
+               class="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-violet-900/20 transition hover:bg-violet-700">
+                <i class="bi bi-plus-lg"></i>
+                Tạo đơn
             </a>
         </div>
 
         <x-flash-messages />
 
-        <x-request-stats-cards :stats="$stats" :completed="$stats['completed']" />
+        @include('admin.partials.department-cards', [
+            'departmentSummaries' => $departmentSummaries,
+            'routeName' => 'admin.overtime-requests.department',
+        ])
 
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nhân viên</th>
-                            <th>Ngày tăng ca</th>
-                            <th>Giờ bắt đầu</th>
-                            <th>Giờ kết thúc</th>
-                            <th>Tổng giờ</th>
-                            <th>Trạng thái</th>
-                            <th>Ngày tạo</th>
-                            <th class="text-end">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($overtimeRequests as $item)
-                            <tr>
-                                <td>{{ $item->employee?->full_name ?? '—' }}</td>
-                                <td>{{ optional($item->work_date)->format('d/m/Y') }}</td>
-                                <td>{{ $item->start_time }}</td>
-                                <td>{{ $item->end_time }}</td>
-                                <td>{{ $item->total_hours }}</td>
-                                <td>
-                                    <x-status-badge :model="$item" />
-                                </td>
-                                <td>{{ optional($item->created_at)->format('d/m/Y H:i') }}</td>
-                                <td class="text-end">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{{ route('admin.overtime-requests.show', $item) }}" class="btn btn-outline-primary">Xem</a>
-                                        @if($item->isPending())
-                                            <a href="{{ route('admin.overtime-requests.edit', $item) }}" class="btn btn-outline-warning">Sửa</a>
-                                            <form action="{{ route('admin.overtime-requests.destroy', $item) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa đơn này?')">Xóa</button>
-                                            </form>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="8" class="text-center py-4 text-muted">Chưa có đơn tăng ca nào.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            @if($overtimeRequests->hasPages())
-                <div class="card-footer">
-                    {{ $overtimeRequests->links() }}
-                </div>
-            @endif
-        </div>
+        @include('admin.overtime-requests.partials.list-body', [
+            'showDepartmentColumn' => true,
+            'scopeLabel' => 'Toàn công ty',
+        ])
     </div>
 </x-admin-layout>

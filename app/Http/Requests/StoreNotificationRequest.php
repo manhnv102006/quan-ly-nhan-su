@@ -20,7 +20,12 @@ class StoreNotificationRequest extends FormRequest
             'type' => ['required', Rule::in(['system', 'leave', 'payroll', 'kpi'])],
             'audience' => ['required', Rule::in(['all', 'departments', 'selected'])],
             'send_mode' => ['required', Rule::in(['immediate', 'scheduled'])],
-            'scheduled_at' => ['required_if:send_mode,scheduled', 'date', 'after:now'],
+            'scheduled_at' => [
+                Rule::excludeIf(fn () => $this->input('send_mode') !== 'scheduled'),
+                'required',
+                'date',
+                'after:now',
+            ],
             'department_ids' => ['required_if:audience,departments', 'array', 'min:1'],
             'department_ids.*' => ['integer', 'exists:departments,id'],
             'user_ids' => ['required_if:audience,selected', 'array', 'min:1'],

@@ -33,7 +33,8 @@
                type="datetime-local"
                min="{{ $minSchedule }}"
                value="{{ old('scheduled_at') }}"
-               class="w-full max-w-md rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 {{ $inputFocusClass }} focus:outline-none">
+               :disabled="sendMode !== 'scheduled'"
+               class="w-full max-w-md rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 {{ $inputFocusClass }} focus:outline-none disabled:bg-slate-100 disabled:text-slate-400">
         <p class="text-xs text-slate-500">
             Hệ thống tự gửi thông báo đúng thời điểm đã chọn (chạy mỗi phút).
         </p>

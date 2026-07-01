@@ -181,7 +181,7 @@ class AutoNotificationService
 
             $this->send('system', 'Đơn tăng ca đã được duyệt', sprintf(
                 'Đơn tăng ca ngày %s của bạn đã được phê duyệt.',
-                $request->overtime_date->format('d/m/Y'),
+                $request->work_date?->format('d/m/Y'),
             ), [$userId], $request->employee?->department_id);
         });
     }
@@ -198,7 +198,7 @@ class AutoNotificationService
 
             $this->send('system', 'Đơn tăng ca bị từ chối', sprintf(
                 'Đơn tăng ca ngày %s của bạn đã bị từ chối.',
-                $request->overtime_date->format('d/m/Y'),
+                $request->work_date?->format('d/m/Y'),
             ), [$userId], $request->employee?->department_id);
         });
     }
