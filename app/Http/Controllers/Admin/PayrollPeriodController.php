@@ -16,7 +16,7 @@ class PayrollPeriodController extends Controller
     {
         $periods = PayrollPeriod::query()
             ->orderBy('year', 'desc')
-            ->orderBy('month', 'desc')
+            ->orderBy('month', 'asc')
             ->paginate(10)
             ->withQueryString();
 
