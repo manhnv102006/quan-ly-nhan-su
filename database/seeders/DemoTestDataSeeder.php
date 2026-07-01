@@ -79,13 +79,18 @@ class DemoTestDataSeeder extends Seeder
     private function linkManagerAccounts(): Employee
     {
         $itDepartment = Department::query()->where('department_code', 'IT')->firstOrFail();
+        $managerPositionId = (int) (DB::table('positions')->where('position_name', 'Trưởng phòng')->value('id') ?? 2);
         $managerEmployee = Employee::query()->where('employee_code', 'EMP002')->firstOrFail();
 
         $itDepartment->update(['manager_id' => $managerEmployee->id]);
-        $managerEmployee->update(['department_id' => $itDepartment->id]);
+        $managerEmployee->update([
+            'department_id' => $itDepartment->id,
+            'position_id' => $managerPositionId,
+            'full_name' => 'Lê Văn Thành',
+        ]);
 
-        $linkedUser = User::query()->where('username', 'anhlethanh')->first()
-            ?? User::query()->where('username', 'manager')->first();
+        $linkedUser = User::query()->where('username', 'manager')->first()
+            ?? User::query()->where('username', 'anhlethanh')->first();
 
         if ($linkedUser) {
             Employee::query()

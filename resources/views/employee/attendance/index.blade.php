@@ -52,7 +52,7 @@
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
             <h2 class="text-base font-semibold text-slate-800 mb-1">Trạng thái hôm nay</h2>
             <p class="text-xs text-slate-500 mb-4">
-                Check-in đúng giờ ca · Miễn trừ {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút đi muộn · Tự check-out sau {{ \App\Services\EmployeeAttendanceService::AUTO_CHECKOUT_MINUTES }} phút kết ca
+                Check-in đúng giờ ca · Miễn trừ {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút đi muộn · Bắt buộc check-out thủ công khi hết giờ ca
             </p>
 
             @if ($isFullDayShift && $attendanceSessions)

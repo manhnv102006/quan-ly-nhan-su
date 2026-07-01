@@ -13,8 +13,6 @@ class EmployeeAttendanceService
 {
     public const GRACE_MINUTES = 5;
 
-    public const AUTO_CHECKOUT_MINUTES = 5;
-
     public function __construct(
         private readonly OvertimeSettlementService $overtimeSettlement,
     ) {
@@ -110,42 +108,18 @@ class EmployeeAttendanceService
                 ]);
             }
 
+            $sessionEnd = Carbon::parse($attendance->shift->end_time)->setDateFrom($attendance->attendance_date);
+            $this->assertCanCheckOut($now, $sessionEnd);
+
             $attendance->check_out = $now;
         }
 
         $attendance->work_hours = $this->calculateWorkHours($attendance, $isFullDay);
         $attendance->save();
 
-        $settled = $this->overtimeSettlement->settleAfterCheckout($employee, $attendance->fresh(), $isFullDay);
+        $this->overtimeSettlement->settleAfterCheckout($employee, $attendance->fresh(), $isFullDay);
 
         return $attendance->fresh();
-    }
-
-    public function processAutoCheckouts(?Employee $employee = null, ?Carbon $now = null): int
-    {
-        $now ??= Carbon::now();
-        $today = $now->copy()->startOfDay();
-        $processed = 0;
-
-        $query = Attendance::query()
-            ->with(['shift', 'employee'])
-            ->whereDate('attendance_date', $today);
-
-        if ($employee) {
-            $query->where('employee_id', $employee->id);
-        }
-
-        foreach ($query->get() as $attendance) {
-            if (! $attendance->shift || ! $attendance->employee) {
-                continue;
-            }
-
-            if ($this->applyAutoCheckouts($attendance, $now)) {
-                $processed++;
-            }
-        }
-
-        return $processed;
     }
 
     public function calculateLateMinutes(Carbon $checkIn, Carbon $sessionStart): int
@@ -231,9 +205,15 @@ class EmployeeAttendanceService
 
     private function performFullDayCheckOut(Attendance $attendance, Carbon $now): void
     {
+        $date = $attendance->attendance_date;
+
         if ($attendance->morning_check_in && ! $attendance->morning_check_out) {
+            $sessionEnd = Carbon::parse($date)->setTime(12, 0);
+            $this->assertCanCheckOut($now, $sessionEnd);
             $attendance->morning_check_out = $now;
         } elseif ($attendance->afternoon_check_in && ! $attendance->afternoon_check_out) {
+            $sessionEnd = Carbon::parse($date)->setTime(17, 0);
+            $this->assertCanCheckOut($now, $sessionEnd);
             $attendance->afternoon_check_out = $now;
         } else {
             throw ValidationException::withMessages([
@@ -257,75 +237,13 @@ class EmployeeAttendanceService
         }
     }
 
-    private function applyAutoCheckouts(Attendance $attendance, Carbon $now): bool
+    private function assertCanCheckOut(Carbon $now, Carbon $sessionEnd): void
     {
-        $isFullDay = $this->isFullDayShift($attendance->shift);
-        $date = $attendance->attendance_date;
-        $changed = false;
-
-        if ($isFullDay) {
-            $changed = $this->autoCheckoutSession(
-                $attendance,
-                Carbon::parse($date)->setTime(12, 0),
-                'morning_check_in',
-                'morning_check_out',
-                $now,
-            ) || $changed;
-
-            $changed = $this->autoCheckoutSession(
-                $attendance,
-                Carbon::parse($date)->setTime(17, 0),
-                'afternoon_check_in',
-                'afternoon_check_out',
-                $now,
-            ) || $changed;
-        } else {
-            $sessionEnd = Carbon::parse($attendance->shift->end_time)->setDateFrom($date);
-            $changed = $this->autoCheckoutSession(
-                $attendance,
-                $sessionEnd,
-                'check_in',
-                'check_out',
-                $now,
-            );
+        if ($now->lt($sessionEnd)) {
+            throw ValidationException::withMessages([
+                'attendance' => 'Chưa đến giờ check-out. Ca làm kết thúc lúc '.$sessionEnd->format('H:i').'.',
+            ]);
         }
-
-        if ($changed) {
-            $attendance->work_hours = $this->calculateWorkHours($attendance, $isFullDay);
-            $attendance->save();
-
-            if ($attendance->employee) {
-                $this->overtimeSettlement->settleAfterCheckout(
-                    $attendance->employee,
-                    $attendance->fresh(),
-                    $isFullDay
-                );
-            }
-        }
-
-        return $changed;
-    }
-
-    private function autoCheckoutSession(
-        Attendance $attendance,
-        Carbon $sessionEnd,
-        string $checkInField,
-        string $checkOutField,
-        Carbon $now,
-    ): bool {
-        if (! $attendance->{$checkInField} || $attendance->{$checkOutField}) {
-            return false;
-        }
-
-        $autoCheckoutAt = $sessionEnd->copy()->addMinutes(self::AUTO_CHECKOUT_MINUTES);
-
-        if ($now->lt($autoCheckoutAt)) {
-            return false;
-        }
-
-        $attendance->{$checkOutField} = $autoCheckoutAt;
-
-        return true;
     }
 
     /**
@@ -344,7 +262,6 @@ class EmployeeAttendanceService
         $checkIn = $attendance->{$checkInField};
         $checkOut = $attendance->{$checkOutField};
         $graceDeadline = $sessionStart->copy()->addMinutes(self::GRACE_MINUTES);
-        $autoCheckoutAt = $sessionEnd->copy()->addMinutes(self::AUTO_CHECKOUT_MINUTES);
 
         $priorDone = $requiresPriorCheckout === null || filled($attendance->{$requiresPriorCheckout});
         $canCheckIn = false;
@@ -374,13 +291,13 @@ class EmployeeAttendanceService
                 }
             }
         } elseif (! $checkOut) {
-            $canCheckOut = true;
-            if ($now->gte($autoCheckoutAt)) {
-                $statusMessage = 'Hệ thống sẽ tự check-out lúc '.$autoCheckoutAt->format('H:i');
-                $statusTone = 'warning';
-            } else {
-                $statusMessage = 'Đã check-in — có thể check-out thủ công';
+            if ($now->lt($sessionEnd)) {
+                $statusMessage = 'Đang làm việc — check-out lúc '.$sessionEnd->format('H:i');
                 $statusTone = 'active';
+            } else {
+                $canCheckOut = true;
+                $statusMessage = 'Đã hết giờ ca — vui lòng check-out';
+                $statusTone = 'warning';
             }
         } else {
             $statusMessage = 'Đã hoàn thành buổi này';
@@ -394,7 +311,6 @@ class EmployeeAttendanceService
             'session_start' => $sessionStart,
             'session_end' => $sessionEnd,
             'grace_deadline' => $graceDeadline,
-            'auto_checkout_at' => $autoCheckoutAt,
             'can_check_in' => $canCheckIn,
             'can_check_out' => $canCheckOut,
             'status_message' => $statusMessage,
