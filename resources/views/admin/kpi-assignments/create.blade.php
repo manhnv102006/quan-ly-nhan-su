@@ -34,7 +34,9 @@
                         <select id="kpi_id" name="kpi_id" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent">
                             <option value="">-- Chọn KPI --</option>
                             @foreach($kpis as $kpi)
-                                <option value="{{ $kpi->id }}" {{ old('kpi_id') == $kpi->id ? 'selected' : '' }}>
+                                <option value="{{ $kpi->id }}"
+                                    data-departments="{{ implode(',', $kpi->departments->pluck('id')->all()) }}"
+                                    {{ old('kpi_id') == $kpi->id ? 'selected' : '' }}>
                                     {{ $kpi->code }} - {{ $kpi->title }}
                                 </option>
                             @endforeach
@@ -50,12 +52,16 @@
                         <select id="manager_id" name="manager_id" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent">
                             <option value="">-- Chọn Manager --</option>
                             @foreach($managers as $manager)
-                                <option value="{{ $manager->id }}" {{ old('manager_id') == $manager->id ? 'selected' : '' }}>
+                                <option value="{{ $manager->id }}"
+                                    data-departments="{{ optional($manager->employee)->department_id }}"
+                                    {{ old('manager_id') == $manager->id ? 'selected' : '' }}>
                                     {{ $manager->name }} ({{ $manager->email }})
                                 </option>
                             @endforeach
                         </select>
                         <x-input-error :messages="$errors->get('manager_id')" class="mt-2" />
+                        <p id="manager_hint" class="mt-2 text-sm text-slate-500 hidden">Vui lòng chọn KPI trước để lọc trưởng phòng phù hợp.</p>
+                        <p id="manager_empty" class="mt-2 text-sm text-red-500 hidden">Không có Manager nào thuộc phòng ban áp dụng của KPI này.</p>
                     </div>
 
                 </div>
@@ -126,5 +132,61 @@
         </div>
 
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const kpiSelect = document.getElementById('kpi_id');
+            const managerSelect = document.getElementById('manager_id');
+            const hint = document.getElementById('manager_hint');
+            const emptyMsg = document.getElementById('manager_empty');
+            const managerOptions = Array.from(managerSelect.options).filter(o => o.value !== '');
+
+            function parseIds(str) {
+                return (str || '').split(',').map(s => s.trim()).filter(Boolean);
+            }
+
+            function filterManagers() {
+                const kpiOption = kpiSelect.options[kpiSelect.selectedIndex];
+                const kpiDeptIds = kpiOption ? parseIds(kpiOption.dataset.departments) : [];
+
+                // Reset messages
+                hint.classList.add('hidden');
+                emptyMsg.classList.add('hidden');
+
+                if (!kpiSelect.value) {
+                    // No KPI selected: hide all managers, show hint
+                    managerOptions.forEach(o => o.hidden = true);
+                    if (managerSelect.value) managerSelect.value = '';
+                    hint.classList.remove('hidden');
+                    return;
+                }
+
+                let visibleCount = 0;
+                managerOptions.forEach(o => {
+                    const managerDeptIds = parseIds(o.dataset.departments);
+                    // Manager phải quản lý ít nhất 1 phòng ban áp dụng của KPI.
+                    // Nếu KPI không gắn phòng ban nào thì cho phép mọi manager.
+                    const match = kpiDeptIds.length === 0
+                        ? true
+                        : managerDeptIds.some(id => kpiDeptIds.includes(id));
+                    o.hidden = !match;
+                    if (match) visibleCount++;
+                });
+
+                // Nếu manager đang chọn không còn hợp lệ thì bỏ chọn
+                const current = managerSelect.options[managerSelect.selectedIndex];
+                if (managerSelect.value && current && current.hidden) {
+                    managerSelect.value = '';
+                }
+
+                if (visibleCount === 0) {
+                    emptyMsg.classList.remove('hidden');
+                }
+            }
+
+            kpiSelect.addEventListener('change', filterManagers);
+            filterManagers();
+        });
+    </script>
 
 </x-admin-layout>
