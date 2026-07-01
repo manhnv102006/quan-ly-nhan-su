@@ -3,7 +3,7 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h4 class="mb-1">Sửa đơn tăng ca</h4>
-                <p class="text-muted mb-0">Chỉnh sửa thông tin đơn tăng ca đang chờ xử lý.</p>
+                <p class="text-muted mb-0">Chỉnh sửa thông tin và trạng thái đơn tăng ca.</p>
             </div>
             <a href="{{ route('admin.overtime-requests.show', $overtimeRequest) }}" class="btn btn-outline-secondary">
                 Quay lại chi tiết
@@ -22,6 +22,7 @@
                         'employees' => $employees,
                         'employeeRequired' => true,
                         'showTotalHours' => true,
+                        'showStatus' => true,
                     ])
 
                     <div class="col-12 d-flex justify-content-end gap-2 pt-2">

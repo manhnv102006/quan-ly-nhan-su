@@ -1,44 +1,31 @@
 @php
     $navigation = \App\Support\EmployeeNavigation::items();
 
-    $statusLabels = [
-        'pending'  => 'Chờ duyệt',
-        'approved' => 'Đã duyệt',
-        'rejected' => 'Từ chối',
-    ];
-
-    $statusClasses = [
-        'pending'  => 'bg-amber-50 text-amber-700 border-amber-100',
-        'approved' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
-        'rejected' => 'bg-rose-50 text-rose-700 border-rose-100',
-    ];
+    $statusLabels = \App\Models\OvertimeRequest::STATUS_LABELS;
+    $statusClasses = \App\Models\OvertimeRequest::STATUS_TAILWIND_CLASSES;
 @endphp
 
 <x-staff-layout title="Đơn tăng ca" subtitle="Xem và gửi yêu cầu tăng ca." role="employee" :navigation="$navigation">
 
     <div class="space-y-6">
 
-        {{-- Flash --}}
         @if (session('success'))
             <div id="toast-success" class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 shadow-sm">
-                <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                    </svg>
-                </div>
                 <p class="text-sm font-medium text-emerald-800">{{ session('success') }}</p>
             </div>
         @endif
 
-        {{-- Header --}}
         <div class="flex items-center justify-between flex-wrap gap-4">
             <div>
                 <h1 class="text-xl font-bold text-slate-800">Đơn tăng ca của tôi</h1>
-                <p class="text-xs text-slate-500 mt-1">Danh sách đơn đã gửi và trạng thái xử lý.</p>
+                <p class="text-xs text-slate-500 mt-1">Gửi đơn → chờ duyệt → chấm công đúng khung giờ OT → tính vào bảng lương.</p>
             </div>
+            <a href="{{ route('employee.overtime-requests.create') }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-semibold shadow-md shadow-amber-500/20 hover:bg-amber-700 transition">
+                + Tạo đơn tăng ca
+            </a>
         </div>
 
-        {{-- Bảng --}}
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
@@ -55,18 +42,17 @@
                         @forelse ($overtimeRequests as $ot)
                             @php
                                 $start = \Carbon\Carbon::parse($ot->start_time);
-                                $end   = \Carbon\Carbon::parse($ot->end_time);
-                                $hours = round($start->diffInMinutes($end) / 60, 1);
+                                $end = \Carbon\Carbon::parse($ot->end_time);
                             @endphp
                             <tr class="hover:bg-slate-50/50 transition">
                                 <td class="px-6 py-4 text-sm font-medium text-slate-700">
-                                    {{ $ot->overtime_date->format('d/m/Y') }}
+                                    {{ $ot->work_date->format('d/m/Y') }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-slate-600">
                                     {{ $start->format('H:i') }} → {{ $end->format('H:i') }}
                                 </td>
                                 <td class="px-6 py-4 text-center text-sm font-bold text-slate-800">
-                                    {{ $hours }}h
+                                    {{ number_format(abs((float) $ot->total_hours), 1) }}h
                                 </td>
                                 <td class="px-6 py-4 text-xs text-slate-500 max-w-[220px] truncate" title="{{ $ot->reason }}">
                                     {{ $ot->reason }}
@@ -81,6 +67,7 @@
                             <tr>
                                 <td colspan="5" class="text-center py-14 text-slate-400 text-sm">
                                     Bạn chưa có đơn tăng ca nào.
+                                    <a href="{{ route('employee.overtime-requests.create') }}" class="text-amber-600 font-semibold hover:underline">Tạo đơn ngay</a>
                                 </td>
                             </tr>
                         @endforelse
@@ -94,18 +81,6 @@
                 </div>
             @endif
         </div>
-
     </div>
-
-    <script>
-        const toast = document.getElementById('toast-success');
-        if (toast) {
-            setTimeout(() => {
-                toast.style.transition = 'opacity 0.3s ease';
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
-    </script>
 
 </x-staff-layout>

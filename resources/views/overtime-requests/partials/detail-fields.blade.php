@@ -17,11 +17,11 @@
     </div>
     <div class="col-md-4">
         <label class="form-label text-muted mb-1">Giờ bắt đầu</label>
-        <div class="fw-semibold">{{ $model?->start_time ?? '—' }}</div>
+        <div class="fw-semibold">{{ \App\Support\TimeInput::forInput($model?->start_time) ?: '—' }}</div>
     </div>
     <div class="col-md-4">
         <label class="form-label text-muted mb-1">Giờ kết thúc</label>
-        <div class="fw-semibold">{{ $model?->end_time ?? '—' }}</div>
+        <div class="fw-semibold">{{ \App\Support\TimeInput::forInput($model?->end_time) ?: '—' }}</div>
     </div>
     <div class="col-md-4">
         <label class="form-label text-muted mb-1">Tổng giờ</label>
