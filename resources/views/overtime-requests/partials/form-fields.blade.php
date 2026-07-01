@@ -2,8 +2,10 @@
     use App\Support\TimeInput;
     $model = $overtimeRequest ?? null;
     $employeeRequired = $employeeRequired ?? false;
+    $hideEmployeeSelect = $hideEmployeeSelect ?? false;
 @endphp
 
+@if (! $hideEmployeeSelect)
 <div class="col-md-6">
     <label for="employee_id" class="form-label fw-semibold">Nhân viên</label>
     <select id="employee_id" name="employee_id" class="form-select @error('employee_id') is-invalid @enderror" @if($employeeRequired) required @endif>
@@ -18,6 +20,7 @@
         <div class="invalid-feedback">{{ $message }}</div>
     @enderror
 </div>
+@endif
 
 <div class="col-md-4">
     <label for="work_date" class="form-label fw-semibold">Ngày</label>

@@ -7,6 +7,7 @@ use App\Http\Requests\OvertimeRequestRejectRequest;
 use App\Http\Requests\OvertimeRequestStoreRequest;
 use App\Http\Requests\OvertimeRequestUpdateRequest;
 use App\Http\Requests\UpdateOvertimeStatusRequest;
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
 use App\Services\OvertimeApprovalService;
@@ -44,27 +45,50 @@ class OvertimeRequestController extends Controller
 
     public function create(): View
     {
-        return view('admin.overtime-requests.create', [
-            'employees' => $this->activeEmployees(),
-        ]);
+        $employees = $this->activeEmployees();
+
+        $departments = Department::query()
+            ->where('status', 'active')
+            ->withCount([
+                'employees as active_employees_count' => fn ($query) => $query->where('status', 'active'),
+            ])
+            ->orderBy('department_name')
+            ->get(['id', 'department_code', 'department_name']);
+
+        $companyEmployeeCount = Employee::query()
+            ->where('status', 'active')
+            ->count();
+
+        return view('admin.overtime-requests.create', compact(
+            'employees',
+            'departments',
+            'companyEmployeeCount',
+        ));
     }
 
     public function store(OvertimeRequestStoreRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        $data['employee_id'] = $data['employee_id'] ?? $request->user()?->employee?->id;
+        $employeeIds = $request->resolveEmployeeIds();
 
-        if (! $data['employee_id']) {
+        if ($employeeIds === []) {
             return back()
-                ->withErrors(['employee_id' => 'Không xác định được nhân viên tạo đơn.'])
-                ->withInput();
+                ->withInput()
+                ->withErrors(['assignment_scope' => 'Không tìm thấy nhân viên phù hợp để tạo đơn tăng ca.']);
         }
 
-        $this->service->create($data);
+        $this->service->createMany($employeeIds, $data);
+
+        $message = match ($data['assignment_scope']) {
+            'employee' => 'Tạo yêu cầu tăng ca thành công.',
+            'department' => 'Đã tạo '.count($employeeIds).' đơn tăng ca cho nhân viên trong phòng ban.',
+            'company' => 'Đã tạo '.count($employeeIds).' đơn tăng ca cho toàn công ty.',
+            default => 'Tạo yêu cầu tăng ca thành công.',
+        };
 
         return redirect()
             ->route('admin.overtime-requests.index')
-            ->with('success', 'Tạo yêu cầu tăng ca thành công.');
+            ->with('success', $message);
     }
 
     public function show(OvertimeRequest $overtimeRequest): View

@@ -35,6 +35,28 @@ class OvertimeRequestService
         return OvertimeRequest::create($data);
     }
 
+    /**
+     * @param  list<int>  $employeeIds
+     * @return list<OvertimeRequest>
+     */
+    public function createMany(array $employeeIds, array $data): array
+    {
+        $payload = $this->normalizePayload($data);
+        unset($payload['employee_id'], $payload['assignment_scope'], $payload['department_id']);
+        $payload['status'] = OvertimeRequest::STATUS_PENDING;
+
+        $created = [];
+
+        foreach ($employeeIds as $employeeId) {
+            $created[] = OvertimeRequest::create([
+                ...$payload,
+                'employee_id' => $employeeId,
+            ]);
+        }
+
+        return $created;
+    }
+
     public function update(OvertimeRequest $overtimeRequest, array $data): OvertimeRequest
     {
         $payload = $this->normalizePayload($data);
