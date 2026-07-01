@@ -55,7 +55,7 @@ class InterviewController extends Controller
         $validated = $request->validate([
             'candidate_id' => ['required', 'exists:candidates,id', 'unique:interviews,candidate_id'],
             'interviewer_id' => ['nullable', 'exists:employees,id'],
-            'interview_date' => ['required', 'date'],
+            'interview_date' => ['required', 'date', 'after:now'],
             'note' => ['nullable', 'string'],
         ], [
             'candidate_id.required' => 'Ứng viên là bắt buộc.',
@@ -64,6 +64,7 @@ class InterviewController extends Controller
             'interviewer_id.exists' => 'Người phỏng vấn được chọn không hợp lệ.',
             'interview_date.required' => 'Thời gian phỏng vấn là bắt buộc.',
             'interview_date.date' => 'Thời gian phỏng vấn không hợp lệ.',
+            'interview_date.after' => 'Thời gian phỏng vấn phải ở tương lai.',
         ]);
 
         $validated['interviewer_id'] = $validated['interviewer_id'] ?: null;

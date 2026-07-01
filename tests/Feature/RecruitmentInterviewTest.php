@@ -29,7 +29,7 @@ test('admin can create an interview for a candidate without an existing intervie
     $response = $this->actingAs($this->admin)->post(route('admin.recruitment.interviews.store'), [
         'candidate_id' => $candidate->id,
         'interviewer_id' => '',
-        'interview_date' => '2026-07-05 09:00:00',
+        'interview_date' => now()->addDay()->format('Y-m-d H:i:s'),
         'note' => 'Phong van vong 1',
     ]);
 
@@ -52,7 +52,7 @@ test('admin cannot create a second interview for the same candidate', function (
     Interview::create([
         'candidate_id' => $candidate->id,
         'interviewer_id' => null,
-        'interview_date' => '2026-07-05 09:00:00',
+        'interview_date' => now()->addDay()->format('Y-m-d H:i:s'),
         'status' => 'scheduled',
         'result' => 'pending',
         'note' => 'Phong van da tao',
@@ -63,7 +63,7 @@ test('admin cannot create a second interview for the same candidate', function (
         ->post(route('admin.recruitment.interviews.store'), [
             'candidate_id' => $candidate->id,
             'interviewer_id' => '',
-            'interview_date' => '2026-07-06 09:00:00',
+            'interview_date' => now()->addDays(2)->format('Y-m-d H:i:s'),
             'note' => 'Phong van moi',
         ]);
 
@@ -73,4 +73,31 @@ test('admin cannot create a second interview for the same candidate', function (
     ]);
 
     expect(Interview::query()->where('candidate_id', $candidate->id)->count())->toBe(1);
+});
+
+test('admin cannot create an interview in the past', function () {
+    $candidate = Candidate::create([
+        'full_name' => 'Nguyen Van C',
+        'phone' => '0900000003',
+        'email' => 'candidate-c@example.com',
+        'address' => 'Ho Chi Minh',
+        'status' => 'new',
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->from(route('admin.recruitment.interviews.create'))
+        ->post(route('admin.recruitment.interviews.store'), [
+            'candidate_id' => $candidate->id,
+            'interviewer_id' => '',
+            'interview_date' => now()->subDay()->format('Y-m-d H:i:s'),
+            'note' => 'Phong van qua khu',
+        ]);
+
+    $response->assertRedirect(route('admin.recruitment.interviews.create'));
+    $response->assertSessionHasErrors([
+        'interview_date' => 'Thời gian phỏng vấn phải ở tương lai.',
+    ]);
+
+    expect(Interview::query()->where('candidate_id', $candidate->id)->count())->toBe(0);
+    expect($candidate->fresh()->status)->toBe('new');
 });
