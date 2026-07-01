@@ -21,7 +21,7 @@
         </div>
 
         {{-- Banner điền sẵn --}}
-        @if (!empty($prefill['overtime_date']))
+        @if (!empty($prefill['work_date']))
             <div class="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4">
                 <svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -41,10 +41,10 @@
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">
                         Ngày tăng ca <span class="text-rose-500">*</span>
                     </label>
-                    <input type="date" name="overtime_date"
-                           value="{{ old('overtime_date', $prefill['overtime_date'] ?? '') }}"
+                    <input type="date" name="work_date"
+                           value="{{ old('work_date', $prefill['work_date'] ?? now()->format('Y-m-d')) }}"
                            class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 transition">
-                    @error('overtime_date')<p class="text-rose-600 text-xs mt-1">{{ $message }}</p>@enderror
+                    @error('work_date')<p class="text-rose-600 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">

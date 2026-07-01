@@ -127,6 +127,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::patch('/kpi-assignments/{assignment}/complete', [KPIAssignmentController::class, 'complete'])->name('kpi-assignments.complete');
 
     Route::get('/attendances', [AttendanceController::class, 'index'])->name('attendances');
+    Route::get('/attendances/departments/{department}', [AttendanceController::class, 'department'])->name('attendances.department');
     Route::get('/attendances/{attendance}', [AttendanceController::class, 'show'])->name('attendances.show');
     Route::get('/attendances/{attendance}/edit', [AttendanceController::class, 'edit'])->name('attendances.edit');
     Route::put('/attendances/{attendance}', [AttendanceController::class, 'update'])->name('attendances.update');
@@ -137,9 +138,16 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::put('/shifts/{shift}', [ShiftController::class, 'update'])->name('shifts.update');
     Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy'])->name('shifts.destroy');
     Route::get('/leave-requests', [LeaveRequestController::class, 'index'])->name('leave-requests');
+    Route::get('/leave-requests/departments/{department}', [LeaveRequestController::class, 'department'])->name('leave-requests.department');
     Route::get('/leave-requests/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('leave-requests.show');
-    Route::resource('overtime-requests', OvertimeRequestController::class);
+    Route::get('/overtime-requests/departments/{department}', [OvertimeRequestController::class, 'department'])->name('overtime-requests.department');
+    Route::resource('overtime-requests', OvertimeRequestController::class)
+        ->parameters(['overtime-requests' => 'overtime_request']);
+    Route::patch('/overtime-requests/{overtime_request}/approve', [OvertimeRequestController::class, 'approve'])->name('overtime-requests.approve');
+    Route::patch('/overtime-requests/{overtime_request}/reject', [OvertimeRequestController::class, 'reject'])->name('overtime-requests.reject');
+    Route::patch('/overtime-requests/{overtime_request}/status', [OvertimeRequestController::class, 'updateStatus'])->name('overtime-requests.status');
     Route::get('/attendance-reports', [AttendanceReportController::class, 'index'])->name('attendance-reports.index');
+    Route::get('/attendance-reports/departments/{department}', [AttendanceReportController::class, 'department'])->name('attendance-reports.department');
 
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
     Route::post('/payroll-periods/{payrollPeriod}/calculate', [PayrollPeriodController::class, 'calculate'])->name('payroll-periods.calculate');
@@ -248,6 +256,8 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(fu
     Route::get('/employee/attendance', [EmployeeAttendanceController::class, 'index'])->name('attendance.index');
     Route::post('/attendance/check-in/{shift}', [EmployeeAttendanceController::class, 'checkIn'])->name('attendance.check-in');
     Route::post('/attendance/check-out/{shift}', [EmployeeAttendanceController::class, 'checkOut'])->name('attendance.check-out');
+    Route::post('/attendance/overtime/{overtime_request}/check-in', [EmployeeAttendanceController::class, 'overtimeCheckIn'])->name('attendance.overtime.check-in');
+    Route::post('/attendance/overtime/{overtime_request}/check-out', [EmployeeAttendanceController::class, 'overtimeCheckOut'])->name('attendance.overtime.check-out');
     Route::get('/employee/overtime-requests', [EmployeeOvertimeController::class, 'index'])->name('employee.overtime-requests');
     Route::get('/employee/overtime-requests/create', [EmployeeOvertimeController::class, 'create'])->name('employee.overtime-requests.create');
     Route::post('/employee/overtime-requests', [EmployeeOvertimeController::class, 'store'])->name('employee.overtime-requests.store');

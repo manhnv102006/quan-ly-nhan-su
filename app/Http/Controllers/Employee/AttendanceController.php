@@ -5,26 +5,60 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Employee;
+use App\Models\OvertimeRequest;
+use App\Services\EmployeeAttendanceService;
+use App\Services\OvertimeAttendanceService;
+use App\Services\OvertimeSettlementService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AttendanceController extends Controller
 {
+    public function __construct(
+        private readonly OvertimeSettlementService $overtimeSettlement,
+        private readonly OvertimeAttendanceService $overtimeAttendance,
+        private readonly EmployeeAttendanceService $attendanceService,
+    ) {
+    }
+
     public function index(): View
     {
-        $employee   = Employee::where('user_id', Auth::id())->firstOrFail();
+        $employee = Employee::where('user_id', Auth::id())->firstOrFail();
         $todayShift = $employee->todayShift();
-        $today      = Carbon::today();
+        $today = Carbon::today();
+        $now = Carbon::now();
+
+        $this->attendanceService->processAutoCheckouts($employee, $now);
 
         $attendance = Attendance::where('employee_id', $employee->id)
             ->whereDate('attendance_date', $today)
             ->first();
 
-        $isFullDayShift = $todayShift && $this->isFullDayShift($todayShift->shift);
+        $isFullDayShift = $todayShift && $this->attendanceService->isFullDayShift($todayShift->shift);
 
-        // Kiểm tra vượt giờ ca -> gợi ý tạo đơn tăng ca
+        $attendanceSessions = null;
+        $regularSession = null;
+
+        $attendanceStub = $attendance ?? new Attendance([
+            'employee_id' => $employee->id,
+            'attendance_date' => $today,
+            'shift_id' => $todayShift?->shift?->id,
+        ]);
+
+        if ($isFullDayShift && $todayShift?->shift) {
+            $attendanceSessions = $this->attendanceService->fullDaySessions($attendanceStub, $today, $now);
+        } elseif ($todayShift?->shift) {
+            $regularSession = $this->attendanceService->regularSession(
+                $attendanceStub,
+                $todayShift->shift,
+                $today,
+                $now,
+            );
+        }
+
         $overtimeInfo = null;
         if ($attendance && $todayShift && $todayShift->shift) {
             $lastCheckOut = $isFullDayShift
@@ -35,82 +69,96 @@ class AttendanceController extends Controller
                 $shiftEnd = Carbon::parse($todayShift->shift->end_time)->setDateFrom($today);
 
                 if ($lastCheckOut->gt($shiftEnd->copy()->addMinutes(15))) {
-                    $overtimeInfo = [
-                        'date'       => $today->format('Y-m-d'),
-                        'start_time' => $shiftEnd->format('H:i'),
-                        'end_time'   => $lastCheckOut->format('H:i'),
-                        'minutes'    => (int) round($shiftEnd->diffInMinutes($lastCheckOut)),
-                    ];
+                    $hasOpenRequest = OvertimeRequest::query()
+                        ->where('employee_id', $employee->id)
+                        ->whereDate('work_date', $today)
+                        ->whereIn('status', [
+                            OvertimeRequest::STATUS_PENDING,
+                            OvertimeRequest::STATUS_APPROVED,
+                        ])
+                        ->exists();
+
+                    if (! $hasOpenRequest) {
+                        $overtimeInfo = [
+                            'date' => $today->format('Y-m-d'),
+                            'start_time' => $shiftEnd->format('H:i'),
+                            'end_time' => $lastCheckOut->format('H:i'),
+                            'minutes' => (int) round($shiftEnd->diffInMinutes($lastCheckOut)),
+                        ];
+                    }
                 }
             }
         }
+
+        $overtimeSessions = $this->overtimeAttendance->sessionsForDate($employee, $today);
 
         return view('employee.attendance.index', compact(
             'employee',
             'todayShift',
             'attendance',
             'isFullDayShift',
-            'overtimeInfo'
+            'attendanceSessions',
+            'regularSession',
+            'overtimeInfo',
+            'overtimeSessions',
         ));
     }
 
+    public function overtimeCheckIn(OvertimeRequest $overtimeRequest): RedirectResponse
+    {
+        $employee = Employee::where('user_id', Auth::id())->firstOrFail();
+
+        try {
+            $this->overtimeAttendance->checkIn($overtimeRequest, $employee);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', $e->validator->errors()->first());
+        }
+
+        return back()->with('success', 'Check-in tăng ca thành công.');
+    }
+
+    public function overtimeCheckOut(OvertimeRequest $overtimeRequest): RedirectResponse
+    {
+        $employee = Employee::where('user_id', Auth::id())->firstOrFail();
+
+        try {
+            $completed = $this->overtimeAttendance->checkOut($overtimeRequest, $employee);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', $e->validator->errors()->first());
+        }
+
+        return back()->with(
+            'success',
+            'Check-out tăng ca thành công. Đã ghi nhận '.$completed->total_hours.' giờ.'
+        );
+    }
+
     public function checkIn($shift): RedirectResponse
-{
-    $employee = Employee::where('user_id', Auth::id())->firstOrFail();
-    $now      = Carbon::now();
-    $today    = Carbon::today();
+    {
+        $employee = Employee::where('user_id', Auth::id())->firstOrFail();
+        $now = Carbon::now();
 
-    $todayShift = $employee->todayShift();
-    if (! $todayShift || ! $todayShift->shift) {
-        return back()->with('error', 'Bạn chưa được gán ca làm hôm nay.');
-    }
-
-    $shiftModel = $todayShift->shift;
-    $isFullDay  = $this->isFullDayShift($shiftModel);
-
-    $attendance = Attendance::firstOrNew([
-        'employee_id'     => $employee->id,
-        'attendance_date' => $today,
-    ]);
-    $attendance->shift_id = $shiftModel->id;
-
-    if ($isFullDay) {
-        $noon = Carbon::today()->setTime(12, 30);
-
-        if ($now->lt($noon) && ! $attendance->morning_check_in) {
-            $attendance->morning_check_in = $now;
-            $sessionStart = Carbon::today()->setTime(8, 0);
-            $attendance->morning_late_minutes = max(0, (int) $sessionStart->diffInMinutes($now, false));
-        } elseif (! $attendance->afternoon_check_in) {
-            $attendance->afternoon_check_in = $now;
-            $sessionStart = Carbon::today()->setTime(13, 0);
-            $attendance->afternoon_late_minutes = max(0, (int) $sessionStart->diffInMinutes($now, false));
-        } else {
-            return back()->with('error', 'Bạn đã chấm công đủ 2 buổi hôm nay.');
+        $todayShift = $employee->todayShift();
+        if (! $todayShift || ! $todayShift->shift) {
+            return back()->with('error', 'Bạn chưa được gán ca làm hôm nay.');
         }
 
-        // Tổng late_minutes = tổng 2 buổi, KHÔNG cộng dồn qua nhiều lần bấm
-        $attendance->late_minutes = $attendance->morning_late_minutes + $attendance->afternoon_late_minutes;
-    } else {
-        if ($attendance->check_in) {
-            return back()->with('error', 'Bạn đã chấm công vào hôm nay.');
+        $isFullDay = $this->attendanceService->isFullDayShift($todayShift->shift);
+
+        try {
+            $this->attendanceService->checkIn($employee, $todayShift->shift, $isFullDay, $now);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', $e->validator->errors()->first());
         }
-        $attendance->check_in = $now;
-        $sessionStart = Carbon::parse($shiftModel->start_time)->setDateFrom($today);
-        $attendance->late_minutes = max(0, (int) $sessionStart->diffInMinutes($now, false));
+
+        return back()->with('success', 'Chấm công vào giờ thành công.');
     }
-
-    $attendance->status = $attendance->late_minutes > 0 ? 'late' : 'present';
-    $attendance->save();
-
-    return back()->with('success', 'Chấm công vào giờ thành công.');
-}
 
     public function checkOut($shift): RedirectResponse
     {
         $employee = Employee::where('user_id', Auth::id())->firstOrFail();
-        $now      = Carbon::now();
-        $today    = Carbon::today();
+        $now = Carbon::now();
+        $today = Carbon::today();
 
         $attendance = Attendance::where('employee_id', $employee->id)
             ->whereDate('attendance_date', $today)
@@ -120,50 +168,14 @@ class AttendanceController extends Controller
             return back()->with('error', 'Bạn chưa chấm công vào hôm nay.');
         }
 
-        $shiftModel = $attendance->shift;
-        $isFullDay  = $this->isFullDayShift($shiftModel);
+        $isFullDay = $this->attendanceService->isFullDayShift($attendance->shift);
 
-        if ($isFullDay) {
-            if ($attendance->morning_check_in && ! $attendance->morning_check_out) {
-                $attendance->morning_check_out = $now;
-            } elseif ($attendance->afternoon_check_in && ! $attendance->afternoon_check_out) {
-                $attendance->afternoon_check_out = $now;
-            } else {
-                return back()->with('error', 'Không xác định được buổi cần chấm công ra.');
-            }
-        } else {
-            if (! $attendance->check_in) {
-                return back()->with('error', 'Bạn chưa chấm công vào.');
-            }
-            $attendance->check_out = $now;
+        try {
+            $this->attendanceService->checkOut($employee, $attendance, $isFullDay, $now);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', $e->validator->errors()->first());
         }
-
-        $attendance->work_hours = $this->calculateWorkHours($attendance, $isFullDay);
-        $attendance->save();
 
         return back()->with('success', 'Chấm công ra giờ thành công.');
-    }
-
-    private function isFullDayShift($shift): bool
-    {
-        return $shift && str_contains(mb_strtolower($shift->shift_name), 'hành chính');
-    }
-
-    private function calculateWorkHours(Attendance $attendance, bool $isFullDay): float
-    {
-        $hours = 0;
-
-        if ($isFullDay) {
-            if ($attendance->morning_check_in && $attendance->morning_check_out) {
-                $hours += $attendance->morning_check_in->diffInMinutes($attendance->morning_check_out) / 60;
-            }
-            if ($attendance->afternoon_check_in && $attendance->afternoon_check_out) {
-                $hours += $attendance->afternoon_check_in->diffInMinutes($attendance->afternoon_check_out) / 60;
-            }
-        } elseif ($attendance->check_in && $attendance->check_out) {
-            $hours += $attendance->check_in->diffInMinutes($attendance->check_out) / 60;
-        }
-
-        return round($hours, 2);
     }
 }

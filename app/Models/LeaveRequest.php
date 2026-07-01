@@ -151,7 +151,10 @@ class LeaveRequest extends Model
             ->when(! empty($filters['status']), fn (Builder $q) => $q->where('status', $filters['status']))
             ->when(! empty($filters['start_from']), fn (Builder $q) => $q->whereDate('start_date', '>=', $filters['start_from']))
             ->when(! empty($filters['start_to']), fn (Builder $q) => $q->whereDate('start_date', '<=', $filters['start_to']))
-            ->when(! empty($filters['employee_id']), fn (Builder $q) => $q->where('employee_id', $filters['employee_id']));
+            ->when(! empty($filters['employee_id']), fn (Builder $q) => $q->where('employee_id', $filters['employee_id']))
+            ->when(! empty($filters['department_id']), function (Builder $q) use ($filters) {
+                $q->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->where('department_id', $filters['department_id']));
+            });
     }
 }
 

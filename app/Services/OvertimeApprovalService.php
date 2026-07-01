@@ -9,8 +9,10 @@ use Illuminate\Validation\ValidationException;
 
 class OvertimeApprovalService
 {
-    public function __construct(private readonly NotificationService $notifications)
-    {
+    public function __construct(
+        private readonly NotificationService $notifications,
+        private readonly OvertimeSettlementService $settlement,
+    ) {
     }
 
     public function approve(OvertimeRequest $overtimeRequest, int $actorId): void
@@ -25,6 +27,8 @@ class OvertimeApprovalService
             title: 'Đơn tăng ca đã được phê duyệt',
             content: 'Đơn tăng ca ngày '.$overtimeRequest->work_date?->format('d/m/Y').' của bạn đã được quản lý phê duyệt.',
         );
+
+        $this->settlement->settleIfCheckedOut($overtimeRequest->fresh());
     }
 
     public function reject(OvertimeRequest $overtimeRequest, int $actorId, string $reason): void
