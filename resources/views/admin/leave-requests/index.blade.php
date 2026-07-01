@@ -244,6 +244,7 @@
                                             <form action="{{ route($approveRouteName, $request) }}" method="POST"
                                                   onsubmit="return confirm('Bạn có chắc chắn muốn phê duyệt đơn nghỉ phép của nhân viên {{ $request->employee?->full_name }}?')">
                                                 @csrf
+                                                @method('PATCH')
                                                 <button type="submit"
                                                         class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition shadow-sm">
                                                     Duyệt
@@ -290,6 +291,7 @@
             </p>
             <form id="reject-form" action="" method="POST">
                 @csrf
+                @method('PATCH')
                 <div class="mb-5">
                     <label for="reject_reason" class="block text-sm font-semibold text-slate-700 mb-2">Lý do từ chối</label>
                     <textarea id="reject_reason" name="reject_reason" required rows="3"
