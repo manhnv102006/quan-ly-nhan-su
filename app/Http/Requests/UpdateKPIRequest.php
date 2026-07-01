@@ -25,7 +25,7 @@ class UpdateKPIRequest extends FormRequest
             'departments' => 'required|array|min:1',
             'departments.*' => 'exists:departments,id',
             'positions' => 'nullable|array',
-            'positions.*' => 'in:employee,manager',
+            'positions.*' => 'in:manager',
             'target' => 'nullable|string|max:255',
             'unit' => 'nullable|string|max:50',
             'weight' => 'required|numeric|min:1|max:100',
