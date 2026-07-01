@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\CandidateInterviewInvitationMail;
 use App\Models\Candidate;
 use App\Models\Employee;
 use App\Models\Interview;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class InterviewController extends Controller
@@ -71,15 +73,24 @@ class InterviewController extends Controller
         $validated['status'] = 'scheduled';
         $validated['result'] = 'pending';
 
-        DB::transaction(function () use ($validated) {
+        $interview = DB::transaction(function () use ($validated) {
             $candidate = Candidate::query()->findOrFail($validated['candidate_id']);
 
-            Interview::create($validated);
+            $interview = Interview::create($validated);
 
             $candidate->update([
                 'status' => 'interview',
             ]);
+
+            return $interview;
         });
+
+        $interview->loadMissing(['candidate.jobPost', 'interviewer']);
+
+        if (filled($interview->candidate?->email)) {
+            Mail::to($interview->candidate->email)
+                ->send(new CandidateInterviewInvitationMail($interview));
+        }
 
         return redirect()
             ->route('admin.recruitment.interviews')
