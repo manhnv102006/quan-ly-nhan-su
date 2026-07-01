@@ -83,16 +83,16 @@
             class="staff-sidebar fixed inset-y-0 left-0 z-50 flex h-screen w-[280px] shrink-0 transform flex-col transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
         >
-            <div class="flex h-[74px] items-center gap-3 px-5">
+            <div class="flex flex-col items-center justify-center gap-2 px-5 py-6 border-b border-slate-100/50">
                 <div class="relative">
-                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br {{ $theme['brand'] }} shadow-lg shadow-slate-900/10">
-                        <x-application-logo class="h-6 w-6 fill-current text-white" />
+                    <div class="flex h-20 w-20 items-center justify-center rounded-2xl overflow-hidden bg-white shadow-md border border-slate-100">
+                        <x-application-logo class="h-full w-full object-contain p-1.5" />
                     </div>
-                    <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white {{ $theme['badgeDot'] }}"></span>
+                    <span class="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-white {{ $theme['badgeDot'] }}"></span>
                 </div>
-                <div>
-                    <p class="font-extrabold tracking-tight text-slate-800">PeopleHub</p>
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] {{ $theme['accentText'] }}">{{ $theme['roleLabel'] }} Panel</p>
+                <div class="text-center mt-1">
+                    <p class="font-extrabold tracking-tight text-slate-800 text-xl leading-tight">Quản lý nhân sự</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest {{ $theme['accentText'] }} mt-0.5">Trang {{ $theme['roleLabel'] }}</p>
                 </div>
             </div>
 

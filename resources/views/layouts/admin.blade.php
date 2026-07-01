@@ -32,16 +32,16 @@
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
         >
             {{-- Brand --}}
-            <div class="flex items-center gap-3 px-5 h-[72px]">
+            <div class="flex flex-col items-center justify-center gap-2 px-5 py-6 border-b border-slate-100/50">
                 <div class="relative">
-                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
-                        <x-application-logo class="w-6 h-6 fill-current text-white" />
+                    <div class="w-20 h-20 rounded-2xl overflow-hidden bg-white flex items-center justify-center shadow-md border border-slate-100">
+                        <x-application-logo class="w-full h-full object-contain p-1.5" />
                     </div>
-                    <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full"></span>
+                    <span class="absolute bottom-1 right-1 w-4 h-4 bg-emerald-400 border-2 border-white rounded-full"></span>
                 </div>
-                <div>
-                    <p class="font-extrabold text-slate-800 tracking-tight">PeopleHub</p>
-                    <p class="text-[11px] font-medium text-violet-600 uppercase tracking-wider">Admin Panel</p>
+                <div class="text-center mt-1">
+                    <p class="font-extrabold text-slate-800 tracking-tight text-xl leading-tight">Quản lý nhân sự</p>
+                    <p class="text-[11px] font-semibold text-violet-600 uppercase tracking-widest mt-0.5">Trang quản trị</p>
                 </div>
             </div>
 

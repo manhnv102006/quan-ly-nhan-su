@@ -16,8 +16,8 @@
         <div class="min-h-screen flex flex-col sm:justify-center items-center px-4 py-10 bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500">
             <div class="text-center mb-6">
                 <a href="/" class="inline-flex flex-col items-center group">
-                    <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shadow-lg group-hover:bg-white/30 transition">
-                        <x-application-logo class="w-10 h-10 fill-current text-white" />
+                    <div class="w-24 h-24 rounded-3xl overflow-hidden bg-white flex items-center justify-center shadow-lg group-hover:scale-105 transition duration-300">
+                        <x-application-logo class="w-full h-full object-contain p-3" />
                     </div>
                     <span class="mt-3 text-xl font-bold text-white tracking-tight">{{ config('app.name', 'Quản lý nhân sự') }}</span>
                 </a>
