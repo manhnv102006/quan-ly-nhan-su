@@ -285,17 +285,20 @@ class CandidateController extends Controller
     private function validateCandidate(Request $request): array
     {
         return $request->validate([
-            'job_post_id' => ['nullable', 'exists:job_posts,id'],
+            'job_post_id' => ['required', 'exists:job_posts,id'],
             'full_name' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'regex:/^[0-9]{10}$/'],
             'email' => ['required', 'string', 'email', 'max:100'],
             'address' => ['required', 'string', 'max:255'],
-            'birth_date' => ['nullable', 'date'],
+            'birth_date' => ['required', 'date'],
             'cv_file' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx'],
             'status' => ['required', 'in:new,interview,passed,failed'],
         ], [
+            'job_post_id.required' => 'Tin tuyển dụng là bắt buộc.',
             'job_post_id.exists' => 'Tin tuyển dụng được chọn không hợp lệ.',
             'full_name.required' => 'Họ và tên ứng viên là bắt buộc.',
+            'phone.regex' => 'Số điện thoại phải gồm đúng 10 chữ số.',
+            'birth_date.required' => 'Ngày sinh là bắt buộc.',
             'email.email' => 'Email ứng viên không hợp lệ.',
             'cv_file.mimes' => 'CV chỉ hỗ trợ định dạng PDF, DOC hoặc DOCX.',
             'status.in' => 'Trạng thái ứng viên không hợp lệ.',
