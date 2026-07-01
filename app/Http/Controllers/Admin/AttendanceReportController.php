@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Department;
+use App\Services\EmployeeAttendanceService;
+use App\Support\DepartmentSummaryBuilder;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -14,28 +16,13 @@ class AttendanceReportController extends Controller
 {
     public function index(Request $request): View
     {
-        [$month, $year, $allAttendances, $departments] = $this->loadReportData($request);
-
-        $stats = $this->buildStats($allAttendances);
-
-        $departmentSummaries = $departments->map(function (Department $department) use ($allAttendances) {
-            $filtered = $this->filterByDepartment($allAttendances, $department->id);
-
-            return [
-                'department' => $department,
-                'stats' => $this->buildStats($filtered),
-            ];
-        });
+        $month = (int) ($request->input('month') ?: now()->month);
+        $year = (int) ($request->input('year') ?: now()->year);
 
         return view('admin.attendance-reports.index', [
-            'attendances' => $allAttendances,
-            'stats' => $stats,
             'month' => $month,
             'year' => $year,
-            'departmentSummaries' => $departmentSummaries,
-            'scopeLabel' => 'Toàn công ty',
-            'showDepartmentColumn' => true,
-            'selectedDepartment' => null,
+            'departmentSummaries' => DepartmentSummaryBuilder::forAttendance($month, $year),
         ]);
     }
 
@@ -58,20 +45,12 @@ class AttendanceReportController extends Controller
     }
 
     /**
-     * @return array{0: int, 1: int, 2: Collection<int, Attendance>, 3: Collection<int, Department>}
+     * @return array{0: int, 1: int, 2: Collection<int, Attendance>}
      */
     private function loadReportData(Request $request): array
     {
         $month = (int) ($request->input('month') ?: now()->month);
         $year = (int) ($request->input('year') ?: now()->year);
-
-        $departments = Department::query()
-            ->where('status', 'active')
-            ->withCount([
-                'employees as active_employees_count' => fn ($query) => $query->where('status', 'active'),
-            ])
-            ->orderBy('department_name')
-            ->get(['id', 'department_code', 'department_name']);
 
         $allAttendances = Attendance::with(['employee.department', 'shift'])
             ->whereMonth('attendance_date', $month)
@@ -80,7 +59,7 @@ class AttendanceReportController extends Controller
             ->orderBy('employee_id')
             ->get();
 
-        return [$month, $year, $allAttendances, $departments];
+        return [$month, $year, $allAttendances];
     }
 
     /**
@@ -137,9 +116,10 @@ class AttendanceReportController extends Controller
                 $checkIn = Carbon::parse($attendance->check_in);
                 $shiftStart = Carbon::parse($attendance->attendance_date)
                     ->setTimeFromTimeString($attendance->shift->start_time);
+                $graceDeadline = $shiftStart->copy()->addMinutes(EmployeeAttendanceService::GRACE_MINUTES);
 
-                if ($checkIn->gt($shiftStart)) {
-                    $lateMinutes = (int) $shiftStart->diffInMinutes($checkIn);
+                if ($checkIn->gt($graceDeadline)) {
+                    $lateMinutes = (int) $graceDeadline->diffInMinutes($checkIn);
                 }
             }
 
