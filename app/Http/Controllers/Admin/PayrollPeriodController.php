@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PayrollPeriod;
+use App\Services\AutoNotificationService;
 use App\Services\PayrollService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,10 @@ use Illuminate\View\View;
 
 class PayrollPeriodController extends Controller
 {
+    public function __construct(
+        private AutoNotificationService $autoNotifications,
+    ) {}
+
     public function index(Request $request): View
     {
         $periods = PayrollPeriod::query()
@@ -194,6 +199,8 @@ class PayrollPeriodController extends Controller
             'approved_at' => now(),
         ]);
 
+        $this->autoNotifications->payrollApproved($payrollPeriod);
+
         return redirect()->back()->with('success', 'Đã duyệt toàn bộ kỳ lương thành công.');
     }
 
@@ -208,6 +215,8 @@ class PayrollPeriodController extends Controller
             'paid_by' => auth()->id() ?? 1,
             'paid_at' => now(),
         ]);
+
+        $this->autoNotifications->payrollPaid($payrollPeriod);
 
         return redirect()->back()->with('success', 'Đã thực hiện chi trả lương cho toàn bộ nhân viên.');
     }

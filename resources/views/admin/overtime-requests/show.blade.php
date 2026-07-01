@@ -1,114 +1,52 @@
-<x-admin-layout>
-
-    <div class="space-y-6">
-
-        <div class="flex justify-between">
-
-            <h1 class="text-2xl font-bold">
-                Chi tiết đơn tăng ca
-            </h1>
-
-            <a href="{{ route('admin.overtime-requests.index') }}"
-                class="px-4 py-2 bg-slate-500 text-white rounded-lg">
-
-                Quay lại
-
-            </a>
-
+<x-admin-layout title="Chi tiết đơn tăng ca">
+    <div class="container-fluid py-2">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4 class="mb-1">Chi tiết đơn tăng ca</h4>
+                <p class="text-muted mb-0">Thông tin đầy đủ yêu cầu tăng ca.</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                @if($overtimeRequest->isPending())
+                    <form action="{{ route('admin.overtime-requests.approve', $overtimeRequest) }}" method="POST" class="d-inline">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="btn btn-success" onclick="return confirm('Duyệt đơn tăng ca này?')">Duyệt</button>
+                    </form>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#reject-form">Từ chối</button>
+                @endif
+                <a href="{{ route('admin.overtime-requests.edit', $overtimeRequest) }}" class="btn btn-warning">Sửa</a>
+                <form action="{{ route('admin.overtime-requests.destroy', $overtimeRequest) }}" method="POST" class="d-inline" onsubmit="return confirm('Xóa đơn tăng ca này?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-outline-danger">Xóa</button>
+                </form>
+                <a href="{{ route('admin.overtime-requests.index') }}" class="btn btn-outline-secondary">Quay lại</a>
+            </div>
         </div>
 
-        <div class="bg-white border rounded-xl p-6">
+        <x-flash-messages />
 
-            <div class="grid grid-cols-2 gap-5">
-
-                <div>
-                    <p class="text-slate-500">
-                        Nhân viên
-                    </p>
-
-                    <h4 class="font-semibold">
-                        {{ $overtimeRequest->employee->full_name }}
-                    </h4>
+        @if($overtimeRequest->isPending())
+            <div id="reject-form" class="collapse mb-3">
+                    <div class="card border-danger">
+                        <div class="card-body">
+                            <form action="{{ route('admin.overtime-requests.reject', $overtimeRequest) }}" method="POST">
+                                @csrf
+                                @method('PATCH')
+                                <label class="form-label">Lý do từ chối</label>
+                                <textarea name="reject_reason" rows="3" class="form-control mb-3" required>{{ old('reject_reason') }}</textarea>
+                                @error('reject_reason')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
+                                <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
+        @endif
 
-                <div>
-                    <p class="text-slate-500">
-                        Phòng ban
-                    </p>
-
-                    <h4 class="font-semibold">
-                        {{ $overtimeRequest->employee->department?->department_name }}
-                    </h4>
-                </div>
-
-                <div>
-                    <p class="text-slate-500">
-                        Ngày tăng ca
-                    </p>
-
-                    <h4 class="font-semibold">
-                        {{ $overtimeRequest->overtime_date->format('d/m/Y') }}
-                    </h4>
-                </div>
-
-                <div>
-                    <p class="text-slate-500">
-                        Trạng thái
-                    </p>
-
-                    <h4 class="font-semibold">
-                        {{ $overtimeRequest->status }}
-                    </h4>
-                </div>
-
-                <div class="col-span-2">
-
-                    <p class="text-slate-500">
-                        Lý do
-                    </p>
-
-                    <p>
-                        {{ $overtimeRequest->reason }}
-                    </p>
-
-                </div>
-
+        <div class="card">
+            <div class="card-body">
+                @include('overtime-requests.partials.detail-fields', ['overtimeRequest' => $overtimeRequest])
             </div>
-
-            @if($overtimeRequest->status == 'pending')
-
-            <div class="flex gap-3 mt-6">
-
-                <form method="POST"
-                    action="{{ route('admin.overtime-requests.approve',$overtimeRequest) }}">
-
-                    @csrf
-                    @method('PATCH')
-
-                    <button class="px-4 py-2 bg-green-600 text-white rounded-lg">
-                        Duyệt
-                    </button>
-
-                </form>
-
-                <form method="POST"
-                    action="{{ route('admin.overtime-requests.reject',$overtimeRequest) }}">
-
-                    @csrf
-                    @method('PATCH')
-
-                    <button class="px-4 py-2 bg-red-600 text-white rounded-lg">
-                        Từ chối
-                    </button>
-
-                </form>
-
-            </div>
-
-            @endif
-
         </div>
-
     </div>
-
 </x-admin-layout>

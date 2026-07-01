@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Support\EmployeeNavigation;
+use App\Support\ManagerNavigation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,9 +18,42 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $user = $request->user()->load(['role', 'employee.department', 'employee.position']);
+
+        $layout = match (true) {
+            $user->isAdmin() => 'admin',
+            $user->isManager() => 'manager',
+            default => 'employee',
+        };
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            'employeeProfile' => $user->employee,
+            'layout' => $layout,
+            'navigation' => $this->navigationFor($user, $layout),
+            'heroTheme' => match ($layout) {
+                'admin' => 'from-violet-600 via-indigo-600 to-cyan-500',
+                'manager' => 'from-emerald-500 via-teal-500 to-cyan-600',
+                default => 'from-sky-500 via-blue-500 to-indigo-600',
+            },
+            'dashboardRoute' => $user->dashboardRouteName(),
         ]);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function navigationFor(\App\Models\User $user, string $layout): array
+    {
+        if ($layout === 'manager') {
+            return ManagerNavigation::items();
+        }
+
+        if ($layout === 'employee') {
+            return EmployeeNavigation::items();
+        }
+
+        return [];
     }
 
     /**

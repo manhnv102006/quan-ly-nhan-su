@@ -171,11 +171,11 @@
                         </tr>
                         <tr>
                             <td class="label">Phòng ban:</td>
-                            <td class="value">{{ $payroll->employee?->department?->name ?: '—' }}</td>
+                            <td class="value">{{ $payroll->employee?->department?->department_name ?: '—' }}</td>
                         </tr>
                         <tr>
                             <td class="label">Chức vụ:</td>
-                            <td class="value">{{ $payroll->employee?->position?->name ?: '—' }}</td>
+                            <td class="value">{{ $payroll->employee?->position?->position_name ?: '—' }}</td>
                         </tr>
                         <tr>
                             <td class="label">Số ngày nghỉ:</td>

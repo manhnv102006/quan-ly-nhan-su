@@ -149,7 +149,7 @@
                             </span>
 
                             <span class="font-medium">
-                                {{ $attendance->shift?->shift_name ?? '-' }}
+                                {{ $attendance->employeeShift?->shift?->shift_name ?? '-' }}
                             </span>
                         </div>
 

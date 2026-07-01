@@ -1,113 +1,31 @@
-<x-admin-layout>
-
+<x-admin-layout title="Danh sách đơn tăng ca">
     <div class="space-y-6">
-
-        <div>
-            <h1 class="text-2xl font-bold">
-                Duyệt đơn tăng ca
-            </h1>
-
-            <p class="text-slate-500">
-                Quản lý các đơn đăng ký tăng ca
-            </p>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Quản lý chấm công</p>
+                <h2 class="mt-1 text-2xl font-bold text-slate-800">Duyệt tăng ca</h2>
+                <p class="mt-1 text-sm text-slate-500">
+                    Theo dõi và duyệt đơn tăng ca —
+                    <span class="font-semibold text-slate-700">Toàn công ty</span>
+                </p>
+            </div>
+            <a href="{{ route('admin.overtime-requests.create') }}"
+               class="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-violet-900/20 transition hover:bg-violet-700">
+                <i class="bi bi-plus-lg"></i>
+                Tạo đơn
+            </a>
         </div>
 
-        <div class="grid grid-cols-4 gap-4">
+        <x-flash-messages />
 
-            <div class="bg-white p-5 rounded-xl border">
-                <p>Tổng đơn</p>
-                <h3 class="text-3xl font-bold">
-                    {{ $stats['total'] }}
-                </h3>
-            </div>
+        @include('admin.partials.department-cards', [
+            'departmentSummaries' => $departmentSummaries,
+            'routeName' => 'admin.overtime-requests.department',
+        ])
 
-            <div class="bg-yellow-50 p-5 rounded-xl border">
-                <p>Chờ duyệt</p>
-                <h3 class="text-3xl font-bold">
-                    {{ $stats['pending'] }}
-                </h3>
-            </div>
-
-            <div class="bg-green-50 p-5 rounded-xl border">
-                <p>Đã duyệt</p>
-                <h3 class="text-3xl font-bold">
-                    {{ $stats['approved'] }}
-                </h3>
-            </div>
-
-            <div class="bg-red-50 p-5 rounded-xl border">
-                <p>Từ chối</p>
-                <h3 class="text-3xl font-bold">
-                    {{ $stats['rejected'] }}
-                </h3>
-            </div>
-
-        </div>
-
-        <div class="bg-white rounded-xl border overflow-hidden">
-
-            <table class="w-full">
-
-                <thead class="bg-slate-50">
-                    <tr>
-                        <th class="p-3 text-left">Nhân viên</th>
-                        <th class="p-3 text-left">Ngày</th>
-                        <th class="p-3 text-left">Giờ bắt đầu</th>
-                        <th class="p-3 text-left">Giờ kết thúc</th>
-                        <th class="p-3 text-left">Trạng thái</th>
-                        <th class="p-3 text-center">Thao tác</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    @foreach($overtimeRequests as $item)
-
-                    <tr class="border-t">
-
-                        <td class="p-3">
-                            {{ $item->employee?->full_name }}
-                        </td>
-
-                        <td class="p-3">
-                            {{ $item->overtime_date?->format('d/m/Y') }}
-                        </td>
-
-                        <td class="p-3">
-                            {{ $item->start_time }}
-                        </td>
-
-                        <td class="p-3">
-                            {{ $item->end_time }}
-                        </td>
-
-                        <td class="p-3">
-                            {{ $item->status }}
-                        </td>
-
-                        <td class="p-3 text-center">
-
-                            <a href="{{ route('admin.overtime-requests.show',$item) }}"
-                                class="text-blue-600">
-
-                                Chi tiết
-
-                            </a>
-
-                        </td>
-
-                    </tr>
-
-                    @endforeach
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-        {{ $overtimeRequests->links() }}
-
+        @include('admin.overtime-requests.partials.list-body', [
+            'showDepartmentColumn' => true,
+            'scopeLabel' => 'Toàn công ty',
+        ])
     </div>
-
 </x-admin-layout>

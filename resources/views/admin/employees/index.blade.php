@@ -7,9 +7,14 @@
                 <h2 class="text-2xl font-bold text-slate-800">Quản lý nhân viên</h2>
                 <p class="text-sm text-slate-500 mt-1">Danh sách và quản lý hồ sơ nhân viên</p>
             </div>
-            <a href="{{ route('admin.employees.create') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
-                + Thêm nhân viên
-            </a>
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="{{ route('admin.employees.create') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
+                    + Thêm nhân viên
+                </a>
+                <a href="{{ route('admin.employees.trash') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
+                    Nhân viên đã xóa
+                </a>
+            </div>
         </div>
 
         @if (session('success'))
@@ -54,6 +59,7 @@
                             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Phòng ban</th>
                             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Chức vụ</th>
                             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500">Email</th>
+                            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Tài khoản</th>
                             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
                             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Ngày tạo</th>
                             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
@@ -72,6 +78,20 @@
                                 <td class="px-6 py-4 text-slate-600">{{ $employee->department?->department_name ?? '-' }}</td>
                                 <td class="px-6 py-4 text-slate-600">{{ $employee->position?->position_name ?? '-' }}</td>
                                 <td class="px-6 py-4 text-slate-600">{{ $employee->email }}</td>
+                                <td class="px-6 py-4 text-center">
+                                    @if ($employee->user)
+                                        <a href="{{ route('admin.accounts.show', $employee->user) }}"
+                                           class="inline-flex rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-200 transition"
+                                           title="{{ $employee->user->name }}">
+                                            {{ $employee->user->username }}
+                                        </a>
+                                    @else
+                                        <a href="{{ route('admin.employees.show', $employee) }}?open=link-account"
+                                           class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 hover:bg-violet-100 hover:text-violet-700 transition">
+                                            Chưa liên kết
+                                        </a>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 text-center">
                                     @if ($employee->status === 'active')
                                         <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Hoạt động</span>
@@ -106,7 +126,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-12 text-slate-400">Không có nhân viên nào</td>
+                                <td colspan="9" class="text-center py-12 text-slate-400">Không có nhân viên nào</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -132,13 +152,13 @@
                 </svg>
             </div>
 
-            <h3 class="mt-5 text-lg font-bold text-slate-800 text-center">Xác nhận xóa nhân viên</h3>
+            <h3 class="mt-5 text-lg font-bold text-slate-800 text-center">Chuyển nhân viên vào thùng rác?</h3>
             <p class="mt-2 text-sm text-slate-500 text-center">
-                Bạn có chắc muốn xóa vĩnh viễn nhân viên
+                Bạn có chắc muốn xóa mềm nhân viên
                 <span id="delete-employee-name" class="font-semibold text-slate-800"></span>?
             </p>
-            <p class="mt-2 text-xs text-red-600 text-center font-medium">
-                Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan sẽ bị xóa.
+            <p class="mt-2 text-xs text-amber-600 text-center font-medium">
+                Nhân viên sẽ được ẩn khỏi danh sách và có thể khôi phục từ mục「Nhân viên đã xóa」.
             </p>
 
             <div class="mt-6 flex gap-3">
@@ -147,8 +167,8 @@
                     Hủy
                 </button>
                 <button type="button" id="confirm-delete-btn"
-                        class="flex-1 px-5 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition">
-                    Xác nhận xóa
+                        class="flex-1 px-5 py-3 rounded-xl bg-orange-600 text-white font-medium hover:bg-orange-700 transition">
+                    Chuyển vào thùng rác
                 </button>
             </div>
         </div>

@@ -6,12 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreKPIAssignmentRequest;
 use App\Models\KPI;
 use App\Models\KPIAssignment;
+use App\Models\Role;
 use App\Models\User;
+use App\Services\AutoNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class KPIAssignmentController extends Controller
 {
+    public function __construct(
+        private AutoNotificationService $autoNotifications,
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -49,9 +55,19 @@ class KPIAssignmentController extends Controller
 
         $assignments = $query->orderBy('created_at', 'desc')->paginate(10);
         $kpis = KPI::where('status', 'active')->get();
-        $managers = User::where('role_id', 2)->get(); // Assuming role_id 2 is manager
+        $managers = User::query()
+            ->whereHas('role', fn ($q) => $q->where('name', Role::MANAGER))
+            ->orderBy('name')
+            ->get();
 
-        return view('admin.kpi-assignments.index', compact('assignments', 'kpis', 'managers'));
+        $stats = [
+            'pending' => KPIAssignment::where('status', 'pending')->count(),
+            'active' => KPIAssignment::where('status', 'active')->count(),
+            'completed' => KPIAssignment::where('status', 'completed')->count(),
+            'total' => KPIAssignment::count(),
+        ];
+
+        return view('admin.kpi-assignments.index', compact('assignments', 'kpis', 'managers', 'stats'));
     }
 
     /**
@@ -59,13 +75,18 @@ class KPIAssignmentController extends Controller
      */
     public function create()
     {
-        $kpis = KPI::where('status', 'active')
+        $kpis = KPI::with('departments')
+            ->where('status', 'active')
             ->whereDoesntHave('assignments', function ($query) {
                 $query->whereIn('status', ['pending', 'active']);
             })
             ->get();
 
-        $managers = User::where('role_id', 2)->get();
+        $managers = User::query()
+            ->with('employee.department')
+            ->whereHas('role', fn ($q) => $q->where('name', Role::MANAGER))
+            ->orderBy('name')
+            ->get();
 
         return view('admin.kpi-assignments.create', compact('kpis', 'managers'));
     }
@@ -79,7 +100,9 @@ class KPIAssignmentController extends Controller
         $data['assigned_by'] = Auth::id();
         $data['status'] = 'pending';
 
-        KPIAssignment::create($data);
+        $assignment = KPIAssignment::create($data);
+
+        $this->autoNotifications->kpiAssigned($assignment);
 
         return redirect()
             ->route('admin.kpi-assignments.index')
@@ -100,9 +123,13 @@ class KPIAssignmentController extends Controller
      */
     public function edit(KPIAssignment $assignment)
     {
-        $assignment->load(['kpi', 'manager']);
-        $kpis = KPI::where('status', 'active')->get();
-        $managers = User::where('role_id', 2)->get();
+        $assignment->load(['kpi.departments', 'manager']);
+        $kpis = KPI::with('departments')->where('status', 'active')->get();
+        $managers = User::query()
+            ->with('employee.department')
+            ->whereHas('role', fn ($q) => $q->where('name', Role::MANAGER))
+            ->orderBy('name')
+            ->get();
 
         // Get assigned KPI IDs for each manager (excluding current assignment)
         $assignedKpis = KPIAssignment::where('id', '!=', $assignment->id)
@@ -143,6 +170,8 @@ class KPIAssignmentController extends Controller
     {
         $assignment->update(['status' => 'active']);
 
+        $this->autoNotifications->kpiApproved($assignment);
+
         return redirect()
             ->route('admin.kpi-assignments.index')
             ->with('success', 'Phê duyệt giao KPI thành công');
@@ -155,6 +184,8 @@ class KPIAssignmentController extends Controller
     {
         $assignment->update(['status' => 'cancelled']);
 
+        $this->autoNotifications->kpiRejected($assignment);
+
         return redirect()
             ->route('admin.kpi-assignments.index')
             ->with('success', 'Hủy giao KPI thành công');
@@ -166,6 +197,8 @@ class KPIAssignmentController extends Controller
     public function complete(KPIAssignment $assignment)
     {
         $assignment->update(['status' => 'completed']);
+
+        $this->autoNotifications->kpiCompleted($assignment);
 
         return redirect()
             ->route('admin.kpi-assignments.index')
