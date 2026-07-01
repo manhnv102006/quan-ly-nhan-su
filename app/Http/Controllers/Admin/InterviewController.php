@@ -85,12 +85,14 @@ class InterviewController extends Controller
             return $interview;
         });
 
-        $interview->loadMissing(['candidate.jobPost', 'interviewer']);
+        DB::afterCommit(function () use ($interview) {
+            $interview->loadMissing(['candidate.jobPost', 'interviewer']);
 
-        if (filled($interview->candidate?->email)) {
-            Mail::to($interview->candidate->email)
-                ->send(new CandidateInterviewInvitationMail($interview));
-        }
+            if (filled($interview->candidate?->email)) {
+                Mail::to($interview->candidate->email)
+                    ->send(new CandidateInterviewInvitationMail($interview));
+            }
+        });
 
         return redirect()
             ->route('admin.recruitment.interviews')
