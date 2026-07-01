@@ -3,18 +3,24 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\OvertimeRequestRejectRequest;
 use App\Http\Requests\OvertimeRequestStoreRequest;
 use App\Http\Requests\OvertimeRequestUpdateRequest;
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
+use App\Services\OvertimeApprovalService;
 use App\Services\OvertimeRequestService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class OvertimeRequestController extends Controller
 {
-    public function __construct(private readonly OvertimeRequestService $service)
-    {
+    public function __construct(
+        private readonly OvertimeRequestService $service,
+        private readonly OvertimeApprovalService $approvalService,
+    ) {
         $this->authorizeResource(OvertimeRequest::class, 'overtimeRequest');
     }
 
@@ -105,6 +111,32 @@ class OvertimeRequestController extends Controller
         return redirect()
             ->route('admin.overtime-requests.index')
             ->with('success', 'Xóa yêu cầu tăng ca thành công.');
+    }
+
+    public function approve(OvertimeRequest $overtimeRequest): RedirectResponse
+    {
+        $this->authorize('approve', $overtimeRequest);
+
+        try {
+            $this->approvalService->approve($overtimeRequest, (int) Auth::id());
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', 'Không thể phê duyệt đơn tăng ca.');
+        }
+
+        return back()->with('success', 'Phê duyệt đơn tăng ca thành công.');
+    }
+
+    public function reject(OvertimeRequestRejectRequest $request, OvertimeRequest $overtimeRequest): RedirectResponse
+    {
+        $this->authorize('reject', $overtimeRequest);
+
+        try {
+            $this->approvalService->reject($overtimeRequest, (int) Auth::id(), $request->validated('reject_reason'));
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', 'Không thể từ chối đơn tăng ca.');
+        }
+
+        return back()->with('success', 'Từ chối đơn tăng ca thành công.');
     }
 
     private function activeEmployees()

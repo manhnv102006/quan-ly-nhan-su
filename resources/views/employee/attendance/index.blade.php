@@ -150,11 +150,19 @@
 
             {{-- Tổng kết: trễ giờ --}}
             @if ($attendance)
-                <div class="mt-5 pt-5 border-t border-slate-100 flex justify-between text-sm">
-                    <span class="text-slate-500">Tổng thời gian đi muộn</span>
-                    <span class="font-semibold {{ $attendance->late_minutes > 0 ? 'text-rose-600' : 'text-emerald-600' }}">
-                        {{ $attendance->late_text }}
-                    </span>
+                <div class="mt-5 pt-5 border-t border-slate-100 space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500">Tổng thời gian đi muộn</span>
+                        <span class="font-semibold {{ $attendance->late_minutes > 0 ? 'text-rose-600' : 'text-emerald-600' }}">
+                            {{ $attendance->late_text }}
+                        </span>
+                    </div>
+                    @if ($attendance->is_overtime)
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500">Giờ tăng ca đã ghi nhận</span>
+                            <span class="font-semibold text-amber-700">{{ $attendance->overtime_text }}</span>
+                        </div>
+                    @endif
                 </div>
             @endif
         </div>
@@ -171,9 +179,9 @@
         </div>
         @php
             $otUrl = route('employee.overtime-requests.create', [
-                'date'       => $overtimeInfo['date'],
+                'work_date' => $overtimeInfo['date'],
                 'start_time' => $overtimeInfo['start_time'],
-                'end_time'   => $overtimeInfo['end_time'],
+                'end_time' => $overtimeInfo['end_time'],
             ]);
         @endphp
         <a href="{{ $otUrl }}" class="px-4 py-2.5 rounded-xl bg-amber-600 text-white text-xs font-semibold shadow-sm hover:bg-amber-700 transition">Tạo đơn tăng ca</a>
