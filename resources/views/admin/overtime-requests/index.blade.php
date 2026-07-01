@@ -44,14 +44,12 @@
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a href="{{ route('admin.overtime-requests.show', $item) }}" class="btn btn-outline-primary">Xem</a>
-                                        @if($item->isPending())
-                                            <a href="{{ route('admin.overtime-requests.edit', $item) }}" class="btn btn-outline-warning">Sửa</a>
-                                            <form action="{{ route('admin.overtime-requests.destroy', $item) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa đơn này?')">Xóa</button>
-                                            </form>
-                                        @endif
+                                        <a href="{{ route('admin.overtime-requests.edit', $item) }}" class="btn btn-outline-warning">Sửa</a>
+                                        <form action="{{ route('admin.overtime-requests.destroy', $item) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa đơn này?')">Xóa</button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>

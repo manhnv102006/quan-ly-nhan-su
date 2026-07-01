@@ -5,29 +5,29 @@
                 <h4 class="mb-1">Chi tiết đơn tăng ca</h4>
                 <p class="text-muted mb-0">Thông tin đầy đủ yêu cầu tăng ca.</p>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
                 @if($overtimeRequest->isPending())
-                    @can('approve', $overtimeRequest)
-                        <form action="{{ route('admin.overtime-requests.approve', $overtimeRequest) }}" method="POST" class="d-inline">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="btn btn-success" onclick="return confirm('Duyệt đơn tăng ca này?')">Duyệt</button>
-                        </form>
-                    @endcan
-                    @can('reject', $overtimeRequest)
-                        <button type="button" class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#reject-form">Từ chối</button>
-                    @endcan
-                    <a href="{{ route('admin.overtime-requests.edit', $overtimeRequest) }}" class="btn btn-warning">Sửa</a>
+                    <form action="{{ route('admin.overtime-requests.approve', $overtimeRequest) }}" method="POST" class="d-inline">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="btn btn-success" onclick="return confirm('Duyệt đơn tăng ca này?')">Duyệt</button>
+                    </form>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#reject-form">Từ chối</button>
                 @endif
+                <a href="{{ route('admin.overtime-requests.edit', $overtimeRequest) }}" class="btn btn-warning">Sửa</a>
+                <form action="{{ route('admin.overtime-requests.destroy', $overtimeRequest) }}" method="POST" class="d-inline" onsubmit="return confirm('Xóa đơn tăng ca này?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-outline-danger">Xóa</button>
+                </form>
                 <a href="{{ route('admin.overtime-requests.index') }}" class="btn btn-outline-secondary">Quay lại</a>
             </div>
         </div>
 
         <x-flash-messages />
 
-        @can('reject', $overtimeRequest)
-            @if($overtimeRequest->isPending())
-                <div id="reject-form" class="collapse mb-3">
+        @if($overtimeRequest->isPending())
+            <div id="reject-form" class="collapse mb-3">
                     <div class="card border-danger">
                         <div class="card-body">
                             <form action="{{ route('admin.overtime-requests.reject', $overtimeRequest) }}" method="POST">
@@ -41,8 +41,7 @@
                         </div>
                     </div>
                 </div>
-            @endif
-        @endcan
+        @endif
 
         <div class="card">
             <div class="card-body">
