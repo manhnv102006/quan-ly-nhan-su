@@ -63,3 +63,35 @@ test('admin cannot create a candidate with invalid phone number', function () {
 
     expect(Candidate::query()->where('email', 'candidate-b@example.com')->exists())->toBeFalse();
 });
+
+test('admin cannot create a candidate with duplicate email or phone', function () {
+    Candidate::create([
+        'job_post_id' => $this->jobPost->id,
+        'full_name' => 'Nguyen Van C',
+        'phone' => '0900000003',
+        'email' => 'candidate-c@example.com',
+        'birth_date' => '1998-01-01',
+        'address' => 'Can Tho',
+        'status' => 'new',
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->from(route('admin.recruitment.candidates.create'))
+        ->post(route('admin.recruitment.candidates.store'), [
+            'job_post_id' => $this->jobPost->id,
+            'full_name' => 'Nguyen Van D',
+            'phone' => '0900000003',
+            'email' => 'candidate-c@example.com',
+            'birth_date' => '1998-01-01',
+            'address' => 'Hue',
+            'status' => 'new',
+        ]);
+
+    $response->assertRedirect(route('admin.recruitment.candidates.create'));
+    $response->assertSessionHasErrors([
+        'phone' => 'Số điện thoại này đã tồn tại trong danh sách ứng viên.',
+        'email' => 'Email này đã tồn tại trong danh sách ứng viên.',
+    ]);
+
+    expect(Candidate::query()->where('email', 'candidate-c@example.com')->count())->toBe(1);
+});
