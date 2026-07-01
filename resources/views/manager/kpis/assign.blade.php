@@ -115,7 +115,12 @@
                         Hạn chót <span class="text-red-500">*</span>
                     </label>
                     <input type="date" name="deadline" id="deadline" value="{{ old('deadline') }}" required
+                        min="{{ now()->format('Y-m-d') }}"
+                        max="{{ $assignment->end_date->format('Y-m-d') }}"
                         class="w-full rounded-xl border border-slate-300 focus:border-violet-500 focus:ring-violet-500">
+                    <p class="text-xs text-slate-500 mt-1">
+                        Hạn chót phải từ hôm nay đến trước ngày kết thúc KPI ({{ $assignment->end_date->format('d/m/Y') }}).
+                    </p>
                     @error('deadline')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
