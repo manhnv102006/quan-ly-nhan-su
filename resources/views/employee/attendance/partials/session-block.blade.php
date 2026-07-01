@@ -48,7 +48,7 @@
 
     @if (! $session['check_in'] && ! $session['check_out'])
         <p class="mt-2 text-[11px] text-slate-500">
-            Check-in từ {{ $session['session_start']->format('H:i') }} · Miễn trừ {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút · Tự check-out lúc {{ $session['auto_checkout_at']->format('H:i') }}
+            Check-in từ {{ $session['session_start']->format('H:i') }} · Miễn trừ {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút · Check-out bắt buộc từ {{ $session['session_end']->format('H:i') }}
         </p>
     @endif
 
@@ -67,6 +67,11 @@
                     {{ $checkOutLabel }}
                 </button>
             </form>
+        @elseif ($session['check_in'] && ! $session['check_out'] && ! $session['can_check_out'])
+            <button type="button" disabled
+                    class="px-4 py-2 rounded-xl bg-slate-200 text-slate-500 text-xs font-semibold cursor-not-allowed">
+                Chưa đến giờ check-out ({{ $session['session_end']->format('H:i') }})
+            </button>
         @elseif (! $session['check_in'] && ! $session['can_check_in'])
             <button type="button" disabled
                     class="px-4 py-2 rounded-xl bg-slate-200 text-slate-500 text-xs font-semibold cursor-not-allowed">

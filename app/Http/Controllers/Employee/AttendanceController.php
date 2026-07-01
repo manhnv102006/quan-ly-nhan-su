@@ -31,8 +31,6 @@ class AttendanceController extends Controller
         $today = Carbon::today();
         $now = Carbon::now();
 
-        $this->attendanceService->processAutoCheckouts($employee, $now);
-
         $attendance = Attendance::where('employee_id', $employee->id)
             ->whereDate('attendance_date', $today)
             ->first();
