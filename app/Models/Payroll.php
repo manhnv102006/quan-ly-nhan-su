@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payroll extends Model
@@ -18,6 +17,8 @@ class Payroll extends Model
         'overtime_hours',
         'overtime_pay',
         'deduction',
+        'paid_leave_days',
+        'unpaid_leave_days',
         'total_salary',
         'status',
         'approved_by',

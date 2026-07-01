@@ -19,6 +19,21 @@ class AttendanceController extends Controller
         ]);
     }
 
+
+        $employees = \App\Models\Employee::select('full_name', 'employee_code')->get();
+
+        return view(
+            'admin.attendances.index',
+            compact(
+                'attendances',
+                'stats',
+                'search',
+                'status',
+                'date',
+                'employees'
+            )
+        );
+
     public function department(Request $request, Department $department): View
     {
         return view('admin.attendances.department', [
@@ -27,6 +42,7 @@ class AttendanceController extends Controller
             'scopeLabel' => $department->department_name,
             'showDepartmentColumn' => false,
         ]);
+
     }
 
     public function show(Attendance $attendance): View

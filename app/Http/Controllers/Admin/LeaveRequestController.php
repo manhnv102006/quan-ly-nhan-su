@@ -7,6 +7,9 @@ use App\Models\Department;
 use App\Models\LeaveRequest;
 use App\Support\DepartmentSummaryBuilder;
 use Illuminate\Http\Request;
+
+use Illuminate\Support\Facades\Auth;
+
 use Illuminate\View\View;
 
 class LeaveRequestController extends Controller
