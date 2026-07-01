@@ -27,4 +27,9 @@ class CandidateInterviewInvitationMail extends Mailable
     {
         return 'Thư mời phỏng vấn tại '.config('app.name');
     }
+
+    public function interviewTimeText(): string
+    {
+        return $this->interview->interview_date?->timezone(config('app.timezone'))->format('d/m/Y H:i') ?? '-';
+    }
 }
