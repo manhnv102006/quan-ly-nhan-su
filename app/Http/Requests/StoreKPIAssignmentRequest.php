@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\KPI;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -27,6 +29,26 @@ class StoreKPIAssignmentRequest extends FormRequest
             'manager_id' => [
                 'required',
                 'exists:users,id',
+                function ($attribute, $value, $fail) {
+                    $kpi = KPI::with('departments')->find($this->input('kpi_id'));
+                    if (! $kpi) {
+                        return;
+                    }
+
+                    $kpiDeptIds = $kpi->departments->pluck('id')->all();
+
+                    // KPI không gắn phòng ban nào -> cho phép mọi manager.
+                    if (empty($kpiDeptIds)) {
+                        return;
+                    }
+
+                    $manager = User::with('employee')->find($value);
+                    $managerDeptId = optional(optional($manager)->employee)->department_id;
+
+                    if (! $managerDeptId || ! in_array($managerDeptId, $kpiDeptIds)) {
+                        $fail('Manager được chọn không thuộc phòng ban áp dụng của KPI này.');
+                    }
+                },
             ],
 
             'target' => [

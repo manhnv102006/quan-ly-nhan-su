@@ -42,7 +42,13 @@ class AssignEmployeeKPIRequest extends FormRequest
             ],
             'target' => ['required', 'string', 'max:255'],
             'comment' => ['nullable', 'string', 'max:1000'],
-            'deadline' => ['required', 'date', 'after_or_equal:today'],
+            'deadline' => [
+                'required',
+                'date',
+                'after_or_equal:today',
+                // Không được vượt quá ngày kết thúc của KPI được giao cho Manager
+                'before_or_equal:' . optional($this->route('assignment')?->end_date)->format('Y-m-d'),
+            ],
         ];
     }
 
@@ -56,6 +62,8 @@ class AssignEmployeeKPIRequest extends FormRequest
             'comment.max' => 'Mô tả không được vượt quá 1000 ký tự.',
             'deadline.required' => 'Vui lòng nhập hạn chót cho nhân viên.',
             'deadline.after_or_equal' => 'Hạn chót phải từ hôm nay trở đi.',
+            'deadline.before_or_equal' => 'Hạn chót không được vượt quá ngày kết thúc của KPI ('
+                . optional($this->route('assignment')?->end_date)->format('d/m/Y') . ').',
         ];
     }
 }
