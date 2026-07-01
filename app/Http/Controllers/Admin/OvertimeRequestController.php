@@ -12,6 +12,7 @@ use App\Models\Employee;
 use App\Models\OvertimeRequest;
 use App\Services\OvertimeApprovalService;
 use App\Services\OvertimeRequestService;
+use App\Support\DepartmentSummaryBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -28,19 +29,58 @@ class OvertimeRequestController extends Controller
 
     public function index(): View
     {
-        $overtimeRequests = OvertimeRequest::with(['employee', 'approver'])
+        $data = $this->buildListData();
+
+        return view('admin.overtime-requests.index', [
+            ...$data,
+            'departmentSummaries' => DepartmentSummaryBuilder::forOvertime(),
+            'scopeLabel' => 'Toàn công ty',
+            'showDepartmentColumn' => true,
+            'selectedDepartment' => null,
+        ]);
+    }
+
+    public function department(Department $department): View
+    {
+        $this->authorize('viewAny', OvertimeRequest::class);
+
+        $data = $this->buildListData($department->id);
+
+        return view('admin.overtime-requests.department', [
+            ...$data,
+            'selectedDepartment' => $department,
+            'scopeLabel' => $department->department_name,
+            'showDepartmentColumn' => false,
+        ]);
+    }
+
+    /**
+     * @return array{
+     *     overtimeRequests: \Illuminate\Contracts\Pagination\LengthAwarePaginator,
+     *     stats: array<string, int>,
+     * }
+     */
+    private function buildListData(?int $departmentId = null): array
+    {
+        $scopedQuery = OvertimeRequest::query()
+            ->when($departmentId, function ($query) use ($departmentId) {
+                $query->whereHas('employee', fn ($employeeQuery) => $employeeQuery->where('department_id', $departmentId));
+            });
+
+        $overtimeRequests = (clone $scopedQuery)
+            ->with(['employee.department', 'approver'])
             ->latest()
             ->paginate(10);
 
         $stats = [
-            'total' => OvertimeRequest::count(),
-            'pending' => OvertimeRequest::where('status', OvertimeRequest::STATUS_PENDING)->count(),
-            'approved' => OvertimeRequest::where('status', OvertimeRequest::STATUS_APPROVED)->count(),
-            'rejected' => OvertimeRequest::where('status', OvertimeRequest::STATUS_REJECTED)->count(),
-            'completed' => OvertimeRequest::where('status', OvertimeRequest::STATUS_COMPLETED)->count(),
+            'total' => (clone $scopedQuery)->count(),
+            'pending' => (clone $scopedQuery)->where('status', OvertimeRequest::STATUS_PENDING)->count(),
+            'approved' => (clone $scopedQuery)->where('status', OvertimeRequest::STATUS_APPROVED)->count(),
+            'rejected' => (clone $scopedQuery)->where('status', OvertimeRequest::STATUS_REJECTED)->count(),
+            'completed' => (clone $scopedQuery)->where('status', OvertimeRequest::STATUS_COMPLETED)->count(),
         ];
 
-        return view('admin.overtime-requests.index', compact('overtimeRequests', 'stats'));
+        return compact('overtimeRequests', 'stats');
     }
 
     public function create(): View

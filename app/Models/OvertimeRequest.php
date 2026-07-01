@@ -123,7 +123,10 @@ class OvertimeRequest extends Model
             ->when(! empty($filters['work_date']), fn (Builder $q) => $q->whereDate('work_date', $filters['work_date']))
             ->when(! empty($filters['work_date_from']), fn (Builder $q) => $q->whereDate('work_date', '>=', $filters['work_date_from']))
             ->when(! empty($filters['work_date_to']), fn (Builder $q) => $q->whereDate('work_date', '<=', $filters['work_date_to']))
-            ->when(! empty($filters['employee_id']), fn (Builder $q) => $q->where('employee_id', $filters['employee_id']));
+            ->when(! empty($filters['employee_id']), fn (Builder $q) => $q->where('employee_id', $filters['employee_id']))
+            ->when(! empty($filters['department_id']), function (Builder $q) use ($filters) {
+                $q->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->where('department_id', $filters['department_id']));
+            });
     }
 
     public function statusLabel(): string
