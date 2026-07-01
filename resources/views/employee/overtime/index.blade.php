@@ -18,7 +18,7 @@
         <div class="flex items-center justify-between flex-wrap gap-4">
             <div>
                 <h1 class="text-xl font-bold text-slate-800">Đơn tăng ca của tôi</h1>
-                <p class="text-xs text-slate-500 mt-1">Gửi đơn → chờ duyệt → check-out → hệ thống ghi nhận giờ OT → tính vào bảng lương.</p>
+                <p class="text-xs text-slate-500 mt-1">Gửi đơn → chờ duyệt → chấm công đúng khung giờ OT → tính vào bảng lương.</p>
             </div>
             <a href="{{ route('employee.overtime-requests.create') }}"
                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-semibold shadow-md shadow-amber-500/20 hover:bg-amber-700 transition">
@@ -52,7 +52,7 @@
                                     {{ $start->format('H:i') }} → {{ $end->format('H:i') }}
                                 </td>
                                 <td class="px-6 py-4 text-center text-sm font-bold text-slate-800">
-                                    {{ number_format((float) $ot->total_hours, 1) }}h
+                                    {{ number_format(abs((float) $ot->total_hours), 1) }}h
                                 </td>
                                 <td class="px-6 py-4 text-xs text-slate-500 max-w-[220px] truncate" title="{{ $ot->reason }}">
                                     {{ $ot->reason }}
