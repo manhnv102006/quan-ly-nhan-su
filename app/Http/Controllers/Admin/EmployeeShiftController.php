@@ -8,11 +8,17 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmployeeShift;
 use App\Models\Shift;
+use App\Services\EmployeeShiftAssignmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class EmployeeShiftController extends Controller
 {
+    public function __construct(
+        private readonly EmployeeShiftAssignmentService $assignmentService,
+    ) {
+    }
+
     public function index(): View
     {
         $employeeShifts = EmployeeShift::with([
@@ -65,28 +71,28 @@ class EmployeeShiftController extends Controller
                 ->withErrors(['assignment_scope' => 'Không tìm thấy nhân viên phù hợp để gán ca.']);
         }
 
-        foreach ($employeeIds as $employeeId) {
-            EmployeeShift::updateOrCreate(
-                [
-                    'employee_id' => $employeeId,
-                    'work_date' => $validated['work_date'],
-                ],
-                [
-                    'shift_id' => $validated['shift_id'],
-                ],
-            );
-        }
+        $assignedCount = $this->assignmentService->assign($validated, $employeeIds);
+        $dayCount = $this->assignmentService->countDates($validated);
+        $employeeCount = count($employeeIds);
 
-        $message = match ($validated['assignment_scope']) {
-            'employee' => 'Đã gán ca làm cho nhân viên.',
-            'department' => 'Đã gán ca cho '.count($employeeIds).' nhân viên trong phòng ban.',
-            'company' => 'Đã gán ca cho '.count($employeeIds).' nhân viên toàn công ty.',
-            default => 'Đã gán ca làm.',
+        $scopeLabel = match ($validated['assignment_scope']) {
+            'employee' => '1 nhân viên',
+            'department' => $employeeCount.' nhân viên trong phòng ban',
+            'company' => $employeeCount.' nhân viên toàn công ty',
+            default => $employeeCount.' nhân viên',
+        };
+
+        $periodLabel = match ($validated['period_mode']) {
+            'single' => '1 ngày',
+            'month' => 'cả tháng ('.$dayCount.' ngày)',
+            'year' => 'cả năm ('.$dayCount.' ngày)',
+            'range' => $dayCount.' ngày',
+            default => $dayCount.' ngày',
         };
 
         return redirect()
             ->route('admin.employee-shifts.index')
-            ->with('success', $message);
+            ->with('success', "Đã gán ca cho {$scopeLabel} trong {$periodLabel} ({$assignedCount} lịch ca).");
     }
 
     /**

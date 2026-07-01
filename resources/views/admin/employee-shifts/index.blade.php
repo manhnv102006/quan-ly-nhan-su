@@ -4,7 +4,7 @@
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-800">Gán ca làm</h2>
-                <p class="text-sm text-slate-500 mt-1">Danh sách ca đã gán cho nhân viên</p>
+                <p class="text-sm text-slate-500 mt-1">Danh sách ca đã gán — có thể gán hàng loạt theo tháng/năm tại mục Gán ca.</p>
             </div>
             <a href="{{ route('admin.employee-shifts.create') }}"
                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition">
