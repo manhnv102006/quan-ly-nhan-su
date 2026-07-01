@@ -144,6 +144,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::patch('/overtime-requests/{overtime_request}/reject', [OvertimeRequestController::class, 'reject'])->name('overtime-requests.reject');
     Route::patch('/overtime-requests/{overtime_request}/status', [OvertimeRequestController::class, 'updateStatus'])->name('overtime-requests.status');
     Route::get('/attendance-reports', [AttendanceReportController::class, 'index'])->name('attendance-reports.index');
+    Route::get('/attendance-reports/departments/{department}', [AttendanceReportController::class, 'department'])->name('attendance-reports.department');
 
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
     Route::post('/payroll-periods/{payrollPeriod}/calculate', [PayrollPeriodController::class, 'calculate'])->name('payroll-periods.calculate');
