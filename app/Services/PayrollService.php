@@ -184,4 +184,27 @@ class PayrollService
 
         return 'success';
     }
+
+    /**
+     * Tính lại lương: Xóa các bản ghi lương hiện tại của kỳ và tính lại từ đầu.
+     * Chỉ áp dụng khi kỳ lương đang ở trạng thái 'calculated'.
+     *
+     * @param PayrollPeriod $period
+     * @return string
+     */
+    public function recalculatePayrollForPeriod(PayrollPeriod $period): string
+    {
+        if ($period->status !== 'calculated') {
+            return 'invalid_status';
+        }
+
+        // Xóa tất cả các bản ghi lương của kỳ này
+        Payroll::where('payroll_period_id', $period->id)->delete();
+
+        // Đặt lại trạng thái kỳ lương về open để tính lại
+        $period->update(['status' => 'open']);
+
+        // Gọi lại hàm tính lương ban đầu
+        return $this->calculatePayrollForPeriod($period);
+    }
 }
