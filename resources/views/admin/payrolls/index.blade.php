@@ -106,6 +106,15 @@
                     </thead>
                     <tbody>
                         @forelse ($payrolls as $payroll)
+                            @php
+                                $lateDays = $payroll->employee?->attendances()
+                                    ->whereBetween('attendance_date', [
+                                        $payroll->payrollPeriod?->start_date,
+                                        $payroll->payrollPeriod?->end_date
+                                    ])
+                                    ->where('status', 'late')
+                                    ->count() ?? 0;
+                            @endphp
                             <tr class="border-t border-slate-100 hover:bg-slate-50 transition">
                                 <td class="px-6 py-4 font-medium text-slate-700">
                                     {{ $payroll->employee?->employee_code ?: '—' }}
@@ -176,6 +185,9 @@
                                                     'overtime_hours' => $payroll->overtime_hours,
                                                     'overtime_pay' => number_format($payroll->overtime_pay, 0, ',', '.'),
                                                     'deduction' => number_format($payroll->deduction, 0, ',', '.'),
+                                                    'late_days' => $lateDays,
+                                                    'late_fine' => number_format($lateDays * 50000, 0, ',', '.'),
+                                                    'unpaid_leave_fine' => number_format($payroll->unpaid_leave_days * 300000, 0, ',', '.'),
                                                     'total_salary' => number_format($payroll->total_salary, 0, ',', '.'),
                                                     'paid_salary' => in_array($payroll->status, ['paid', 'closed']) ? number_format($payroll->total_salary, 0, ',', '.') : '0',
                                                     'remaining_salary' => !in_array($payroll->status, ['paid', 'closed']) ? number_format($payroll->total_salary, 0, ',', '.') : '0',
@@ -342,9 +354,17 @@
                             <span class="text-slate-700 font-bold">Tổng thu nhập:</span>
                             <span class="font-extrabold text-slate-800" id="modalTotalIncome">11,500,000 ₫</span>
                         </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-slate-600 font-medium">Giảm trừ:</span>
-                            <span class="font-bold text-rose-500" id="modalDeduction">-450,000 ₫</span>
+                        <div class="flex justify-between items-center text-rose-500">
+                            <span class="font-medium" id="modalLateLabel">Phạt đi muộn (0 lần):</span>
+                            <span class="font-bold" id="modalLateFine">-0 ₫</span>
+                        </div>
+                        <div class="flex justify-between items-center text-rose-500">
+                            <span class="font-medium" id="modalLeaveLabel">Phạt nghỉ quá phép/không phép (0 ngày):</span>
+                            <span class="font-bold" id="modalLeaveFine">-0 ₫</span>
+                        </div>
+                        <div class="flex justify-between items-center font-bold text-rose-600 border-t border-slate-200/60 pt-2">
+                            <span>Tổng giảm trừ:</span>
+                            <span id="modalDeduction">-0 ₫</span>
                         </div>
                         <div class="border-t border-slate-200/60 my-2"></div>
                         <div class="flex justify-between items-center">
@@ -430,6 +450,10 @@
             let totalIncome = basic + allowance + bonus + overtime;
             
             document.getElementById('modalTotalIncome').innerText = totalIncome.toLocaleString('vi-VN') + ' ₫';
+            document.getElementById('modalLateLabel').innerText = 'Phạt đi muộn (' + data.late_days + ' lần):';
+            document.getElementById('modalLateFine').innerText = '-' + data.late_fine + ' ₫';
+            document.getElementById('modalLeaveLabel').innerText = 'Phạt nghỉ quá phép (' + data.unpaid_leave_days + ' ngày):';
+            document.getElementById('modalLeaveFine').innerText = '-' + data.unpaid_leave_fine + ' ₫';
             document.getElementById('modalDeduction').innerText = '-' + data.deduction + ' ₫';
             document.getElementById('modalTotalSalary').innerText = data.total_salary + ' ₫';
             document.getElementById('modalPaidSalary').innerText = data.paid_salary + ' ₫';
