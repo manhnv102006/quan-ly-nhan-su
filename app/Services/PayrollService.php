@@ -25,18 +25,28 @@ class PayrollService
      * @param PayrollPeriod $period
      * @return string
      */
-    public function calculatePayrollForPeriod(PayrollPeriod $period): string
+    public function calculatePayrollForPeriod(PayrollPeriod $period, ?int $departmentId = null): string
     {
-        // 1. Kiểm tra xem kỳ lương này đã được tính trước đó chưa
-        $exists = Payroll::where('payroll_period_id', $period->id)->exists();
+        // 1. Kiểm tra xem kỳ lương này của phòng ban đã được tính trước đó chưa
+        $existsQuery = Payroll::where('payroll_period_id', $period->id);
+        if ($departmentId) {
+            $existsQuery->whereHas('employee', fn($q) => $q->where('department_id', $departmentId));
+        }
+        $exists = $existsQuery->exists();
         if ($exists) {
             return 'already_exists';
         }
 
-        // 2. Lấy danh sách toàn bộ nhân viên đang hoạt động
-        $employees = Employee::with(['position', 'contracts' => function ($query) {
+        // 2. Lấy danh sách nhân viên đang hoạt động (lọc theo phòng ban nếu có)
+        $employeesQuery = Employee::with(['position', 'contracts' => function ($query) {
             $query->where('status', 'active');
-        }])->where('status', 'active')->get();
+        }])->where('status', 'active');
+
+        if ($departmentId) {
+            $employeesQuery->where('department_id', $departmentId);
+        }
+
+        $employees = $employeesQuery->get();
 
         if ($employees->isEmpty()) {
             return 'no_employees';
@@ -174,6 +184,7 @@ class PayrollService
                 'paid_leave_days' => $paidLeaveDays,
                 'unpaid_leave_days' => $unpaidLeaveDays,
                 'total_salary' => $totalSalary,
+                'status' => 'calculated',
             ]);
         }
 
@@ -192,19 +203,27 @@ class PayrollService
      * @param PayrollPeriod $period
      * @return string
      */
-    public function recalculatePayrollForPeriod(PayrollPeriod $period): string
+    public function recalculatePayrollForPeriod(PayrollPeriod $period, ?int $departmentId = null): string
     {
-        if ($period->status !== 'calculated') {
+        // Cho phép tính lại nếu ở trạng thái open hoặc calculated
+        if (!in_array($period->status, ['open', 'calculated'])) {
             return 'invalid_status';
         }
 
-        // Xóa tất cả các bản ghi lương của kỳ này
-        Payroll::where('payroll_period_id', $period->id)->delete();
+        // Xóa tất cả các bản ghi lương của kỳ này (lọc theo phòng ban nếu có)
+        $deleteQuery = Payroll::where('payroll_period_id', $period->id);
+        if ($departmentId) {
+            $deleteQuery->whereHas('employee', fn($q) => $q->where('department_id', $departmentId));
+        }
+        $deleteQuery->delete();
 
-        // Đặt lại trạng thái kỳ lương về open để tính lại
-        $period->update(['status' => 'open']);
+        // Nếu không còn bất kỳ bảng lương nào trong kỳ này, đặt lại status về open
+        $remainingPayrollsExists = Payroll::where('payroll_period_id', $period->id)->exists();
+        if (!$remainingPayrollsExists) {
+            $period->update(['status' => 'open']);
+        }
 
         // Gọi lại hàm tính lương ban đầu
-        return $this->calculatePayrollForPeriod($period);
+        return $this->calculatePayrollForPeriod($period, $departmentId);
     }
 }
