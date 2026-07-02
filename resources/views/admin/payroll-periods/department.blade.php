@@ -19,7 +19,7 @@
             </div>
 
             <div class="flex items-center gap-3">
-                @if ($payrollPeriod->status === 'open')
+                @if ($departmentStatus === 'open')
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-sky-100 text-sky-700 border border-sky-200">
                         🔵 Chưa tính lương (Open)
                     </span>
@@ -30,7 +30,7 @@
                             ⚡ Tính lương tự động
                         </button>
                     </form>
-                @elseif ($payrollPeriod->status === 'calculated')
+                @elseif ($departmentStatus === 'calculated')
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-amber-100 text-amber-700 border border-amber-200">
                         🟡 Đã tính lương (Calculated)
                     </span>
@@ -48,7 +48,7 @@
                             ✅ Duyệt lương phòng ban
                         </button>
                     </form>
-                @elseif ($payrollPeriod->status === 'approved')
+                @elseif ($departmentStatus === 'approved')
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-violet-100 text-violet-700 border border-violet-200">
                         🟣 Đã duyệt (Approved)
                     </span>
@@ -60,7 +60,7 @@
                             💰 Chi trả lương phòng ban
                         </button>
                     </form>
-                @elseif ($payrollPeriod->status === 'paid')
+                @elseif ($departmentStatus === 'paid')
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
                         🟢 Đã chi trả (Paid)
                     </span>
