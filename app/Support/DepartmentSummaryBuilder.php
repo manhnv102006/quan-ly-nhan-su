@@ -115,6 +115,13 @@ class DepartmentSummaryBuilder
                 'stats' => [
                     'employee_count' => (clone $query)->count(),
                     'total_salary' => (clone $query)->sum('total_salary'),
+                    'status_label' => match ($period->status) {
+                        'open' => 'Tạm tính',
+                        'calculated' => 'Đã tính',
+                        'approved' => 'Đã duyệt',
+                        'paid' => 'Đã chi trả',
+                        default => 'Đã đóng',
+                    },
                 ],
             ];
         });

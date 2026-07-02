@@ -20,6 +20,7 @@ class PayrollPeriodController extends Controller
     public function index(Request $request): View
     {
         $periods = PayrollPeriod::query()
+            ->withSum('payrolls', 'total_salary')
             ->orderBy('year', 'desc')
             ->orderBy('month', 'asc')
             ->paginate(10)
@@ -178,89 +179,149 @@ class PayrollPeriodController extends Controller
             ->with('success', 'Xóa kỳ lương thành công.');
     }
 
-    public function calculate(PayrollPeriod $payrollPeriod, PayrollService $payrollService): RedirectResponse
+    public function calculate(Request $request, PayrollPeriod $payrollPeriod, PayrollService $payrollService): RedirectResponse
     {
         if (!$payrollPeriod->isOpen()) {
             return redirect()->back()->with('error', 'Kỳ lương phải ở trạng thái mở mới có thể tính lương.');
         }
 
-        $result = $payrollService->calculatePayrollForPeriod($payrollPeriod);
+        $departmentId = $request->input('department_id');
+        $result = $payrollService->calculatePayrollForPeriod($payrollPeriod, $departmentId);
 
         if ($result === 'already_exists') {
-            return redirect()->back()->with('error', 'Kỳ lương này đã được tính lương trước đó.');
+            return redirect()->back()->with('error', 'Kỳ lương này (hoặc phòng ban này) đã được tính lương trước đó.');
         }
 
         if ($result === 'no_employees') {
-            return redirect()->back()->with('error', 'Không có nhân viên hoạt động nào trong kỳ này.');
+            return redirect()->back()->with('error', 'Không có nhân viên hoạt động nào.');
         }
 
-        return redirect()->back()->with('success', 'Tính lương tự động cho toàn bộ nhân viên thành công.');
+        return redirect()->back()->with('success', 'Tính lương tự động thành công.');
     }
 
-    public function recalculate(PayrollPeriod $payrollPeriod, PayrollService $payrollService): RedirectResponse
+    public function recalculate(Request $request, PayrollPeriod $payrollPeriod, PayrollService $payrollService): RedirectResponse
     {
-        if (!$payrollPeriod->isCalculated()) {
-            return redirect()->back()->with('error', 'Chỉ có thể tính lại lương khi kỳ lương đang ở trạng thái đã tính (Calculated).');
-        }
-
-        $result = $payrollService->recalculatePayrollForPeriod($payrollPeriod);
+        $departmentId = $request->input('department_id');
+        $result = $payrollService->recalculatePayrollForPeriod($payrollPeriod, $departmentId);
 
         if ($result === 'invalid_status') {
             return redirect()->back()->with('error', 'Trạng thái kỳ lương không hợp lệ để tính lại.');
         }
 
         if ($result === 'no_employees') {
-            return redirect()->back()->with('error', 'Không có nhân viên hoạt động nào trong kỳ này.');
+            return redirect()->back()->with('error', 'Không có nhân viên hoạt động nào.');
         }
 
-        return redirect()->back()->with('success', 'Đã tính lại lương cho toàn bộ nhân viên thành công.');
+        return redirect()->back()->with('success', 'Đã tính lại lương thành công.');
     }
 
-    public function approve(PayrollPeriod $payrollPeriod): RedirectResponse
+    public function approve(Request $request, PayrollPeriod $payrollPeriod): RedirectResponse
     {
-        if (!$payrollPeriod->isCalculated()) {
-            return redirect()->back()->with('error', 'Chỉ có thể duyệt kỳ lương sau khi đã tính lương.');
+        $departmentId = $request->input('department_id');
+        
+        $query = $payrollPeriod->payrolls();
+        if ($departmentId) {
+            $query->whereHas('employee', fn($q) => $q->where('department_id', $departmentId));
         }
 
-        $payrollPeriod->update([
+        if ((clone $query)->count() === 0) {
+            return redirect()->back()->with('error', 'Chưa có bảng lương nào được tính để duyệt.');
+        }
+
+        $query->update([
             'status' => 'approved',
             'approved_by' => auth()->id() ?? 1,
             'approved_at' => now(),
         ]);
 
-        $this->autoNotifications->payrollApproved($payrollPeriod);
+        // Cập nhật trạng thái kỳ lương chung thành 'approved' nếu tất cả đã được duyệt
+        $hasUnapproved = $payrollPeriod->payrolls()->where(function($q) {
+            $q->whereNull('status')->orWhere('status', '!=', 'approved');
+        })->exists();
 
-        return redirect()->back()->with('success', 'Đã duyệt toàn bộ kỳ lương thành công.');
-    }
-
-    public function pay(PayrollPeriod $payrollPeriod): RedirectResponse
-    {
-        if (!$payrollPeriod->isApproved()) {
-            return redirect()->back()->with('error', 'Chỉ có thể chi trả kỳ lương sau khi đã được phê duyệt.');
+        if (!$hasUnapproved) {
+            $payrollPeriod->update([
+                'status' => 'approved',
+                'approved_by' => auth()->id() ?? 1,
+                'approved_at' => now(),
+            ]);
+            $this->autoNotifications->payrollApproved($payrollPeriod);
         }
 
-        $payrollPeriod->update([
+        return redirect()->back()->with('success', 'Đã duyệt bảng lương thành công.');
+    }
+
+    public function pay(Request $request, PayrollPeriod $payrollPeriod): RedirectResponse
+    {
+        $departmentId = $request->input('department_id');
+        
+        $query = $payrollPeriod->payrolls();
+        if ($departmentId) {
+            $query->whereHas('employee', fn($q) => $q->where('department_id', $departmentId));
+        }
+
+        if ((clone $query)->count() === 0) {
+            return redirect()->back()->with('error', 'Chưa có bảng lương nào.');
+        }
+
+        // Chỉ cho phép chi trả khi tất cả các dòng của bộ phận này đã được duyệt
+        $hasUnapproved = (clone $query)->where(fn($q) => $q->whereNull('status')->orWhere('status', '!=', 'approved'))->exists();
+        if ($hasUnapproved) {
+            return redirect()->back()->with('error', 'Chỉ có thể chi trả sau khi bảng lương đã được duyệt.');
+        }
+
+        $query->update([
             'status' => 'paid',
             'paid_by' => auth()->id() ?? 1,
             'paid_at' => now(),
         ]);
 
-        $this->autoNotifications->payrollPaid($payrollPeriod);
+        // Cập nhật trạng thái kỳ lương chung thành 'paid' nếu tất cả đã được chi trả
+        $hasUnpaid = $payrollPeriod->payrolls()->where('status', '!=', 'paid')->exists();
+        if (!$hasUnpaid) {
+            $payrollPeriod->update([
+                'status' => 'paid',
+                'paid_by' => auth()->id() ?? 1,
+                'paid_at' => now(),
+            ]);
+            $this->autoNotifications->payrollPaid($payrollPeriod);
+        }
 
-        return redirect()->back()->with('success', 'Đã thực hiện chi trả lương cho toàn bộ nhân viên.');
+        return redirect()->back()->with('success', 'Đã chi trả lương thành công.');
     }
 
-    public function close(PayrollPeriod $payrollPeriod): RedirectResponse
+    public function close(Request $request, PayrollPeriod $payrollPeriod): RedirectResponse
     {
-        if (!$payrollPeriod->isPaid()) {
+        $departmentId = $request->input('department_id');
+        
+        $query = $payrollPeriod->payrolls();
+        if ($departmentId) {
+            $query->whereHas('employee', fn($q) => $q->where('department_id', $departmentId));
+        }
+
+        if ((clone $query)->count() === 0) {
+            return redirect()->back()->with('error', 'Chưa có bảng lương nào.');
+        }
+
+        // Chỉ cho phép đóng khi tất cả các dòng của bộ phận này đã được chi trả
+        $hasUnpaid = (clone $query)->where('status', '!=', 'paid')->exists();
+        if ($hasUnpaid) {
             return redirect()->back()->with('error', 'Chỉ có thể đóng kỳ lương sau khi đã chi trả lương.');
         }
 
-        $payrollPeriod->update([
+        $query->update([
             'status' => 'closed',
         ]);
 
-        return redirect()->back()->with('success', 'Kỳ lương đã được đóng thành công.');
+        // Cập nhật trạng thái kỳ lương chung thành 'closed' nếu tất cả đã được đóng
+        $hasUnclosed = $payrollPeriod->payrolls()->where('status', '!=', 'closed')->exists();
+        if (!$hasUnclosed) {
+            $payrollPeriod->update([
+                'status' => 'closed',
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Đã đóng bảng lương thành công.');
     }
 }
 

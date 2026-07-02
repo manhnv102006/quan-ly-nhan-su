@@ -97,11 +97,12 @@
                 'departmentSummaries' => $departmentSummaries,
                 'routeName' => 'admin.payroll-periods.department',
                 'routeParams' => ['payrollPeriod' => $payrollPeriod->id],
-                'statLabels' => ['NV nhận lương', 'Tổng lương'],
-                'statKeys' => ['employee_count', 'total_salary'],
-                'statTones' => ['slate', 'violet'],
+                'statLabels' => ['Tổng số nhân viên', 'Tổng số lương', 'Trạng thái'],
+                'statKeys' => ['employee_count', 'total_salary', 'status_label'],
+                'statTones' => ['slate', 'violet', 'sky'],
                 'formatters' => [
-                    'total_salary' => fn($val) => number_format($val, 0, ',', '.') . ' ₫'
+                    'total_salary' => fn($val) => number_format($val, 0, ',', '.') . ' ₫',
+                    'status_label' => fn($val) => $val
                 ]
             ])
         </div>
