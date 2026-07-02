@@ -161,7 +161,27 @@ class PayrollPeriodController extends Controller
             ->latest()
             ->paginate(10);
 
-        return view('admin.payroll-periods.department', compact('payrollPeriod', 'department', 'payrolls'));
+        // Xác định trạng thái của riêng phòng ban này
+        $deptPayrolls = $payrollPeriod->payrolls()
+            ->whereHas('employee', fn($q) => $q->where('department_id', $department->id))
+            ->get();
+
+        if ($deptPayrolls->isEmpty()) {
+            $departmentStatus = 'open';
+        } else {
+            $statuses = $deptPayrolls->pluck('status')->unique();
+            if ($statuses->contains('closed')) {
+                $departmentStatus = 'closed';
+            } elseif ($statuses->contains('paid')) {
+                $departmentStatus = 'paid';
+            } elseif ($statuses->contains('approved')) {
+                $departmentStatus = 'approved';
+            } else {
+                $departmentStatus = 'calculated';
+            }
+        }
+
+        return view('admin.payroll-periods.department', compact('payrollPeriod', 'department', 'payrolls', 'departmentStatus'));
     }
 
     public function destroy(PayrollPeriod $payrollPeriod): RedirectResponse
