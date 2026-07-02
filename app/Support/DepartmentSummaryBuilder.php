@@ -101,6 +101,26 @@ class DepartmentSummaryBuilder
     }
 
     /**
+     * @return Collection<int, array{department: Department, stats: array{total_salary: float, employee_count: int}}>
+     */
+    public static function forPayrollPeriod(\App\Models\PayrollPeriod $period): Collection
+    {
+        return self::departments()->map(function (Department $department) use ($period) {
+            $query = \App\Models\Payroll::query()
+                ->where('payroll_period_id', $period->id)
+                ->whereHas('employee', fn ($employeeQuery) => $employeeQuery->where('department_id', $department->id));
+
+            return [
+                'department' => $department,
+                'stats' => [
+                    'employee_count' => (clone $query)->count(),
+                    'total_salary' => (clone $query)->sum('total_salary'),
+                ],
+            ];
+        });
+    }
+
+    /**
      * @param  list<string>  $statuses
      * @return array{total: int, pending: int, approved: int}
      */
