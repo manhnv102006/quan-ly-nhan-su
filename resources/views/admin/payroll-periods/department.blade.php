@@ -37,6 +37,7 @@
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Lương cơ bản</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Phụ cấp</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Thưởng (KPI)</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Tăng ca</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Nghỉ phép</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Khấu trừ</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Thực lĩnh</th>
@@ -62,6 +63,15 @@
                                     @if($payroll->bonus > 0)+@endif{{ number_format($payroll->bonus, 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4 text-slate-600">
+                                    @if($payroll->overtime_hours > 0)
+                                        <span class="text-sky-600 font-semibold">{{ $payroll->overtime_hours }}h</span>
+                                        <span class="text-slate-400">→</span>
+                                        <span class="text-emerald-600">+{{ number_format($payroll->overtime_pay, 0, ',', '.') }} ₫</span>
+                                    @else
+                                        <span class="text-slate-400">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-slate-600">
                                     <span class="text-emerald-600 font-semibold" title="Nghỉ phép có phép (hưởng lương)">{{ $payroll->paid_leave_days }}P</span> / 
                                     <span class="text-rose-500 font-semibold" title="Nghỉ phép không lương / vắng mặt">{{ $payroll->unpaid_leave_days }}KP</span>
                                 </td>
@@ -83,7 +93,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="px-6 py-10 text-center text-slate-500">
+                                <td colspan="10" class="px-6 py-10 text-center text-slate-500">
                                     Kỳ lương này chưa được tính hoặc chưa có nhân sự nào trong phòng ban này được lập bảng lương.
                                 </td>
                             </tr>
