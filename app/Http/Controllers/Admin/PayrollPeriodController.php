@@ -197,6 +197,25 @@ class PayrollPeriodController extends Controller
         return redirect()->back()->with('success', 'Tính lương tự động cho toàn bộ nhân viên thành công.');
     }
 
+    public function recalculate(PayrollPeriod $payrollPeriod, PayrollService $payrollService): RedirectResponse
+    {
+        if (!$payrollPeriod->isCalculated()) {
+            return redirect()->back()->with('error', 'Chỉ có thể tính lại lương khi kỳ lương đang ở trạng thái đã tính (Calculated).');
+        }
+
+        $result = $payrollService->recalculatePayrollForPeriod($payrollPeriod);
+
+        if ($result === 'invalid_status') {
+            return redirect()->back()->with('error', 'Trạng thái kỳ lương không hợp lệ để tính lại.');
+        }
+
+        if ($result === 'no_employees') {
+            return redirect()->back()->with('error', 'Không có nhân viên hoạt động nào trong kỳ này.');
+        }
+
+        return redirect()->back()->with('success', 'Đã tính lại lương cho toàn bộ nhân viên thành công.');
+    }
+
     public function approve(PayrollPeriod $payrollPeriod): RedirectResponse
     {
         if (!$payrollPeriod->isCalculated()) {

@@ -33,6 +33,12 @@
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-amber-100 text-amber-700 border border-amber-200">
                         🟡 Đã tính lương (Calculated)
                     </span>
+                    <form action="{{ route('admin.payroll-periods.recalculate', $payrollPeriod) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn tính lại lương? Toàn bộ bảng lương hiện tại của kỳ này sẽ bị xóa và tính lại từ đầu.')">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-lg transition">
+                            🔄 Tính lại
+                        </button>
+                    </form>
                     <form action="{{ route('admin.payroll-periods.approve', $payrollPeriod) }}" method="POST">
                         @csrf
                         <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg transition">
