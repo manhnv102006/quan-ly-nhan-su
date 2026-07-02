@@ -254,6 +254,8 @@ class PayrollPeriodController extends Controller
             return redirect()->back()->with('error', 'Không có nhân viên hoạt động nào.');
         }
 
+        $this->syncPeriodStatus($payrollPeriod);
+
         return redirect()->back()->with('success', 'Tính lương tự động thành công.');
     }
 
@@ -269,6 +271,8 @@ class PayrollPeriodController extends Controller
         if ($result === 'no_employees') {
             return redirect()->back()->with('error', 'Không có nhân viên hoạt động nào.');
         }
+
+        $this->syncPeriodStatus($payrollPeriod);
 
         return redirect()->back()->with('success', 'Đã tính lại lương thành công.');
     }
@@ -292,19 +296,7 @@ class PayrollPeriodController extends Controller
             'approved_at' => now(),
         ]);
 
-        // Cập nhật trạng thái kỳ lương chung thành 'approved' nếu tất cả đã được duyệt
-        $hasUnapproved = $payrollPeriod->payrolls()->where(function($q) {
-            $q->whereNull('status')->orWhere('status', '!=', 'approved');
-        })->exists();
-
-        if (!$hasUnapproved) {
-            $payrollPeriod->update([
-                'status' => 'approved',
-                'approved_by' => auth()->id() ?? 1,
-                'approved_at' => now(),
-            ]);
-            $this->autoNotifications->payrollApproved($payrollPeriod);
-        }
+        $this->syncPeriodStatus($payrollPeriod);
 
         return redirect()->back()->with('success', 'Đã duyệt bảng lương thành công.');
     }
@@ -334,16 +326,7 @@ class PayrollPeriodController extends Controller
             'paid_at' => now(),
         ]);
 
-        // Cập nhật trạng thái kỳ lương chung thành 'paid' nếu tất cả đã được chi trả
-        $hasUnpaid = $payrollPeriod->payrolls()->where('status', '!=', 'paid')->exists();
-        if (!$hasUnpaid) {
-            $payrollPeriod->update([
-                'status' => 'paid',
-                'paid_by' => auth()->id() ?? 1,
-                'paid_at' => now(),
-            ]);
-            $this->autoNotifications->payrollPaid($payrollPeriod);
-        }
+        $this->syncPeriodStatus($payrollPeriod);
 
         return redirect()->back()->with('success', 'Đã chi trả lương thành công.');
     }
@@ -371,15 +354,54 @@ class PayrollPeriodController extends Controller
             'status' => 'closed',
         ]);
 
-        // Cập nhật trạng thái kỳ lương chung thành 'closed' nếu tất cả đã được đóng
-        $hasUnclosed = $payrollPeriod->payrolls()->where('status', '!=', 'closed')->exists();
-        if (!$hasUnclosed) {
-            $payrollPeriod->update([
-                'status' => 'closed',
-            ]);
-        }
+        $this->syncPeriodStatus($payrollPeriod);
 
         return redirect()->back()->with('success', 'Đã đóng bảng lương thành công.');
+    }
+
+    private function syncPeriodStatus(PayrollPeriod $payrollPeriod): void
+    {
+        $totalActiveDepartmentsCount = \App\Models\Department::where('status', 'active')
+            ->whereHas('employees', fn($q) => $q->where('status', 'active'))
+            ->count();
+
+        $payrolls = $payrollPeriod->payrolls()
+            ->join('employees', 'payrolls.employee_id', '=', 'employees.id')
+            ->where('employees.status', 'active')
+            ->get(['employees.department_id', 'payrolls.status']);
+
+        $calculatedDeptsCount = $payrolls->pluck('department_id')->unique()->count();
+        $allCalculated = ($totalActiveDepartmentsCount > 0 && $calculatedDeptsCount >= $totalActiveDepartmentsCount);
+
+        if ($payrolls->isEmpty()) {
+            $newStatus = 'open';
+        } else {
+            $statuses = $payrolls->pluck('status')->toArray();
+
+            $allClosed = $allCalculated && !in_array('calculated', $statuses) && !in_array('approved', $statuses) && !in_array('paid', $statuses);
+            $allPaid = $allCalculated && !in_array('calculated', $statuses) && !in_array('approved', $statuses);
+            $allApproved = $allCalculated && !in_array('calculated', $statuses);
+
+            if ($allClosed) {
+                $newStatus = 'closed';
+            } elseif ($allPaid) {
+                $newStatus = 'paid';
+            } elseif ($allApproved) {
+                $newStatus = 'approved';
+            } else {
+                $newStatus = 'calculated';
+            }
+        }
+
+        if ($payrollPeriod->status !== $newStatus) {
+            $payrollPeriod->update(['status' => $newStatus]);
+            
+            if ($newStatus === 'approved') {
+                $this->autoNotifications->payrollApproved($payrollPeriod);
+            } elseif ($newStatus === 'paid') {
+                $this->autoNotifications->payrollPaid($payrollPeriod);
+            }
+        }
     }
 }
 
