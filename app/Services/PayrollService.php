@@ -56,8 +56,15 @@ class PayrollService
                 $basicSalary = $employee->position->base_salary;
             }
 
-            // B. Phụ cấp: Mặc định mỗi nhân viên được nhận 1,5 triệu VNĐ
-            $allowance = 1500000;
+            // B. Phụ cấp: Tính theo chức vụ (quyền càng cao phụ cấp càng lớn)
+            $allowance = match ($employee->position?->position_name) {
+                'Giám đốc' => 10000000,
+                'Trưởng phòng' => 5000000,
+                'Phó phòng' => 3000000,
+                'Nhân viên' => 1500000,
+                'Thực tập sinh' => 500000,
+                default => 1000000,
+            };
 
             // C. Khấu trừ: Đi trễ (50.000 VND / lần) + Vắng mặt vượt phép (300.000 VND / ngày)
             $lateDays = $employee->attendances()
@@ -124,8 +131,7 @@ class PayrollService
 
 
 
-            // E. Thực lĩnh = Lương cơ bản + Phụ cấp + Thưởng KPI - Khấu trừ
-            $totalSalary = $basicSalary + $allowance + $bonus - $deduction;
+
 
             // F. Lương tăng ca: tổng giờ OT đã hoàn thành trong kỳ * hệ số 1.5
             $overtimeHours = (float) OvertimeRequest::query()
