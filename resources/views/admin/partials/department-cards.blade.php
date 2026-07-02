@@ -5,6 +5,7 @@
     'statLabels' => ['Tổng đơn', 'Chờ duyệt', 'Đã duyệt'],
     'statKeys' => ['total', 'pending', 'approved'],
     'statTones' => ['slate', 'amber', 'emerald'],
+    'formatters' => [],
 ])
 
 <section class="space-y-4">
@@ -50,6 +51,7 @@
                                     'emerald' => 'bg-emerald-50',
                                     'rose' => 'bg-rose-50',
                                     'sky' => 'bg-sky-50',
+                                    'violet' => 'bg-violet-50',
                                     default => 'bg-slate-50',
                                 };
                                 $textClass = match ($tone) {
@@ -57,11 +59,16 @@
                                     'emerald' => 'text-emerald-600',
                                     'rose' => 'text-rose-600',
                                     'sky' => 'text-sky-600',
+                                    'violet' => 'text-violet-600',
                                     default => 'text-slate-800',
                                 };
+                                $val = $deptStats[$key] ?? 0;
+                                if (isset($formatters[$key])) {
+                                    $val = $formatters[$key]($val);
+                                }
                             @endphp
                             <div class="rounded-xl {{ $bgClass }} px-2 py-2">
-                                <p class="text-lg font-extrabold {{ $textClass }}">{{ $deptStats[$key] ?? 0 }}</p>
+                                <p class="text-lg font-extrabold {{ $textClass }}">{{ $val }}</p>
                                 <p class="text-[10px] text-slate-500">{{ $statLabels[$i] ?? $key }}</p>
                             </div>
                         @endforeach
