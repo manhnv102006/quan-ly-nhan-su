@@ -54,7 +54,7 @@ class Payroll extends Model
 
     public function displayStatus(): string
     {
-        return $this->payrollPeriod?->status ?? $this->status;
+        return $this->status ?? $this->payrollPeriod?->status ?? 'open';
     }
 
     public function statusLabel(): string

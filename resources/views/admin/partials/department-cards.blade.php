@@ -42,37 +42,66 @@
                     </h3>
                     <p class="text-xs text-slate-500">{{ $dept->department_code }}</p>
 
-                    <div class="mt-4 grid grid-cols-3 gap-2 text-center">
-                        @foreach ($statKeys as $i => $key)
-                            @php
-                                $tone = $statTones[$i] ?? 'slate';
-                                $bgClass = match ($tone) {
-                                    'amber' => 'bg-amber-50',
-                                    'emerald' => 'bg-emerald-50',
-                                    'rose' => 'bg-rose-50',
-                                    'sky' => 'bg-sky-50',
-                                    'violet' => 'bg-violet-50',
-                                    default => 'bg-slate-50',
-                                };
-                                $textClass = match ($tone) {
-                                    'amber' => 'text-amber-600',
-                                    'emerald' => 'text-emerald-600',
-                                    'rose' => 'text-rose-600',
-                                    'sky' => 'text-sky-600',
-                                    'violet' => 'text-violet-600',
-                                    default => 'text-slate-800',
-                                };
-                                $val = $deptStats[$key] ?? 0;
-                                if (isset($formatters[$key])) {
-                                    $val = $formatters[$key]($val);
-                                }
-                            @endphp
-                            <div class="rounded-xl {{ $bgClass }} px-2 py-2">
-                                <p class="text-lg font-extrabold {{ $textClass }}">{{ $val }}</p>
-                                <p class="text-[10px] text-slate-500">{{ $statLabels[$i] ?? $key }}</p>
-                            </div>
-                        @endforeach
-                    </div>
+                    @if(count($statKeys) > 3)
+                        <!-- Dạng danh sách chi tiết (khi có nhiều thông số như Lương) -->
+                        <div class="mt-4 space-y-1.5 border-t border-slate-100 pt-3">
+                            @foreach ($statKeys as $i => $key)
+                                @php
+                                    $tone = $statTones[$i] ?? 'slate';
+                                    $textClass = match ($tone) {
+                                        'amber' => 'text-amber-600 font-semibold',
+                                        'emerald' => 'text-emerald-600 font-semibold',
+                                        'rose' => 'text-rose-500 font-semibold',
+                                        'sky' => 'text-sky-600 font-semibold',
+                                        'indigo' => 'text-indigo-600 font-semibold',
+                                        'violet' => 'text-violet-600 font-bold text-sm',
+                                        default => 'text-slate-700 font-semibold',
+                                    };
+                                    $val = $deptStats[$key] ?? 0;
+                                    if (isset($formatters[$key])) {
+                                        $val = $formatters[$key]($val);
+                                    }
+                                @endphp
+                                <div class="flex justify-between items-center py-0.5 text-xs">
+                                    <span class="text-slate-500">{{ $statLabels[$i] ?? $key }}</span>
+                                    <span class="{{ $textClass }}">{{ $val }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <!-- Dạng lưới (cho KPI, nghỉ phép, tăng ca...) -->
+                        <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+                            @foreach ($statKeys as $i => $key)
+                                @php
+                                    $tone = $statTones[$i] ?? 'slate';
+                                    $bgClass = match ($tone) {
+                                        'amber' => 'bg-amber-50',
+                                        'emerald' => 'bg-emerald-50',
+                                        'rose' => 'bg-rose-50',
+                                        'sky' => 'bg-sky-50',
+                                        'violet' => 'bg-violet-50',
+                                        default => 'bg-slate-50',
+                                    };
+                                    $textClass = match ($tone) {
+                                        'amber' => 'text-amber-600',
+                                        'emerald' => 'text-emerald-600',
+                                        'rose' => 'text-rose-600',
+                                        'sky' => 'text-sky-600',
+                                        'violet' => 'text-violet-600',
+                                        default => 'text-slate-800',
+                                    };
+                                    $val = $deptStats[$key] ?? 0;
+                                    if (isset($formatters[$key])) {
+                                        $val = $formatters[$key]($val);
+                                    }
+                                @endphp
+                                <div class="rounded-xl {{ $bgClass }} px-2 py-2">
+                                    <p class="text-lg font-extrabold {{ $textClass }}">{{ $val }}</p>
+                                    <p class="text-[10px] text-slate-500">{{ $statLabels[$i] ?? $key }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </a>
             @endforeach
         </div>

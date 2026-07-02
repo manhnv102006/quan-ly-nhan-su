@@ -25,6 +25,7 @@
                     </span>
                     <form action="{{ route('admin.payroll-periods.calculate', $payrollPeriod) }}" method="POST">
                         @csrf
+                        <input type="hidden" name="department_id" value="{{ $department->id }}">
                         <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-medium shadow-lg transition text-sm">
                             ⚡ Tính lương tự động
                         </button>
@@ -35,14 +36,16 @@
                     </span>
                     <form action="{{ route('admin.payroll-periods.recalculate', $payrollPeriod) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn tính lại lương? Toàn bộ bảng lương hiện tại của kỳ này sẽ bị xóa và tính lại từ đầu.')">
                         @csrf
+                        <input type="hidden" name="department_id" value="{{ $department->id }}">
                         <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-lg transition text-sm">
                             🔄 Tính lại
                         </button>
                     </form>
                     <form action="{{ route('admin.payroll-periods.approve', $payrollPeriod) }}" method="POST">
                         @csrf
+                        <input type="hidden" name="department_id" value="{{ $department->id }}">
                         <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg transition text-sm">
-                            ✅ Duyệt toàn bộ kỳ lương
+                            ✅ Duyệt lương phòng ban
                         </button>
                     </form>
                 @elseif ($payrollPeriod->status === 'approved')
@@ -50,10 +53,11 @@
                         🟣 Đã duyệt (Approved)
                     </span>
                     <form action="{{ route('admin.payroll-periods.pay', $payrollPeriod) }}" method="POST"
-                          onsubmit="return confirm('Xác nhận đã thực hiện chi trả lương cho toàn bộ nhân viên trong kỳ này?')">
+                          onsubmit="return confirm('Xác nhận đã thực hiện chi trả lương cho nhân viên thuộc phòng ban này?')">
                         @csrf
+                        <input type="hidden" name="department_id" value="{{ $department->id }}">
                         <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-lg transition text-sm">
-                            💰 Chi trả toàn bộ kỳ lương
+                            💰 Chi trả lương phòng ban
                         </button>
                     </form>
                 @elseif ($payrollPeriod->status === 'paid')
@@ -62,8 +66,9 @@
                     </span>
                     <form action="{{ route('admin.payroll-periods.close', $payrollPeriod) }}" method="POST">
                         @csrf
+                        <input type="hidden" name="department_id" value="{{ $department->id }}">
                         <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-medium shadow-lg transition text-sm">
-                            🔒 Đóng kỳ lương
+                            🔒 Đóng lương phòng ban
                         </button>
                     </form>
                 @else
