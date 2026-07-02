@@ -60,6 +60,7 @@
                 <table class="w-full">
                     <thead>
                         <tr class="bg-slate-50">
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">STT</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Mã</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Tên kỳ lương</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Kỳ hạn trả</th>
@@ -74,6 +75,7 @@
                     <tbody>
                         @forelse ($periods as $period)
                             <tr class="border-t border-slate-100 hover:bg-slate-50 transition">
+                                <td class="px-6 py-4 text-slate-600">{{ ($periods->currentPage() - 1) * $periods->perPage() + $loop->iteration }}</td>
                                 <td class="px-6 py-4 text-slate-600 font-semibold">BL{{ str_pad($period->id, 6, '0', STR_PAD_LEFT) }}</td>
                                 <td class="px-6 py-4 font-semibold text-slate-800">
                                     {{ $period->name }}
@@ -86,22 +88,38 @@
                                     {{ number_format($period->payrolls_sum_total_salary ?? 0, 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4 text-right font-semibold text-emerald-600">
-                                    {{ in_array($period->status, ['paid', 'closed']) ? number_format($period->payrolls_sum_total_salary ?? 0, 0, ',', '.') . ' ₫' : '0 ₫' }}
+                                    {{ number_format($period->paid_salary_sum ?? 0, 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4 text-right font-semibold text-rose-600">
-                                    {{ !in_array($period->status, ['paid', 'closed']) ? number_format($period->payrolls_sum_total_salary ?? 0, 0, ',', '.') . ' ₫' : '0 ₫' }}
+                                    {{ number_format($period->unpaid_salary_sum ?? 0, 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     @if ($period->status === 'open')
                                         <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">Tạm tính</span>
                                     @elseif ($period->status === 'calculated')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Đã tính lương</span>
+                                        @if ($period->is_all_calculated)
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-800">Đã hoàn thiện</span>
+                                        @else
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Chưa tính xong</span>
+                                        @endif
                                     @elseif ($period->status === 'approved')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-700">Đã duyệt</span>
+                                        @if ($period->is_all_approved)
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-700">Đã duyệt xong</span>
+                                        @else
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-fuchsia-100 text-fuchsia-700">Chưa duyệt xong</span>
+                                        @endif
                                     @elseif ($period->status === 'paid')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Đã chi trả</span>
+                                        @if ($period->is_all_paid)
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Đã chi trả</span>
+                                        @else
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">Chưa chi trả xong</span>
+                                        @endif
                                     @else
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Đã đóng</span>
+                                        @if ($period->is_all_closed)
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Đã đóng</span>
+                                        @else
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-600">Chưa đóng xong</span>
+                                        @endif
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
@@ -136,7 +154,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center py-12 text-slate-400">
+                                <td colspan="10" class="text-center py-12 text-slate-400">
                                     Chưa có kỳ lương nào được tạo
                                 </td>
                             </tr>
