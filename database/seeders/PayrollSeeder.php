@@ -42,6 +42,12 @@ class PayrollSeeder extends Seeder
                 $deduction = rand(0, 2) * 200000; // 0 to 400k
                 $totalSalary = $basicSalary + $allowance + $bonus - $deduction;
 
+                // Map individual payroll status to the period's status
+                $payrollStatus = 'calculated';
+                if (in_array($period->status, ['approved', 'paid', 'closed'])) {
+                    $payrollStatus = $period->status;
+                }
+
                 DB::table('payrolls')->insert([
                     'employee_id' => $employee->id,
                     'payroll_period_id' => $period->id,
@@ -51,6 +57,7 @@ class PayrollSeeder extends Seeder
                     'bonus' => $bonus,
                     'deduction' => $deduction,
                     'total_salary' => $totalSalary,
+                    'status' => $payrollStatus,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
