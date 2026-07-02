@@ -22,9 +22,47 @@ class PayrollPeriodController extends Controller
         $periods = PayrollPeriod::query()
             ->withSum('payrolls', 'total_salary')
             ->orderBy('year', 'desc')
-            ->orderBy('month', 'asc')
+            ->orderBy('month', 'desc')
             ->paginate(10)
             ->withQueryString();
+
+        $totalDepartments = \App\Models\Department::where('status', 'active')
+            ->whereHas('employees', fn($q) => $q->where('status', 'active'))
+            ->count();
+
+        foreach ($periods as $period) {
+            $payrolls = \App\Models\Payroll::query()
+                ->where('payroll_period_id', $period->id)
+                ->join('employees', 'payrolls.employee_id', '=', 'employees.id')
+                ->where('employees.status', 'active')
+                ->get(['employees.department_id', 'payrolls.status', 'payrolls.total_salary']);
+
+            // 1. Tính toán tính lương
+            $calculatedDepts = $payrolls->pluck('department_id')->unique();
+            $period->is_all_calculated = ($totalDepartments > 0 && $calculatedDepts->count() >= $totalDepartments);
+
+            // 2. Tính toán duyệt lương
+            $approvedDepts = $payrolls->groupBy('department_id')->filter(function ($group) {
+                return $group->every(fn($p) => in_array($p->status, ['approved', 'paid', 'closed']));
+            });
+            $period->is_all_approved = ($totalDepartments > 0 && $approvedDepts->count() >= $totalDepartments);
+
+            // 3. Tính toán chi trả
+            $paidDepts = $payrolls->groupBy('department_id')->filter(function ($group) {
+                return $group->every(fn($p) => in_array($p->status, ['paid', 'closed']));
+            });
+            $period->is_all_paid = ($totalDepartments > 0 && $paidDepts->count() >= $totalDepartments);
+
+            // 4. Tính toán đóng kỳ
+            $closedDepts = $payrolls->groupBy('department_id')->filter(function ($group) {
+                return $group->every(fn($p) => $p->status === 'closed');
+            });
+            $period->is_all_closed = ($totalDepartments > 0 && $closedDepts->count() >= $totalDepartments);
+
+            // 5. Tính toán tổng lương đã trả và còn cần trả
+            $period->paid_salary_sum = $payrolls->filter(fn($p) => in_array($p->status, ['paid', 'closed']))->sum('total_salary');
+            $period->unpaid_salary_sum = $payrolls->filter(fn($p) => !in_array($p->status, ['paid', 'closed']))->sum('total_salary');
+        }
 
         $stats = [
             'total' => PayrollPeriod::count(),
@@ -201,8 +239,8 @@ class PayrollPeriodController extends Controller
 
     public function calculate(Request $request, PayrollPeriod $payrollPeriod, PayrollService $payrollService): RedirectResponse
     {
-        if (!$payrollPeriod->isOpen()) {
-            return redirect()->back()->with('error', 'Kỳ lương phải ở trạng thái mở mới có thể tính lương.');
+        if (!in_array($payrollPeriod->status, ['open', 'calculated'])) {
+            return redirect()->back()->with('error', 'Kỳ lương phải ở trạng thái mở hoặc đã tính mới có thể tính lương.');
         }
 
         $departmentId = $request->input('department_id');
