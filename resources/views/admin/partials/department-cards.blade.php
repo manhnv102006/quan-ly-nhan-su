@@ -73,6 +73,7 @@
                         <div class="mt-4 grid grid-cols-3 gap-2 text-center">
                             @foreach ($statKeys as $i => $key)
                                 @php
+                                    $val = $deptStats[$key] ?? 0;
                                     $tone = $statTones[$i] ?? 'slate';
                                     $bgClass = match ($tone) {
                                         'amber' => 'bg-amber-50',
@@ -90,14 +91,29 @@
                                         'violet' => 'text-violet-600',
                                         default => 'text-slate-800',
                                     };
-                                    $val = $deptStats[$key] ?? 0;
+                                    if ($key === 'status_label') {
+                                        $bgClass = match ($val) {
+                                            'Tạm tính' => 'bg-sky-100/70',
+                                            'Đã tính' => 'bg-amber-100/70',
+                                            'Đã duyệt' => 'bg-violet-100/70',
+                                            'Đã chi trả' => 'bg-emerald-100/70',
+                                            default => 'bg-slate-100/70',
+                                        };
+                                        $textClass = match ($val) {
+                                            'Tạm tính' => 'text-sky-700 font-bold',
+                                            'Đã tính' => 'text-amber-700 font-bold',
+                                            'Đã duyệt' => 'text-violet-700 font-bold',
+                                            'Đã chi trả' => 'text-emerald-700 font-bold',
+                                            default => 'text-slate-600 font-bold',
+                                        };
+                                    }
                                     if (isset($formatters[$key])) {
                                         $val = $formatters[$key]($val);
                                     }
                                 @endphp
-                                <div class="rounded-xl {{ $bgClass }} px-2 py-2">
-                                    <p class="text-lg font-extrabold {{ $textClass }}">{{ $val }}</p>
-                                    <p class="text-[10px] text-slate-500">{{ $statLabels[$i] ?? $key }}</p>
+                                <div class="rounded-xl {{ $bgClass }} px-2 py-2.5 flex flex-col justify-center items-center min-h-[64px]">
+                                    <p class="text-xs text-slate-500 mb-1 font-medium">{{ $statLabels[$i] ?? $key }}</p>
+                                    <p class="{{ $key === 'status_label' ? 'text-sm font-bold' : 'text-xl font-extrabold' }} {{ $textClass }}">{{ $val }}</p>
                                 </div>
                             @endforeach
                         </div>
