@@ -247,6 +247,10 @@
                     <td>Thưởng KPI (Tính theo kết quả đánh giá)</td>
                     <td class="text-right">{{ number_format($payroll->bonus, 0, ',', '.') }} ₫</td>
                 </tr>
+                <tr>
+                    <td>Lương tăng ca ({{ $payroll->overtime_hours }} giờ × hệ số 1.5)</td>
+                    <td class="text-right">{{ number_format($payroll->overtime_pay, 0, ',', '.') }} ₫</td>
+                </tr>
                 <tr class="text-red">
                     <td>Khấu trừ (Đi trễ, vắng mặt không phép)</td>
                     <td class="text-right">-{{ number_format($payroll->deduction, 0, ',', '.') }} ₫</td>
