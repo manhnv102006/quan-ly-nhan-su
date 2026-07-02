@@ -133,11 +133,6 @@ class PayrollPeriodController extends Controller
 
     public function show(PayrollPeriod $payrollPeriod): View
     {
-        $payrolls = $payrollPeriod->payrolls()
-            ->with(['employee'])
-            ->latest()
-            ->paginate(10);
-
         $totalCount = $payrollPeriod->payrolls()->count();
         $totalSalary = $payrollPeriod->payrolls()->sum('total_salary');
 
@@ -150,7 +145,22 @@ class PayrollPeriodController extends Controller
             'unpaid_salary' => $isPaidOrClosed ? 0 : $totalSalary,
         ];
 
-        return view('admin.payroll-periods.show', compact('payrollPeriod', 'payrolls', 'stats'));
+        return view('admin.payroll-periods.show', [
+            'payrollPeriod' => $payrollPeriod,
+            'stats' => $stats,
+            'departmentSummaries' => \App\Support\DepartmentSummaryBuilder::forPayrollPeriod($payrollPeriod),
+        ]);
+    }
+
+    public function department(PayrollPeriod $payrollPeriod, \App\Models\Department $department): View
+    {
+        $payrolls = $payrollPeriod->payrolls()
+            ->whereHas('employee', fn($q) => $q->where('department_id', $department->id))
+            ->with(['employee'])
+            ->latest()
+            ->paginate(10);
+
+        return view('admin.payroll-periods.department', compact('payrollPeriod', 'department', 'payrolls'));
     }
 
     public function destroy(PayrollPeriod $payrollPeriod): RedirectResponse
