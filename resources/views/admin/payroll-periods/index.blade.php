@@ -98,7 +98,7 @@
                                         <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">Tạm tính</span>
                                     @elseif ($period->status === 'calculated')
                                         @if ($period->is_all_calculated)
-                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-800">Đã hoàn thiện</span>
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-800">Đã tính xong</span>
                                         @else
                                             <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Chưa tính xong</span>
                                         @endif
