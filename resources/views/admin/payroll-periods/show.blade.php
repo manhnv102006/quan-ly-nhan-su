@@ -23,49 +23,18 @@
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-sky-100 text-sky-700 border border-sky-200">
                         🔵 Chưa tính lương (Open)
                     </span>
-                    <form action="{{ route('admin.payroll-periods.calculate', $payrollPeriod) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-medium shadow-lg transition">
-                            ⚡ Tính lương tự động
-                        </button>
-                    </form>
                 @elseif ($payrollPeriod->status === 'calculated')
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-amber-100 text-amber-700 border border-amber-200">
                         🟡 Đã tính lương (Calculated)
                     </span>
-                    <form action="{{ route('admin.payroll-periods.recalculate', $payrollPeriod) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn tính lại lương? Toàn bộ bảng lương hiện tại của kỳ này sẽ bị xóa và tính lại từ đầu.')">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-lg transition">
-                            🔄 Tính lại
-                        </button>
-                    </form>
-                    <form action="{{ route('admin.payroll-periods.approve', $payrollPeriod) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg transition">
-                            ✅ Duyệt toàn bộ kỳ lương
-                        </button>
-                    </form>
                 @elseif ($payrollPeriod->status === 'approved')
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-violet-100 text-violet-700 border border-violet-200">
                         🟣 Đã duyệt (Approved)
                     </span>
-                    <form action="{{ route('admin.payroll-periods.pay', $payrollPeriod) }}" method="POST"
-                          onsubmit="return confirm('Xác nhận đã thực hiện chi trả lương cho toàn bộ nhân viên trong kỳ này?')">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-lg transition">
-                            💰 Chi trả toàn bộ kỳ lương
-                        </button>
-                    </form>
                 @elseif ($payrollPeriod->status === 'paid')
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
                         🟢 Đã chi trả (Paid)
                     </span>
-                    <form action="{{ route('admin.payroll-periods.close', $payrollPeriod) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-medium shadow-lg transition">
-                            🔒 Đóng kỳ lương
-                        </button>
-                    </form>
                 @else
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-600 border border-slate-200">
                         🔒 Đã đóng (Closed)
