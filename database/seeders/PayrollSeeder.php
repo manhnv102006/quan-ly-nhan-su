@@ -42,10 +42,49 @@ class PayrollSeeder extends Seeder
                 $deduction = rand(0, 2) * 200000; // 0 to 400k
                 $totalSalary = $basicSalary + $allowance + $bonus - $deduction;
 
-                // Map individual payroll status to the period's status
+                // Determine status for individual payroll based on period and department
                 $payrollStatus = 'calculated';
-                if (in_array($period->status, ['approved', 'paid', 'closed'])) {
-                    $payrollStatus = $period->status;
+                $approvedBy = null;
+                $approvedAt = null;
+                $paidBy = null;
+                $paidAt = null;
+
+                if ($period->status === 'closed') {
+                    $payrollStatus = 'closed';
+                    $approvedBy = 1;
+                    $approvedAt = now();
+                    $paidBy = 1;
+                    $paidAt = now();
+                } elseif ($period->status === 'paid') {
+                    $payrollStatus = 'paid';
+                    $approvedBy = 1;
+                    $approvedAt = now();
+                    $paidBy = 1;
+                    $paidAt = now();
+                } elseif ($period->status === 'approved') {
+                    $payrollStatus = 'approved';
+                    $approvedBy = 1;
+                    $approvedAt = now();
+                } elseif ($period->status === 'calculated') {
+                    // For calculated period, seed mixed statuses to cover all cases
+                    // Odd department IDs will be approved, even will be calculated, some will not be seeded (remain open)
+                    $deptId = $employee->department_id;
+                    if ($deptId == 1) {
+                        $payrollStatus = 'paid';
+                        $approvedBy = 1;
+                        $approvedAt = now();
+                        $paidBy = 1;
+                        $paidAt = now();
+                    } elseif ($deptId == 2) {
+                        $payrollStatus = 'approved';
+                        $approvedBy = 1;
+                        $approvedAt = now();
+                    } elseif ($deptId == 3) {
+                        $payrollStatus = 'calculated';
+                    } else {
+                        // Skip seeding for other departments so they show as "Open"
+                        continue;
+                    }
                 }
 
                 DB::table('payrolls')->insert([
@@ -58,6 +97,10 @@ class PayrollSeeder extends Seeder
                     'deduction' => $deduction,
                     'total_salary' => $totalSalary,
                     'status' => $payrollStatus,
+                    'approved_by' => $approvedBy,
+                    'approved_at' => $approvedAt,
+                    'paid_by' => $paidBy,
+                    'paid_at' => $paidAt,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
