@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PayrollPeriod;
+use App\Models\Payroll;
 use App\Services\AutoNotificationService;
 use App\Services\PayrollService;
 use Illuminate\Http\RedirectResponse;
@@ -222,19 +223,55 @@ class PayrollPeriodController extends Controller
         return view('admin.payroll-periods.department', compact('payrollPeriod', 'department', 'payrolls', 'departmentStatus'));
     }
 
+    public function trash(Request $request): View
+    {
+        $periods = PayrollPeriod::onlyTrashed()
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('admin.payroll-periods.trash', compact('periods'));
+    }
+
     public function destroy(PayrollPeriod $payrollPeriod): RedirectResponse
     {
-        if ($payrollPeriod->payrolls()->exists()) {
-            return redirect()
-                ->route('admin.payroll-periods.index')
-                ->with('error', 'Không thể xóa kỳ lương này vì đã có bảng lương liên kết.');
-        }
+        // Xóa mềm tất cả các bản ghi lương liên kết trước
+        $payrollPeriod->payrolls()->delete();
 
+        // Xóa mềm kỳ lương
         $payrollPeriod->delete();
 
         return redirect()
             ->route('admin.payroll-periods.index')
-            ->with('success', 'Xóa kỳ lương thành công.');
+            ->with('success', 'Đã xóa mềm kỳ lương thành công. Bạn có thể khôi phục từ Thùng rác.');
+    }
+
+    public function restore(Request $request, int $id): RedirectResponse
+    {
+        $period = PayrollPeriod::onlyTrashed()->findOrFail($id);
+        $period->restore();
+
+        // Khôi phục tất cả bảng lương liên kết
+        Payroll::onlyTrashed()->where('payroll_period_id', $id)->restore();
+
+        return redirect()
+            ->route('admin.payroll-periods.trash')
+            ->with('success', 'Đã khôi phục kỳ lương và các bảng lương liên kết thành công.');
+    }
+
+    public function forceDelete(Request $request, int $id): RedirectResponse
+    {
+        $period = PayrollPeriod::onlyTrashed()->findOrFail($id);
+
+        // Xóa vĩnh viễn tất cả bảng lương liên kết
+        Payroll::onlyTrashed()->where('payroll_period_id', $id)->forceDelete();
+
+        // Xóa vĩnh viễn kỳ lương
+        $period->forceDelete();
+
+        return redirect()
+            ->route('admin.payroll-periods.trash')
+            ->with('success', 'Đã xóa vĩnh viễn kỳ lương khỏi hệ thống.');
     }
 
     public function calculate(Request $request, PayrollPeriod $payrollPeriod, PayrollService $payrollService): RedirectResponse

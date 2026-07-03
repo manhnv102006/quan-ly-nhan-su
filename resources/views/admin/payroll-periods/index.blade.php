@@ -11,8 +11,12 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
+                <a href="{{ route('admin.payroll-periods.trash') }}"
+                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition text-sm">
+                    🗑️ Thùng rác ({{ \App\Models\PayrollPeriod::onlyTrashed()->count() }})
+                </a>
                 <a href="{{ route('admin.payroll-periods.create') }}"
-                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
+                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition text-sm">
                     <span>+</span>
                     Thêm kỳ lương
                 </a>
@@ -143,7 +147,9 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="button"
-                                                    onclick="openDeleteModal('{{ $period->id }}', @json($period->name))"
+                                                    data-id="{{ $period->id }}"
+                                                    data-name="{{ $period->name }}"
+                                                    onclick="triggerDelete(this)"
                                                     class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition"
                                                     title="Xóa kỳ lương">
                                                 🗑️ Xóa
@@ -229,6 +235,12 @@
 
     <script>
         let deleteTargetId = null;
+
+        function triggerDelete(btn) {
+            const id = btn.getAttribute('data-id');
+            const name = btn.getAttribute('data-name');
+            openDeleteModal(id, name);
+        }
 
         function openDeleteModal(id, name) {
             deleteTargetId = id;
