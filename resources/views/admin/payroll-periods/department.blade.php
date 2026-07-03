@@ -132,10 +132,8 @@
                                     @if($payroll->bonus > 0)+@endif{{ number_format($payroll->bonus, 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4 text-slate-700">
-                                    @if($payroll->overtime_hours > 0)
-                                        <span class="font-semibold text-slate-700">{{ $payroll->overtime_hours }}h</span>
-                                        <span class="text-slate-400">→</span>
-                                        <span>+{{ number_format($payroll->overtime_pay, 0, ',', '.') }} ₫</span>
+                                    @if($payroll->overtime_pay > 0)
+                                        {{ number_format($payroll->overtime_pay, 0, ',', '.') }} ₫
                                     @else
                                         <span class="text-slate-400">—</span>
                                     @endif
@@ -163,6 +161,9 @@
                                                     'period_range' => ($payroll->payrollPeriod?->start_date?->format('d/m/Y') ?: '') . ' - ' . ($payroll->payrollPeriod?->end_date?->format('d/m/Y') ?: ''),
                                                     'basic_salary' => number_format($payroll->basic_salary, 0, ',', '.'),
                                                     'allowance' => number_format($payroll->allowance, 0, ',', '.'),
+                                                    'allowance_meal' => number_format($payroll->allowance_meal, 0, ',', '.'),
+                                                    'allowance_phone' => number_format($payroll->allowance_phone, 0, ',', '.'),
+                                                    'allowance_fuel' => number_format($payroll->allowance_fuel, 0, ',', '.'),
                                                     'bonus' => number_format($payroll->bonus, 0, ',', '.'),
                                                     'overtime_hours' => $payroll->overtime_hours,
                                                     'overtime_pay' => number_format($payroll->overtime_pay, 0, ',', '.'),
@@ -299,6 +300,20 @@
                             <span class="text-slate-600 font-medium">Phụ cấp:</span>
                             <span class="font-bold text-slate-800" id="modalAllowance">500,000 ₫</span>
                         </div>
+                        <div class="pl-4 space-y-1 text-xs text-slate-500 border-l border-slate-200">
+                            <div class="flex justify-between items-center">
+                                <span>+ Ăn trưa:</span>
+                                <span id="modalAllowanceMeal">0 ₫</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>+ Điện thoại:</span>
+                                <span id="modalAllowancePhone">0 ₫</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>+ Xăng xe:</span>
+                                <span id="modalAllowanceFuel">0 ₫</span>
+                            </div>
+                        </div>
                         <div class="flex justify-between items-center">
                             <span class="text-slate-600 font-medium">Thưởng (KPI):</span>
                             <span class="font-bold text-slate-800 text-emerald-600" id="modalBonus">0 ₫</span>
@@ -397,6 +412,9 @@
             document.getElementById('modalStandardDays').innerText = data.standard_working_days;
             document.getElementById('modalActualDays').innerText = data.actual_working_days;
             document.getElementById('modalAllowance').innerText = data.allowance + ' ₫';
+            document.getElementById('modalAllowanceMeal').innerText = data.allowance_meal + ' ₫';
+            document.getElementById('modalAllowancePhone').innerText = data.allowance_phone + ' ₫';
+            document.getElementById('modalAllowanceFuel').innerText = data.allowance_fuel + ' ₫';
             document.getElementById('modalBonus').innerText = data.bonus + ' ₫';
             document.getElementById('modalOvertime').innerText = data.overtime_pay + ' ₫';
             

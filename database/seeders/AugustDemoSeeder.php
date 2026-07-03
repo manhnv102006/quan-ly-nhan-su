@@ -111,6 +111,10 @@ class AugustDemoSeeder extends Seeder
                         'contract_code' => 'HD_' . $employee->employee_code,
                         'contract_type_id' => 1,
                         'salary' => 15000000, // Lương cơ bản 15 triệu
+                        'allowance' => 1500000,
+                        'allowance_meal' => 700000,
+                        'allowance_phone' => 400000,
+                        'allowance_fuel' => 400000,
                         'start_date' => '2025-01-01',
                         'status' => 'active',
                         'created_at' => now(),
