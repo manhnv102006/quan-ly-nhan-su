@@ -3,17 +3,25 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LeaveRequestRejectRequest;
 use App\Models\Department;
 use App\Models\LeaveRequest;
+use App\Services\LeaveApprovalService;
 use App\Support\DepartmentSummaryBuilder;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 use Illuminate\View\View;
 
 class LeaveRequestController extends Controller
 {
+    public function __construct(private readonly LeaveApprovalService $service)
+    {
+    }
+
     public function index(Request $request): View
     {
         $this->authorize('viewAny', LeaveRequest::class);
@@ -50,12 +58,39 @@ class LeaveRequestController extends Controller
         $leaveRequest->load([
             'employee.department',
             'employee.position',
+            'employee.user',
             'approver.employee',
             'rejecter.employee',
             'histories.actor.employee',
         ]);
 
         return view('admin.leave-requests.show', compact('leaveRequest'));
+    }
+
+    public function approve(LeaveRequest $leaveRequest): RedirectResponse
+    {
+        $this->authorize('approve', $leaveRequest);
+
+        try {
+            $this->service->approve($leaveRequest, (int) Auth::id());
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', 'Không thể duyệt đơn nghỉ phép.');
+        }
+
+        return back()->with('success', 'Đã duyệt đơn nghỉ phép của quản lý.');
+    }
+
+    public function reject(LeaveRequestRejectRequest $request, LeaveRequest $leaveRequest): RedirectResponse
+    {
+        $this->authorize('reject', $leaveRequest);
+
+        try {
+            $this->service->reject($leaveRequest, (int) Auth::id(), null, $request->validated('reject_reason'));
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', 'Không thể từ chối đơn nghỉ phép.');
+        }
+
+        return back()->with('success', 'Đã từ chối đơn nghỉ phép của quản lý.');
     }
 
     /**
@@ -83,7 +118,7 @@ class LeaveRequestController extends Controller
         ];
 
         $leaveRequests = (clone $scopedQuery)
-            ->with(['employee.department', 'approver.employee', 'rejecter.employee'])
+            ->with(['employee.department', 'employee.user', 'approver.employee', 'rejecter.employee'])
             ->filter($filters)
             ->latest()
             ->paginate(10)
