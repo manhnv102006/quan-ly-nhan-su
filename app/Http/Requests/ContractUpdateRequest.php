@@ -34,6 +34,7 @@ class ContractUpdateRequest extends FormRequest
             'allowance_meal' => ['nullable', 'numeric', 'min:0'],
             'allowance_phone' => ['nullable', 'numeric', 'min:0'],
             'allowance_fuel' => ['nullable', 'numeric', 'min:0'],
+            'allowance_position' => ['nullable', 'numeric', 'min:0'],
             'signed_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'description' => ['nullable', 'string', 'max:1000'],
             'note' => ['nullable', 'string', 'max:1000'],

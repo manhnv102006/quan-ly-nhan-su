@@ -100,6 +100,13 @@
     </div>
 
     <div>
+        <label for="allowance_position" class="admin-label">Phụ cấp chức vụ</label>
+        <input type="number" id="allowance_position" name="allowance_position" class="admin-field sub-allowance" min="0"
+               value="{{ old('allowance_position', $isEdit ? (int)$contract->allowance_position : 0) }}">
+        @error('allowance_position')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
         <label for="allowance" class="admin-label">Tổng phụ cấp hàng tháng (Tự động tính)</label>
         <input type="number" id="allowance" name="allowance" class="admin-field bg-slate-50 cursor-not-allowed" min="0"
                value="{{ old('allowance', $isEdit ? (int)$contract->allowance : 0) }}" readonly>
