@@ -12,27 +12,13 @@ use Illuminate\View\View;
 
 class AttendanceController extends Controller
 {
-    public function index(): View
+       public function index(): View
     {
         return view('admin.attendances.index', [
             'departmentSummaries' => DepartmentSummaryBuilder::forAttendanceManagement(),
+            'employees' => \App\Models\Employee::select('full_name', 'employee_code')->get(),
         ]);
     }
-
-
-        $employees = \App\Models\Employee::select('full_name', 'employee_code')->get();
-
-        return view(
-            'admin.attendances.index',
-            compact(
-                'attendances',
-                'stats',
-                'search',
-                'status',
-                'date',
-                'employees'
-            )
-        );
 
     public function department(Request $request, Department $department): View
     {
@@ -42,7 +28,6 @@ class AttendanceController extends Controller
             'scopeLabel' => $department->department_name,
             'showDepartmentColumn' => false,
         ]);
-
     }
 
     public function show(Attendance $attendance): View
