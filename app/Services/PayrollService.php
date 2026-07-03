@@ -28,7 +28,7 @@ class PayrollService
     public function calculatePayrollForPeriod(PayrollPeriod $period, ?int $departmentId = null): string
     {
         // 1. Kiểm tra xem kỳ lương này của phòng ban đã được tính trước đó chưa
-        $existsQuery = Payroll::where('payroll_period_id', $period->id);
+        $existsQuery = Payroll::withTrashed()->where('payroll_period_id', $period->id);
         if ($departmentId) {
             $existsQuery->whereHas('employee', fn($q) => $q->where('department_id', $departmentId));
         }
@@ -127,6 +127,11 @@ class PayrollService
             // Đảm bảo không vượt quá ngày công chuẩn
             $actualWorkingDays = min($actualWorkingDays, $standardWorkingDays);
 
+            // Nếu không đi làm đủ công cơ bản thì không được nhận phụ cấp
+            if ($actualWorkingDays < $standardWorkingDays) {
+                $allowance = 0;
+            }
+
             // F. Lương cơ bản PRO-RATA theo ngày công thực tế
             $basicSalary = $standardWorkingDays > 0
                 ? round(($contractSalary / $standardWorkingDays) * $actualWorkingDays, 0)
@@ -168,10 +173,10 @@ class PayrollService
                 }
             }
 
-            // I. Lương tăng ca: tổng giờ OT đã hoàn thành trong kỳ * hệ số 1.5
+            // I. Lương tăng ca: tổng giờ OT đã duyệt hoặc hoàn thành trong kỳ * hệ số 1.5
             $overtimeHours = (float) OvertimeRequest::query()
                 ->where('employee_id', $employee->id)
-                ->where('status', OvertimeRequest::STATUS_COMPLETED)
+                ->whereIn('status', [OvertimeRequest::STATUS_APPROVED, OvertimeRequest::STATUS_COMPLETED])
                 ->whereBetween('work_date', [$startDate, $endDate])
                 ->sum('total_hours');
 
@@ -231,12 +236,12 @@ class PayrollService
             return 'invalid_status';
         }
 
-        // Xóa tất cả các bản ghi lương của kỳ này (lọc theo phòng ban nếu có)
-        $deleteQuery = Payroll::where('payroll_period_id', $period->id);
+        // Xóa vĩnh viễn tất cả các bản ghi lương của kỳ này (kể cả đã xóa mềm) để tránh trùng lặp unique constraint
+        $deleteQuery = Payroll::withTrashed()->where('payroll_period_id', $period->id);
         if ($departmentId) {
             $deleteQuery->whereHas('employee', fn($q) => $q->where('department_id', $departmentId));
         }
-        $deleteQuery->delete();
+        $deleteQuery->forceDelete();
 
         // Nếu không còn bất kỳ bảng lương nào trong kỳ này, đặt lại status về open
         $remainingPayrollsExists = Payroll::where('payroll_period_id', $period->id)->exists();
@@ -265,5 +270,63 @@ class PayrollService
         }
 
         return $days;
+    }
+
+    /**
+     * Cập nhật tự động tiền tăng ca của nhân viên vào bảng lương nếu bảng lương đã tồn tại.
+     */
+    public function updatePayrollOvertime(int $employeeId, string $date): void
+    {
+        $carbonDate = \Carbon\Carbon::parse($date);
+
+        // Tìm xem có bảng lương nào chứa ngày này không
+        $payroll = Payroll::where('employee_id', $employeeId)
+            ->whereHas('payrollPeriod', function($q) use ($carbonDate) {
+                $q->whereDate('start_date', '<=', $carbonDate)
+                  ->whereDate('end_date', '>=', $carbonDate);
+            })
+            ->first();
+
+        if (!$payroll) {
+            return;
+        }
+
+        $period = $payroll->payrollPeriod;
+        $startDate = $period->start_date;
+        $endDate = $period->end_date;
+
+        // Tính lại tổng số giờ tăng ca của nhân viên đó trong kỳ (chỉ tính những đơn đã duyệt hoặc hoàn thành)
+        $overtimeHours = (float) OvertimeRequest::query()
+            ->where('employee_id', $employeeId)
+            ->whereIn('status', [OvertimeRequest::STATUS_APPROVED, OvertimeRequest::STATUS_COMPLETED])
+            ->whereBetween('work_date', [$startDate, $endDate])
+            ->sum('total_hours');
+
+        // Tìm lương hợp đồng / lương cơ bản gốc
+        $employee = $payroll->employee;
+        $activeContract = $employee?->contracts->first();
+        $contractSalary = 0;
+        if ($activeContract) {
+            $contractSalary = $activeContract->salary;
+        } elseif ($employee?->position) {
+            $contractSalary = $employee->position->base_salary;
+        }
+
+        $standardWorkingDays = $payroll->standard_working_days;
+        $standardMonthlyHours = $standardWorkingDays * 8;
+        $hourlyRate = ($contractSalary > 0 && $standardMonthlyHours > 0)
+            ? ($contractSalary / $standardMonthlyHours)
+            : 0;
+
+        $overtimePay = round($overtimeHours * $hourlyRate * self::OVERTIME_RATE_MULTIPLIER, 0);
+
+        // Tính lại tổng lương thực lĩnh
+        $totalSalary = $payroll->basic_salary + $payroll->allowance + $payroll->bonus + $overtimePay - $payroll->deduction;
+
+        $payroll->update([
+            'overtime_hours' => $overtimeHours,
+            'overtime_pay' => $overtimePay,
+            'total_salary' => max(0, $totalSalary)
+        ]);
     }
 }
