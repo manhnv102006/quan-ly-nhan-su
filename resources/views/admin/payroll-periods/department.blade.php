@@ -164,6 +164,7 @@
                                                     'allowance_meal' => number_format($payroll->allowance_meal, 0, ',', '.'),
                                                     'allowance_phone' => number_format($payroll->allowance_phone, 0, ',', '.'),
                                                     'allowance_fuel' => number_format($payroll->allowance_fuel, 0, ',', '.'),
+                                                    'allowance_position' => number_format($payroll->allowance_position, 0, ',', '.'),
                                                     'bonus' => number_format($payroll->bonus, 0, ',', '.'),
                                                     'overtime_hours' => $payroll->overtime_hours,
                                                     'overtime_pay' => number_format($payroll->overtime_pay, 0, ',', '.'),
@@ -313,6 +314,10 @@
                                 <span>+ Xăng xe:</span>
                                 <span id="modalAllowanceFuel">0 ₫</span>
                             </div>
+                            <div class="flex justify-between items-center">
+                                <span>+ Chức vụ:</span>
+                                <span id="modalAllowancePosition">0 ₫</span>
+                            </div>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-slate-600 font-medium">Thưởng (KPI):</span>
@@ -415,6 +420,7 @@
             document.getElementById('modalAllowanceMeal').innerText = data.allowance_meal + ' ₫';
             document.getElementById('modalAllowancePhone').innerText = data.allowance_phone + ' ₫';
             document.getElementById('modalAllowanceFuel').innerText = data.allowance_fuel + ' ₫';
+            document.getElementById('modalAllowancePosition').innerText = data.allowance_position + ' ₫';
             document.getElementById('modalBonus').innerText = data.bonus + ' ₫';
             document.getElementById('modalOvertime').innerText = data.overtime_pay + ' ₫';
             

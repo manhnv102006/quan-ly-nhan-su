@@ -69,34 +69,16 @@ class PayrollService
                 $contractSalary = $employee->position->base_salary;
             }
 
-            // B. Phụ cấp bóc tách: Ăn trưa (hợp đồng), Điện thoại, Xăng xe
-            $allowanceMealContract = 0;
-            $allowancePhone = 0;
-            $allowanceFuel = 0;
+            // B. Phụ cấp bóc tách: Ăn trưa, Điện thoại, Xăng xe, Chức vụ
+            $allowanceMeal = 0;
+            $allowancePhone = 50000; // Mặc định 50k
+            $allowanceFuel = 100000;  // Mặc định 100k
+            $allowancePosition = (float) ($employee->position?->allowance ?? 0);
 
             if ($activeContract) {
-                $allowanceMealContract = (float) ($activeContract->allowance_meal ?? 0);
-                $allowancePhone = (float) ($activeContract->allowance_phone ?? 0);
-                $allowanceFuel = (float) ($activeContract->allowance_fuel ?? 0);
-
-                // Nếu hợp đồng chỉ dùng cột allowance chung mà không có phụ cấp con
-                $totalContractAllowance = (float) $activeContract->allowance;
-                if ($allowanceMealContract == 0 && $allowancePhone == 0 && $allowanceFuel == 0 && $totalContractAllowance > 0) {
-                    // Chia: Ăn trưa 50%, Điện thoại 25%, Xăng xe 25%
-                    $allowanceMealContract = round($totalContractAllowance * 0.5);
-                    $allowancePhone = round($totalContractAllowance * 0.25);
-                    $allowanceFuel = $totalContractAllowance - $allowanceMealContract - $allowancePhone;
-                }
-            } else {
-                // Mặc định theo chức vụ nếu không có hợp đồng
-                list($allowanceMealContract, $allowancePhone, $allowanceFuel) = match ($employee->position?->position_name) {
-                    'Giám đốc' => [4000000, 3000000, 3000000],
-                    'Trưởng phòng' => [2000000, 1500000, 1500000],
-                    'Phó phòng' => [1200000, 900000, 900000],
-                    'Nhân viên' => [700000, 400000, 400000],
-                    'Thực tập sinh' => [300000, 100000, 100000],
-                    default => [400000, 300000, 300000],
-                };
+                $allowancePhone = $activeContract->allowance_phone > 0 ? (float) $activeContract->allowance_phone : 50000;
+                $allowanceFuel = $activeContract->allowance_fuel > 0 ? (float) $activeContract->allowance_fuel : 100000;
+                $allowancePosition = $activeContract->allowance_position > 0 ? (float) $activeContract->allowance_position : $allowancePosition;
             }
 
             // C. Chấm công: Đếm ngày đi làm thực tế (present + late)
@@ -147,20 +129,22 @@ class PayrollService
             // Đảm bảo không vượt quá ngày công chuẩn
             $actualWorkingDays = min($actualWorkingDays, $standardWorkingDays);
 
-            // Phụ cấp ăn trưa tính theo số ngày đi làm thực tế (present + late), hôm nào nghỉ là không được tính tiền ăn ngày đó
-            $allowanceMeal = 0;
-            if ($presentDays > 0 && $standardWorkingDays > 0) {
-                $allowanceMeal = round(($allowanceMealContract / $standardWorkingDays) * $presentDays, 0);
+            // Phụ cấp ăn trưa mặc định là 30.000 VND / ngày thực tế đi làm (trừ khi có quy định khác trong hợp đồng)
+            $mealRate = 30000;
+            if ($activeContract && $activeContract->allowance_meal > 0) {
+                $mealRate = $standardWorkingDays > 0 ? ($activeContract->allowance_meal / $standardWorkingDays) : 30000;
             }
+            $allowanceMeal = round($mealRate * $presentDays, 0);
 
             // Nếu không đi làm ngày nào trong tháng thì không được hưởng bất kỳ phụ cấp nào
             if ($presentDays == 0) {
                 $allowanceMeal = 0;
                 $allowancePhone = 0;
                 $allowanceFuel = 0;
+                $allowancePosition = 0;
             }
 
-            $allowance = $allowanceMeal + $allowancePhone + $allowanceFuel;
+            $allowance = $allowanceMeal + $allowancePhone + $allowanceFuel + $allowancePosition;
 
             // F. Lương cơ bản PRO-RATA theo ngày công thực tế
             $basicSalary = $standardWorkingDays > 0
@@ -233,6 +217,7 @@ class PayrollService
                 'allowance_meal' => $allowanceMeal,
                 'allowance_phone' => $allowancePhone,
                 'allowance_fuel' => $allowanceFuel,
+                'allowance_position' => $allowancePosition,
                 'bonus' => $bonus,
                 'overtime_hours' => $overtimeHours,
                 'overtime_pay' => $overtimePay,
