@@ -79,9 +79,30 @@
     </div>
 
     <div>
-        <label for="allowance" class="admin-label">Phụ cấp</label>
-        <input type="number" id="allowance" name="allowance" class="admin-field" min="0"
-               value="{{ old('allowance', $isEdit ? $contract->allowance : 0) }}">
+        <label for="allowance_meal" class="admin-label">Phụ cấp ăn trưa</label>
+        <input type="number" id="allowance_meal" name="allowance_meal" class="admin-field sub-allowance" min="0"
+               value="{{ old('allowance_meal', $isEdit ? (int)$contract->allowance_meal : 0) }}">
+        @error('allowance_meal')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
+        <label for="allowance_phone" class="admin-label">Phụ cấp điện thoại</label>
+        <input type="number" id="allowance_phone" name="allowance_phone" class="admin-field sub-allowance" min="0"
+               value="{{ old('allowance_phone', $isEdit ? (int)$contract->allowance_phone : 0) }}">
+        @error('allowance_phone')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
+        <label for="allowance_fuel" class="admin-label">Phụ cấp xăng xe</label>
+        <input type="number" id="allowance_fuel" name="allowance_fuel" class="admin-field sub-allowance" min="0"
+               value="{{ old('allowance_fuel', $isEdit ? (int)$contract->allowance_fuel : 0) }}">
+        @error('allowance_fuel')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
+        <label for="allowance" class="admin-label">Tổng phụ cấp hàng tháng (Tự động tính)</label>
+        <input type="number" id="allowance" name="allowance" class="admin-field bg-slate-50 cursor-not-allowed" min="0"
+               value="{{ old('allowance', $isEdit ? (int)$contract->allowance : 0) }}" readonly>
         @error('allowance')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
     </div>
 
@@ -160,3 +181,28 @@
         </script>
     @endpush
 @endif
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const subAllowances = document.querySelectorAll('.sub-allowance');
+            const totalAllowanceInput = document.getElementById('allowance');
+
+            if (subAllowances.length && totalAllowanceInput) {
+                function calculateTotalAllowance() {
+                    let total = 0;
+                    subAllowances.forEach(input => {
+                        const val = parseFloat(input.value) || 0;
+                        total += val;
+                    });
+                    totalAllowanceInput.value = total;
+                }
+
+                subAllowances.forEach(input => {
+                    input.addEventListener('input', calculateTotalAllowance);
+                    input.addEventListener('change', calculateTotalAllowance);
+                });
+            }
+        });
+    </script>
+@endpush

@@ -69,15 +69,37 @@ class PayrollService
                 $contractSalary = $employee->position->base_salary;
             }
 
-            // B. Phụ cấp: Tính theo chức vụ (quyền càng cao phụ cấp càng lớn)
-            $allowance = match ($employee->position?->position_name) {
-                'Giám đốc' => 10000000,
-                'Trưởng phòng' => 5000000,
-                'Phó phòng' => 3000000,
-                'Nhân viên' => 1500000,
-                'Thực tập sinh' => 500000,
-                default => 1000000,
-            };
+            // B. Phụ cấp bóc tách: Ăn trưa, Điện thoại, Xăng xe
+            $allowanceMeal = 0;
+            $allowancePhone = 0;
+            $allowanceFuel = 0;
+
+            if ($activeContract) {
+                $allowanceMeal = (float) ($activeContract->allowance_meal ?? 0);
+                $allowancePhone = (float) ($activeContract->allowance_phone ?? 0);
+                $allowanceFuel = (float) ($activeContract->allowance_fuel ?? 0);
+
+                // Nếu hợp đồng chỉ dùng cột allowance chung mà không có phụ cấp con
+                $totalContractAllowance = (float) $activeContract->allowance;
+                if ($allowanceMeal == 0 && $allowancePhone == 0 && $allowanceFuel == 0 && $totalContractAllowance > 0) {
+                    // Chia: Ăn trưa 50%, Điện thoại 25%, Xăng xe 25%
+                    $allowanceMeal = round($totalContractAllowance * 0.5);
+                    $allowancePhone = round($totalContractAllowance * 0.25);
+                    $allowanceFuel = $totalContractAllowance - $allowanceMeal - $allowancePhone;
+                }
+            } else {
+                // Mặc định theo chức vụ nếu không có hợp đồng
+                list($allowanceMeal, $allowancePhone, $allowanceFuel) = match ($employee->position?->position_name) {
+                    'Giám đốc' => [4000000, 3000000, 3000000],
+                    'Trưởng phòng' => [2000000, 1500000, 1500000],
+                    'Phó phòng' => [1200000, 900000, 900000],
+                    'Nhân viên' => [700000, 400000, 400000],
+                    'Thực tập sinh' => [300000, 100000, 100000],
+                    default => [400000, 300000, 300000],
+                };
+            }
+
+            $allowance = $allowanceMeal + $allowancePhone + $allowanceFuel;
 
             // C. Chấm công: Đếm ngày đi làm thực tế (present + late)
             $presentDays = $employee->attendances()
@@ -129,6 +151,9 @@ class PayrollService
 
             // Nếu không đi làm đủ công cơ bản thì không được nhận phụ cấp
             if ($actualWorkingDays < $standardWorkingDays) {
+                $allowanceMeal = 0;
+                $allowancePhone = 0;
+                $allowanceFuel = 0;
                 $allowance = 0;
             }
 
@@ -200,6 +225,9 @@ class PayrollService
                 'generated_by' => Auth::id() ?? 1, // Fallback cho seeder hoặc chạy CLI
                 'basic_salary' => $basicSalary,
                 'allowance' => $allowance,
+                'allowance_meal' => $allowanceMeal,
+                'allowance_phone' => $allowancePhone,
+                'allowance_fuel' => $allowanceFuel,
                 'bonus' => $bonus,
                 'overtime_hours' => $overtimeHours,
                 'overtime_pay' => $overtimePay,
