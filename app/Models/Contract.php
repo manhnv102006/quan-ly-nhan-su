@@ -34,6 +34,9 @@ class Contract extends Model
         'end_date',
         'salary',
         'allowance',
+        'allowance_meal',
+        'allowance_phone',
+        'allowance_fuel',
         'status',
         'file_path',
         'signed_date',
@@ -48,6 +51,9 @@ class Contract extends Model
         'signed_date' => 'date',
         'salary' => 'decimal:2',
         'allowance' => 'decimal:2',
+        'allowance_meal' => 'decimal:2',
+        'allowance_phone' => 'decimal:2',
+        'allowance_fuel' => 'decimal:2',
     ];
 
     /*
