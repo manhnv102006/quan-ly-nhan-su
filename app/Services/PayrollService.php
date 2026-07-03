@@ -55,15 +55,18 @@ class PayrollService
         $startDate = $period->start_date;
         $endDate = $period->end_date;
 
+        // Tính ngày công chuẩn trong kỳ (Thứ 2 - Thứ 7, trừ Chủ nhật)
+        $standardWorkingDays = $this->calculateStandardWorkingDays($startDate, $endDate);
+
         foreach ($employees as $employee) {
-            // A. Lương cơ bản: Ưu tiên lấy từ hợp đồng active, nếu không thì lấy từ chức vụ
+            // A. Lương hợp đồng (full tháng): Ưu tiên lấy từ hợp đồng active, nếu không thì lấy từ chức vụ
             $activeContract = $employee->contracts->first();
-            $basicSalary = 0;
+            $contractSalary = 0;
 
             if ($activeContract) {
-                $basicSalary = $activeContract->salary;
+                $contractSalary = $activeContract->salary;
             } elseif ($employee->position) {
-                $basicSalary = $employee->position->base_salary;
+                $contractSalary = $employee->position->base_salary;
             }
 
             // B. Phụ cấp: Tính theo chức vụ (quyền càng cao phụ cấp càng lớn)
@@ -76,12 +79,18 @@ class PayrollService
                 default => 1000000,
             };
 
-            // C. Khấu trừ: Đi trễ (50.000 VND / lần) + Vắng mặt vượt phép (300.000 VND / ngày)
+            // C. Chấm công: Đếm ngày đi làm thực tế (present + late)
+            $presentDays = $employee->attendances()
+                ->whereBetween('attendance_date', [$startDate, $endDate])
+                ->whereIn('status', ['present', 'late'])
+                ->count();
+
             $lateDays = $employee->attendances()
                 ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->where('status', 'late')
                 ->count();
 
+            // D. Nghỉ phép: Tính số ngày nghỉ có lương và không lương
             $absentRecords = $employee->attendances()
                 ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->where('status', 'absent')
@@ -113,9 +122,20 @@ class PayrollService
             // Số ngày nghỉ bị trừ tiền = nghỉ không phép + nghỉ có phép vượt quá hạn mức
             $unpaidLeaveDays = $unapprovedAbsences + $excessPaidLeaves;
 
+            // E. Ngày công thực tế = ngày đi làm (present+late) + ngày nghỉ phép hưởng lương
+            $actualWorkingDays = $presentDays + $paidLeaveDays;
+            // Đảm bảo không vượt quá ngày công chuẩn
+            $actualWorkingDays = min($actualWorkingDays, $standardWorkingDays);
+
+            // F. Lương cơ bản PRO-RATA theo ngày công thực tế
+            $basicSalary = $standardWorkingDays > 0
+                ? round(($contractSalary / $standardWorkingDays) * $actualWorkingDays, 0)
+                : $contractSalary;
+
+            // G. Khấu trừ: Phạt đi trễ (50.000 VND / lần) + Phạt nghỉ không phép (300.000 VND / ngày)
             $deduction = ($lateDays * 50000) + ($unpaidLeaveDays * 300000);
 
-            // D. Thưởng KPI: Tính điểm KPI trung bình và quy đổi thưởng
+            // H. Thưởng KPI: Tính điểm KPI trung bình và quy đổi thưởng
             $averageKpiScore = $employee->employeeKpis()
                 ->whereHas('kpi')
                 ->whereHas('kpiAssignment', function ($query) use ($startDate, $endDate) {
@@ -148,29 +168,27 @@ class PayrollService
                 }
             }
 
-
-
-
-
-
-            // F. Lương tăng ca: tổng giờ OT đã hoàn thành trong kỳ * hệ số 1.5
+            // I. Lương tăng ca: tổng giờ OT đã hoàn thành trong kỳ * hệ số 1.5
             $overtimeHours = (float) OvertimeRequest::query()
                 ->where('employee_id', $employee->id)
                 ->where('status', OvertimeRequest::STATUS_COMPLETED)
                 ->whereBetween('work_date', [$startDate, $endDate])
                 ->sum('total_hours');
 
-            $hourlyRate = $basicSalary > 0 ? ($basicSalary / self::STANDARD_MONTHLY_HOURS) : 0;
+            $standardMonthlyHours = $standardWorkingDays * 8;
+            $hourlyRate = ($contractSalary > 0 && $standardMonthlyHours > 0)
+                ? ($contractSalary / $standardMonthlyHours)
+                : 0;
             $overtimePay = round($overtimeHours * $hourlyRate * self::OVERTIME_RATE_MULTIPLIER, 0);
 
-            // G. Thực lĩnh = Lương cơ bản + Phụ cấp + Thưởng KPI + Lương tăng ca - Khấu trừ
+            // J. Thực lĩnh = Lương cơ bản (pro-rata) + Phụ cấp + Thưởng KPI + Lương tăng ca - Khấu trừ
             $totalSalary = $basicSalary + $allowance + $bonus + $overtimePay - $deduction;
 
             if ($totalSalary < 0) {
                 $totalSalary = 0; // Không thể âm thực lĩnh
             }
 
-            // F. Tạo bản ghi bảng lương
+            // K. Tạo bản ghi bảng lương
             Payroll::create([
                 'employee_id' => $employee->id,
                 'payroll_period_id' => $period->id,
@@ -180,12 +198,15 @@ class PayrollService
                 'bonus' => $bonus,
                 'overtime_hours' => $overtimeHours,
                 'overtime_pay' => $overtimePay,
+                'standard_working_days' => $standardWorkingDays,
+                'actual_working_days' => $actualWorkingDays,
                 'deduction' => $deduction,
                 'paid_leave_days' => $paidLeaveDays,
                 'unpaid_leave_days' => $unpaidLeaveDays,
                 'total_salary' => $totalSalary,
                 'status' => 'calculated',
             ]);
+
         }
 
         // Cập nhật trạng thái kỳ lương sang calculated
@@ -225,5 +246,24 @@ class PayrollService
 
         // Gọi lại hàm tính lương ban đầu
         return $this->calculatePayrollForPeriod($period, $departmentId);
+    }
+
+    /**
+     * Tính số ngày công chuẩn trong kỳ lương (Thứ 2 - Thứ 7, trừ Chủ nhật).
+     */
+    private function calculateStandardWorkingDays($startDate, $endDate): int
+    {
+        $days = 0;
+        $current = \Carbon\Carbon::parse($startDate)->copy();
+        $end = \Carbon\Carbon::parse($endDate);
+
+        while ($current->lte($end)) {
+            if (!$current->isSunday()) {
+                $days++;
+            }
+            $current->addDay();
+        }
+
+        return $days;
     }
 }

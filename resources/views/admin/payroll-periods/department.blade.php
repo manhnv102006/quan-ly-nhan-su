@@ -170,6 +170,8 @@
                                                     'late_days' => $lateDays,
                                                     'late_fine' => number_format($lateDays * 50000, 0, ',', '.'),
                                                     'unpaid_leave_fine' => number_format($payroll->unpaid_leave_days * 300000, 0, ',', '.'),
+                                                    'standard_working_days' => $payroll->standard_working_days,
+                                                    'actual_working_days' => $payroll->actual_working_days,
                                                     'total_salary' => number_format($payroll->total_salary, 0, ',', '.'),
                                                     'paid_salary' => in_array($payroll->status, ['paid', 'closed']) ? number_format($payroll->total_salary, 0, ',', '.') : '0',
                                                     'remaining_salary' => !in_array($payroll->status, ['paid', 'closed']) ? number_format($payroll->total_salary, 0, ',', '.') : '0',
@@ -279,14 +281,18 @@
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Ngày công chuẩn:</span>
-                            <span class="font-semibold text-slate-800">26</span>
+                            <span class="font-semibold text-slate-800" id="modalStandardDays">26</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-slate-50">
+                            <span class="font-medium text-slate-500">Ngày công thực tế:</span>
+                            <span class="font-semibold text-emerald-600" id="modalActualDays">26</span>
                         </div>
                     </div>
 
                     <!-- Right column -->
                     <div class="bg-slate-50/50 rounded-2xl p-5 border border-slate-100 space-y-3.5 text-sm">
                         <div class="flex justify-between items-center">
-                            <span class="text-slate-600 font-medium">Lương chính:</span>
+                            <span class="text-slate-600 font-medium" id="modalBasicLabel">Lương chính:</span>
                             <span class="font-bold text-slate-800" id="modalBasicSalary">11,000,000 ₫</span>
                         </div>
                         <div class="flex justify-between items-center">
@@ -335,12 +341,16 @@
                     </div>
                 </div>
 
-                <!-- Tab: Chấm công chi tiết -->
+                 <!-- Tab: Chấm công chi tiết -->
                 <div id="content-attendance" class="hidden space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div class="bg-violet-50/50 rounded-2xl p-4 border border-violet-100 text-center">
                             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Ngày công chuẩn</p>
-                            <h4 class="text-2xl font-black text-violet-700 mt-1">26</h4>
+                            <h4 class="text-2xl font-black text-violet-700 mt-1" id="modalStandardDaysAtt">26</h4>
+                        </div>
+                        <div class="bg-sky-50/50 rounded-2xl p-4 border border-sky-100 text-center">
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Ngày công thực tế</p>
+                            <h4 class="text-2xl font-black text-sky-700 mt-1" id="modalActualDaysAtt">26</h4>
                         </div>
                         <div class="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100 text-center">
                             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Nghỉ phép hưởng lương</p>
@@ -382,14 +392,10 @@
 
         function openPayrollModal(data) {
             document.getElementById('modalPayrollCode').innerText = 'PL' + String(data.id).padStart(6, '0');
-            document.getElementById('modalEmpName').innerText = data.employee_code + ' - ' + data.full_name;
-            document.getElementById('modalEmpDept').innerText = data.department_name;
-            document.getElementById('modalEmpPosition').innerText = data.position_name;
-            document.getElementById('modalStatus').innerText = data.status_label;
-            document.getElementById('modalPeriodName').innerText = data.period_name;
-            document.getElementById('modalPeriodRange').innerText = data.period_range;
-            
+             document.getElementById('modalBasicLabel').innerText = 'Lương chính (' + data.actual_working_days + '/' + data.standard_working_days + ' ngày):';
             document.getElementById('modalBasicSalary').innerText = data.basic_salary + ' ₫';
+            document.getElementById('modalStandardDays').innerText = data.standard_working_days;
+            document.getElementById('modalActualDays').innerText = data.actual_working_days;
             document.getElementById('modalAllowance').innerText = data.allowance + ' ₫';
             document.getElementById('modalBonus').innerText = data.bonus + ' ₫';
             document.getElementById('modalOvertime').innerText = data.overtime_pay + ' ₫';
@@ -410,12 +416,14 @@
             document.getElementById('modalTotalSalary').innerText = data.total_salary + ' ₫';
             document.getElementById('modalPaidSalary').innerText = data.paid_salary + ' ₫';
             document.getElementById('modalRemainingSalary').innerText = data.remaining_salary + ' ₫';
-
+ 
             // Attendance tab data
+            document.getElementById('modalStandardDaysAtt').innerText = data.standard_working_days;
+            document.getElementById('modalActualDaysAtt').innerText = data.actual_working_days;
             document.getElementById('modalPaidLeave').innerText = data.paid_leave_days + ' ngày';
             document.getElementById('modalUnpaidLeave').innerText = data.unpaid_leave_days + ' ngày';
             document.getElementById('modalOvertimeHours').innerText = data.overtime_hours + ' giờ';
-
+ 
             // PDF button url
             document.getElementById('modalPdfBtn').href = data.pdf_url;
 
