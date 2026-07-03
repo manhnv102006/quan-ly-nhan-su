@@ -16,6 +16,8 @@ class Payroll extends Model
         'bonus',
         'overtime_hours',
         'overtime_pay',
+        'standard_working_days',
+        'actual_working_days',
         'deduction',
         'paid_leave_days',
         'unpaid_leave_days',
@@ -26,6 +28,7 @@ class Payroll extends Model
         'paid_by',
         'paid_at',
     ];
+
 
     protected $casts = [
         'approved_at' => 'datetime',
