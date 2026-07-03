@@ -18,6 +18,7 @@ class Payroll extends Model
         'allowance_meal',
         'allowance_phone',
         'allowance_fuel',
+        'allowance_position',
         'bonus',
         'overtime_hours',
         'overtime_pay',
@@ -41,6 +42,7 @@ class Payroll extends Model
         'allowance_meal' => 'decimal:2',
         'allowance_phone' => 'decimal:2',
         'allowance_fuel' => 'decimal:2',
+        'allowance_position' => 'decimal:2',
     ];
 
     public function employee(): BelongsTo

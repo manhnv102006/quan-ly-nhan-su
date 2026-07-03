@@ -13,7 +13,7 @@ class PositionController extends Controller
     public function index(Request $request): View
     {
         $positions = Position::query()
-            ->orderBy('position_name')
+            ->orderBy('id', 'asc')
             ->paginate(10)
             ->withQueryString();
 
@@ -36,6 +36,7 @@ class PositionController extends Controller
         $validated = $request->validate([
             'position_name' => 'required|string|max:255|unique:positions,position_name',
             'base_salary' => 'required|numeric|min:0',
+            'allowance' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
         ], [
@@ -72,6 +73,7 @@ class PositionController extends Controller
         $validated = $request->validate([
             'position_name' => 'required|string|max:255|unique:positions,position_name,' . $position->id,
             'base_salary' => 'required|numeric|min:0',
+            'allowance' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
         ], [
