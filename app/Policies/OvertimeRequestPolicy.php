@@ -36,7 +36,7 @@ class OvertimeRequestPolicy
 
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isEmployee();
+        return $user->isAdmin() || $user->isEmployee() || $user->isManager();
     }
 
     public function update(User $user, OvertimeRequest $overtimeRequest): bool
@@ -87,12 +87,17 @@ class OvertimeRequestPolicy
 
     protected function managerCanManage(User $user, OvertimeRequest $overtimeRequest): bool
     {
+        $overtimeRequest->loadMissing('employee');
+
+        // Quản lý không được tự duyệt đơn tăng ca của chính mình; đơn này chỉ Admin mới duyệt.
+        if ($overtimeRequest->employee?->user_id === $user->id) {
+            return false;
+        }
+
         $manager = $this->managerResolver->resolve($user);
         if (! $manager) {
             return false;
         }
-
-        $overtimeRequest->loadMissing('employee');
 
         return $overtimeRequest->employee?->isManagedBy($manager) ?? false;
     }
