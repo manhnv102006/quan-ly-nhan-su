@@ -58,9 +58,9 @@
                     @method('PUT')
 
                     <div>
-                        <label for="job_post_id" class="mb-2 block text-sm font-bold text-slate-700">Tin tuyển dụng</label>
-                        <select id="job_post_id" name="job_post_id" class="{{ $inputClass }} @error('job_post_id') border-red-400 @enderror">
-                            <option value="">Chưa gắn tin tuyển dụng</option>
+                        <label for="job_post_id" class="mb-2 block text-sm font-bold text-slate-700">Tin tuyển dụng <span class="text-red-500">*</span></label>
+                        <select id="job_post_id" name="job_post_id" required class="{{ $inputClass }} @error('job_post_id') border-red-400 @enderror">
+                            <option value="">Chọn tin tuyển dụng</option>
                             @foreach ($jobPosts as $jobPost)
                                 <option value="{{ $jobPost->id }}" @selected(old('job_post_id', $candidate->job_post_id) == $jobPost->id)>
                                     {{ $jobPost->title }}
@@ -84,7 +84,7 @@
 
                         <div>
                             <label for="phone" class="mb-2 block text-sm font-bold text-slate-700">Số điện thoại <span class="text-red-500">*</span></label>
-                            <input type="text" id="phone" name="phone" value="{{ old('phone', $candidate->phone) }}" maxlength="20" required
+                            <input type="text" id="phone" name="phone" value="{{ old('phone', $candidate->phone) }}" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" required
                                    class="{{ $inputClass }} @error('phone') border-red-400 @enderror">
                             @error('phone')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
@@ -99,8 +99,8 @@
                         </div>
 
                         <div>
-                            <label for="birth_date" class="mb-2 block text-sm font-bold text-slate-700">Ngày sinh</label>
-                            <input type="date" id="birth_date" name="birth_date" value="{{ old('birth_date', $candidate->birth_date?->format('Y-m-d')) }}"
+                            <label for="birth_date" class="mb-2 block text-sm font-bold text-slate-700">Ngày sinh <span class="text-red-500">*</span></label>
+                            <input type="date" id="birth_date" name="birth_date" value="{{ old('birth_date', $candidate->birth_date?->format('Y-m-d')) }}" required
                                    class="{{ $inputClass }} @error('birth_date') border-red-400 @enderror">
                             @error('birth_date')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>

@@ -83,7 +83,7 @@
 
                         <div>
                             <label for="interview_date" class="mb-2 block text-sm font-bold text-slate-700">Thời gian phỏng vấn <span class="text-red-500">*</span></label>
-                            <input type="datetime-local" id="interview_date" name="interview_date" value="{{ old('interview_date') }}" required
+                            <input type="datetime-local" id="interview_date" name="interview_date" value="{{ old('interview_date') }}" min="{{ now()->format('Y-m-d\TH:i') }}" required
                                    class="{{ $inputClass }} @error('interview_date') border-red-400 @enderror">
                             @error('interview_date')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>

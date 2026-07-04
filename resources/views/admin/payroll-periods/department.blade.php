@@ -1,98 +1,99 @@
-<x-admin-layout title="Quản lý lương">
+<x-admin-layout title="Danh sách lương {{ $department->department_name }}">
 
     <div class="space-y-6">
 
+        <!-- Header -->
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
-                <h2 class="text-2xl font-bold text-slate-800">Bảng lương nhân viên</h2>
-                <p class="text-sm text-slate-500 mt-1">
-                    Xem và lọc thông tin thực lĩnh của nhân sự
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('admin.payroll-periods.show', $payrollPeriod) }}" 
+                       class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition"
+                       title="Quay lại chi tiết kỳ lương">
+                        ←
+                    </a>
+                    <h2 class="text-2xl font-bold text-slate-800">Lương phòng: {{ $department->department_name }}</h2>
+                </div>
+                <p class="text-sm text-slate-500 mt-1.5 ml-12">
+                    Kỳ lương: {{ $payrollPeriod->name }} ({{ $payrollPeriod->start_date?->format('d/m/Y') }} - {{ $payrollPeriod->end_date?->format('d/m/Y') }})
                 </p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
-                <a href="{{ route('admin.payroll-periods.index') }}"
-                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition text-sm">
-                    📅 Quản lý kỳ lương
-                </a>
+            <div class="flex items-center gap-3">
+                @if ($departmentStatus === 'open')
+                    <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-sky-100 text-sky-700 border border-sky-200">
+                        🔵 Chưa tính lương (Open)
+                    </span>
+                    <form action="{{ route('admin.payroll-periods.calculate', $payrollPeriod) }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="department_id" value="{{ $department->id }}">
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-medium shadow-lg transition text-sm">
+                            ⚡ Tính lương tự động
+                        </button>
+                    </form>
+                @elseif ($departmentStatus === 'calculated')
+                    <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                        🟡 Đã tính lương (Calculated)
+                    </span>
+                    <form action="{{ route('admin.payroll-periods.recalculate', $payrollPeriod) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn tính lại lương? Toàn bộ bảng lương hiện tại của kỳ này sẽ bị xóa và tính lại từ đầu.')">
+                        @csrf
+                        <input type="hidden" name="department_id" value="{{ $department->id }}">
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-lg transition text-sm">
+                            🔄 Tính lại
+                        </button>
+                    </form>
+                    <form action="{{ route('admin.payroll-periods.approve', $payrollPeriod) }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="department_id" value="{{ $department->id }}">
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg transition text-sm">
+                            ✅ Duyệt lương phòng ban
+                        </button>
+                    </form>
+                @elseif ($departmentStatus === 'approved')
+                    <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-violet-100 text-violet-700 border border-violet-200">
+                        🟣 Đã duyệt (Approved)
+                    </span>
+                    <form action="{{ route('admin.payroll-periods.pay', $payrollPeriod) }}" method="POST"
+                          onsubmit="return confirm('Xác nhận đã thực hiện chi trả lương cho nhân viên thuộc phòng ban này?')">
+                        @csrf
+                        <input type="hidden" name="department_id" value="{{ $department->id }}">
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-lg transition text-sm">
+                            💰 Chi trả lương phòng ban
+                        </button>
+                    </form>
+                @elseif ($departmentStatus === 'paid')
+                    <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                        🟢 Đã chi trả (Paid)
+                    </span>
+                    <form action="{{ route('admin.payroll-periods.close', $payrollPeriod) }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="department_id" value="{{ $department->id }}">
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-medium shadow-lg transition text-sm">
+                            🔒 Đóng lương phòng ban
+                        </button>
+                    </form>
+                @else
+                    <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                        🔒 Đã đóng (Closed)
+                    </span>
+                @endif
             </div>
         </div>
 
-        <!-- Thống kê tổng quan -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <p class="text-slate-500 text-sm">Tổng số phiếu lương</p>
-                <h3 class="text-3xl font-bold mt-2">
-                    {{ \App\Models\Payroll::count() }}
-                </h3>
-            </div>
-
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <p class="text-slate-500 text-sm">Tổng thực tế đã chi trả</p>
-                <h3 class="text-3xl font-bold mt-2 text-emerald-600">
-                    {{ number_format(\App\Models\Payroll::whereHas('payrollPeriod', function($q) { $q->whereIn('status', ['paid', 'closed']); })->sum('total_salary'), 0, ',', '.') }} ₫
-                </h3>
-            </div>
-
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <p class="text-slate-500 text-sm">Tổng chưa chi trả</p>
-                <h3 class="text-3xl font-bold mt-2 text-rose-600">
-                    {{ number_format(\App\Models\Payroll::whereHas('payrollPeriod', function($q) { $q->whereNotIn('status', ['paid', 'closed']); })->sum('total_salary'), 0, ',', '.') }} ₫
-                </h3>
-            </div>
-        </div>
-
-        <!-- Bộ lọc và tìm kiếm -->
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
-            <form action="{{ route('admin.payrolls') }}" method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label for="search" class="block text-xs font-bold text-slate-500 uppercase mb-2">Tìm kiếm nhân viên</label>
-                    <div class="relative">
-                        <input type="text" id="search" name="search"
-                               value="{{ request('search') }}"
-                               placeholder="Nhập tên nhân viên..."
-                               class="w-full rounded-xl border border-slate-200 pl-10 pr-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition text-sm">
-                        <span class="absolute left-3 top-3.5 text-slate-400">🔍</span>
-                    </div>
-                </div>
-
-                <div>
-                    <label for="period_id" class="block text-xs font-bold text-slate-500 uppercase mb-2">Lọc theo kỳ lương</label>
-                    <select id="period_id" name="period_id"
-                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition text-sm">
-                        <option value="">-- Tất cả kỳ lương --</option>
-                        @foreach ($periods as $period)
-                            <option value="{{ $period->id }}" @selected(request('period_id') == $period->id)>
-                                {{ $period->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="flex items-end gap-2">
-                    <button type="submit"
-                            class="flex-1 bg-violet-600 text-white font-medium px-5 py-3 rounded-xl hover:bg-violet-700 transition shadow-lg shadow-violet-500/10 text-sm">
-                        Lọc kết quả
-                    </button>
-                    @if(request()->anyFilled(['search', 'period_id']))
-                        <a href="{{ route('admin.payrolls') }}"
-                           class="bg-slate-100 text-slate-700 font-medium px-5 py-3 rounded-xl hover:bg-slate-200 transition text-sm text-center">
-                            Xóa lọc
-                        </a>
-                    @endif
-                </div>
-            </form>
-        </div>
-
-        <!-- Bảng danh sách lương -->
+        <!-- Danh sách bảng lương -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="font-semibold text-slate-800">Danh sách lương nhân viên</h3>
+                <span class="text-xs font-medium text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                    Hiển thị tối đa 10 nhân sự/trang
+                </span>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead>
                         <tr class="bg-slate-50">
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Mã NV</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Họ và tên</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Kỳ lương</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Lương cơ bản</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Phụ cấp</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Thưởng (KPI)</th>
@@ -100,7 +101,6 @@
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Nghỉ phép</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Khấu trừ</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Thực lĩnh</th>
-                            <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
                             <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
                         </tr>
                     </thead>
@@ -122,51 +122,31 @@
                                 <td class="px-6 py-4 font-semibold text-slate-800">
                                     {{ $payroll->employee?->full_name ?: '—' }}
                                 </td>
-                                <td class="px-6 py-4 text-slate-600">
-                                    <a href="{{ route('admin.payroll-periods.show', $payroll->payroll_period_id) }}" class="text-violet-600 hover:underline">
-                                        {{ $payroll->payrollPeriod?->name ?: '—' }}
-                                    </a>
-                                </td>
-                                <td class="px-6 py-4 text-slate-600">
+                                <td class="px-6 py-4 text-slate-700">
                                     {{ number_format($payroll->basic_salary, 0, ',', '.') }} ₫
                                 </td>
-                                <td class="px-6 py-4 text-slate-600">
+                                <td class="px-6 py-4 text-slate-700">
                                     {{ number_format($payroll->allowance, 0, ',', '.') }} ₫
                                 </td>
-                                <td class="px-6 py-4 font-medium text-emerald-600">
+                                <td class="px-6 py-4 font-medium text-slate-700">
                                     @if($payroll->bonus > 0)+@endif{{ number_format($payroll->bonus, 0, ',', '.') }} ₫
                                 </td>
-                                <td class="px-6 py-4 text-slate-600">
-                                    @if($payroll->overtime_hours > 0)
-                                        <span class="text-sky-600 font-semibold">{{ $payroll->overtime_hours }}h</span>
-                                        <span class="text-slate-400">→</span>
-                                        <span class="text-emerald-600">+{{ number_format($payroll->overtime_pay, 0, ',', '.') }} ₫</span>
+                                <td class="px-6 py-4 text-slate-700">
+                                    @if($payroll->overtime_pay > 0)
+                                        {{ number_format($payroll->overtime_pay, 0, ',', '.') }} ₫
                                     @else
                                         <span class="text-slate-400">—</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-slate-600">
-                                    <span class="text-emerald-600 font-semibold" title="Nghỉ phép có phép (hưởng lương)">{{ $payroll->paid_leave_days }}P</span> / 
-                                    <span class="text-rose-500 font-semibold" title="Nghỉ phép không lương / vắng mặt">{{ $payroll->unpaid_leave_days }}KP</span>
+                                <td class="px-6 py-4 text-slate-500">
+                                    <span class="font-semibold text-slate-700" title="Nghỉ phép có phép (hưởng lương)">{{ $payroll->paid_leave_days }}P</span> / 
+                                    <span class="font-semibold text-slate-700" title="Nghỉ phép không lương / vắng mặt">{{ $payroll->unpaid_leave_days }}KP</span>
                                 </td>
-                                <td class="px-6 py-4 text-red-500">
+                                <td class="px-6 py-4 text-slate-700">
                                     -{{ number_format($payroll->deduction, 0, ',', '.') }} ₫
                                 </td>
-                                <td class="px-6 py-4 font-bold text-violet-600">
+                                <td class="px-6 py-4 font-bold text-slate-950">
                                     {{ number_format($payroll->total_salary, 0, ',', '.') }} ₫
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    @if ($payroll->payrollPeriod?->status === 'open')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">Chưa tính lương</span>
-                                    @elseif ($payroll->payrollPeriod?->status === 'calculated')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Đã tính lương</span>
-                                    @elseif ($payroll->payrollPeriod?->status === 'approved')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-700">Đã duyệt</span>
-                                    @elseif ($payroll->payrollPeriod?->status === 'paid')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Đã chi trả</span>
-                                    @else
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Đã đóng</span>
-                                    @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex justify-center items-center gap-2">
@@ -181,6 +161,10 @@
                                                     'period_range' => ($payroll->payrollPeriod?->start_date?->format('d/m/Y') ?: '') . ' - ' . ($payroll->payrollPeriod?->end_date?->format('d/m/Y') ?: ''),
                                                     'basic_salary' => number_format($payroll->basic_salary, 0, ',', '.'),
                                                     'allowance' => number_format($payroll->allowance, 0, ',', '.'),
+                                                    'allowance_meal' => number_format($payroll->allowance_meal, 0, ',', '.'),
+                                                    'allowance_phone' => number_format($payroll->allowance_phone, 0, ',', '.'),
+                                                    'allowance_fuel' => number_format($payroll->allowance_fuel, 0, ',', '.'),
+                                                    'allowance_position' => number_format($payroll->allowance_position, 0, ',', '.'),
                                                     'bonus' => number_format($payroll->bonus, 0, ',', '.'),
                                                     'overtime_hours' => $payroll->overtime_hours,
                                                     'overtime_pay' => number_format($payroll->overtime_pay, 0, ',', '.'),
@@ -209,17 +193,17 @@
                                             👁️ Xem chi tiết
                                         </button>
                                         <a href="{{ route('admin.payrolls.pdf', $payroll) }}"
-                                           class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1"
+                                           class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1"
                                            title="Xuất PDF">
-                                            📄 PDF
+                                            📄 Xuất PDF
                                         </a>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="12" class="text-center py-12 text-slate-400">
-                                    Không tìm thấy dữ liệu bảng lương phù hợp
+                                <td colspan="10" class="px-6 py-10 text-center text-slate-500">
+                                    Kỳ lương này chưa được tính hoặc chưa có nhân sự nào trong phòng ban này được lập bảng lương.
                                 </td>
                             </tr>
                         @endforelse
@@ -232,36 +216,6 @@
                     {{ $payrolls->links() }}
                 </div>
             @endif
-        </div>
-
-    </div>
-
-    <!-- Thông báo Success -->
-    @if (session('success'))
-        <div id="success-toast"
-             class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-emerald-200 shadow-lg rounded-2xl px-5 py-4 max-w-sm">
-            <div class="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-            </div>
-            <p class="text-sm font-medium text-slate-700">{{ session('success') }}</p>
-        </div>
-    @endif
-
-    <!-- Thông báo Error -->
-    @if (session('error'))
-        <div id="error-toast"
-             class="fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-red-200 shadow-lg rounded-2xl px-5 py-4 max-w-sm">
-            <div class="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </div>
-            <p class="text-sm font-medium text-slate-700">{{ session('error') }}</p>
-        </div>
-    @endif
-
     <!-- Modal Chi tiết Phiếu lương -->
     <div id="payrollDetailModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
         <!-- Overlay -->
@@ -347,6 +301,24 @@
                             <span class="text-slate-600 font-medium">Phụ cấp:</span>
                             <span class="font-bold text-slate-800" id="modalAllowance">500,000 ₫</span>
                         </div>
+                        <div class="pl-4 space-y-1 text-xs text-slate-500 border-l border-slate-200">
+                            <div class="flex justify-between items-center">
+                                <span>+ Ăn trưa:</span>
+                                <span id="modalAllowanceMeal">0 ₫</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>+ Điện thoại:</span>
+                                <span id="modalAllowancePhone">0 ₫</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>+ Xăng xe:</span>
+                                <span id="modalAllowanceFuel">0 ₫</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>+ Chức vụ:</span>
+                                <span id="modalAllowancePosition">0 ₫</span>
+                            </div>
+                        </div>
                         <div class="flex justify-between items-center">
                             <span class="text-slate-600 font-medium">Thưởng (KPI):</span>
                             <span class="font-bold text-slate-800 text-emerald-600" id="modalBonus">0 ₫</span>
@@ -389,9 +361,9 @@
                     </div>
                 </div>
 
-                <!-- Tab: Chấm công chi tiết -->
+                 <!-- Tab: Chấm công chi tiết -->
                 <div id="content-attendance" class="hidden space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div class="bg-violet-50/50 rounded-2xl p-4 border border-violet-100 text-center">
                             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Ngày công chuẩn</p>
                             <h4 class="text-2xl font-black text-violet-700 mt-1" id="modalStandardDaysAtt">26</h4>
@@ -440,18 +412,15 @@
 
         function openPayrollModal(data) {
             document.getElementById('modalPayrollCode').innerText = 'PL' + String(data.id).padStart(6, '0');
-            document.getElementById('modalEmpName').innerText = data.employee_code + ' - ' + data.full_name;
-            document.getElementById('modalEmpDept').innerText = data.department_name;
-            document.getElementById('modalEmpPosition').innerText = data.position_name;
-            document.getElementById('modalStatus').innerText = data.status_label;
-            document.getElementById('modalPeriodName').innerText = data.period_name;
-            document.getElementById('modalPeriodRange').innerText = data.period_range;
-            
-            document.getElementById('modalBasicLabel').innerText = 'Lương chính (' + data.actual_working_days + '/' + data.standard_working_days + ' ngày):';
+             document.getElementById('modalBasicLabel').innerText = 'Lương chính (' + data.actual_working_days + '/' + data.standard_working_days + ' ngày):';
             document.getElementById('modalBasicSalary').innerText = data.basic_salary + ' ₫';
             document.getElementById('modalStandardDays').innerText = data.standard_working_days;
             document.getElementById('modalActualDays').innerText = data.actual_working_days;
             document.getElementById('modalAllowance').innerText = data.allowance + ' ₫';
+            document.getElementById('modalAllowanceMeal').innerText = data.allowance_meal + ' ₫';
+            document.getElementById('modalAllowancePhone').innerText = data.allowance_phone + ' ₫';
+            document.getElementById('modalAllowanceFuel').innerText = data.allowance_fuel + ' ₫';
+            document.getElementById('modalAllowancePosition').innerText = data.allowance_position + ' ₫';
             document.getElementById('modalBonus').innerText = data.bonus + ' ₫';
             document.getElementById('modalOvertime').innerText = data.overtime_pay + ' ₫';
             
@@ -471,14 +440,14 @@
             document.getElementById('modalTotalSalary').innerText = data.total_salary + ' ₫';
             document.getElementById('modalPaidSalary').innerText = data.paid_salary + ' ₫';
             document.getElementById('modalRemainingSalary').innerText = data.remaining_salary + ' ₫';
-
+ 
             // Attendance tab data
             document.getElementById('modalStandardDaysAtt').innerText = data.standard_working_days;
             document.getElementById('modalActualDaysAtt').innerText = data.actual_working_days;
             document.getElementById('modalPaidLeave').innerText = data.paid_leave_days + ' ngày';
             document.getElementById('modalUnpaidLeave').innerText = data.unpaid_leave_days + ' ngày';
             document.getElementById('modalOvertimeHours').innerText = data.overtime_hours + ' giờ';
-
+ 
             // PDF button url
             document.getElementById('modalPdfBtn').href = data.pdf_url;
 
@@ -513,25 +482,6 @@
                 contentPayment.classList.add('hidden');
                 contentAttendance.classList.remove('hidden');
             }
-        }
-
-        // Tự tắt Toast thông báo sau 4 giây
-        const successToast = document.getElementById('success-toast');
-        if (successToast) {
-            setTimeout(function () {
-                successToast.style.transition = 'opacity 0.3s ease';
-                successToast.style.opacity = '0';
-                setTimeout(function () { successToast.remove(); }, 300);
-            }, 4000);
-        }
-
-        const errorToast = document.getElementById('error-toast');
-        if (errorToast) {
-            setTimeout(function () {
-                errorToast.style.transition = 'opacity 0.3s ease';
-                errorToast.style.opacity = '0';
-                setTimeout(function () { errorToast.remove(); }, 300);
-            }, 4000);
         }
     </script>
 
