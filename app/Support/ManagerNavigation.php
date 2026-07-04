@@ -39,7 +39,7 @@ class ManagerNavigation
                 'href' => route('manager.leave-requests.index'),
                 'route' => 'manager.leave-requests*',
                 'icon' => 'M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zM12 16.5h.008v.008H12V16.5z',
-                'note' => 'Quản lý nghỉ phép',
+                'note' => 'Duyệt nhân viên & đơn cá nhân',
             ],
             [
                 'label' => 'Tăng ca',
