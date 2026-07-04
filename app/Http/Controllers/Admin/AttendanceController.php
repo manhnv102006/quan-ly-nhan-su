@@ -27,6 +27,7 @@ class AttendanceController extends Controller
         ]);
     }
 
+
     public function department(Request $request, Department $department): View
     {
         return view('admin.attendances.department', [
