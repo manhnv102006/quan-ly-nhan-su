@@ -15,6 +15,11 @@ use App\Rules\NoContractOverlap;
 class ContractService
 {
     /**
+     * Phụ cấp cố định cho mọi hợp đồng: 1.500.000đ.
+     */
+    public const FIXED_ALLOWANCE = 1_500_000;
+
+    /**
      * Sinh mã hợp đồng theo định dạng HD-YYYY-0001
      */
     public function generateCode(): string
@@ -47,6 +52,7 @@ class ContractService
             $data['created_by'] = $creatorId;
             $data['department_id'] = $data['department_id'] ?? $employee->department_id;
             $data['position_id'] = $data['position_id'] ?? $employee->position_id;
+            $data['allowance'] = self::FIXED_ALLOWANCE;
 
             $this->assertNoOverlap($data['employee_id'], $data['start_date'], $data['end_date']);
 
@@ -68,6 +74,8 @@ class ContractService
         }
 
         return DB::transaction(function () use ($contract, $data) {
+            $data['allowance'] = self::FIXED_ALLOWANCE;
+
             $this->assertNoOverlap(
                 $data['employee_id'] ?? $contract->employee_id,
                 $data['start_date'] ?? $contract->start_date->toDateString(),
@@ -119,7 +127,7 @@ class ContractService
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
                 'salary' => $data['salary'] ?? $contract->salary,
-                'allowance' => $data['allowance'] ?? $contract->allowance,
+                'allowance' => self::FIXED_ALLOWANCE,
                 'description' => $data['description'] ?? $contract->description,
                 'note' => $data['note'] ?? null,
                 'status' => Contract::STATUS_ACTIVE,
