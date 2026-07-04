@@ -60,6 +60,27 @@ class OvertimeRequest extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saved(function (OvertimeRequest $overtimeRequest) {
+            if ($overtimeRequest->employee_id && $overtimeRequest->work_date) {
+                app(\App\Services\PayrollService::class)->updatePayrollOvertime(
+                    $overtimeRequest->employee_id,
+                    $overtimeRequest->work_date->format('Y-m-d')
+                );
+            }
+        });
+
+        static::deleted(function (OvertimeRequest $overtimeRequest) {
+            if ($overtimeRequest->employee_id && $overtimeRequest->work_date) {
+                app(\App\Services\PayrollService::class)->updatePayrollOvertime(
+                    $overtimeRequest->employee_id,
+                    $overtimeRequest->work_date->format('Y-m-d')
+                );
+            }
+        });
+    }
+
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);

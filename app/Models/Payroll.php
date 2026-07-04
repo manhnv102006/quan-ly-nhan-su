@@ -4,18 +4,26 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payroll extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'employee_id',
         'payroll_period_id',
         'generated_by',
         'basic_salary',
         'allowance',
+        'allowance_meal',
+        'allowance_phone',
+        'allowance_fuel',
+        'allowance_position',
         'bonus',
         'overtime_hours',
         'overtime_pay',
+        'standard_working_days',
+        'actual_working_days',
         'deduction',
         'paid_leave_days',
         'unpaid_leave_days',
@@ -27,9 +35,14 @@ class Payroll extends Model
         'paid_at',
     ];
 
+
     protected $casts = [
         'approved_at' => 'datetime',
         'paid_at' => 'datetime',
+        'allowance_meal' => 'decimal:2',
+        'allowance_phone' => 'decimal:2',
+        'allowance_fuel' => 'decimal:2',
+        'allowance_position' => 'decimal:2',
     ];
 
     public function employee(): BelongsTo
@@ -54,7 +67,7 @@ class Payroll extends Model
 
     public function displayStatus(): string
     {
-        return $this->payrollPeriod?->status ?? $this->status;
+        return $this->status ?? $this->payrollPeriod?->status ?? 'open';
     }
 
     public function statusLabel(): string
