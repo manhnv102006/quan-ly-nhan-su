@@ -14,6 +14,16 @@ class ContractStoreRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('salary')) {
+            // Bỏ dấu chấm phân tách hàng nghìn (VD: "15.000.000" -> "15000000").
+            $this->merge([
+                'salary' => str_replace('.', '', (string) $this->input('salary')),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
