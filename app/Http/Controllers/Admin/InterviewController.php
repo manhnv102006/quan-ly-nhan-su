@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\CandidateInterviewInvitationMail;
 use App\Models\Candidate;
 use App\Models\Employee;
 use App\Models\Interview;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
+use Throwable;
 
 class InterviewController extends Controller
 {
@@ -53,30 +57,70 @@ class InterviewController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'candidate_id' => ['required', 'exists:candidates,id'],
+            'candidate_id' => ['required', 'exists:candidates,id', 'unique:interviews,candidate_id'],
             'interviewer_id' => ['nullable', 'exists:employees,id'],
-            'interview_date' => ['required', 'date'],
+            'interview_date' => ['required', 'date', 'after:now'],
             'note' => ['nullable', 'string'],
         ], [
             'candidate_id.required' => 'Ứng viên là bắt buộc.',
             'candidate_id.exists' => 'Ứng viên được chọn không hợp lệ.',
+            'candidate_id.unique' => 'Đã tạo lịch phỏng vấn cho ứng viên này rồi.',
             'interviewer_id.exists' => 'Người phỏng vấn được chọn không hợp lệ.',
             'interview_date.required' => 'Thời gian phỏng vấn là bắt buộc.',
             'interview_date.date' => 'Thời gian phỏng vấn không hợp lệ.',
+            'interview_date.after' => 'Thời gian phỏng vấn phải ở tương lai.',
         ]);
 
         $validated['interviewer_id'] = $validated['interviewer_id'] ?: null;
         $validated['status'] = 'scheduled';
         $validated['result'] = 'pending';
 
-        DB::transaction(function () use ($validated) {
+        $interview = DB::transaction(function () use ($validated) {
             $candidate = Candidate::query()->findOrFail($validated['candidate_id']);
 
-            Interview::create($validated);
+            $interview = Interview::create($validated);
 
             $candidate->update([
                 'status' => 'interview',
             ]);
+
+            return $interview;
+        });
+
+        DB::afterCommit(function () use ($interview) {
+            $interview->loadMissing(['candidate.jobPost', 'interviewer']);
+
+            if (filled($interview->candidate?->email)) {
+                $mail = new CandidateInterviewInvitationMail($interview);
+
+                try {
+                    Mail::to($interview->candidate->email)
+                        ->send($mail);
+
+                    $interview->candidate->emailLogs()->create([
+                        'email' => $interview->candidate->email,
+                        'type' => 'interview_invitation',
+                        'status' => 'sent',
+                        'subject' => $mail->subjectText(),
+                        'sent_at' => now(),
+                    ]);
+                } catch (Throwable $exception) {
+                    $interview->candidate->emailLogs()->create([
+                        'email' => $interview->candidate->email,
+                        'type' => 'interview_invitation',
+                        'status' => 'failed',
+                        'subject' => $mail->subjectText(),
+                        'error_message' => $exception->getMessage(),
+                    ]);
+
+                    Log::warning('Unable to send interview invitation email to candidate.', [
+                        'candidate_id' => $interview->candidate->id,
+                        'candidate_email' => $interview->candidate->email,
+                        'interview_id' => $interview->id,
+                        'error' => $exception->getMessage(),
+                    ]);
+                }
+            }
         });
 
         return redirect()
