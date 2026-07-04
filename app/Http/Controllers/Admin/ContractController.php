@@ -80,6 +80,10 @@ class ContractController extends Controller
             'contractTypes' => ContractType::orderBy('contract_name')->get(),
             'employees' => Employee::with(['department', 'position'])
                 ->where('status', 'active')
+                // Ẩn nhân viên đã có hợp đồng đang hiệu lực (mỗi nhân viên chỉ 1 HĐ active).
+                ->whereDoesntHave('contracts', function ($q) {
+                    $q->where('status', Contract::STATUS_ACTIVE);
+                })
                 ->orderBy('full_name')
                 ->get(),
             'departments' => Department::orderBy('department_name')->get(),
