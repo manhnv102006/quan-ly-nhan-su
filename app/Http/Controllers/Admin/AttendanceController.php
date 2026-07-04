@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Department;
+use App\Models\Employee;
 use App\Models\EmployeeShift;
 use App\Support\DepartmentSummaryBuilder;
 use Illuminate\Http\Request;
@@ -12,9 +13,16 @@ use Illuminate\View\View;
 
 class AttendanceController extends Controller
 {
-       public function index(): View
+    public function index(Request $request): View
     {
+        $data = $this->buildListData($request);
+
         return view('admin.attendances.index', [
+            ...$data,
+            'employees' => Employee::query()
+                ->select('full_name', 'employee_code')
+                ->orderBy('full_name')
+                ->get(),
             'departmentSummaries' => DepartmentSummaryBuilder::forAttendanceManagement(),
             'employees' => \App\Models\Employee::select('full_name', 'employee_code')->get(),
         ]);
@@ -95,7 +103,7 @@ class AttendanceController extends Controller
      *     filters: array{search: string, status: mixed, date: mixed}
      * }
      */
-    private function buildListData(Request $request, int $departmentId): array
+    private function buildListData(Request $request, ?int $departmentId = null): array
     {
         $filters = [
             'search' => trim((string) $request->input('search', '')),
@@ -104,7 +112,12 @@ class AttendanceController extends Controller
         ];
 
         $scopedQuery = Attendance::query()
-            ->whereHas('employee', fn ($employeeQuery) => $employeeQuery->where('department_id', $departmentId));
+            ->when($departmentId, function ($query) use ($departmentId) {
+                $query->whereHas(
+                    'employee',
+                    fn ($employeeQuery) => $employeeQuery->where('department_id', $departmentId)
+                );
+            });
 
         $stats = [
             'total' => (clone $scopedQuery)->count(),
