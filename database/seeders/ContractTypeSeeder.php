@@ -40,6 +40,12 @@ class ContractTypeSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'contract_name' => 'Hợp đồng thực tập',
+                'duration_month' => 3,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 }

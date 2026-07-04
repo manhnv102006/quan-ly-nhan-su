@@ -39,7 +39,7 @@ class PayrollService
 
         // 2. Lấy danh sách nhân viên đang hoạt động (lọc theo phòng ban nếu có)
         $employeesQuery = Employee::with(['position', 'contracts' => function ($query) {
-            $query->where('status', 'active');
+            $query->where('status', 'active')->with('contractType');
         }])->where('status', 'active');
 
         if ($departmentId) {
@@ -145,8 +145,9 @@ class PayrollService
             }
 
             // Phụ cấp cố định 1.500.000đ cho mọi nhân viên (dùng chung hằng số với hợp đồng).
-            // Vẫn giữ quy tắc: không đi làm ngày nào thì không hưởng phụ cấp.
-            $allowance = $presentDays == 0 ? 0 : ContractService::FIXED_ALLOWANCE;
+            // Hợp đồng thực tập: không có phụ cấp. Không đi làm ngày nào: cũng không hưởng phụ cấp.
+            $isInternship = $activeContract?->contractType?->isInternship() ?? false;
+            $allowance = ($presentDays == 0 || $isInternship) ? 0 : ContractService::FIXED_ALLOWANCE;
 
             // F. Lương cơ bản PRO-RATA theo ngày công thực tế
             $basicSalary = $standardWorkingDays > 0
