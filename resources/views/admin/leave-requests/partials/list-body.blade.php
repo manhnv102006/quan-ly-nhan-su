@@ -109,7 +109,7 @@
                         <th class="px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Số ngày</th>
                         <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Lý do</th>
                         <th class="px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
-                        <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Quản lý xử lý</th>
+                        <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Người xử lý</th>
                         <th class="px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Thao tác</th>
                     </tr>
                 </thead>
