@@ -108,9 +108,10 @@
     </div>
 
     <div>
-        <label for="allowance" class="admin-label">Tổng phụ cấp hàng tháng (Tự động tính)</label>
-        <input type="number" id="allowance" name="allowance" class="admin-field bg-slate-50 cursor-not-allowed" min="0"
-               value="{{ old('allowance', $isEdit ? (int)$contract->allowance : 0) }}" readonly>
+        <label for="allowance" class="admin-label">Phụ cấp hàng tháng (cố định)</label>
+        <input type="text" id="allowance" name="allowance" class="admin-field money-input bg-slate-50 cursor-not-allowed" inputmode="numeric"
+               value="1500000" readonly>
+        <p class="mt-1 text-[11px] text-slate-400">Cố định 1.500.000đ cho mọi hợp đồng.</p>
         @error('allowance')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
     </div>
 
@@ -221,27 +222,3 @@
     </script>
 @endpush
 
-@push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const subAllowances = document.querySelectorAll('.sub-allowance');
-            const totalAllowanceInput = document.getElementById('allowance');
-
-            if (subAllowances.length && totalAllowanceInput) {
-                function calculateTotalAllowance() {
-                    let total = 0;
-                    subAllowances.forEach(input => {
-                        const val = parseFloat(input.value) || 0;
-                        total += val;
-                    });
-                    totalAllowanceInput.value = total;
-                }
-
-                subAllowances.forEach(input => {
-                    input.addEventListener('input', calculateTotalAllowance);
-                    input.addEventListener('change', calculateTotalAllowance);
-                });
-            }
-        });
-    </script>
-@endpush

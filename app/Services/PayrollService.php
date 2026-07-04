@@ -144,7 +144,9 @@ class PayrollService
                 $allowancePosition = 0;
             }
 
-            $allowance = $allowanceMeal + $allowancePhone + $allowanceFuel + $allowancePosition;
+            // Phụ cấp cố định 1.500.000đ cho mọi nhân viên (dùng chung hằng số với hợp đồng).
+            // Vẫn giữ quy tắc: không đi làm ngày nào thì không hưởng phụ cấp.
+            $allowance = $presentDays == 0 ? 0 : ContractService::FIXED_ALLOWANCE;
 
             // F. Lương cơ bản PRO-RATA theo ngày công thực tế
             $basicSalary = $standardWorkingDays > 0
