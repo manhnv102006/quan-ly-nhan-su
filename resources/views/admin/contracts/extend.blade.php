@@ -51,8 +51,8 @@
                     </div>
                     <div>
                         <label for="salary" class="admin-label">Lương cơ bản *</label>
-                        <input type="number" id="salary" name="salary" class="admin-field" min="1" required
-                               value="{{ old('salary', $contract->salary) }}">
+                        <input type="text" id="salary" name="salary" class="admin-field money-input" inputmode="numeric" required
+                               value="{{ old('salary', (int) $contract->salary) }}" placeholder="VD: 15.000.000">
                         @error('salary')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
@@ -80,4 +80,35 @@
             </form>
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Định dạng ô tiền: phân tách hàng nghìn bằng dấu chấm (VD: 15.000.000).
+                const moneyInputs = document.querySelectorAll('.money-input');
+
+                function formatMoney(value) {
+                    const digits = (value || '').toString().replace(/\D/g, '');
+                    if (digits === '') return '';
+                    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                }
+
+                moneyInputs.forEach(function (input) {
+                    input.value = formatMoney(input.value);
+
+                    input.addEventListener('input', function () {
+                        this.value = formatMoney(this.value);
+                    });
+
+                    const form = input.closest('form');
+                    if (form) {
+                        // Bỏ dấu chấm trước khi gửi để server nhận số thuần.
+                        form.addEventListener('submit', function () {
+                            input.value = (input.value || '').replace(/\D/g, '');
+                        });
+                    }
+                });
+            });
+        </script>
+    @endpush
 </x-admin-layout>
