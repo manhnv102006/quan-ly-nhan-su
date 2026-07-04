@@ -21,8 +21,9 @@
 <x-dynamic-component :component="$layout" :attributes="new \Illuminate\View\ComponentAttributeBag($layoutParams)">
 
     <div class="max-w-2xl">
-        <a href="{{ route('employee.leave-requests') }}" class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition mb-6 font-semibold">
-            <span>←</span> Quay lại danh sách
+        <a href="{{ $isManager ? route('manager.leave-requests.index') : route('employee.leave-requests') }}"
+           class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition mb-6 font-semibold">
+            <span>←</span> {{ $isManager ? 'Quay lại quản lý nghỉ phép' : 'Quay lại danh sách' }}
         </a>
 
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-8">
