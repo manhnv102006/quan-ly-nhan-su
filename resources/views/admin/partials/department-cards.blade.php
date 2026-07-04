@@ -5,6 +5,7 @@
     'statLabels' => ['Tổng đơn', 'Chờ duyệt', 'Đã duyệt'],
     'statKeys' => ['total', 'pending', 'approved'],
     'statTones' => ['slate', 'amber', 'emerald'],
+    'formatters' => [],
 ])
 
 <section class="space-y-4">
@@ -41,31 +42,82 @@
                     </h3>
                     <p class="text-xs text-slate-500">{{ $dept->department_code }}</p>
 
-                    <div class="mt-4 grid grid-cols-3 gap-2 text-center">
-                        @foreach ($statKeys as $i => $key)
-                            @php
-                                $tone = $statTones[$i] ?? 'slate';
-                                $bgClass = match ($tone) {
-                                    'amber' => 'bg-amber-50',
-                                    'emerald' => 'bg-emerald-50',
-                                    'rose' => 'bg-rose-50',
-                                    'sky' => 'bg-sky-50',
-                                    default => 'bg-slate-50',
-                                };
-                                $textClass = match ($tone) {
-                                    'amber' => 'text-amber-600',
-                                    'emerald' => 'text-emerald-600',
-                                    'rose' => 'text-rose-600',
-                                    'sky' => 'text-sky-600',
-                                    default => 'text-slate-800',
-                                };
-                            @endphp
-                            <div class="rounded-xl {{ $bgClass }} px-2 py-2">
-                                <p class="text-lg font-extrabold {{ $textClass }}">{{ $deptStats[$key] ?? 0 }}</p>
-                                <p class="text-[10px] text-slate-500">{{ $statLabels[$i] ?? $key }}</p>
-                            </div>
-                        @endforeach
-                    </div>
+                    @if(count($statKeys) > 3)
+                        <!-- Dạng danh sách chi tiết (khi có nhiều thông số như Lương) -->
+                        <div class="mt-4 space-y-1.5 border-t border-slate-100 pt-3">
+                            @foreach ($statKeys as $i => $key)
+                                @php
+                                    $tone = $statTones[$i] ?? 'slate';
+                                    $textClass = match ($tone) {
+                                        'amber' => 'text-amber-600 font-semibold',
+                                        'emerald' => 'text-emerald-600 font-semibold',
+                                        'rose' => 'text-rose-500 font-semibold',
+                                        'sky' => 'text-sky-600 font-semibold',
+                                        'indigo' => 'text-indigo-600 font-semibold',
+                                        'violet' => 'text-violet-600 font-bold text-sm',
+                                        default => 'text-slate-700 font-semibold',
+                                    };
+                                    $val = $deptStats[$key] ?? 0;
+                                    if (isset($formatters[$key])) {
+                                        $val = $formatters[$key]($val);
+                                    }
+                                @endphp
+                                <div class="flex justify-between items-center py-0.5 text-xs">
+                                    <span class="text-slate-500">{{ $statLabels[$i] ?? $key }}</span>
+                                    <span class="{{ $textClass }}">{{ $val }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <!-- Dạng lưới (cho KPI, nghỉ phép, tăng ca...) -->
+                        <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+                            @foreach ($statKeys as $i => $key)
+                                @php
+                                    $val = $deptStats[$key] ?? 0;
+                                    $tone = $statTones[$i] ?? 'slate';
+                                    $bgClass = match ($tone) {
+                                        'amber' => 'bg-amber-50',
+                                        'emerald' => 'bg-emerald-50',
+                                        'rose' => 'bg-rose-50',
+                                        'sky' => 'bg-sky-50',
+                                        'violet' => 'bg-violet-50',
+                                        default => 'bg-slate-50',
+                                    };
+                                    $textClass = match ($tone) {
+                                        'amber' => 'text-amber-600',
+                                        'emerald' => 'text-emerald-600',
+                                        'rose' => 'text-rose-600',
+                                        'sky' => 'text-sky-600',
+                                        'violet' => 'text-violet-600',
+                                        default => 'text-slate-800',
+                                    };
+                                    if ($key === 'status_label') {
+                                        $bgClass = match ($val) {
+                                            'Tạm tính' => 'bg-sky-100/70',
+                                            'Đã tính' => 'bg-amber-100/70',
+                                            'Đã duyệt' => 'bg-violet-100/70',
+                                            'Đã chi trả' => 'bg-emerald-100/70',
+                                            default => 'bg-slate-100/70',
+                                        };
+                                        $textClass = match ($val) {
+                                            'Tạm tính' => 'text-sky-700 font-bold',
+                                            'Đã tính' => 'text-amber-700 font-bold',
+                                            'Đã duyệt' => 'text-violet-700 font-bold',
+                                            'Đã chi trả' => 'text-emerald-700 font-bold',
+                                            default => 'text-slate-600 font-bold',
+                                        };
+                                    }
+                                    if (isset($formatters[$key])) {
+                                        $val = $formatters[$key]($val);
+                                    }
+                                @endphp
+                                <div class="rounded-xl {{ $bgClass }} px-2 py-2.5 flex flex-col justify-center items-center min-h-[64px]">
+                                    <p class="text-xs text-slate-500 mb-1 font-medium">{{ $statLabels[$i] ?? $key }}</p>
+                                    <p class="{{ $key === 'status_label' ? 'text-sm font-bold' : 'text-xl font-extrabold' }} {{ $textClass }}">{{ $val }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </a>
             @endforeach
         </div>

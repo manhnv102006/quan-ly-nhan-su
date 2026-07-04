@@ -13,8 +13,14 @@ class Position extends Model
     protected $fillable = [
         'position_name',
         'base_salary',
+        'allowance',
         'description',
         'status',
+    ];
+
+    protected $casts = [
+        'base_salary' => 'decimal:2',
+        'allowance' => 'decimal:2',
     ];
 
     protected $dates = [

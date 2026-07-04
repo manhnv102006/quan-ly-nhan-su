@@ -25,18 +25,28 @@ class PayrollService
      * @param PayrollPeriod $period
      * @return string
      */
-    public function calculatePayrollForPeriod(PayrollPeriod $period): string
+    public function calculatePayrollForPeriod(PayrollPeriod $period, ?int $departmentId = null): string
     {
-        // 1. Kiểm tra xem kỳ lương này đã được tính trước đó chưa
-        $exists = Payroll::where('payroll_period_id', $period->id)->exists();
+        // 1. Kiểm tra xem kỳ lương này của phòng ban đã được tính trước đó chưa
+        $existsQuery = Payroll::withTrashed()->where('payroll_period_id', $period->id);
+        if ($departmentId) {
+            $existsQuery->whereHas('employee', fn($q) => $q->where('department_id', $departmentId));
+        }
+        $exists = $existsQuery->exists();
         if ($exists) {
             return 'already_exists';
         }
 
-        // 2. Lấy danh sách toàn bộ nhân viên đang hoạt động
-        $employees = Employee::with(['position', 'contracts' => function ($query) {
+        // 2. Lấy danh sách nhân viên đang hoạt động (lọc theo phòng ban nếu có)
+        $employeesQuery = Employee::with(['position', 'contracts' => function ($query) {
             $query->where('status', 'active');
-        }])->where('status', 'active')->get();
+        }])->where('status', 'active');
+
+        if ($departmentId) {
+            $employeesQuery->where('department_id', $departmentId);
+        }
+
+        $employees = $employeesQuery->get();
 
         if ($employees->isEmpty()) {
             return 'no_employees';
@@ -45,26 +55,44 @@ class PayrollService
         $startDate = $period->start_date;
         $endDate = $period->end_date;
 
+        // Tính ngày công chuẩn trong kỳ (Thứ 2 - Thứ 7, trừ Chủ nhật)
+        $standardWorkingDays = $this->calculateStandardWorkingDays($startDate, $endDate);
+
         foreach ($employees as $employee) {
-            // A. Lương cơ bản: Ưu tiên lấy từ hợp đồng active, nếu không thì lấy từ chức vụ
+            // A. Lương hợp đồng (full tháng): Ưu tiên lấy từ hợp đồng active, nếu không thì lấy từ chức vụ
             $activeContract = $employee->contracts->first();
-            $basicSalary = 0;
+            $contractSalary = 0;
 
             if ($activeContract) {
-                $basicSalary = $activeContract->salary;
+                $contractSalary = $activeContract->salary;
             } elseif ($employee->position) {
-                $basicSalary = $employee->position->base_salary;
+                $contractSalary = $employee->position->base_salary;
             }
 
-            // B. Phụ cấp: Mặc định mỗi nhân viên được nhận 1,5 triệu VNĐ
-            $allowance = 1500000;
+            // B. Phụ cấp bóc tách: Ăn trưa, Điện thoại, Xăng xe, Chức vụ
+            $allowanceMeal = 0;
+            $allowancePhone = 50000; // Mặc định 50k
+            $allowanceFuel = 100000;  // Mặc định 100k
+            $allowancePosition = (float) ($employee->position?->allowance ?? 0);
 
-            // C. Khấu trừ: Đi trễ (50.000 VND / lần) + Vắng mặt vượt phép (300.000 VND / ngày)
+            if ($activeContract) {
+                $allowancePhone = $activeContract->allowance_phone > 0 ? (float) $activeContract->allowance_phone : 50000;
+                $allowanceFuel = $activeContract->allowance_fuel > 0 ? (float) $activeContract->allowance_fuel : 100000;
+                $allowancePosition = $activeContract->allowance_position > 0 ? (float) $activeContract->allowance_position : $allowancePosition;
+            }
+
+            // C. Chấm công: Đếm ngày đi làm thực tế (present + late)
+            $presentDays = $employee->attendances()
+                ->whereBetween('attendance_date', [$startDate, $endDate])
+                ->whereIn('status', ['present', 'late'])
+                ->count();
+
             $lateDays = $employee->attendances()
                 ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->where('status', 'late')
                 ->count();
 
+            // D. Nghỉ phép: Tính số ngày nghỉ có lương và không lương
             $absentRecords = $employee->attendances()
                 ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->where('status', 'absent')
@@ -96,11 +124,49 @@ class PayrollService
             // Số ngày nghỉ bị trừ tiền = nghỉ không phép + nghỉ có phép vượt quá hạn mức
             $unpaidLeaveDays = $unapprovedAbsences + $excessPaidLeaves;
 
+            // E. Ngày công thực tế = ngày đi làm (present+late) + ngày nghỉ phép hưởng lương
+            $actualWorkingDays = $presentDays + $paidLeaveDays;
+            // Đảm bảo không vượt quá ngày công chuẩn
+            $actualWorkingDays = min($actualWorkingDays, $standardWorkingDays);
+
+            // Phụ cấp ăn trưa mặc định là 30.000 VND / ngày thực tế đi làm (trừ khi có quy định khác trong hợp đồng)
+            $mealRate = 30000;
+            if ($activeContract && $activeContract->allowance_meal > 0) {
+                $mealRate = $standardWorkingDays > 0 ? ($activeContract->allowance_meal / $standardWorkingDays) : 30000;
+            }
+            $allowanceMeal = round($mealRate * $presentDays, 0);
+
+            // Nếu không đi làm ngày nào trong tháng thì không được hưởng bất kỳ phụ cấp nào
+            if ($presentDays == 0) {
+                $allowanceMeal = 0;
+                $allowancePhone = 0;
+                $allowanceFuel = 0;
+                $allowancePosition = 0;
+            }
+
+            $allowance = $allowanceMeal + $allowancePhone + $allowanceFuel + $allowancePosition;
+
+            // F. Lương cơ bản PRO-RATA theo ngày công thực tế
+            $basicSalary = $standardWorkingDays > 0
+                ? round(($contractSalary / $standardWorkingDays) * $actualWorkingDays, 0)
+                : $contractSalary;
+
+            // G. Khấu trừ: Phạt đi trễ (50.000 VND / lần) + Phạt nghỉ không phép (300.000 VND / ngày)
             $deduction = ($lateDays * 50000) + ($unpaidLeaveDays * 300000);
 
-            // D. Thưởng KPI: Tính điểm KPI trung bình và quy đổi thưởng
+            // H. Thưởng KPI: Tính điểm KPI trung bình và quy đổi thưởng
             $averageKpiScore = $employee->employeeKpis()
                 ->whereHas('kpi')
+                ->whereHas('kpiAssignment', function ($query) use ($startDate, $endDate) {
+                    $query->where(function ($q) use ($startDate, $endDate) {
+                        $q->whereBetween('start_date', [$startDate, $endDate])
+                          ->orWhereBetween('end_date', [$startDate, $endDate])
+                          ->orWhere(function ($q2) use ($startDate, $endDate) {
+                              $q2->where('start_date', '<=', $startDate)
+                                 ->where('end_date', '>=', $endDate);
+                          });
+                    });
+                })
                 ->avg('score');
 
             $bonus = 0;
@@ -121,44 +187,49 @@ class PayrollService
                 }
             }
 
-
-
-
-            // E. Thực lĩnh = Lương cơ bản + Phụ cấp + Thưởng KPI - Khấu trừ
-            $totalSalary = $basicSalary + $allowance + $bonus - $deduction;
-
-            // F. Lương tăng ca: tổng giờ OT đã hoàn thành trong kỳ * hệ số 1.5
+            // I. Lương tăng ca: tổng giờ OT đã duyệt hoặc hoàn thành trong kỳ * hệ số 1.5
             $overtimeHours = (float) OvertimeRequest::query()
                 ->where('employee_id', $employee->id)
-                ->where('status', OvertimeRequest::STATUS_COMPLETED)
+                ->whereIn('status', [OvertimeRequest::STATUS_APPROVED, OvertimeRequest::STATUS_COMPLETED])
                 ->whereBetween('work_date', [$startDate, $endDate])
                 ->sum('total_hours');
 
-            $hourlyRate = $basicSalary > 0 ? ($basicSalary / self::STANDARD_MONTHLY_HOURS) : 0;
+            $standardMonthlyHours = $standardWorkingDays * 8;
+            $hourlyRate = ($contractSalary > 0 && $standardMonthlyHours > 0)
+                ? ($contractSalary / $standardMonthlyHours)
+                : 0;
             $overtimePay = round($overtimeHours * $hourlyRate * self::OVERTIME_RATE_MULTIPLIER, 0);
 
-            // G. Thực lĩnh = Lương cơ bản + Phụ cấp + Thưởng KPI + Lương tăng ca - Khấu trừ
+            // J. Thực lĩnh = Lương cơ bản (pro-rata) + Phụ cấp + Thưởng KPI + Lương tăng ca - Khấu trừ
             $totalSalary = $basicSalary + $allowance + $bonus + $overtimePay - $deduction;
 
             if ($totalSalary < 0) {
                 $totalSalary = 0; // Không thể âm thực lĩnh
             }
 
-            // F. Tạo bản ghi bảng lương
+            // K. Tạo bản ghi bảng lương
             Payroll::create([
                 'employee_id' => $employee->id,
                 'payroll_period_id' => $period->id,
                 'generated_by' => Auth::id() ?? 1, // Fallback cho seeder hoặc chạy CLI
                 'basic_salary' => $basicSalary,
                 'allowance' => $allowance,
+                'allowance_meal' => $allowanceMeal,
+                'allowance_phone' => $allowancePhone,
+                'allowance_fuel' => $allowanceFuel,
+                'allowance_position' => $allowancePosition,
                 'bonus' => $bonus,
                 'overtime_hours' => $overtimeHours,
                 'overtime_pay' => $overtimePay,
+                'standard_working_days' => $standardWorkingDays,
+                'actual_working_days' => $actualWorkingDays,
                 'deduction' => $deduction,
                 'paid_leave_days' => $paidLeaveDays,
                 'unpaid_leave_days' => $unpaidLeaveDays,
                 'total_salary' => $totalSalary,
+                'status' => 'calculated',
             ]);
+
         }
 
         // Cập nhật trạng thái kỳ lương sang calculated
@@ -167,5 +238,113 @@ class PayrollService
         ]);
 
         return 'success';
+    }
+
+    /**
+     * Tính lại lương: Xóa các bản ghi lương hiện tại của kỳ và tính lại từ đầu.
+     * Chỉ áp dụng khi kỳ lương đang ở trạng thái 'calculated'.
+     *
+     * @param PayrollPeriod $period
+     * @return string
+     */
+    public function recalculatePayrollForPeriod(PayrollPeriod $period, ?int $departmentId = null): string
+    {
+        // Cho phép tính lại nếu ở trạng thái open hoặc calculated
+        if (!in_array($period->status, ['open', 'calculated'])) {
+            return 'invalid_status';
+        }
+
+        // Xóa vĩnh viễn tất cả các bản ghi lương của kỳ này (kể cả đã xóa mềm) để tránh trùng lặp unique constraint
+        $deleteQuery = Payroll::withTrashed()->where('payroll_period_id', $period->id);
+        if ($departmentId) {
+            $deleteQuery->whereHas('employee', fn($q) => $q->where('department_id', $departmentId));
+        }
+        $deleteQuery->forceDelete();
+
+        // Nếu không còn bất kỳ bảng lương nào trong kỳ này, đặt lại status về open
+        $remainingPayrollsExists = Payroll::where('payroll_period_id', $period->id)->exists();
+        if (!$remainingPayrollsExists) {
+            $period->update(['status' => 'open']);
+        }
+
+        // Gọi lại hàm tính lương ban đầu
+        return $this->calculatePayrollForPeriod($period, $departmentId);
+    }
+
+    /**
+     * Tính số ngày công chuẩn trong kỳ lương (Thứ 2 - Thứ 7, trừ Chủ nhật).
+     */
+    private function calculateStandardWorkingDays($startDate, $endDate): int
+    {
+        $days = 0;
+        $current = \Carbon\Carbon::parse($startDate)->copy();
+        $end = \Carbon\Carbon::parse($endDate);
+
+        while ($current->lte($end)) {
+            if (!$current->isSunday()) {
+                $days++;
+            }
+            $current->addDay();
+        }
+
+        return $days;
+    }
+
+    /**
+     * Cập nhật tự động tiền tăng ca của nhân viên vào bảng lương nếu bảng lương đã tồn tại.
+     */
+    public function updatePayrollOvertime(int $employeeId, string $date): void
+    {
+        $carbonDate = \Carbon\Carbon::parse($date);
+
+        // Tìm xem có bảng lương nào chứa ngày này không
+        $payroll = Payroll::where('employee_id', $employeeId)
+            ->whereHas('payrollPeriod', function($q) use ($carbonDate) {
+                $q->whereDate('start_date', '<=', $carbonDate)
+                  ->whereDate('end_date', '>=', $carbonDate);
+            })
+            ->first();
+
+        if (!$payroll) {
+            return;
+        }
+
+        $period = $payroll->payrollPeriod;
+        $startDate = $period->start_date;
+        $endDate = $period->end_date;
+
+        // Tính lại tổng số giờ tăng ca của nhân viên đó trong kỳ (chỉ tính những đơn đã duyệt hoặc hoàn thành)
+        $overtimeHours = (float) OvertimeRequest::query()
+            ->where('employee_id', $employeeId)
+            ->whereIn('status', [OvertimeRequest::STATUS_APPROVED, OvertimeRequest::STATUS_COMPLETED])
+            ->whereBetween('work_date', [$startDate, $endDate])
+            ->sum('total_hours');
+
+        // Tìm lương hợp đồng / lương cơ bản gốc
+        $employee = $payroll->employee;
+        $activeContract = $employee?->contracts->first();
+        $contractSalary = 0;
+        if ($activeContract) {
+            $contractSalary = $activeContract->salary;
+        } elseif ($employee?->position) {
+            $contractSalary = $employee->position->base_salary;
+        }
+
+        $standardWorkingDays = $payroll->standard_working_days;
+        $standardMonthlyHours = $standardWorkingDays * 8;
+        $hourlyRate = ($contractSalary > 0 && $standardMonthlyHours > 0)
+            ? ($contractSalary / $standardMonthlyHours)
+            : 0;
+
+        $overtimePay = round($overtimeHours * $hourlyRate * self::OVERTIME_RATE_MULTIPLIER, 0);
+
+        // Tính lại tổng lương thực lĩnh
+        $totalSalary = $payroll->basic_salary + $payroll->allowance + $payroll->bonus + $overtimePay - $payroll->deduction;
+
+        $payroll->update([
+            'overtime_hours' => $overtimeHours,
+            'overtime_pay' => $overtimePay,
+            'total_salary' => max(0, $totalSalary)
+        ]);
     }
 }

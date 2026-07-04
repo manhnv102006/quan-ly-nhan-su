@@ -178,6 +178,14 @@
                             <td class="value">{{ $payroll->employee?->position?->position_name ?: '—' }}</td>
                         </tr>
                         <tr>
+                            <td class="label">Ngày công chuẩn:</td>
+                            <td class="value">{{ $payroll->standard_working_days }} ngày</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Ngày công thực tế:</td>
+                            <td class="value">{{ $payroll->actual_working_days }} ngày</td>
+                        </tr>
+                        <tr>
                             <td class="label">Số ngày nghỉ:</td>
                             <td class="value">{{ $payroll->paid_leave_days }} phép / {{ $payroll->unpaid_leave_days }} vắng</td>
                         </tr>
@@ -236,7 +244,7 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>Lương cơ bản</td>
+                    <td>Lương cơ bản thực tế (Tính theo {{ $payroll->actual_working_days }}/{{ $payroll->standard_working_days }} ngày công)</td>
                     <td class="text-right">{{ number_format($payroll->basic_salary, 0, ',', '.') }} ₫</td>
                 </tr>
                 <tr>
@@ -246,6 +254,10 @@
                 <tr>
                     <td>Thưởng KPI (Tính theo kết quả đánh giá)</td>
                     <td class="text-right">{{ number_format($payroll->bonus, 0, ',', '.') }} ₫</td>
+                </tr>
+                <tr>
+                    <td>Lương tăng ca ({{ $payroll->overtime_hours }} giờ × hệ số 1.5)</td>
+                    <td class="text-right">{{ number_format($payroll->overtime_pay, 0, ',', '.') }} ₫</td>
                 </tr>
                 <tr class="text-red">
                     <td>Khấu trừ (Đi trễ, vắng mặt không phép)</td>
