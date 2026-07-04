@@ -17,7 +17,7 @@ class PayrollPeriodSeeder extends Seeder
 
         $data = [];
 
-        for ($month = 1; $month <= 12; $month++) {
+        for ($month = 1; $month <= 7; $month++) {
             $monthStr = str_pad($month, 2, '0', STR_PAD_LEFT);
             $startDate = "2026-$monthStr-01";
             $endDate = date('Y-m-t', strtotime($startDate));
