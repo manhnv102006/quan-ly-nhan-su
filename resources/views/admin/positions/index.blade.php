@@ -53,6 +53,7 @@
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">ID</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Tên chức vụ</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Lương cơ bản</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Phụ cấp chức vụ</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Mô tả</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Trạng thái</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Ngày tạo</th>
@@ -67,6 +68,11 @@
                                 <td class="px-6 py-4">
                                     <span class="px-3 py-1 rounded-lg bg-violet-50 text-violet-700 text-sm font-medium">
                                         {{ number_format($position->base_salary, 0, ',', '.') }} ₫
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium">
+                                        {{ number_format($position->allowance, 0, ',', '.') }} ₫
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-slate-500 max-w-xs truncate">
@@ -107,7 +113,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-12 text-slate-400">
+                                <td colspan="8" class="text-center py-12 text-slate-400">
                                     Chưa có chức vụ nào
                                 </td>
                             </tr>
