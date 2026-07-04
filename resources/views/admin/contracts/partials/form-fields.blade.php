@@ -26,10 +26,12 @@
 
     <div>
         <label for="contract_type_id" class="admin-label">Loại hợp đồng *</label>
-        <select id="contract_type_id" name="contract_type_id" class="admin-field" required>
+        <select id="contract_type_id" name="contract_type_id" class="admin-field" required data-contract-type-select>
             <option value="">— Chọn loại —</option>
             @foreach($contractTypes as $type)
-                <option value="{{ $type->id }}" @selected(old('contract_type_id', $isEdit ? $contract->contract_type_id : null) == $type->id)>
+                <option value="{{ $type->id }}"
+                        data-internship="{{ $type->isInternship() ? '1' : '0' }}"
+                        @selected(old('contract_type_id', $isEdit ? $contract->contract_type_id : null) == $type->id)>
                     {{ $type->contract_name }}
                 </option>
             @endforeach
@@ -218,6 +220,26 @@
                     });
                 }
             });
+        });
+    </script>
+@endpush
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Hợp đồng thực tập -> phụ cấp = 0; loại khác -> 1.500.000.
+            const typeSelect = document.querySelector('[data-contract-type-select]');
+            const allowanceInput = document.getElementById('allowance');
+            if (!typeSelect || !allowanceInput) return;
+
+            function syncAllowance() {
+                const opt = typeSelect.selectedOptions[0];
+                const isInternship = opt && opt.dataset.internship === '1';
+                allowanceInput.value = isInternship ? '0' : '1.500.000';
+            }
+
+            typeSelect.addEventListener('change', syncAllowance);
+            syncAllowance();
         });
     </script>
 @endpush
