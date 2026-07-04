@@ -52,7 +52,7 @@ class ContractController extends Controller
                 });
             })
             ->when($request->filled('start_from'), fn ($q) => $q->whereDate('start_date', '>=', $request->start_from))
-            ->when($request->filled('start_to'), fn ($q) => $q->whereDate('end_date', '<=', $request->start_to));
+            ->when($request->filled('end_to'), fn ($q) => $q->whereDate('end_date', '<=', $request->end_to));
 
         $contracts = $query
             ->orderByDesc('created_at')
@@ -70,7 +70,7 @@ class ContractController extends Controller
             'employees' => Employee::orderBy('full_name')->get(),
             'departments' => Department::orderBy('department_name')->get(),
             'positions' => Position::orderBy('position_name')->get(),
-            'filters' => $request->only(['search', 'status', 'contract_type_id', 'employee_id', 'department_id', 'position_id', 'start_from', 'start_to']),
+            'filters' => $request->only(['search', 'status', 'contract_type_id', 'employee_id', 'department_id', 'position_id', 'start_from', 'end_to']),
         ]);
     }
 
