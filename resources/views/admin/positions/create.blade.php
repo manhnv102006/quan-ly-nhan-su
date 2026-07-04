@@ -57,6 +57,19 @@
                 </div>
 
                 <div>
+                    <label for="allowance" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Phụ cấp chức vụ (VND)
+                    </label>
+                    <input type="number" id="allowance" name="allowance"
+                           value="{{ old('allowance', 0) }}"
+                           placeholder="Nhập phụ cấp chức vụ" min="0" step="1000"
+                           class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('allowance') border-red-400 @enderror">
+                    @error('allowance')
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
                     <label for="status" class="block text-sm font-semibold text-slate-700 mb-2">
                         Trạng thái <span class="text-red-500">*</span>
                     </label>

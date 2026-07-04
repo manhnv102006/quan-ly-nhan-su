@@ -20,20 +20,6 @@ class AttendanceController extends Controller
     }
 
 
-        $employees = \App\Models\Employee::select('full_name', 'employee_code')->get();
-
-        return view(
-            'admin.attendances.index',
-            compact(
-                'attendances',
-                'stats',
-                'search',
-                'status',
-                'date',
-                'employees'
-            )
-        );
-
     public function department(Request $request, Department $department): View
     {
         return view('admin.attendances.department', [

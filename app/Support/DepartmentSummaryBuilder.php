@@ -101,6 +101,44 @@ class DepartmentSummaryBuilder
     }
 
     /**
+     * @return Collection<int, array{department: Department, stats: array{total_salary: float, employee_count: int}}>
+     */
+    public static function forPayrollPeriod(\App\Models\PayrollPeriod $period): Collection
+    {
+        return self::departments()->map(function (Department $department) use ($period) {
+            $query = \App\Models\Payroll::query()
+                ->where('payroll_period_id', $period->id)
+                ->whereHas('employee', fn ($employeeQuery) => $employeeQuery->where('department_id', $department->id));
+
+            $deptPayrolls = (clone $query)->get();
+
+            if ($deptPayrolls->isEmpty()) {
+                $statusLabel = 'Tạm tính';
+            } else {
+                $statuses = $deptPayrolls->pluck('status')->unique();
+                if ($statuses->contains('closed')) {
+                    $statusLabel = 'Đã đóng';
+                } elseif ($statuses->contains('paid')) {
+                    $statusLabel = 'Đã chi trả';
+                } elseif ($statuses->contains('approved')) {
+                    $statusLabel = 'Đã duyệt';
+                } else {
+                    $statusLabel = 'Đã tính';
+                }
+            }
+
+            return [
+                'department' => $department,
+                'stats' => [
+                    'employee_count' => $deptPayrolls->count(),
+                    'total_salary' => $deptPayrolls->sum('total_salary'),
+                    'status_label' => $statusLabel,
+                ],
+            ];
+        });
+    }
+
+    /**
      * @param  list<string>  $statuses
      * @return array{total: int, pending: int, approved: int}
      */
