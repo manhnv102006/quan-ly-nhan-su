@@ -15,6 +15,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CandidateController extends Controller
@@ -117,7 +118,7 @@ class CandidateController extends Controller
 
     public function update(Request $request, Candidate $candidate): RedirectResponse
     {
-        $validated = $this->validateCandidate($request);
+        $validated = $this->validateCandidate($request, $candidate);
 
         $validated['job_post_id'] = $validated['job_post_id'] ?: null;
 
@@ -282,21 +283,34 @@ class CandidateController extends Controller
         ];
     }
 
-    private function validateCandidate(Request $request): array
+    private function validateCandidate(Request $request, ?Candidate $candidate = null): array
     {
+        $phoneUniqueRule = Rule::unique('candidates', 'phone');
+        $emailUniqueRule = Rule::unique('candidates', 'email');
+
+        if ($candidate !== null) {
+            $phoneUniqueRule->ignore($candidate->id);
+            $emailUniqueRule->ignore($candidate->id);
+        }
+
         return $request->validate([
-            'job_post_id' => ['nullable', 'exists:job_posts,id'],
+            'job_post_id' => ['required', 'exists:job_posts,id'],
             'full_name' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'string', 'max:20'],
-            'email' => ['required', 'string', 'email', 'max:100'],
+            'phone' => ['required', 'string', 'regex:/^[0-9]{10}$/', $phoneUniqueRule],
+            'email' => ['required', 'string', 'email', 'max:100', $emailUniqueRule],
             'address' => ['required', 'string', 'max:255'],
-            'birth_date' => ['nullable', 'date'],
+            'birth_date' => ['required', 'date'],
             'cv_file' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx'],
             'status' => ['required', 'in:new,interview,passed,failed'],
         ], [
+            'job_post_id.required' => 'Tin tuyển dụng là bắt buộc.',
             'job_post_id.exists' => 'Tin tuyển dụng được chọn không hợp lệ.',
             'full_name.required' => 'Họ và tên ứng viên là bắt buộc.',
+            'phone.regex' => 'Số điện thoại phải gồm đúng 10 chữ số.',
+            'phone.unique' => 'Số điện thoại này đã tồn tại trong danh sách ứng viên.',
+            'birth_date.required' => 'Ngày sinh là bắt buộc.',
             'email.email' => 'Email ứng viên không hợp lệ.',
+            'email.unique' => 'Email này đã tồn tại trong danh sách ứng viên.',
             'cv_file.mimes' => 'CV chỉ hỗ trợ định dạng PDF, DOC hoặc DOCX.',
             'status.in' => 'Trạng thái ứng viên không hợp lệ.',
         ]);
