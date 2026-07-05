@@ -26,10 +26,12 @@
 
     <div>
         <label for="contract_type_id" class="admin-label">Loại hợp đồng *</label>
-        <select id="contract_type_id" name="contract_type_id" class="admin-field" required>
+        <select id="contract_type_id" name="contract_type_id" class="admin-field" required data-contract-type-select>
             <option value="">— Chọn loại —</option>
             @foreach($contractTypes as $type)
-                <option value="{{ $type->id }}" @selected(old('contract_type_id', $isEdit ? $contract->contract_type_id : null) == $type->id)>
+                <option value="{{ $type->id }}"
+                        data-internship="{{ $type->isInternship() ? '1' : '0' }}"
+                        @selected(old('contract_type_id', $isEdit ? $contract->contract_type_id : null) == $type->id)>
                     {{ $type->contract_name }}
                 </option>
             @endforeach
@@ -73,8 +75,9 @@
 
     <div>
         <label for="salary" class="admin-label">Lương cơ bản *</label>
-        <input type="number" id="salary" name="salary" class="admin-field" min="1"
-               value="{{ old('salary', $isEdit ? $contract->salary : '') }}" required>
+        <input type="text" id="salary" name="salary" class="admin-field money-input" inputmode="numeric"
+               value="{{ old('salary', $isEdit ? (int) $contract->salary : '') }}" required
+               placeholder="VD: 15.000.000">
         @error('salary')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
     </div>
 
@@ -107,9 +110,10 @@
     </div>
 
     <div>
-        <label for="allowance" class="admin-label">Tổng phụ cấp hàng tháng (Tự động tính)</label>
-        <input type="number" id="allowance" name="allowance" class="admin-field bg-slate-50 cursor-not-allowed" min="0"
-               value="{{ old('allowance', $isEdit ? (int)$contract->allowance : 0) }}" readonly>
+        <label for="allowance" class="admin-label">Phụ cấp hàng tháng (cố định)</label>
+        <input type="text" id="allowance" name="allowance" class="admin-field money-input bg-slate-50 cursor-not-allowed" inputmode="numeric"
+               value="1500000" readonly>
+        <p class="mt-1 text-[11px] text-slate-400">Cố định 1.500.000đ cho mọi hợp đồng.</p>
         @error('allowance')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
     </div>
 
@@ -192,24 +196,51 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const subAllowances = document.querySelectorAll('.sub-allowance');
-            const totalAllowanceInput = document.getElementById('allowance');
+            // Định dạng ô tiền: phân tách hàng nghìn bằng dấu chấm (VD: 15.000.000).
+            const moneyInputs = document.querySelectorAll('.money-input');
 
-            if (subAllowances.length && totalAllowanceInput) {
-                function calculateTotalAllowance() {
-                    let total = 0;
-                    subAllowances.forEach(input => {
-                        const val = parseFloat(input.value) || 0;
-                        total += val;
-                    });
-                    totalAllowanceInput.value = total;
-                }
-
-                subAllowances.forEach(input => {
-                    input.addEventListener('input', calculateTotalAllowance);
-                    input.addEventListener('change', calculateTotalAllowance);
-                });
+            function formatMoney(value) {
+                const digits = (value || '').toString().replace(/\D/g, '');
+                if (digits === '') return '';
+                return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
             }
+
+            moneyInputs.forEach(function (input) {
+                input.value = formatMoney(input.value);
+
+                input.addEventListener('input', function () {
+                    this.value = formatMoney(this.value);
+                });
+
+                const form = input.closest('form');
+                if (form) {
+                    // Bỏ dấu chấm trước khi gửi để server nhận số thuần.
+                    form.addEventListener('submit', function () {
+                        input.value = (input.value || '').replace(/\D/g, '');
+                    });
+                }
+            });
         });
     </script>
 @endpush
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Hợp đồng thực tập -> phụ cấp = 0; loại khác -> 1.500.000.
+            const typeSelect = document.querySelector('[data-contract-type-select]');
+            const allowanceInput = document.getElementById('allowance');
+            if (!typeSelect || !allowanceInput) return;
+
+            function syncAllowance() {
+                const opt = typeSelect.selectedOptions[0];
+                const isInternship = opt && opt.dataset.internship === '1';
+                allowanceInput.value = isInternship ? '0' : '1.500.000';
+            }
+
+            typeSelect.addEventListener('change', syncAllowance);
+            syncAllowance();
+        });
+    </script>
+@endpush
+

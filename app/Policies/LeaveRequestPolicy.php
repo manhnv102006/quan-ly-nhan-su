@@ -74,11 +74,16 @@ class LeaveRequestPolicy
 
     public function approve(User $user, LeaveRequest $leaveRequest): Response
     {
+
         return $this->decideApprovalAccess($user, $leaveRequest, 'duyệt');
+
+        return $this->decisionResponse($user, $leaveRequest, 'duyệt');
+
     }
 
     public function reject(User $user, LeaveRequest $leaveRequest): Response
     {
+
         return $this->decideApprovalAccess($user, $leaveRequest, 'từ chối');
     }
 
@@ -102,6 +107,35 @@ class LeaveRequestPolicy
 
         if (! $user->isManager()) {
             return Response::deny('Chỉ quản lý mới được '.$action.' đơn nghỉ phép.', 403);
+
+        return $this->decisionResponse($user, $leaveRequest, 'từ chối');
+    }
+
+    /**
+     * Phân cấp duyệt/từ chối:
+     * - Admin: chỉ xử lý đơn của tài khoản có vai trò Manager.
+     * - Manager: chỉ xử lý đơn của nhân viên thường thuộc quyền quản lý.
+     */
+    protected function decisionResponse(User $user, LeaveRequest $leaveRequest, string $action): Response
+    {
+        $leaveRequest->loadMissing('employee.user');
+        $targetIsManager = (bool) $leaveRequest->employee?->hasManagerRole();
+
+        if ($user->isAdmin()) {
+            if (! $targetIsManager) {
+                return Response::deny("Admin chỉ được {$action} đơn nghỉ phép của quản lý.", 403);
+            }
+
+            return Response::allow();
+        }
+
+        if (! $user->isManager()) {
+            return Response::deny("Chỉ quản lý hoặc admin mới được {$action} đơn nghỉ phép.", 403);
+        }
+
+        if ($targetIsManager) {
+            return Response::deny("Đơn nghỉ phép của quản lý do Admin {$action}.", 403);
+
         }
 
         return $this->managerCanManageResponse($user, $leaveRequest);
