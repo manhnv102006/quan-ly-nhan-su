@@ -27,8 +27,9 @@ return new class extends Migration
             }
         });
 
-        // Thêm index nếu chưa tồn tại (tránh duplicate key)
-        $existingIndexes = collect(DB::select("SHOW INDEX FROM contracts"))->pluck('Key_name')->toArray();
+        // Thêm index nếu chưa tồn tại (tránh duplicate key). Dùng Schema::getIndexes
+        // để tương thích cả MySQL lẫn SQLite (thay cho "SHOW INDEX" đặc thù MySQL).
+        $existingIndexes = collect(Schema::getIndexes('contracts'))->pluck('name')->all();
         if (! in_array('contracts_employee_id_status_index', $existingIndexes)) {
             Schema::table('contracts', function (Blueprint $table) {
                 $table->index(['employee_id', 'status'], 'contracts_employee_id_status_index');
@@ -40,13 +41,17 @@ return new class extends Migration
             });
         }
 
-        // backfill department_id và position_id từ employee nếu có
-        DB::table('contracts')
-            ->join('employees', 'employees.id', '=', 'contracts.employee_id')
-            ->update([
-                'contracts.department_id' => DB::raw('employees.department_id'),
-                'contracts.position_id' => DB::raw('employees.position_id'),
-            ]);
+        // backfill department_id và position_id từ employee nếu có.
+        // UPDATE ... JOIN chỉ hợp lệ trên MySQL; SQLite (môi trường test) không có
+        // dữ liệu để backfill nên bỏ qua an toàn.
+        if (DB::getDriverName() === 'mysql') {
+            DB::table('contracts')
+                ->join('employees', 'employees.id', '=', 'contracts.employee_id')
+                ->update([
+                    'contracts.department_id' => DB::raw('employees.department_id'),
+                    'contracts.position_id' => DB::raw('employees.position_id'),
+                ]);
+        }
 
         Schema::table('contracts', function (Blueprint $table) {
             // thêm ràng buộc khóa ngoại cho cột nullable, cho phép set null khi xóa
@@ -55,8 +60,26 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
         });
 
-        // Cập nhật trạng thái sang danh sách mới
-        DB::statement("ALTER TABLE contracts MODIFY COLUMN status ENUM('draft','active','expired','cancelled') NOT NULL DEFAULT 'draft'");
+        // Cập nhật trạng thái sang danh sách mới, đảm bảo KHÔNG mất dữ liệu 'terminated' cũ.
+        // MySQL: mở rộng ENUM thành tập hợp chứa cả giá trị cũ lẫn mới -> chuyển dữ liệu
+        // -> thu gọn ENUM. (Nếu UPDATE trước khi ENUM có 'cancelled' thì chính 'cancelled'
+        // cũng bị ép về chuỗi rỗng.) SQLite: đổi sang string để bỏ ràng buộc CHECK cũ.
+        if (DB::getDriverName() === 'mysql') {
+            // 1) Tập hợp trung gian chứa cả 'terminated' (cũ) và 'draft'/'cancelled' (mới).
+            DB::statement("ALTER TABLE contracts MODIFY COLUMN status ENUM('draft','active','expired','cancelled','terminated') NOT NULL DEFAULT 'draft'");
+
+            // 2) Chuyển dữ liệu trạng thái cũ sang trạng thái mới tương ứng.
+            DB::table('contracts')->where('status', 'terminated')->update(['status' => 'cancelled']);
+
+            // 3) Thu gọn ENUM về danh sách trạng thái cuối cùng.
+            DB::statement("ALTER TABLE contracts MODIFY COLUMN status ENUM('draft','active','expired','cancelled') NOT NULL DEFAULT 'draft'");
+        } else {
+            Schema::table('contracts', function (Blueprint $table) {
+                $table->string('status')->default('draft')->change();
+            });
+
+            DB::table('contracts')->where('status', 'terminated')->update(['status' => 'cancelled']);
+        }
     }
 
     public function down(): void
@@ -86,6 +109,24 @@ return new class extends Migration
             try { $table->dropIndex('contracts_start_date_end_date_index'); } catch (\Throwable $e) {}
         });
 
-        DB::statement("ALTER TABLE contracts MODIFY COLUMN status ENUM('active','expired','terminated') NOT NULL");
+        // Rollback: đưa trạng thái về tập cũ mà không ép hàng 'draft'/'cancelled' thành rỗng.
+        if (DB::getDriverName() === 'mysql') {
+            // 1) Mở rộng tạm để giữ mọi giá trị hiện có.
+            DB::statement("ALTER TABLE contracts MODIFY COLUMN status ENUM('draft','active','expired','cancelled','terminated') NOT NULL DEFAULT 'active'");
+
+            // 2) Ánh xạ ngược về tập trạng thái cũ.
+            DB::table('contracts')->where('status', 'cancelled')->update(['status' => 'terminated']);
+            DB::table('contracts')->where('status', 'draft')->update(['status' => 'active']);
+
+            // 3) Thu gọn về ENUM cũ.
+            DB::statement("ALTER TABLE contracts MODIFY COLUMN status ENUM('active','expired','terminated') NOT NULL");
+        } else {
+            DB::table('contracts')->where('status', 'cancelled')->update(['status' => 'terminated']);
+            DB::table('contracts')->where('status', 'draft')->update(['status' => 'active']);
+
+            Schema::table('contracts', function (Blueprint $table) {
+                $table->string('status')->change();
+            });
+        }
     }
 };

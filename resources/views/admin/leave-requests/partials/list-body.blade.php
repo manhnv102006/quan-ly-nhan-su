@@ -109,7 +109,7 @@
                         <th class="px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Số ngày</th>
                         <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Lý do</th>
                         <th class="px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
-                        <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Quản lý xử lý</th>
+                        <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Người xử lý</th>
                         <th class="px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Thao tác</th>
                     </tr>
                 </thead>
@@ -161,7 +161,28 @@
                                 @endif
                             </td>
                             <td class="px-5 py-4 text-center">
-                                <x-view-only-badge :href="route('admin.leave-requests.show', $leaveRequest)" />
+                                @if ($leaveRequest->status === 'pending' && $leaveRequest->employee?->hasManagerRole())
+                                    <div class="flex items-center justify-center gap-2">
+                                        <form action="{{ route('admin.leave-requests.approve', $leaveRequest) }}" method="POST"
+                                              onsubmit="return confirm('Duyệt đơn nghỉ phép của quản lý {{ $leaveRequest->employee?->full_name }}?')">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit"
+                                                    class="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700">
+                                                Duyệt
+                                            </button>
+                                        </form>
+                                        <button type="button"
+                                                onclick="openLeaveRejectModal('{{ route('admin.leave-requests.reject', $leaveRequest) }}', @js($leaveRequest->employee?->full_name))"
+                                                class="rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700">
+                                            Từ chối
+                                        </button>
+                                        <a href="{{ route('admin.leave-requests.show', $leaveRequest) }}"
+                                           class="text-xs font-medium text-violet-600 hover:text-violet-700">Xem</a>
+                                    </div>
+                                @else
+                                    <x-view-only-badge :href="route('admin.leave-requests.show', $leaveRequest)" />
+                                @endif
                             </td>
                         </tr>
                     @empty
@@ -186,4 +207,51 @@
             </div>
         @endif
     </div>
+
+    <div id="leave-reject-modal"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="mx-4 w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+            <h3 class="mb-2 text-lg font-bold text-slate-800">Từ chối đơn nghỉ phép</h3>
+            <p class="mb-4 text-sm text-slate-500">
+                Nhập lý do từ chối cho quản lý <strong id="leave-reject-name" class="text-slate-800"></strong>:
+            </p>
+            <form id="leave-reject-form" action="" method="POST">
+                @csrf
+                @method('PATCH')
+                <div class="mb-5">
+                    <label for="reject_reason" class="mb-2 block text-sm font-semibold text-slate-700">Lý do từ chối</label>
+                    <textarea id="reject_reason" name="reject_reason" required rows="3"
+                              placeholder="Nhập lý do từ chối..."
+                              class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"></textarea>
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeLeaveRejectModal()"
+                            class="flex-1 rounded-xl bg-slate-100 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200">
+                        Hủy
+                    </button>
+                    <button type="submit"
+                            class="flex-1 rounded-xl bg-rose-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-rose-700">
+                        Xác nhận từ chối
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openLeaveRejectModal(actionUrl, employeeName) {
+            const modal = document.getElementById('leave-reject-modal');
+            const form = document.getElementById('leave-reject-form');
+            document.getElementById('leave-reject-name').textContent = employeeName || '';
+            form.setAttribute('action', actionUrl);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeLeaveRejectModal() {
+            const modal = document.getElementById('leave-reject-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    </script>
 </section>
