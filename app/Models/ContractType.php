@@ -19,4 +19,16 @@ class ContractType extends Model
     {
         return $this->hasMany(Contract::class);
     }
+
+    /**
+     * Loại hợp đồng thực tập (nhận diện theo tên) -> không có phụ cấp.
+     */
+    public function isInternship(): bool
+    {
+        $name = mb_strtolower($this->contract_name ?? '');
+
+        return str_contains($name, 'thực tập')
+            || str_contains($name, 'thuc tap')
+            || str_contains($name, 'intern');
+    }
 }

@@ -20,6 +20,21 @@
 
 <x-admin-layout title="Quản lý nghỉ phép">
     <div class="space-y-6">
+
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Quản lý nghỉ phép</p>
+                <h2 class="mt-1 text-2xl font-bold text-slate-800">Quản lý nghỉ phép</h2>
+                <p class="mt-1 text-sm text-slate-500">
+                    Theo dõi toàn bộ đơn nghỉ phép —
+                    <span class="font-semibold text-slate-700">Toàn công ty</span>.
+                    Admin chỉ phê duyệt đơn của <span class="font-semibold text-slate-700">quản lý</span>;
+                    đơn nhân viên do Manager xử lý.
+                </p>
+            </div>
+        </div>
+
+
         @include('admin.partials.department-cards', [
             'departmentSummaries' => $departmentSummaries,
             'routeName' => 'admin.leave-requests.department',
@@ -31,6 +46,5 @@
             'showDepartmentColumn' => true,
             'scopeLabel' => 'Toàn công ty',
         ])
-
     </div>
 </x-admin-layout>

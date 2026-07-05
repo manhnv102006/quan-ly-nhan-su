@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Contract;
+use App\Models\ContractType;
 use App\Models\Employee;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,21 @@ use App\Rules\NoContractOverlap;
 
 class ContractService
 {
+    /**
+     * Phụ cấp cố định cho mọi hợp đồng: 1.500.000đ.
+     */
+    public const FIXED_ALLOWANCE = 1_500_000;
+
+    /**
+     * Phụ cấp áp dụng theo loại hợp đồng: HĐ thực tập không có phụ cấp.
+     */
+    public function allowanceForContractType($contractTypeId): int
+    {
+        $type = $contractTypeId ? ContractType::find($contractTypeId) : null;
+
+        return $type && $type->isInternship() ? 0 : self::FIXED_ALLOWANCE;
+    }
+
     /**
      * Sinh mã hợp đồng theo định dạng HD-YYYY-0001
      */
@@ -47,6 +63,7 @@ class ContractService
             $data['created_by'] = $creatorId;
             $data['department_id'] = $data['department_id'] ?? $employee->department_id;
             $data['position_id'] = $data['position_id'] ?? $employee->position_id;
+            $data['allowance'] = $this->allowanceForContractType($data['contract_type_id'] ?? null);
 
             $this->assertNoOverlap($data['employee_id'], $data['start_date'], $data['end_date']);
 
@@ -68,6 +85,10 @@ class ContractService
         }
 
         return DB::transaction(function () use ($contract, $data) {
+            $data['allowance'] = $this->allowanceForContractType(
+                $data['contract_type_id'] ?? $contract->contract_type_id
+            );
+
             $this->assertNoOverlap(
                 $data['employee_id'] ?? $contract->employee_id,
                 $data['start_date'] ?? $contract->start_date->toDateString(),
@@ -119,7 +140,7 @@ class ContractService
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
                 'salary' => $data['salary'] ?? $contract->salary,
-                'allowance' => $data['allowance'] ?? $contract->allowance,
+                'allowance' => $this->allowanceForContractType($data['contract_type_id'] ?? $contract->contract_type_id),
                 'description' => $data['description'] ?? $contract->description,
                 'note' => $data['note'] ?? null,
                 'status' => Contract::STATUS_ACTIVE,

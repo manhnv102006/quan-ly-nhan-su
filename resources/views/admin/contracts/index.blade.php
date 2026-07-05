@@ -126,8 +126,8 @@
                 </div>
 
                 <div>
-                    <label for="start_to" class="admin-label">Đến ngày (kết thúc)</label>
-                    <input type="date" id="start_to" name="start_to" value="{{ $filters['start_to'] ?? '' }}" class="admin-field">
+                    <label for="end_to" class="admin-label">Đến ngày (kết thúc)</label>
+                    <input type="date" id="end_to" name="end_to" value="{{ $filters['end_to'] ?? '' }}" class="admin-field">
                 </div>
 
                 <div class="flex flex-wrap items-end gap-2 md:col-span-2 xl:col-span-4">
