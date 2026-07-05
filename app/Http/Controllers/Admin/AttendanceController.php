@@ -24,9 +24,9 @@ class AttendanceController extends Controller
                 ->orderBy('full_name')
                 ->get(),
             'departmentSummaries' => DepartmentSummaryBuilder::forAttendanceManagement(),
+            'employees' => \App\Models\Employee::select('full_name', 'employee_code')->get(),
         ]);
     }
-
 
     public function department(Request $request, Department $department): View
     {
@@ -36,7 +36,6 @@ class AttendanceController extends Controller
             'scopeLabel' => $department->department_name,
             'showDepartmentColumn' => false,
         ]);
-
     }
 
     public function show(Attendance $attendance): View

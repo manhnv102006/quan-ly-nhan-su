@@ -1,11 +1,15 @@
 @php
-    $navigation = \App\Support\EmployeeNavigation::items();
+    $user = Auth::user();
+    $isManager = $user->role->name === 'manager';
+    $navigation = $isManager
+        ? \App\Support\ManagerNavigation::items()
+        : \App\Support\EmployeeNavigation::items();
 
     $statusLabels = \App\Models\OvertimeRequest::STATUS_LABELS;
     $statusClasses = \App\Models\OvertimeRequest::STATUS_TAILWIND_CLASSES;
 @endphp
 
-<x-staff-layout title="Đơn tăng ca" subtitle="Xem và gửi yêu cầu tăng ca." role="employee" :navigation="$navigation">
+<x-staff-layout title="Đơn tăng ca" subtitle="Xem và gửi yêu cầu tăng ca." :role="$isManager ? 'manager' : 'employee'" :navigation="$navigation">
 
     <div class="space-y-6">
 

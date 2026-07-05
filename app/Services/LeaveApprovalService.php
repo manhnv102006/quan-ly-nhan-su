@@ -19,7 +19,16 @@ class LeaveApprovalService
 
     public function approve(LeaveRequest $leaveRequest, int $actorId, ?Employee $manager = null): void
     {
+
+        $this->assertActorAllowed($actorId, $leaveRequest);
+
+        if ($manager) {
+            $leaveRequest->authorizeManagerAction($manager);
+        }
+
+
         $this->assertActorAuthorized($leaveRequest, $actorId, $manager);
+
         $this->assertPending($leaveRequest);
 
         if ($leaveRequest->leave_type === 'annual') {
@@ -58,7 +67,15 @@ class LeaveApprovalService
 
     public function reject(LeaveRequest $leaveRequest, int $actorId, ?Employee $manager, string $reason): void
     {
+
+        $this->assertActorAllowed($actorId, $leaveRequest);
+
+        if ($manager) {
+            $leaveRequest->authorizeManagerAction($manager);
+        }
+
         $this->assertActorAuthorized($leaveRequest, $actorId, $manager);
+
         $this->assertPending($leaveRequest);
 
         $this->processDecision(
@@ -81,22 +98,41 @@ class LeaveApprovalService
         }
     }
 
+
+    protected function assertActorAllowed(int $actorId, LeaveRequest $leaveRequest): void
+
     /**
      * Phân cấp: Admin xử lý đơn của Manager; Manager xử lý đơn của nhân viên thường
      * thuộc quyền quản lý (Manager phải có hồ sơ nhân viên đi kèm).
      */
     protected function assertActorAuthorized(LeaveRequest $leaveRequest, int $actorId, ?Employee $manager): void
+
     {
         $user = User::find($actorId);
         $leaveRequest->loadMissing('employee.user');
         $targetIsManager = (bool) $leaveRequest->employee?->hasManagerRole();
 
+        $leaveRequest->loadMissing('employee.user');
+        $isFromManager = $leaveRequest->employee?->user?->isManager() ?? false;
+
+        if ($isFromManager) {
+            if (! $user?->isAdmin()) {
+                abort(403, 'Đơn nghỉ phép của quản lý chỉ Admin mới được duyệt hoặc từ chối.');
+            }
+
+            return;
+        }
+
         if ($user?->isAdmin()) {
+
+            abort(403, 'Admin chỉ được duyệt đơn nghỉ phép của quản lý, không được duyệt đơn của nhân viên.');
+
             if (! $targetIsManager) {
                 abort(403, 'Admin chỉ được duyệt/từ chối đơn nghỉ phép của quản lý.');
             }
 
             return;
+
         }
 
         if (! $user?->isManager()) {

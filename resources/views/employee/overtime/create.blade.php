@@ -1,8 +1,12 @@
 @php
-    $navigation = \App\Support\EmployeeNavigation::items();
+    $user = Auth::user();
+    $isManager = $user->role->name === 'manager';
+    $navigation = $isManager
+        ? \App\Support\ManagerNavigation::items()
+        : \App\Support\EmployeeNavigation::items();
 @endphp
 
-<x-staff-layout title="Tạo đơn tăng ca" role="employee" :navigation="$navigation">
+<x-staff-layout title="Tạo đơn tăng ca" :role="$isManager ? 'manager' : 'employee'" :navigation="$navigation">
 
     <div class="max-w-xl space-y-6">
 
