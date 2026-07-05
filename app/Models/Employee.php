@@ -107,6 +107,13 @@ class Employee extends Model
         return $this->user_id !== null && $this->user !== null;
     }
 
+    public function hasManagerRole(): bool
+    {
+        $this->loadMissing('user');
+
+        return (bool) $this->user?->isManager();
+    }
+
     public function clearStaleUserLink(): bool
     {
         if ($this->user_id === null) {

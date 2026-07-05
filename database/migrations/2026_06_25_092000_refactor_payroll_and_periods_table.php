@@ -24,11 +24,14 @@ return new class extends Migration
             $table->foreign('paid_by')->references('id')->on('users')->nullOnDelete();
         });
 
-        // Update status enum values. In MySQL/MariaDB we can use raw SQL statement to modify the ENUM.
-        try {
+        // Mở rộng status. MySQL dùng ENUM; SQLite dùng string (bỏ CHECK cũ) để chấp nhận
+        // các trạng thái mới. Không dùng try/catch để tránh nuốt lỗi thật trên MySQL.
+        if (DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE payroll_periods MODIFY COLUMN status ENUM('open', 'calculated', 'approved', 'paid', 'closed') DEFAULT 'open'");
-        } catch (\Exception $e) {
-            // Fallback for SQLite or other systems in local environments
+        } else {
+            Schema::table('payroll_periods', function (Blueprint $table) {
+                $table->string('status')->default('open')->change();
+            });
         }
 
         // 2. Alter payrolls table (drop columns no longer needed as they are moved to periods)
@@ -58,9 +61,12 @@ return new class extends Migration
         });
 
         // Restore payroll_periods status enum and drop tracking columns
-        try {
+        if (DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE payroll_periods MODIFY COLUMN status ENUM('open', 'closed') DEFAULT 'open'");
-        } catch (\Exception $e) {
+        } else {
+            Schema::table('payroll_periods', function (Blueprint $table) {
+                $table->string('status')->default('open')->change();
+            });
         }
 
         Schema::table('payroll_periods', function (Blueprint $table) {
