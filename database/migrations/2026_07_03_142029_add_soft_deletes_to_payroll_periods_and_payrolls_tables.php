@@ -12,11 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('payroll_periods', function (Blueprint $table) {
-            $table->softDeletes();
+            if (! Schema::hasColumn('payroll_periods', 'deleted_at')) {
+                $table->softDeletes();
+            }
         });
 
         Schema::table('payrolls', function (Blueprint $table) {
-            $table->softDeletes();
+            if (! Schema::hasColumn('payrolls', 'deleted_at')) {
+                $table->softDeletes();
+            }
         });
     }
 
