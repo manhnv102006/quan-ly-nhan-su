@@ -20,6 +20,7 @@
 
 <x-admin-layout title="Quản lý nghỉ phép">
     <div class="space-y-6">
+
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Quản lý nghỉ phép</p>
@@ -32,6 +33,7 @@
                 </p>
             </div>
         </div>
+
 
         @include('admin.partials.department-cards', [
             'departmentSummaries' => $departmentSummaries,
