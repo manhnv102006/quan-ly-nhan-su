@@ -59,13 +59,8 @@ class ManagerNavigation
                 'label' => 'Duyệt nghỉ phép',
                 'href' => route('manager.leave-requests.index'),
                 'route' => 'manager.leave-requests*',
-
                 'icon' => 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
                 'note' => 'Duyệt đơn của nhân viên',
-
-                'icon' => 'M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zM12 16.5h.008v.008H12V16.5z',
-                'note' => 'Duyệt nhân viên & đơn cá nhân',
-
             ],
             [
                 'label' => 'Duyệt tăng ca',
