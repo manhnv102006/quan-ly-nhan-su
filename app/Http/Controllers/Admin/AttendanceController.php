@@ -13,18 +13,10 @@ use Illuminate\View\View;
 
 class AttendanceController extends Controller
 {
-    public function index(Request $request): View
+    public function index(): View
     {
-        $data = $this->buildListData($request);
-
         return view('admin.attendances.index', [
-            ...$data,
-            'employees' => Employee::query()
-                ->select('full_name', 'employee_code')
-                ->orderBy('full_name')
-                ->get(),
             'departmentSummaries' => DepartmentSummaryBuilder::forAttendanceManagement(),
-            'employees' => \App\Models\Employee::select('full_name', 'employee_code')->get(),
         ]);
     }
 

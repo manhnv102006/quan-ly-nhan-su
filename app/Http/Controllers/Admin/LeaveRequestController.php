@@ -10,11 +10,7 @@ use App\Services\LeaveApprovalService;
 use App\Support\DepartmentSummaryBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\RedirectResponse;
-
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
-
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -69,26 +65,12 @@ class LeaveRequestController extends Controller
         return view('admin.leave-requests.show', compact('leaveRequest'));
     }
 
-
     public function approve(LeaveRequest $leaveRequest): RedirectResponse
-    public function approve(LeaveRequest $leaveRequest, LeaveApprovalService $service): RedirectResponse
-
     {
         $this->authorize('approve', $leaveRequest);
 
         try {
-
             $this->service->approve($leaveRequest, (int) Auth::id());
-        } catch (ValidationException $e) {
-            return back()->withErrors($e->errors())->with('error', 'Không thể duyệt đơn nghỉ phép.');
-        }
-
-        return back()->with('success', 'Đã duyệt đơn nghỉ phép của quản lý.');
-    }
-
-    public function reject(LeaveRequestRejectRequest $request, LeaveRequest $leaveRequest): RedirectResponse
-
-            $service->approve($leaveRequest, (int) Auth::id());
         } catch (ValidationException $e) {
             return redirect()
                 ->route('admin.leave-requests.show', $leaveRequest)
@@ -101,21 +83,12 @@ class LeaveRequestController extends Controller
             ->with('success', 'Đã duyệt đơn nghỉ phép của quản lý.');
     }
 
-    public function reject(LeaveRequestRejectRequest $request, LeaveRequest $leaveRequest, LeaveApprovalService $service): RedirectResponse
-
+    public function reject(LeaveRequestRejectRequest $request, LeaveRequest $leaveRequest): RedirectResponse
     {
         $this->authorize('reject', $leaveRequest);
 
         try {
-
             $this->service->reject($leaveRequest, (int) Auth::id(), null, $request->validated('reject_reason'));
-        } catch (ValidationException $e) {
-            return back()->withErrors($e->errors())->with('error', 'Không thể từ chối đơn nghỉ phép.');
-        }
-
-        return back()->with('success', 'Đã từ chối đơn nghỉ phép của quản lý.');
-
-            $service->reject($leaveRequest, (int) Auth::id(), null, $request->validated('reject_reason'));
         } catch (ValidationException $e) {
             return redirect()
                 ->route('admin.leave-requests.show', $leaveRequest)
@@ -126,7 +99,6 @@ class LeaveRequestController extends Controller
         return redirect()
             ->route('admin.leave-requests')
             ->with('success', 'Đã từ chối đơn nghỉ phép của quản lý.');
-
     }
 
     /**
