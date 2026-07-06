@@ -1,5 +1,5 @@
 @php
-    $canAdminDecide = $overtimeRequest->isPending() && $overtimeRequest->employee?->hasManagerRole();
+    $canAdminDecide = $overtimeRequest->isPending();
     $isFromManager = $overtimeRequest->employee?->hasManagerRole() ?? false;
 @endphp
 
@@ -10,11 +10,15 @@
                 <h4 class="mb-1">Chi tiết đơn tăng ca</h4>
                 <p class="text-muted mb-0">
                     @if ($canAdminDecide)
-                        Đơn tăng ca của quản lý — Admin được duyệt hoặc từ chối.
+                        @if ($isFromManager)
+                            Đơn tăng ca của quản lý — Admin có thể duyệt hoặc từ chối.
+                        @else
+                            Đơn tăng ca đang chờ duyệt — Admin có thể duyệt hoặc từ chối.
+                        @endif
                     @elseif ($isFromManager)
-                        Đơn tăng ca của quản lý. Đơn đã xử lý hoặc không còn ở trạng thái chờ duyệt.
+                        Đơn tăng ca của quản lý đã được xử lý.
                     @else
-                        Xem thông tin đơn tăng ca. Đơn của nhân viên thường do quản lý phòng ban phê duyệt.
+                        Đơn tăng ca đã được xử lý.
                     @endif
                 </p>
             </div>
@@ -23,7 +27,7 @@
                     <form action="{{ route('admin.overtime-requests.approve', $overtimeRequest) }}" method="POST" class="d-inline">
                         @csrf
                         @method('PATCH')
-                        <button type="submit" class="btn btn-success" onclick="return confirm('Duyệt đơn tăng ca của quản lý {{ $overtimeRequest->employee?->full_name }}?')">Duyệt</button>
+                        <button type="submit" class="btn btn-success" onclick="return confirm('Duyệt đơn tăng ca của {{ $overtimeRequest->employee?->full_name }}?')">Duyệt</button>
                     </form>
                     <button type="button" class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#reject-form">Từ chối</button>
                 @endif
