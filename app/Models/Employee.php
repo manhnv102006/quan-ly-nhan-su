@@ -160,6 +160,30 @@ class Employee extends Model
             ->all();
     }
 
+    /**
+     * Phòng ban mà quản lý được phép duyệt đơn cấp dưới.
+     *
+     * @return list<int>
+     */
+    public static function departmentIdsForManagerApproval(self $manager): array
+    {
+        $managedDepartmentIds = self::managedDepartmentIdsFor($manager);
+
+        if ($managedDepartmentIds !== []) {
+            return $managedDepartmentIds;
+        }
+
+        return $manager->department_id ? [(int) $manager->department_id] : [];
+    }
+
+    public function isInManagerDepartments(self $manager): bool
+    {
+        $departmentIds = self::departmentIdsForManagerApproval($manager);
+
+        return $departmentIds !== []
+            && in_array((int) $this->department_id, $departmentIds, true);
+    }
+
     public function isManagedBy(self $manager): bool
     {
         if ($this->manager_id === $manager->id) {
@@ -186,6 +210,28 @@ class Employee extends Model
                 $scope->orWhereIn('department_id', $managedDepartmentIds);
             }
         });
+    }
+
+    /**
+     * Nhân viên thường thuộc phòng ban quản lý (không gồm quản lý khác hoặc chính mình).
+     *
+     * @param  Builder<Employee>  $query
+     */
+    public function scopeForManagerDepartmentApproval(Builder $query, self $manager): Builder
+    {
+        $departmentIds = self::departmentIdsForManagerApproval($manager);
+
+        if ($departmentIds === []) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query
+            ->whereIn('department_id', $departmentIds)
+            ->where('id', '!=', $manager->id)
+            ->where(function (Builder $scope) {
+                $scope->whereDoesntHave('user')
+                    ->orWhereHas('user', fn (Builder $userQuery) => $userQuery->whereDoesntHave('role', fn ($roleQuery) => $roleQuery->where('name', 'manager')));
+            });
     }
 
     public function employeeShifts(): HasMany
