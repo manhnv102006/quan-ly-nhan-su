@@ -6,12 +6,6 @@
     $scopeLabel = $scopeLabel ?? 'Toàn công ty';
     $statusClasses = OvertimeRequest::STATUS_TAILWIND_CLASSES;
     $statusLabels = OvertimeRequest::STATUS_LABELS;
-    $statusSelectClasses = [
-        OvertimeRequest::STATUS_PENDING => 'border-amber-200 bg-amber-50 text-amber-800 focus:ring-amber-300',
-        OvertimeRequest::STATUS_APPROVED => 'border-emerald-200 bg-emerald-50 text-emerald-800 focus:ring-emerald-300',
-        OvertimeRequest::STATUS_REJECTED => 'border-rose-200 bg-rose-50 text-rose-800 focus:ring-rose-300',
-        OvertimeRequest::STATUS_COMPLETED => 'border-sky-200 bg-sky-50 text-sky-800 focus:ring-sky-300',
-    ];
     $displayHours = fn ($item) => number_format(abs((float) $item->total_hours), 2);
     $tableColspan = $showDepartmentColumn ? 9 : 8;
 @endphp
@@ -82,6 +76,9 @@
                                     <div>
                                         <p class="font-semibold text-slate-800">{{ $item->employee?->full_name ?? '—' }}</p>
                                         <p class="text-xs text-slate-500">{{ $item->employee?->employee_code ?? '—' }}</p>
+                                        @if ($item->employee?->hasManagerRole())
+                                            <span class="mt-1 inline-flex rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-600">Quản lý</span>
+                                        @endif
                                     </div>
                                 </div>
                             </td>
@@ -109,22 +106,10 @@
                                     {{ $displayHours($item) }}h
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
-                                <form method="POST"
-                                      action="{{ route('admin.overtime-requests.status', $item) }}"
-                                      class="overtime-status-form mx-auto w-fit"
-                                      data-current="{{ $item->status }}">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="reject_reason" value="">
-                                    <select name="status"
-                                            class="overtime-status-select cursor-pointer rounded-xl border px-3 py-2 text-xs font-bold shadow-sm outline-none transition focus:ring-2 {{ $statusSelectClasses[$item->status] ?? 'border-slate-200 bg-white text-slate-700 focus:ring-violet-300' }}"
-                                            aria-label="Trạng thái đơn tăng ca">
-                                        @foreach ($statusLabels as $value => $label)
-                                            <option value="{{ $value }}" @selected($item->status === $value)>{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </form>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-bold {{ $statusClasses[$item->status] ?? 'bg-slate-100 text-slate-600 border-slate-200' }}">
+                                    {{ $statusLabels[$item->status] ?? $item->status }}
+                                </span>
                             </td>
                             <td class="px-6 py-4 text-xs text-slate-500">
                                 {{ optional($item->created_at)->format('d/m/Y') }}
@@ -132,16 +117,13 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex flex-wrap items-center justify-center gap-1.5">
-                                    @php
-                                        $canAdminDecide = $item->isPending() && $item->employee?->hasManagerRole();
-                                    @endphp
-                                    @if ($canAdminDecide)
+                                    @if ($item->isPending())
                                         <form method="POST" action="{{ route('admin.overtime-requests.approve', $item) }}" class="inline">
                                             @csrf
                                             @method('PATCH')
                                             <button type="submit"
                                                     class="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
-                                                    onclick="return confirm('Duyệt đơn tăng ca của quản lý {{ $item->employee?->full_name }}?')">
+                                                    onclick="return confirm('Duyệt đơn tăng ca của {{ $item->employee?->full_name }}?')">
                                                 <i class="bi bi-check-lg"></i> Duyệt
                                             </button>
                                         </form>
@@ -150,8 +132,6 @@
                                                 class="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700">
                                             <i class="bi bi-x-lg"></i> Từ chối
                                         </button>
-                                    @elseif ($item->employee?->hasManagerRole())
-                                        <span class="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-600">Quản lý</span>
                                     @endif
                                     <a href="{{ route('admin.overtime-requests.show', $item) }}"
                                        class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
@@ -200,7 +180,7 @@
     <div class="mx-4 w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
         <h3 class="mb-2 text-lg font-bold text-slate-800">Từ chối đơn tăng ca</h3>
         <p class="mb-4 text-sm text-slate-500">
-            Nhập lý do từ chối cho quản lý <strong id="overtime-reject-name" class="text-slate-800"></strong>:
+            Nhập lý do từ chối cho nhân viên <strong id="overtime-reject-name" class="text-slate-800"></strong>:
         </p>
         <form id="overtime-reject-form" action="" method="POST">
             @csrf
@@ -242,36 +222,6 @@
             modal.classList.add('hidden');
             modal.classList.remove('flex');
         }
-
-        document.querySelectorAll('.overtime-status-select').forEach(function (select) {
-            select.addEventListener('change', function () {
-                const form = this.closest('.overtime-status-form');
-                const current = form.dataset.current;
-                const next = this.value;
-
-                if (next === current) {
-                    return;
-                }
-
-                if (next === 'rejected') {
-                    const reason = prompt('Nhập lý do từ chối:');
-                    if (!reason || !reason.trim()) {
-                        this.value = current;
-                        return;
-                    }
-                    form.querySelector('[name="reject_reason"]').value = reason.trim();
-                } else {
-                    form.querySelector('[name="reject_reason"]').value = '';
-                }
-
-                if (!confirm('Cập nhật trạng thái đơn tăng ca này?')) {
-                    this.value = current;
-                    return;
-                }
-
-                form.submit();
-            });
-        });
     </script>
     @endpush
 @endonce
