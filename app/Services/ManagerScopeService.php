@@ -29,12 +29,7 @@ class ManagerScopeService
      */
     public function managedDepartmentIds(Employee $manager): array
     {
-        return Department::query()
-            ->where('manager_id', $manager->id)
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->values()
-            ->all();
+        return Employee::managedDepartmentIdsFor($manager);
     }
 
     public function managedDepartmentId(Employee $manager): ?int

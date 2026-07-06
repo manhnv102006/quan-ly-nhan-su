@@ -7,6 +7,7 @@ use App\Services\ManagerEmployeeResolver;
 use App\Services\ManagerScopeService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -81,6 +82,22 @@ class User extends Authenticatable
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    /**
+     * Tài khoản chưa liên kết nhân viên (trừ nhân viên đang chỉnh sửa).
+     *
+     * @param  Builder<User>  $query
+     */
+    public function scopeAvailableForEmployeeLink(Builder $query, ?int $exceptEmployeeId = null): Builder
+    {
+        $linkedUserIds = Employee::query()
+            ->whereNotNull('user_id')
+            ->when($exceptEmployeeId, fn (Builder $employeeQuery) => $employeeQuery->where('id', '!=', $exceptEmployeeId))
+            ->whereHas('user')
+            ->pluck('user_id');
+
+        return $query->whereNotIn('id', $linkedUserIds);
     }
 
     /**

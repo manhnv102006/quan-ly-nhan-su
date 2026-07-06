@@ -46,6 +46,29 @@
         ];
     $firstName = collect(explode(' ', trim($user?->name ?? 'User')))->filter()->first() ?? ($user?->name ?? 'User');
     $initial = strtoupper(mb_substr($user?->name ?? 'U', 0, 1));
+
+    $managerPendingApprovals = ['leave' => 0, 'overtime' => 0, 'kpi' => 0, 'total' => 0];
+    $employeePendingActions = ['kpis' => 0, 'total' => 0];
+
+    if ($isManager) {
+        if (empty($navigation)) {
+            $navigation = \App\Support\ManagerNavigation::items();
+        }
+
+        if ($user) {
+            $managerPendingApprovals = app(\App\Services\ManagerPendingApprovalService::class)->countsForUser($user);
+            $navigation = app(\App\Services\ManagerPendingApprovalService::class)->applyBadgesToNavigation($navigation, $user);
+        }
+    } elseif ($role === 'employee') {
+        if (empty($navigation)) {
+            $navigation = \App\Support\EmployeeNavigation::items();
+        }
+
+        if ($user) {
+            $employeePendingActions = app(\App\Services\EmployeePendingActionService::class)->countsForUser($user);
+            $navigation = app(\App\Services\EmployeePendingActionService::class)->applyBadgesToNavigation($navigation, $user);
+        }
+    }
 @endphp
 
 <!DOCTYPE html>
@@ -110,13 +133,21 @@
                         @if (! empty($item['target'])) target="{{ $item['target'] }}" @endif
                         class="staff-menu-item {{ $isActive ? $theme['activeMenu'] : 'staff-menu-item-inactive' }}"
                     >
-                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-500 shadow-sm shadow-slate-200/60' }}">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl relative {{ $isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-500 shadow-sm shadow-slate-200/60' }}">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}" />
                             </svg>
+                            @if (! empty($item['badge']) && $item['badge'] > 0)
+                                <x-nav-badge :count="$item['badge']" :active="$isActive" dot-only active-ring="ring-violet-500" />
+                            @endif
                         </span>
                         <span class="min-w-0 flex-1">
-                            <span class="block truncate">{{ $item['label'] }}</span>
+                            <span class="flex items-center justify-between gap-2">
+                                <span class="block truncate">{{ $item['label'] }}</span>
+                                @if (! empty($item['badge']) && $item['badge'] > 0)
+                                    <x-nav-badge :count="$item['badge']" :active="$isActive" active-ring="ring-violet-500" />
+                                @endif
+                            </span>
                             @if (! empty($item['note']))
                                 <span class="block truncate text-[11px] {{ $isActive ? 'text-white/70' : 'text-slate-400' }}">{{ $item['note'] }}</span>
                             @endif
@@ -184,6 +215,30 @@
                     </div>
 
                     <div class="flex items-center gap-2 sm:gap-3">
+                        @if ($isManager && $managerPendingApprovals['total'] > 0)
+                            <a href="{{ route('manager.dashboard') }}#approvals"
+                               title="{{ $managerPendingApprovals['total'] }} việc cần xử lý"
+                               class="relative inline-flex rounded-xl p-2.5 text-slate-500 transition {{ $theme['ghost'] }}">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span class="absolute top-1.5 right-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                                    {{ $managerPendingApprovals['total'] > 9 ? '9+' : $managerPendingApprovals['total'] }}
+                                </span>
+                            </a>
+                        @elseif (! $isManager && $employeePendingActions['total'] > 0)
+                            <a href="{{ route('employee.kpis.index') }}"
+                               title="{{ $employeePendingActions['total'] }} KPI cần cập nhật"
+                               class="relative inline-flex rounded-xl p-2.5 text-slate-500 transition {{ $theme['ghost'] }}">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625z" />
+                                </svg>
+                                <span class="absolute top-1.5 right-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                                    {{ $employeePendingActions['total'] > 9 ? '9+' : $employeePendingActions['total'] }}
+                                </span>
+                            </a>
+                        @endif
+
                         @include('admin.partials.notification-dropdown')
 
                         <div class="hidden rounded-2xl border border-white/70 bg-white/75 px-3 py-2 text-right shadow-sm shadow-slate-200/50 sm:block">
