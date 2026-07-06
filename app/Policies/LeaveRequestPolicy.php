@@ -74,25 +74,33 @@ class LeaveRequestPolicy
 
     public function approve(User $user, LeaveRequest $leaveRequest): Response
     {
-        if ($user->isAdmin()) {
-            return Response::deny('Admin chỉ được xem đơn nghỉ phép, không được duyệt.', 403);
-        }
-
-        if (! $user->isManager()) {
-            return Response::deny('Chỉ quản lý mới được duyệt đơn nghỉ phép.', 403);
-        }
-
-        return $this->managerCanManageResponse($user, $leaveRequest);
+        return $this->decideApprovalAccess($user, $leaveRequest, 'duyệt');
     }
 
     public function reject(User $user, LeaveRequest $leaveRequest): Response
     {
+        return $this->decideApprovalAccess($user, $leaveRequest, 'từ chối');
+    }
+
+    protected function decideApprovalAccess(User $user, LeaveRequest $leaveRequest, string $action): Response
+    {
+        $leaveRequest->loadMissing('employee.user');
+        $isFromManager = $leaveRequest->employee?->user?->isManager() ?? false;
+
+        if ($isFromManager) {
+            if ($user->isAdmin()) {
+                return Response::allow();
+            }
+
+            return Response::deny("Đơn nghỉ phép của quản lý chỉ Admin mới được {$action}.", 403);
+        }
+
         if ($user->isAdmin()) {
-            return Response::deny('Admin chỉ được xem đơn nghỉ phép, không được từ chối.', 403);
+            return Response::deny('Admin chỉ được xem đơn nghỉ phép, không được '.$action.'.', 403);
         }
 
         if (! $user->isManager()) {
-            return Response::deny('Chỉ quản lý mới được từ chối đơn nghỉ phép.', 403);
+            return Response::deny('Chỉ quản lý mới được '.$action.' đơn nghỉ phép.', 403);
         }
 
         return $this->managerCanManageResponse($user, $leaveRequest);
@@ -100,12 +108,16 @@ class LeaveRequestPolicy
 
     protected function managerCanManageResponse(User $user, LeaveRequest $leaveRequest): Response
     {
+        $leaveRequest->loadMissing('employee');
+
+        if ($leaveRequest->employee?->user_id === $user->id) {
+            return Response::deny('Bạn không thể tự duyệt đơn nghỉ phép của chính mình.', 403);
+        }
+
         $manager = $this->managerResolver->resolve($user);
         if (! $manager) {
             return Response::deny('Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Vui lòng liên hệ quản trị để được hỗ trợ.', 403);
         }
-
-        $leaveRequest->loadMissing('employee');
 
         if (! $leaveRequest->employee?->isManagedBy($manager)) {
             return Response::deny('Bạn không có quyền xử lý đơn nghỉ phép này. Đơn không thuộc nhân viên do bạn quản lý.', 403);

@@ -31,6 +31,7 @@ class LeaveApprovalController extends Controller
                 'managerLinked' => false,
                 'leaveRequests' => LeaveRequest::query()->whereRaw('0 = 1')->paginate(10),
                 'stats' => ['pending' => 0, 'approved' => 0, 'rejected' => 0],
+                'myLeaveStats' => null,
                 'filters' => [],
                 'recentHistories' => collect(),
             ]);
@@ -38,12 +39,24 @@ class LeaveApprovalController extends Controller
 
         $filters = $request->only(['employee_name', 'employee_code', 'leave_type', 'status', 'start_from', 'start_to']);
 
-        $scopedQuery = LeaveRequest::query()->forManager($manager);
+        $scopedQuery = LeaveRequest::query()
+            ->forManager($manager)
+            ->whereHas('employee', function ($query) {
+                $query->whereDoesntHave('user', function ($userQuery) {
+                    $userQuery->whereHas('role', fn ($roleQuery) => $roleQuery->where('name', 'manager'));
+                });
+            });
 
         $stats = [
             'pending' => (clone $scopedQuery)->where('status', LeaveRequest::STATUS_PENDING)->count(),
             'approved' => (clone $scopedQuery)->where('status', LeaveRequest::STATUS_APPROVED)->count(),
             'rejected' => (clone $scopedQuery)->where('status', LeaveRequest::STATUS_REJECTED)->count(),
+        ];
+
+        $myLeaveQuery = LeaveRequest::query()->where('employee_id', $manager->id);
+        $myLeaveStats = [
+            'total' => (clone $myLeaveQuery)->count(),
+            'pending' => (clone $myLeaveQuery)->where('status', LeaveRequest::STATUS_PENDING)->count(),
         ];
 
         $leaveRequests = (clone $scopedQuery)
@@ -54,7 +67,14 @@ class LeaveApprovalController extends Controller
             ->withQueryString();
 
         $recentHistories = LeaveRequestHistory::query()
-            ->whereHas('leaveRequest', fn ($query) => $query->forManager($manager))
+            ->whereHas('leaveRequest', function ($query) use ($manager) {
+                $query->forManager($manager)
+                    ->whereHas('employee', function ($employeeQuery) {
+                        $employeeQuery->whereDoesntHave('user', function ($userQuery) {
+                            $userQuery->whereHas('role', fn ($roleQuery) => $roleQuery->where('name', 'manager'));
+                        });
+                    });
+            })
             ->with(['actor', 'leaveRequest.employee'])
             ->latest()
             ->limit(15)
@@ -64,6 +84,7 @@ class LeaveApprovalController extends Controller
             'managerLinked' => true,
             'leaveRequests' => $leaveRequests,
             'stats' => $stats,
+            'myLeaveStats' => $myLeaveStats,
             'filters' => $filters,
             'recentHistories' => $recentHistories,
         ]);

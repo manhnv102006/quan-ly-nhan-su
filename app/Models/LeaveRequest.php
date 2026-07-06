@@ -66,7 +66,12 @@ class LeaveRequest extends Model
             return null;
         }
 
-        $user->loadMissing('employee');
+        $user->loadMissing(['employee', 'role']);
+
+        // Admin duyệt theo vai trò tài khoản, không lấy tên hồ sơ nhân viên đang liên kết.
+        if ($user->isAdmin()) {
+            return $user->name ?: 'Quản trị viên';
+        }
 
         return $user->employee?->full_name ?: $user->name;
     }

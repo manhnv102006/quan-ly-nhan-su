@@ -1,7 +1,6 @@
 <x-admin-layout title="Quản lý chấm công">
 
     <div class="space-y-6">
-
         <div>
             <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Quản lý chấm công</p>
             <h1 class="mt-1 text-2xl font-bold text-slate-800">Quản lý chấm công</h1>

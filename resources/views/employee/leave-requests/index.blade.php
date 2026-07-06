@@ -57,12 +57,26 @@
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-xl font-bold text-slate-800">Lịch sử nghỉ phép của bạn</h2>
-                <p class="text-xs text-slate-500 mt-1">Danh sách đơn đã gửi và trạng thái xử lý.</p>
+                <p class="text-xs text-slate-500 mt-1">
+                    @if ($isManager)
+                        Đơn của quản lý do Admin phê duyệt.
+                    @else
+                        Danh sách đơn đã gửi và trạng thái xử lý.
+                    @endif
+                </p>
             </div>
-            <a href="{{ route('employee.leave-requests.create') }}"
-               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 text-white font-semibold text-xs shadow-md shadow-sky-500/20 hover:bg-sky-700 transition">
-                <span>➕</span> Tạo đơn nghỉ phép
-            </a>
+            <div class="flex flex-wrap items-center gap-2">
+                @if ($isManager)
+                    <a href="{{ route('manager.leave-requests.index') }}"
+                       class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+                        ← Duyệt đơn nhân viên
+                    </a>
+                @endif
+                <a href="{{ route('employee.leave-requests.create') }}"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 text-white font-semibold text-xs shadow-md shadow-sky-500/20 hover:bg-sky-700 transition">
+                    <span>➕</span> Tạo đơn nghỉ phép
+                </a>
+            </div>
         </div>
 
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
