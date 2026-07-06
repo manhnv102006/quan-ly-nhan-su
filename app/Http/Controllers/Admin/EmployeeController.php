@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\EmployeeRequest;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmployeeDocument;
@@ -22,15 +23,6 @@ use ZipArchive;
 
 class EmployeeController extends Controller
 {
-    private const DOCUMENT_RULES = [
-        'documents' => ['nullable', 'array'],
-        'documents.*.document_name' => ['nullable', 'string', 'max:255'],
-        'documents.*.document_type' => ['nullable', 'in:cccd,cv,certificate,degree,contract'],
-        'documents.*.file' => ['nullable', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,doc,docx'],
-        'remove_documents' => ['nullable', 'array'],
-        'remove_documents.*' => ['integer', 'exists:employee_documents,id'],
-    ];
-
     public function create(): View
     {
         $departments = Department::query()->orderBy('department_name')->get(['id', 'department_name']);
@@ -40,24 +32,9 @@ class EmployeeController extends Controller
         return view('admin.employees.create', compact('departments', 'positions', 'users'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(EmployeeRequest $request): RedirectResponse
     {
-        $validated = $request->validate(array_merge([
-            'employee_code' => ['required', 'string', 'max:20', 'unique:employees,employee_code'],
-            'full_name' => ['required', 'string', 'max:100'],
-            'gender' => ['required', 'in:male,female,other'],
-            'date_of_birth' => ['required', 'date'],
-            'phone' => ['required', 'string', 'max:20'],
-            'email' => ['required', 'email', 'max:100', 'unique:employees,email'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'department_id' => ['nullable', 'exists:departments,id'],
-            'position_id' => ['nullable', 'exists:positions,id'],
-            'hire_date' => ['required', 'date'],
-            'status' => ['required', 'in:active,inactive,resigned'],
-            'user_id' => ['nullable', 'exists:users,id'],
-        ], self::DOCUMENT_RULES));
-
-        $validated['employee_code'] = strtoupper($validated['employee_code']);
+        $validated = $request->validated();
 
         $employee = Employee::create(collect($validated)->except(['documents', 'remove_documents'])->all());
 
@@ -147,24 +124,9 @@ class EmployeeController extends Controller
         return view('admin.employees.edit', compact('employee', 'departments', 'positions', 'documents', 'users'));
     }
 
-    public function update(Request $request, Employee $employee): RedirectResponse
+    public function update(EmployeeRequest $request, Employee $employee): RedirectResponse
     {
-        $validated = $request->validate(array_merge([
-            'employee_code' => ['required', 'string', 'max:20', 'unique:employees,employee_code,'.$employee->id],
-            'full_name' => ['required', 'string', 'max:100'],
-            'gender' => ['required', 'in:male,female,other'],
-            'date_of_birth' => ['required', 'date'],
-            'phone' => ['required', 'string', 'max:20'],
-            'email' => ['required', 'email', 'max:100', 'unique:employees,email,'.$employee->id],
-            'address' => ['nullable', 'string', 'max:255'],
-            'department_id' => ['nullable', 'exists:departments,id'],
-            'position_id' => ['nullable', 'exists:positions,id'],
-            'hire_date' => ['required', 'date'],
-            'status' => ['required', 'in:active,inactive,resigned'],
-            'user_id' => ['nullable', 'exists:users,id'],
-        ], self::DOCUMENT_RULES));
-
-        $validated['employee_code'] = strtoupper($validated['employee_code']);
+        $validated = $request->validated();
 
         $employee->update(collect($validated)->except(['documents', 'remove_documents'])->all());
 

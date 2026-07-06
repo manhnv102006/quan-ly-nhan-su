@@ -11,104 +11,126 @@
         </div>
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+            @if ($errors->any())
+                <div class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4">
+                    <p class="text-sm font-semibold text-rose-800">Vui lòng kiểm tra lại các trường sau:</p>
+                    <ul class="mt-2 list-disc space-y-1 ps-5 text-sm text-rose-700">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <form action="{{ route('admin.employees.store') }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @csrf
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Mã nhân viên</label>
+                    <label class="block text-sm font-medium text-slate-700">Mã nhân viên <span class="text-rose-500">*</span></label>
                     <input type="text" name="employee_code" value="{{ old('employee_code') }}" required
-                           class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
-                    @error('employee_code') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
+                           maxlength="20" pattern="[A-Za-z0-9_-]+" placeholder="VD: EMP001"
+                           class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('employee_code') border-rose-400 @else border-slate-200 @enderror">
+                    @error('employee_code') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Họ và tên</label>
+                    <label class="block text-sm font-medium text-slate-700">Họ và tên <span class="text-rose-500">*</span></label>
                     <input type="text" name="full_name" value="{{ old('full_name') }}" required
-                           class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
-                    @error('full_name') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
+                           minlength="2" maxlength="100"
+                           class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('full_name') border-rose-400 @else border-slate-200 @enderror">
+                    @error('full_name') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Giới tính</label>
-                    <select name="gender" required class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
+                    <label class="block text-sm font-medium text-slate-700">Giới tính <span class="text-rose-500">*</span></label>
+                    <select name="gender" required class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('gender') border-rose-400 @else border-slate-200 @enderror">
                         <option value="male" @selected(old('gender') === 'male')>Nam</option>
                         <option value="female" @selected(old('gender') === 'female')>Nữ</option>
                         <option value="other" @selected(old('gender') === 'other')>Khác</option>
                     </select>
+                    @error('gender') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Ngày sinh</label>
+                    <label class="block text-sm font-medium text-slate-700">Ngày sinh <span class="text-rose-500">*</span></label>
                     <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}" required
-                           class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
-                    @error('date_of_birth') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
+                           max="{{ now()->subYears(16)->format('Y-m-d') }}"
+                           class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('date_of_birth') border-rose-400 @else border-slate-200 @enderror">
+                    @error('date_of_birth') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Số điện thoại</label>
+                    <label class="block text-sm font-medium text-slate-700">Số điện thoại <span class="text-rose-500">*</span></label>
                     <input type="text" name="phone" value="{{ old('phone') }}" required
-                           class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
-                    @error('phone') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
+                           maxlength="11" pattern="0[0-9]{9,10}" placeholder="VD: 0912345678"
+                           class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('phone') border-rose-400 @else border-slate-200 @enderror">
+                    @error('phone') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Email</label>
+                    <label class="block text-sm font-medium text-slate-700">Email <span class="text-rose-500">*</span></label>
                     <input type="email" name="email" value="{{ old('email') }}" required
-                           class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
-                    @error('email') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
+                           maxlength="100"
+                           class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('email') border-rose-400 @else border-slate-200 @enderror">
+                    @error('email') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700">Địa chỉ</label>
                     <input type="text" name="address" value="{{ old('address') }}"
-                           class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
+                           maxlength="255"
+                           class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('address') border-rose-400 @else border-slate-200 @enderror">
+                    @error('address') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Phòng ban</label>
-                    <select name="department_id" class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
+                    <label class="block text-sm font-medium text-slate-700">Phòng ban <span class="text-rose-500">*</span></label>
+                    <select name="department_id" required class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('department_id') border-rose-400 @else border-slate-200 @enderror">
                         <option value="">-- Chọn phòng ban --</option>
                         @foreach ($departments as $dept)
                             <option value="{{ $dept->id }}" @selected(old('department_id') == $dept->id)>{{ $dept->department_name }}</option>
                         @endforeach
                     </select>
+                    @error('department_id') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Chức vụ</label>
-                    <select name="position_id" class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
+                    <label class="block text-sm font-medium text-slate-700">Chức vụ <span class="text-rose-500">*</span></label>
+                    <select name="position_id" required class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('position_id') border-rose-400 @else border-slate-200 @enderror">
                         <option value="">-- Chọn chức vụ --</option>
                         @foreach ($positions as $pos)
                             <option value="{{ $pos->id }}" @selected(old('position_id') == $pos->id)>{{ $pos->position_name }}</option>
                         @endforeach
                     </select>
+                    @error('position_id') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Ngày vào làm</label>
+                    <label class="block text-sm font-medium text-slate-700">Ngày vào làm <span class="text-rose-500">*</span></label>
                     <input type="date" name="hire_date" value="{{ old('hire_date') }}" required
-                           class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
-                    @error('hire_date') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
+                           class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('hire_date') border-rose-400 @else border-slate-200 @enderror">
+                    @error('hire_date') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Trạng thái</label>
-                    <select name="status" required class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
+                    <label class="block text-sm font-medium text-slate-700">Trạng thái <span class="text-rose-500">*</span></label>
+                    <select name="status" required class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('status') border-rose-400 @else border-slate-200 @enderror">
                         <option value="active" @selected(old('status', 'active') === 'active')>Hoạt động</option>
                         <option value="inactive" @selected(old('status') === 'inactive')>Tạm khóa</option>
                         <option value="resigned" @selected(old('status') === 'resigned')>Đã nghỉ việc</option>
                     </select>
+                    @error('status') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700">Tài khoản liên kết</label>
-                    <select name="user_id" class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
+                    <select name="user_id" class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('user_id') border-rose-400 @else border-slate-200 @enderror">
                         <option value="">-- Chọn tài khoản để liên kết --</option>
                         @foreach ($users as $usr)
                             <option value="{{ $usr->id }}" @selected(old('user_id') == $usr->id)>{{ $usr->name }} ({{ $usr->email }})</option>
                         @endforeach
                     </select>
-                    @error('user_id') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
+                    @error('user_id') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
                 @include('admin.employees.partials.document-upload-fields')
