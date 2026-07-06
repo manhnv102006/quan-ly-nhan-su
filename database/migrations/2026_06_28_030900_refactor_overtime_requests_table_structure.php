@@ -9,9 +9,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Đổi tên cột overtime_date -> work_date
+        // Đổi tên cột overtime_date -> work_date (renameColumn chạy được cả MySQL lẫn SQLite)
         if (Schema::hasColumn('overtime_requests', 'overtime_date') && ! Schema::hasColumn('overtime_requests', 'work_date')) {
-            DB::statement('ALTER TABLE overtime_requests CHANGE overtime_date work_date DATE NOT NULL');
+            Schema::table('overtime_requests', function (Blueprint $table) {
+                $table->renameColumn('overtime_date', 'work_date');
+            });
         }
 
         Schema::table('overtime_requests', function (Blueprint $table) {
@@ -51,32 +53,41 @@ return new class extends Migration
             }
         });
 
-        // Mở rộng status
-        DB::statement("ALTER TABLE overtime_requests MODIFY COLUMN status ENUM('pending','approved','rejected','completed') NOT NULL DEFAULT 'pending'");
-
-        // Chuẩn hóa khóa ngoại approved_by -> users.id (nếu đã tồn tại khóa cũ sẽ drop trước)
-        $foreignKeys = collect(DB::select("
-            SELECT CONSTRAINT_NAME
-            FROM information_schema.KEY_COLUMN_USAGE
-            WHERE TABLE_SCHEMA = DATABASE()
-              AND TABLE_NAME = 'overtime_requests'
-              AND COLUMN_NAME IN ('employee_id', 'approved_by')
-              AND REFERENCED_TABLE_NAME IS NOT NULL
-        "));
-
-        foreach ($foreignKeys as $foreignKey) {
-            DB::statement("ALTER TABLE overtime_requests DROP FOREIGN KEY `{$foreignKey->CONSTRAINT_NAME}`");
+        // Mở rộng status. MySQL dùng ENUM; SQLite dùng string (bỏ CHECK cũ).
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE overtime_requests MODIFY COLUMN status ENUM('pending','approved','rejected','completed') NOT NULL DEFAULT 'pending'");
+        } else {
+            Schema::table('overtime_requests', function (Blueprint $table) {
+                $table->string('status')->default('pending')->change();
+            });
         }
 
-        Schema::table('overtime_requests', function (Blueprint $table) {
-            // employee_id: xóa nhân viên thì xóa toàn bộ đơn tăng ca liên quan
-            $table->foreign('employee_id')->references('id')->on('employees')->cascadeOnDelete();
-            // approved_by: xóa tài khoản người duyệt thì set null
-            $table->foreign('approved_by')->references('id')->on('users')->nullOnDelete();
-        });
+        // Chuẩn hóa khóa ngoại approved_by -> users.id. Việc truy vấn information_schema và
+        // DROP FOREIGN KEY chỉ áp dụng cho MySQL; SQLite giữ nguyên khóa ngoại tạo ban đầu.
+        if (DB::getDriverName() === 'mysql') {
+            $foreignKeys = collect(DB::select("
+                SELECT CONSTRAINT_NAME
+                FROM information_schema.KEY_COLUMN_USAGE
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'overtime_requests'
+                  AND COLUMN_NAME IN ('employee_id', 'approved_by')
+                  AND REFERENCED_TABLE_NAME IS NOT NULL
+            "));
 
-        // Index cho employee_id, work_date, status
-        $indexes = collect(DB::select("SHOW INDEX FROM overtime_requests"))->pluck('Key_name')->toArray();
+            foreach ($foreignKeys as $foreignKey) {
+                DB::statement("ALTER TABLE overtime_requests DROP FOREIGN KEY `{$foreignKey->CONSTRAINT_NAME}`");
+            }
+
+            Schema::table('overtime_requests', function (Blueprint $table) {
+                // employee_id: xóa nhân viên thì xóa toàn bộ đơn tăng ca liên quan
+                $table->foreign('employee_id')->references('id')->on('employees')->cascadeOnDelete();
+                // approved_by: xóa tài khoản người duyệt thì set null
+                $table->foreign('approved_by')->references('id')->on('users')->nullOnDelete();
+            });
+        }
+
+        // Index cho employee_id, work_date, status (Schema::getIndexes tương thích mọi driver)
+        $indexes = collect(Schema::getIndexes('overtime_requests'))->pluck('name')->all();
         if (! in_array('overtime_requests_employee_id_index', $indexes, true)) {
             Schema::table('overtime_requests', function (Blueprint $table) {
                 $table->index('employee_id', 'overtime_requests_employee_id_index');
@@ -96,10 +107,18 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE overtime_requests MODIFY COLUMN status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE overtime_requests MODIFY COLUMN status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending'");
+        } else {
+            Schema::table('overtime_requests', function (Blueprint $table) {
+                $table->string('status')->default('pending')->change();
+            });
+        }
 
         if (Schema::hasColumn('overtime_requests', 'work_date') && ! Schema::hasColumn('overtime_requests', 'overtime_date')) {
-            DB::statement('ALTER TABLE overtime_requests CHANGE work_date overtime_date DATE NOT NULL');
+            Schema::table('overtime_requests', function (Blueprint $table) {
+                $table->renameColumn('work_date', 'overtime_date');
+            });
         }
 
         Schema::table('overtime_requests', function (Blueprint $table) {

@@ -15,6 +15,16 @@ class ContractUpdateRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('salary')) {
+            // Bỏ dấu chấm phân tách hàng nghìn (VD: "15.000.000" -> "15000000").
+            $this->merge([
+                'salary' => str_replace('.', '', (string) $this->input('salary')),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         /** @var Contract $contract */
@@ -35,7 +45,7 @@ class ContractUpdateRequest extends FormRequest
             'allowance_phone' => ['nullable', 'numeric', 'min:0'],
             'allowance_fuel' => ['nullable', 'numeric', 'min:0'],
             'allowance_position' => ['nullable', 'numeric', 'min:0'],
-            'signed_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'signed_date' => ['nullable', 'date', 'before_or_equal:start_date'],
             'description' => ['nullable', 'string', 'max:1000'],
             'note' => ['nullable', 'string', 'max:1000'],
             'contract_file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
