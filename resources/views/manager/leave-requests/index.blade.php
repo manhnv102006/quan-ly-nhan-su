@@ -18,12 +18,33 @@
 @endphp
 
 <x-staff-layout
-    title="Duyệt nghỉ phép"
-    subtitle="Thống kê và danh sách chỉ tính trên nhân viên thuộc quyền quản lý."
+    title="Quản lý nghỉ phép"
+    subtitle="Duyệt đơn nhân viên cấp dưới và quản lý đơn nghỉ phép cá nhân của bạn."
     role="manager"
     :navigation="$navigation"
 >
     <div class="space-y-6">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Nghỉ phép</p>
+                <h2 class="mt-1 text-2xl font-bold text-slate-800">Quản lý nghỉ phép</h2>
+                <p class="mt-1 text-sm text-slate-500">
+                    Duyệt đơn của <span class="font-semibold text-slate-700">nhân viên</span>.
+                    Đơn của bạn do <span class="font-semibold text-slate-700">Admin</span> phê duyệt.
+                </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('employee.leave-requests') }}"
+                   class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+                    Đơn của tôi
+                </a>
+                <a href="{{ route('employee.leave-requests.create') }}"
+                   class="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-violet-500/20 transition hover:bg-violet-700">
+                    Tạo đơn nghỉ phép
+                </a>
+            </div>
+        </div>
+
         @if (session('success'))
             <div class="flex items-center gap-3 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4 shadow-sm">
                 <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100">
@@ -62,6 +83,33 @@
                 </div>
             </div>
         @else
+            @if ($myLeaveStats)
+                <section class="staff-card border border-sky-100/80 bg-sky-50/40 p-5 sm:p-6">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-600">Đơn cá nhân</p>
+                            <h3 class="mt-1 text-lg font-bold text-slate-800">Nghỉ phép của bạn</h3>
+                            <p class="mt-1 text-sm text-slate-600">
+                                Tổng {{ number_format($myLeaveStats['total']) }} đơn
+                                @if ($myLeaveStats['pending'] > 0)
+                                    · <span class="font-semibold text-amber-700">{{ number_format($myLeaveStats['pending']) }} đơn đang chờ Admin duyệt</span>
+                                @endif
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ route('employee.leave-requests') }}"
+                               class="inline-flex items-center rounded-xl border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-50">
+                                Xem đơn của tôi
+                            </a>
+                            <a href="{{ route('employee.leave-requests.create') }}"
+                               class="inline-flex items-center rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-700">
+                                Tạo đơn mới
+                            </a>
+                        </div>
+                    </div>
+                </section>
+            @endif
+
             <section class="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div class="staff-stat-card border border-amber-100/80 bg-white/90">
                     <div class="flex items-start justify-between">
@@ -73,7 +121,7 @@
                         <span class="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-amber-700">Chờ</span>
                     </div>
                     <p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format($stats['pending']) }}</p>
-                    <p class="mt-1 text-sm font-medium text-slate-500">Đơn chờ duyệt</p>
+                    <p class="mt-1 text-sm font-medium text-slate-500">Đơn nhân viên chờ duyệt</p>
                 </div>
 
                 <div class="staff-stat-card border border-violet-100/80 bg-white/90">
@@ -167,7 +215,8 @@
             <section class="staff-card overflow-hidden">
                 <div class="border-b border-slate-100 px-6 py-5 sm:px-7">
                     <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-indigo-600">Danh sách</p>
-                    <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-800">Đơn nghỉ phép cấp dưới</h3>
+                    <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-800">Đơn nghỉ phép nhân viên</h3>
+                    <p class="mt-1 text-xs text-slate-500">Chỉ hiển thị đơn của nhân viên thường thuộc quyền quản lý</p>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full">

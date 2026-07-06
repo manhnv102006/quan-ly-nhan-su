@@ -9,7 +9,9 @@ class StoreEmployeeOvertimeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->isEmployee() ?? false;
+        $user = $this->user();
+
+        return $user?->isEmployee() || $user?->isManager() || false;
     }
 
     public function rules(): array
