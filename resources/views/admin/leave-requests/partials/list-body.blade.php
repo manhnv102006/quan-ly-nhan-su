@@ -2,8 +2,43 @@
     $filterRoute = $filterRoute ?? route('admin.leave-requests');
     $clearFilterRoute = $clearFilterRoute ?? route('admin.leave-requests');
     $showDepartmentColumn = $showDepartmentColumn ?? true;
+    $showDepartmentFilter = $showDepartmentFilter ?? $showDepartmentColumn;
     $scopeLabel = $scopeLabel ?? 'Toàn công ty';
-    $hasFilters = collect($filters ?? [])->filter(fn ($v) => filled($v))->isNotEmpty();
+    $departments = $departments ?? collect();
+
+    $filterLabels = [
+        'employee_name' => 'Tên nhân viên',
+        'employee_code' => 'Mã nhân viên',
+        'status' => 'Trạng thái',
+        'leave_type' => 'Loại nghỉ',
+        'start_from' => 'Từ ngày',
+        'start_to' => 'Đến ngày',
+        'department_id' => 'Phòng ban',
+    ];
+
+    $activeFilters = collect($filters ?? [])
+        ->filter(fn ($value, $key) => filled($value) && ($showDepartmentFilter || $key !== 'department_id'))
+        ->map(function ($value, $key) use ($filterLabels, $statusLabels, $departments) {
+            if ($key === 'status') {
+                return ['key' => $key, 'label' => $filterLabels[$key], 'value' => $statusLabels[$value] ?? $value];
+            }
+            if ($key === 'leave_type') {
+                return ['key' => $key, 'label' => $filterLabels[$key], 'value' => \App\Models\LeaveRequest::LEAVE_TYPE_LABELS[$value] ?? $value];
+            }
+            if ($key === 'department_id') {
+                $dept = $departments->firstWhere('id', (int) $value);
+
+                return ['key' => $key, 'label' => $filterLabels[$key], 'value' => $dept?->department_name ?? $value];
+            }
+            if (in_array($key, ['start_from', 'start_to'], true)) {
+                return ['key' => $key, 'label' => $filterLabels[$key], 'value' => \Illuminate\Support\Carbon::parse($value)->format('d/m/Y')];
+            }
+
+            return ['key' => $key, 'label' => $filterLabels[$key] ?? $key, 'value' => $value];
+        })
+        ->values();
+
+    $hasFilters = $activeFilters->isNotEmpty();
 @endphp
 
 <section class="space-y-6">
@@ -29,56 +64,109 @@
         @endforeach
     </div>
 
-    <div class="admin-card p-5 sm:p-6">
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <div>
-                <h3 class="text-sm font-bold text-slate-800">Tìm kiếm &amp; lọc</h3>
-                <p class="text-xs text-slate-500">Tìm theo tên, mã nhân viên, trạng thái hoặc loại nghỉ</p>
+    <div class="admin-card overflow-hidden">
+        <div class="border-b border-slate-100 bg-gradient-to-r from-violet-50/80 via-white to-indigo-50/50 px-5 py-4 sm:px-6">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Bộ lọc</p>
+                    <h3 class="mt-1 text-sm font-bold text-slate-800">Tìm kiếm đơn nghỉ phép</h3>
+                    <p class="mt-0.5 text-xs text-slate-500">Lọc theo nhân viên, phòng ban, trạng thái, loại nghỉ và khoảng thời gian</p>
+                </div>
+                @if($hasFilters)
+                    <span class="rounded-full bg-violet-600 px-3 py-1 text-xs font-semibold text-white">
+                        {{ $leaveRequests->total() }} kết quả
+                    </span>
+                @endif
             </div>
+
             @if($hasFilters)
-                <span class="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
-                    Đang lọc · {{ $leaveRequests->total() }} kết quả
-                </span>
+                <div class="mt-3 flex flex-wrap gap-2">
+                    @foreach($activeFilters as $chip)
+                        <span class="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-white px-3 py-1 text-xs font-medium text-violet-800">
+                            <span class="text-violet-500">{{ $chip['label'] }}:</span>
+                            {{ $chip['value'] }}
+                        </span>
+                    @endforeach
+                </div>
             @endif
         </div>
 
-        <form action="{{ $filterRoute }}" method="GET" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div class="xl:col-span-2">
-                <label for="search" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Từ khóa</label>
-                <input type="text" id="search" name="search"
-                       value="{{ $filters['search'] ?? '' }}"
-                       placeholder="Tên hoặc mã nhân viên (VD: EMP002, Nguyễn)"
-                       class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
+        <form action="{{ $filterRoute }}" method="GET" class="space-y-4 p-5 sm:p-6">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div>
+                    <label for="employee_name" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Tên nhân viên</label>
+                    <input type="text" id="employee_name" name="employee_name"
+                           value="{{ $filters['employee_name'] ?? '' }}"
+                           placeholder="Nhập tên nhân viên"
+                           class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
+                </div>
+
+                <div>
+                    <label for="employee_code" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Mã nhân viên</label>
+                    <input type="text" id="employee_code" name="employee_code"
+                           value="{{ $filters['employee_code'] ?? '' }}"
+                           placeholder="VD: EMP002"
+                           class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
+                </div>
+
+                @if($showDepartmentFilter)
+                    <div>
+                        <label for="department_id" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Phòng ban</label>
+                        <select id="department_id" name="department_id"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
+                            <option value="">Tất cả phòng ban</option>
+                            @foreach ($departments as $dept)
+                                <option value="{{ $dept->id }}" @selected((string) ($filters['department_id'] ?? '') === (string) $dept->id)>
+                                    {{ $dept->department_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
+                <div>
+                    <label for="status" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Trạng thái</label>
+                    <select id="status" name="status"
+                            class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
+                        <option value="">Tất cả trạng thái</option>
+                        @foreach ($statusLabels as $val => $label)
+                            <option value="{{ $val }}" @selected(($filters['status'] ?? '') === $val)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label for="leave_type" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Loại nghỉ</label>
+                    <select id="leave_type" name="leave_type"
+                            class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
+                        <option value="">Tất cả loại nghỉ</option>
+                        @foreach (\App\Models\LeaveRequest::LEAVE_TYPE_LABELS as $val => $label)
+                            <option value="{{ $val }}" @selected(($filters['leave_type'] ?? '') === $val)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label for="start_from" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Nghỉ từ ngày</label>
+                    <input type="date" id="start_from" name="start_from"
+                           value="{{ $filters['start_from'] ?? '' }}"
+                           class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
+                </div>
+
+                <div>
+                    <label for="start_to" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Nghỉ đến ngày</label>
+                    <input type="date" id="start_to" name="start_to"
+                           value="{{ $filters['start_to'] ?? '' }}"
+                           class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
+                </div>
             </div>
 
-            <div>
-                <label for="status" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Trạng thái</label>
-                <select id="status" name="status"
-                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
-                    <option value="">Tất cả trạng thái</option>
-                    @foreach ($statusLabels as $val => $label)
-                        <option value="{{ $val }}" @selected(($filters['status'] ?? '') === $val)>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <label for="leave_type" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Loại nghỉ</label>
-                <select id="leave_type" name="leave_type"
-                        class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
-                    <option value="">Tất cả loại nghỉ</option>
-                    @foreach (\App\Models\LeaveRequest::LEAVE_TYPE_LABELS as $val => $label)
-                        <option value="{{ $val }}" @selected(($filters['leave_type'] ?? '') === $val)>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="flex flex-wrap items-end gap-2 md:col-span-2 xl:col-span-4">
+            <div class="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
                 <button type="submit" class="admin-btn-primary">
                     <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                     </svg>
-                    <span>Tìm kiếm</span>
+                    <span>Áp dụng bộ lọc</span>
                 </button>
                 @if($hasFilters)
                     <a href="{{ $clearFilterRoute }}"
@@ -86,6 +174,24 @@
                         Xóa bộ lọc
                     </a>
                 @endif
+
+                <div class="ml-auto flex flex-wrap gap-1.5">
+                    @foreach (['pending' => 'Chờ duyệt', 'approved' => 'Đã duyệt', 'rejected' => 'Từ chối'] as $quickStatus => $quickLabel)
+                        @php
+                            $quickQuery = request()->except('page');
+                            if (($filters['status'] ?? '') === $quickStatus) {
+                                unset($quickQuery['status']);
+                            } else {
+                                $quickQuery['status'] = $quickStatus;
+                            }
+                            $quickUrl = $filterRoute.(count($quickQuery) ? '?'.http_build_query($quickQuery) : '');
+                        @endphp
+                        <a href="{{ $quickUrl }}"
+                           class="inline-flex rounded-full px-3 py-1 text-xs font-semibold transition {{ ($filters['status'] ?? '') === $quickStatus ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
+                            {{ $quickLabel }}
+                        </a>
+                    @endforeach
+                </div>
             </div>
         </form>
     </div>
