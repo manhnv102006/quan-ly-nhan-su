@@ -6,7 +6,7 @@
 
 <x-staff-layout
     title="Duyệt tăng ca"
-    subtitle="Thống kê và danh sách chỉ tính trên nhân viên thuộc quyền quản lý."
+    subtitle="Chỉ hiển thị đơn của nhân viên thường trong phòng ban bạn quản lý. Đơn tăng ca của quản lý do Admin phê duyệt."
     role="manager"
     :navigation="$navigation"
 >
@@ -145,7 +145,8 @@
             <section class="staff-card overflow-hidden">
                 <div class="border-b border-slate-100 px-6 py-5 sm:px-7">
                     <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-indigo-600">Danh sách</p>
-                    <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-800">Đơn tăng ca cấp dưới</h3>
+                    <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-800">Đơn tăng ca nhân viên phòng ban</h3>
+                    <p class="mt-1 text-xs text-slate-500">Không bao gồm đơn của quản lý — Admin là người phê duyệt</p>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full">

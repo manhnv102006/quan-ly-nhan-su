@@ -132,16 +132,26 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex flex-wrap items-center justify-center gap-1.5">
-                                    @if ($item->isPending())
+                                    @php
+                                        $canAdminDecide = $item->isPending() && $item->employee?->hasManagerRole();
+                                    @endphp
+                                    @if ($canAdminDecide)
                                         <form method="POST" action="{{ route('admin.overtime-requests.approve', $item) }}" class="inline">
                                             @csrf
                                             @method('PATCH')
                                             <button type="submit"
                                                     class="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
-                                                    onclick="return confirm('Duyệt đơn tăng ca này?')">
+                                                    onclick="return confirm('Duyệt đơn tăng ca của quản lý {{ $item->employee?->full_name }}?')">
                                                 <i class="bi bi-check-lg"></i> Duyệt
                                             </button>
                                         </form>
+                                        <button type="button"
+                                                onclick="openOvertimeRejectModal('{{ route('admin.overtime-requests.reject', $item) }}', @js($item->employee?->full_name))"
+                                                class="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700">
+                                            <i class="bi bi-x-lg"></i> Từ chối
+                                        </button>
+                                    @elseif ($item->employee?->hasManagerRole())
+                                        <span class="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-600">Quản lý</span>
                                     @endif
                                     <a href="{{ route('admin.overtime-requests.show', $item) }}"
                                        class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
@@ -185,9 +195,54 @@
     </div>
 </section>
 
+<div id="overtime-reject-modal"
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+    <div class="mx-4 w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+        <h3 class="mb-2 text-lg font-bold text-slate-800">Từ chối đơn tăng ca</h3>
+        <p class="mb-4 text-sm text-slate-500">
+            Nhập lý do từ chối cho quản lý <strong id="overtime-reject-name" class="text-slate-800"></strong>:
+        </p>
+        <form id="overtime-reject-form" action="" method="POST">
+            @csrf
+            @method('PATCH')
+            <div class="mb-5">
+                <label for="overtime_reject_reason" class="mb-2 block text-sm font-semibold text-slate-700">Lý do từ chối</label>
+                <textarea id="overtime_reject_reason" name="reject_reason" required rows="3"
+                          placeholder="Nhập lý do từ chối..."
+                          class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeOvertimeRejectModal()"
+                        class="flex-1 rounded-xl bg-slate-100 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200">
+                    Hủy
+                </button>
+                <button type="submit"
+                        class="flex-1 rounded-xl bg-rose-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-rose-700">
+                    Xác nhận từ chối
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @once
     @push('scripts')
     <script>
+        function openOvertimeRejectModal(actionUrl, employeeName) {
+            const modal = document.getElementById('overtime-reject-modal');
+            const form = document.getElementById('overtime-reject-form');
+            document.getElementById('overtime-reject-name').textContent = employeeName || '';
+            form.setAttribute('action', actionUrl);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeOvertimeRejectModal() {
+            const modal = document.getElementById('overtime-reject-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
         document.querySelectorAll('.overtime-status-select').forEach(function (select) {
             select.addEventListener('change', function () {
                 const form = this.closest('.overtime-status-form');
