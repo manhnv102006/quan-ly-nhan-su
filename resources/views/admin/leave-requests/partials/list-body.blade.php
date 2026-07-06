@@ -164,16 +164,6 @@
                                 @endif
                             </td>
                             <td class="px-5 py-4 text-center">
-
-                                @if ($leaveRequest->employee?->user?->isManager() && $leaveRequest->status === 'pending')
-                                    <div class="flex items-center justify-center gap-1.5">
-                                        <form action="{{ route('admin.leave-requests.approve', $leaveRequest) }}" method="POST" onsubmit="return confirm('Duyệt đơn nghỉ phép này?')">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Duyệt</button>
-                                        </form>
-                                        <a href="{{ route('admin.leave-requests.show', $leaveRequest) }}" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Chi tiết</a>
-
                                 @if ($leaveRequest->status === 'pending' && $leaveRequest->employee?->hasManagerRole())
                                     <div class="flex items-center justify-center gap-2">
                                         <form action="{{ route('admin.leave-requests.approve', $leaveRequest) }}" method="POST"
