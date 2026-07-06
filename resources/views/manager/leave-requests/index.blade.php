@@ -72,9 +72,8 @@
                             nên không thể tải danh sách đơn nghỉ phép cần duyệt.
                         </p>
                         <p class="mt-2 text-xs text-amber-600/90">
-                            Vui lòng liên hệ quản trị viên để gán <code class="rounded bg-amber-100 px-1">user_id</code>
-                            trên bảng nhân viên. Sau khi liên kết, hệ thống sẽ lấy đơn cấp dưới theo
-                            <code class="rounded bg-amber-100 px-1">manager_id</code> hoặc phòng ban được giao quản lý.
+                            Vui lòng liên hệ quản trị viên để gán <code class="rounded bg-amber-100 px-1">Trưởng phòng ban</code>
+                            trong mục Quản lý phòng ban. Chỉ quản lý được gán trưởng phòng mới nhận đơn nghỉ phép của nhân viên cùng phòng ban.
                         </p>
                     </div>
                     <a href="{{ route('profile.edit') }}" class="inline-flex shrink-0 items-center justify-center rounded-2xl bg-amber-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-700">

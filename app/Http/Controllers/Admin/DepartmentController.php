@@ -5,12 +5,17 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Services\ManagerDepartmentSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DepartmentController extends Controller
 {
+    public function __construct(
+        private readonly ManagerDepartmentSyncService $managerDepartmentSync,
+    ) {}
+
     public function index(): View
     {
         $departments = Department::query()
@@ -57,6 +62,12 @@ class DepartmentController extends Controller
 
         Department::create($validated);
 
+        $department = Department::query()->where('department_code', $validated['department_code'])->first();
+
+        if ($department) {
+            $this->managerDepartmentSync->syncAfterDepartmentManagerAssigned($department, $department->manager_id);
+        }
+
         return redirect()
             ->route('admin.departments')
             ->with('success', 'Thêm phòng ban thành công.');
@@ -99,6 +110,8 @@ class DepartmentController extends Controller
         $validated['manager_id'] = $validated['manager_id'] ?: null;
 
         $department->update($validated);
+
+        $this->managerDepartmentSync->syncAfterDepartmentManagerAssigned($department->fresh(), $department->manager_id);
 
         return redirect()
             ->route('admin.departments')
