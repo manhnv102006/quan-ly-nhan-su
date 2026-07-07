@@ -1,12 +1,11 @@
 @php
     $user = Auth::user();
     $isManager = $user->role->name === 'manager';
-    $navigation = $isManager
-        ? \App\Support\ManagerNavigation::items()
-        : \App\Support\EmployeeNavigation::items();
+    $layout = $isManager ? 'manager-layout' : 'employee-layout';
+    $layoutParams = ['title' => 'Tạo đơn tăng ca', 'subtitle' => 'Gửi yêu cầu tăng ca cho quản lý phê duyệt.'];
 @endphp
 
-<x-staff-layout title="Tạo đơn tăng ca" :role="$isManager ? 'manager' : 'employee'" :navigation="$navigation">
+<x-dynamic-component :component="$layout" :attributes="new \Illuminate\View\ComponentAttributeBag($layoutParams)">
 
     <div class="max-w-xl space-y-6">
 
@@ -129,4 +128,4 @@
         updatePreview();
     </script>
 
-</x-staff-layout>
+</x-dynamic-component>

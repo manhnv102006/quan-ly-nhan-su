@@ -1,12 +1,14 @@
 @php
     $user = Auth::user();
     $isManager = $user->role->name === 'manager';
-    $navigation = $isManager
-        ? \App\Support\ManagerNavigation::items()
-        : \App\Support\EmployeeNavigation::items();
+    $layout = $isManager ? 'manager-layout' : 'employee-layout';
+    $layoutParams = [
+        'title' => 'Chấm công hôm nay',
+        'subtitle' => 'Check-in và check-out ca làm việc hôm nay.',
+    ];
 @endphp
 
-<x-staff-layout title="Chấm công hôm nay" :role="$isManager ? 'manager' : 'employee'" :navigation="$navigation">
+<x-dynamic-component :component="$layout" :attributes="new \Illuminate\View\ComponentAttributeBag($layoutParams)">
 
     <div class="space-y-6">
 
@@ -241,4 +243,4 @@
 @endif
     </div>
 
-</x-staff-layout>
+</x-dynamic-component>

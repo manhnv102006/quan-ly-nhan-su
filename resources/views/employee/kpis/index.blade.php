@@ -1,54 +1,57 @@
-@php
-    $navigation = \App\Support\EmployeeNavigation::items();
-@endphp
-
-<x-staff-layout
+<x-employee-layout
     title="KPI của tôi"
     subtitle="Theo dõi và cập nhật tiến độ mục tiêu được giao."
-    role="employee"
-    :navigation="$navigation"
 >
-    <div class="space-y-6">
-
-        {{-- Header --}}
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-                <h2 class="text-2xl font-bold text-slate-800">KPI của tôi</h2>
-                <p class="text-sm text-slate-500 mt-1">
-                    Tổng cộng {{ $employeeKpis->total() }} mục tiêu được giao
-                </p>
+    <div class="employee-page">
+        <section class="employee-hero">
+            <div class="absolute -right-16 top-0 h-48 w-48 rounded-full bg-white/10 blur-3xl"></div>
+            <div class="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <span class="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur">Mục tiêu cá nhân</span>
+                    <h2 class="mt-4 text-3xl font-extrabold tracking-tight">KPI của tôi</h2>
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-sky-100/90">
+                        Theo dõi tiến độ, cập nhật kết quả và xem đánh giá từ quản lý trực tiếp.
+                    </p>
+                </div>
+                <div class="rounded-3xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-100">Tổng mục tiêu</p>
+                    <p class="mt-2 text-3xl font-extrabold">{{ $employeeKpis->total() }}</p>
+                </div>
             </div>
-        </div>
+        </section>
 
-        {{-- Danh sách --}}
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="px-6 py-5 border-b border-slate-100">
-                <h3 class="font-semibold text-slate-800">Danh sách mục tiêu KPI</h3>
+        <div class="employee-panel">
+            <div class="employee-panel-header">
+                <div>
+                    <p class="employee-kicker">Danh sách</p>
+                    <h3 class="employee-section-title text-lg">Mục tiêu KPI được giao</h3>
+                    <p class="employee-section-subtitle">Cập nhật tiến độ trước hạn chót để quản lý có thể đánh giá kịp thời</p>
+                </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+            <div class="employee-table-wrap overflow-x-auto">
+                <table class="employee-table text-sm">
                     <thead>
-                        <tr class="bg-slate-50">
-                            <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Mã KPI</th>
-                            <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Mục tiêu</th>
-                            <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Tiến độ</th>
-                            <th class="px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Hạn chót</th>
-                            <th class="px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
-                            <th class="px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Điểm</th>
-                            <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Nhận xét</th>
-                            <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Người giao</th>
-                            <th class="px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
+                        <tr>
+                            <th>Mã KPI</th>
+                            <th>Mục tiêu</th>
+                            <th>Tiến độ</th>
+                            <th class="text-center">Hạn chót</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th class="text-center">Điểm</th>
+                            <th>Nhận xét</th>
+                            <th>Người giao</th>
+                            <th class="text-center">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($employeeKpis as $employeeKpi)
                             @php $progress = max(0, min(100, (int) ($employeeKpi->progress ?? 0))); @endphp
-                            <tr class="border-t border-slate-100 hover:bg-slate-50 transition align-top">
-                                <td class="px-5 py-4 font-mono font-semibold text-slate-800 whitespace-nowrap">
+                            <tr class="align-top">
+                                <td class="font-mono font-semibold text-slate-800 whitespace-nowrap">
                                     {{ $employeeKpi->kpi->code ?? 'N/A' }}
                                 </td>
-                                <td class="px-5 py-4">
+                                <td>
                                     <p class="font-semibold text-slate-800">{{ $employeeKpi->target }}</p>
                                     @if($employeeKpi->comment)
                                         <p class="text-xs text-slate-500 mt-1 max-w-xs">{{ Str::limit($employeeKpi->comment, 90) }}</p>
@@ -72,7 +75,7 @@
                                         </div>
                                     @endif
                                 </td>
-                                <td class="px-5 py-4">
+                                <td>
                                     <div class="w-32">
                                         <div class="flex justify-between text-xs text-slate-500 mb-1">
                                             <span class="font-semibold text-slate-700">{{ $progress }}%</span>
@@ -83,10 +86,10 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-5 py-4 text-center text-slate-600 whitespace-nowrap">
+                                <td class="text-center text-slate-600 whitespace-nowrap">
                                     {{ optional($employeeKpi->deadline)->format('d/m/Y') ?? '—' }}
                                 </td>
-                                <td class="px-5 py-4 text-center">
+                                <td class="text-center">
                                     <span class="inline-block px-3 py-1 rounded-lg text-xs font-medium
                                         @class([
                                             'bg-amber-100 text-amber-700' => $employeeKpi->status === 'pending',
@@ -97,7 +100,7 @@
                                         {{ $employeeKpi->status_label }}
                                     </span>
                                 </td>
-                                <td class="px-5 py-4 text-center whitespace-nowrap">
+                                <td class="text-center whitespace-nowrap">
                                     @if($employeeKpi->score !== null)
                                         <span class="font-semibold text-slate-800">{{ number_format($employeeKpi->score, 0) }}</span>
                                         <span class="text-slate-400">/100</span>
@@ -105,20 +108,20 @@
                                         <span class="text-slate-400 text-xs">Chưa chấm</span>
                                     @endif
                                 </td>
-                                <td class="px-5 py-4 text-slate-600">
+                                <td class="text-slate-600">
                                     @if($employeeKpi->review)
                                         <p class="max-w-xs">{{ Str::limit($employeeKpi->review, 90) }}</p>
                                     @else
                                         <span class="text-slate-400 text-xs">Chưa có nhận xét</span>
                                     @endif
                                 </td>
-                                <td class="px-5 py-4 text-slate-600 whitespace-nowrap">
+                                <td class="text-slate-600 whitespace-nowrap">
                                     {{ $employeeKpi->kpiAssignment->manager->name ?? 'N/A' }}
                                 </td>
-                                <td class="px-5 py-4 text-center whitespace-nowrap">
+                                <td class="text-center whitespace-nowrap">
                                     @if($employeeKpi->score === null && $employeeKpi->status !== 'not_completed')
                                         <a href="{{ route('employee.kpis.edit', $employeeKpi) }}"
-                                           class="inline-flex items-center gap-1 px-3 py-2 bg-sky-600 text-white text-xs font-medium rounded-lg hover:bg-sky-700 transition">
+                                           class="employee-btn-primary inline-flex items-center gap-1 px-3 py-2 text-xs">
                                             Cập nhật
                                         </a>
                                     @elseif($employeeKpi->score !== null)
@@ -149,4 +152,4 @@
         </div>
 
     </div>
-</x-staff-layout>
+</x-employee-layout>

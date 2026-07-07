@@ -7,14 +7,16 @@
         ? \App\Support\ManagerNavigation::items()
         : \App\Support\EmployeeNavigation::items();
 
-    $layout = $isAdmin ? 'admin-layout' : 'staff-layout';
+    $layout = match (true) {
+        $isAdmin => 'admin-layout',
+        $isManager => 'manager-layout',
+        default => 'employee-layout',
+    };
     $layoutParams = $isAdmin
         ? ['title' => 'Chi tiết đơn nghỉ phép']
         : [
             'title' => 'Chi tiết đơn nghỉ phép',
             'subtitle' => 'Thông tin chi tiết đơn xin nghỉ phép của bạn.',
-            'role' => $isManager ? 'manager' : 'employee',
-            'navigation' => $navigation,
         ];
 
     $leaveTypes = \App\Models\LeaveRequest::LEAVE_TYPE_LABELS;
