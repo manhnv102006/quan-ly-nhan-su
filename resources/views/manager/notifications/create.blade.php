@@ -1,8 +1,6 @@
-<x-staff-layout
+<x-manager-layout
     title="Thêm thông báo"
     subtitle="Gửi thông báo nội bộ tới phòng ban {{ $managedDepartment->department_name }}"
-    role="manager"
-    :navigation="$navigation"
 >
     <div class="space-y-6">
         <div class="flex flex-wrap items-center justify-between gap-4">
@@ -10,7 +8,7 @@
                 <h2 class="text-2xl font-bold text-slate-800">Thêm thông báo</h2>
                 <p class="text-sm text-slate-500 mt-1">
                     Gửi thông báo tới thành viên phòng ban
-                    <span class="font-semibold text-violet-600">{{ $managedDepartment->department_name }}</span>
+                    <span class="font-semibold text-teal-600">{{ $managedDepartment->department_name }}</span>
                 </p>
             </div>
             <a href="{{ route('manager.notifications.index') }}"
@@ -20,13 +18,13 @@
         </div>
 
         @if (session('success'))
-            <div class="rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4">
-                <p class="text-sm font-medium text-violet-700">{{ session('success') }}</p>
+            <div class="rounded-2xl border border-teal-200 bg-teal-50 px-5 py-4">
+                <p class="text-sm font-medium text-teal-700">{{ session('success') }}</p>
             </div>
         @endif
 
-        <div class="rounded-2xl border border-violet-100 bg-violet-50/60 px-5 py-4">
-            <p class="text-sm text-violet-800">
+        <div class="rounded-2xl border border-teal-100 bg-teal-50/60 px-5 py-4">
+            <p class="text-sm text-teal-800">
                 Thông báo sẽ chỉ hiển thị trong phòng ban <strong>{{ $managedDepartment->department_name }}</strong>
                 ({{ $managedDepartment->department_code }}).
             </p>
@@ -53,14 +51,14 @@
                     <label for="title" class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Tiêu đề</label>
                     <input id="title" name="title" type="text" value="{{ old('title') }}" required
                            placeholder="VD: Họp phòng ban tuần này"
-                           class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">
+                           class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-teal-400 focus:outline-none">
                 </div>
 
                 <div class="space-y-2">
                     <label for="content" class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Nội dung</label>
                     <textarea id="content" name="content" rows="5" required
                               placeholder="Nhập nội dung chi tiết thông báo..."
-                              class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">{{ old('content') }}</textarea>
+                              class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-teal-400 focus:outline-none">{{ old('content') }}</textarea>
                 </div>
 
                 <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-5 space-y-4">
@@ -69,12 +67,12 @@
                     <div class="flex flex-wrap gap-x-6 gap-y-3">
                         <label class="inline-flex items-center gap-2 cursor-pointer">
                             <input type="radio" name="audience" value="all" x-model="audience"
-                                   class="text-violet-600 focus:ring-violet-500">
+                                   class="text-teal-600 focus:ring-teal-500">
                             <span class="text-sm text-slate-700">Toàn bộ phòng ban</span>
                         </label>
                         <label class="inline-flex items-center gap-2 cursor-pointer">
                             <input type="radio" name="audience" value="selected" x-model="audience"
-                                   class="text-violet-600 focus:ring-violet-500">
+                                   class="text-teal-600 focus:ring-teal-500">
                             <span class="text-sm text-slate-700">Chọn thành viên cụ thể</span>
                         </label>
                     </div>
@@ -84,12 +82,12 @@
 
                         <div class="max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100">
                             @forelse ($members as $member)
-                                <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-violet-50/50 transition">
+                                <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-teal-50/50 transition">
                                     <input type="checkbox"
                                            name="user_ids[]"
                                            value="{{ $member->id }}"
                                            @checked(in_array($member->id, array_map('intval', old('user_ids', []))))
-                                           class="rounded border-slate-300 text-violet-600 focus:ring-violet-500">
+                                           class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
                                     <div class="min-w-0 flex-1">
                                         <p class="text-sm font-medium text-slate-800">{{ $member->name }}</p>
                                         <p class="text-xs text-slate-500">{{ $member->email }} · {{ $member->role?->name ?? '—' }}</p>
@@ -102,7 +100,7 @@
                     </div>
                 </div>
 
-                @include('notifications.partials.schedule-fields', ['accent' => 'violet'])
+                @include('notifications.partials.schedule-fields', ['accent' => 'teal'])
 
                 <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
                     <a href="{{ route('manager.notifications.index') }}"
@@ -110,7 +108,7 @@
                         Hủy
                     </a>
                     <button type="submit"
-                            class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition">
+                            class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition">
                         Lưu & gửi
                     </button>
                 </div>
@@ -119,4 +117,4 @@
 
         @include('notifications.partials.pending-scheduled', ['pendingScheduled' => $pendingScheduled])
     </div>
-</x-staff-layout>
+</x-manager-layout>

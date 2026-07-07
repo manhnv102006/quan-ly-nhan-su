@@ -4,16 +4,14 @@
     $statusLabels = \App\Models\OvertimeRequest::STATUS_LABELS;
 @endphp
 
-<x-staff-layout
+<x-manager-layout
     title="Chi tiết đơn tăng ca"
     subtitle="Nhân viên: {{ $overtimeRequest->employee?->full_name ?? '—' }}"
-    role="manager"
-    :navigation="$navigation"
 >
     <div class="space-y-6">
         @if (session('success'))
-            <div class="flex items-center gap-3 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4 shadow-sm">
-                <p class="text-sm font-medium text-violet-800">{{ session('success') }}</p>
+            <div class="flex items-center gap-3 rounded-2xl border border-teal-200 bg-teal-50 px-5 py-4 shadow-sm">
+                <p class="text-sm font-medium text-teal-800">{{ session('success') }}</p>
             </div>
         @endif
 
@@ -35,7 +33,7 @@
 
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Chi tiết yêu cầu</p>
+                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-teal-600">Chi tiết yêu cầu</p>
                 <h2 class="mt-1 text-xl font-bold text-slate-800">Đơn tăng ca #{{ $overtimeRequest->id }}</h2>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -49,7 +47,7 @@
                             @csrf
                             @method('PATCH')
                             <button type="submit" onclick="return confirm('Duyệt đơn tăng ca này?')"
-                                    class="inline-flex items-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-violet-900/20 transition hover:bg-violet-700">
+                                    class="inline-flex items-center rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-900/20 transition hover:bg-teal-700">
                                 Duyệt đơn
                             </button>
                         </form>
@@ -68,7 +66,7 @@
             </div>
         </div>
 
-        <section class="staff-card p-6 sm:p-7">
+        <section class="manager-card p-6 sm:p-7">
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 <div class="rounded-3xl bg-slate-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Nhân viên</p>
@@ -108,7 +106,7 @@
         </section>
 
         @if(in_array($overtimeRequest->status, [\App\Models\OvertimeRequest::STATUS_APPROVED, \App\Models\OvertimeRequest::STATUS_REJECTED, \App\Models\OvertimeRequest::STATUS_COMPLETED], true))
-            <section class="staff-card p-6 sm:p-7">
+            <section class="manager-card p-6 sm:p-7">
                 <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-600">Phê duyệt</p>
                 <h3 class="mt-2 text-lg font-bold text-slate-800">Thông tin xử lý</h3>
                 <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -168,4 +166,4 @@
             </x-modal>
         @endif
     @endcan
-</x-staff-layout>
+</x-manager-layout>
