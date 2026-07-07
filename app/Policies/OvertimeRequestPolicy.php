@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Employee;
 use App\Models\OvertimeRequest;
 use App\Models\User;
 use App\Services\ManagerEmployeeResolver;
@@ -69,6 +70,23 @@ class OvertimeRequestPolicy
 
     public function approve(User $user, OvertimeRequest $overtimeRequest): bool
     {
+        return $this->decideApprovalAccess($user, $overtimeRequest);
+    }
+
+    public function reject(User $user, OvertimeRequest $overtimeRequest): bool
+    {
+        return $this->decideApprovalAccess($user, $overtimeRequest);
+    }
+
+    protected function decideApprovalAccess(User $user, OvertimeRequest $overtimeRequest): bool
+    {
+        $overtimeRequest->loadMissing('employee.user');
+        $isFromManager = $overtimeRequest->employee?->user?->isManager() ?? false;
+
+        if ($isFromManager) {
+            return $user->isAdmin();
+        }
+
         if ($user->isAdmin()) {
             return true;
         }
@@ -80,16 +98,14 @@ class OvertimeRequestPolicy
         return $this->managerCanManage($user, $overtimeRequest);
     }
 
-    public function reject(User $user, OvertimeRequest $overtimeRequest): bool
-    {
-        return $this->approve($user, $overtimeRequest);
-    }
-
     protected function managerCanManage(User $user, OvertimeRequest $overtimeRequest): bool
     {
-        $overtimeRequest->loadMissing('employee');
+        $overtimeRequest->loadMissing('employee.user');
 
-        // Quản lý không được tự duyệt đơn tăng ca của chính mình; đơn này chỉ Admin mới duyệt.
+        if ($overtimeRequest->employee?->user?->isManager()) {
+            return false;
+        }
+
         if ($overtimeRequest->employee?->user_id === $user->id) {
             return false;
         }
@@ -99,6 +115,11 @@ class OvertimeRequestPolicy
             return false;
         }
 
-        return $overtimeRequest->employee?->isManagedBy($manager) ?? false;
+        $departmentIds = Employee::departmentIdsForManagerApproval($manager);
+        if ($departmentIds === []) {
+            return false;
+        }
+
+        return $overtimeRequest->employee?->isInManagerDepartments($manager) ?? false;
     }
 }

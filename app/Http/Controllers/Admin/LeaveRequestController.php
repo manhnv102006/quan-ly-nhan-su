@@ -11,6 +11,7 @@ use App\Support\DepartmentSummaryBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -106,10 +107,26 @@ class LeaveRequestController extends Controller
      */
     private function buildListData(Request $request, ?int $departmentId = null): array
     {
+        $request->validate([
+            'employee_name' => ['nullable', 'string', 'max:100'],
+            'employee_code' => ['nullable', 'string', 'max:20'],
+            'status' => ['nullable', Rule::in(array_keys(LeaveRequest::STATUS_LABELS))],
+            'leave_type' => ['nullable', Rule::in(array_keys(LeaveRequest::LEAVE_TYPE_LABELS))],
+            'start_from' => ['nullable', 'date'],
+            'start_to' => ['nullable', 'date', 'after_or_equal:start_from'],
+            'department_id' => ['nullable', 'integer', 'exists:departments,id'],
+        ], [
+            'start_to.after_or_equal' => 'Ngày kết thúc lọc phải sau hoặc bằng ngày bắt đầu.',
+            'department_id.exists' => 'Phòng ban không hợp lệ.',
+        ]);
+
         $filters = [
-            'search' => trim((string) $request->input('search', '')),
+            'employee_name' => trim((string) $request->input('employee_name', '')),
+            'employee_code' => trim((string) $request->input('employee_code', '')),
             'status' => $request->input('status'),
             'leave_type' => $request->input('leave_type'),
+            'start_from' => $request->input('start_from'),
+            'start_to' => $request->input('start_to'),
             'department_id' => $departmentId ?? $request->input('department_id'),
         ];
 
@@ -132,6 +149,10 @@ class LeaveRequestController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return compact('leaveRequests', 'stats', 'filters');
+        $departments = Department::query()
+            ->orderBy('department_name')
+            ->get(['id', 'department_name', 'department_code']);
+
+        return compact('leaveRequests', 'stats', 'filters', 'departments');
     }
 }
