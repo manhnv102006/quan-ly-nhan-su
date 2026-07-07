@@ -8,6 +8,6 @@
         'readRoute' => 'manager.notifications.read',
         'createRoute' => $managedDepartment ? 'manager.notifications.create' : null,
         'showRoute' => 'manager.notifications.show',
-        'showaccent' => 'teal',
+        'showAccent' => 'emerald',
     ])
 </x-manager-layout>
