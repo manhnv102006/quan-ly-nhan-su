@@ -1,16 +1,13 @@
 @php
-    $navigation = \App\Support\EmployeeNavigation::items();
     $isLocked = $employeeKpi->status === \App\Models\EmployeeKPI::STATUS_NOT_COMPLETED;
     $currentProgress = max(0, min(100, (int) ($employeeKpi->progress ?? 0)));
 @endphp
 
-<x-staff-layout
+<x-employee-layout
     :title="'Cập nhật tiến độ: ' . $employeeKpi->target"
     subtitle="Cập nhật tiến độ và trạng thái KPI của bạn."
-    role="employee"
-    :navigation="$navigation"
 >
-    <div class="space-y-6" x-data="{ progress: {{ old('progress', $currentProgress) }} }">
+    <div class="employee-page" x-data="{ progress: {{ old('progress', $currentProgress) }} }">
 
         {{-- Header --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -187,4 +184,4 @@
 
         </div>
     </div>
-</x-staff-layout>
+</x-employee-layout>

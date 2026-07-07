@@ -7,14 +7,16 @@
         ? \App\Support\ManagerNavigation::items()
         : \App\Support\EmployeeNavigation::items();
 
-    $layout = $isAdmin ? 'admin-layout' : 'staff-layout';
+    $layout = match (true) {
+        $isAdmin => 'admin-layout',
+        $isManager => 'manager-layout',
+        default => 'employee-layout',
+    };
     $layoutParams = $isAdmin
         ? ['title' => 'Tạo đơn nghỉ phép']
         : [
             'title' => 'Tạo đơn nghỉ phép',
             'subtitle' => 'Điền đầy đủ thông tin để gửi đơn xin nghỉ phép.',
-            'role' => $isManager ? 'manager' : 'employee',
-            'navigation' => $navigation
         ];
 @endphp
 
