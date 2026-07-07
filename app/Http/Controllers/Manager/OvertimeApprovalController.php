@@ -46,7 +46,7 @@ class OvertimeApprovalController extends Controller
             'work_date_to',
         ]);
 
-        $scopedQuery = OvertimeRequest::query()->forManager($manager);
+        $scopedQuery = OvertimeRequest::query()->forManagerApproval($manager);
 
         $stats = [
             'pending' => (clone $scopedQuery)->where('status', OvertimeRequest::STATUS_PENDING)->count(),
@@ -62,7 +62,7 @@ class OvertimeApprovalController extends Controller
             ->withQueryString();
 
         $recentHistories = OvertimeRequestHistory::query()
-            ->whereHas('overtimeRequest', fn ($query) => $query->forManager($manager))
+            ->whereHas('overtimeRequest', fn ($query) => $query->forManagerApproval($manager))
             ->with(['actor', 'overtimeRequest.employee'])
             ->latest('processed_at')
             ->limit(15)

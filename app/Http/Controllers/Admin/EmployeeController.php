@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\EmployeeRequest;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmployeeDocument;
@@ -23,6 +24,7 @@ use ZipArchive;
 
 class EmployeeController extends Controller
 {
+
     public function __construct(
         private readonly ManagerDepartmentSyncService $managerDepartmentSync,
     ) {}
@@ -36,6 +38,7 @@ class EmployeeController extends Controller
         'remove_documents.*' => ['integer', 'exists:employee_documents,id'],
     ];
 
+
     public function create(): View
     {
         $departments = Department::query()->orderBy('department_name')->get(['id', 'department_name']);
@@ -48,8 +51,11 @@ class EmployeeController extends Controller
         return view('admin.employees.create', compact('departments', 'positions', 'users'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(EmployeeRequest $request): RedirectResponse
     {
+
+        $validated = $request->validated();
+
         $validated = $request->validate(array_merge([
             'employee_code' => ['required', 'string', 'max:20', 'unique:employees,employee_code'],
             'full_name' => ['required', 'string', 'max:100'],
@@ -66,6 +72,7 @@ class EmployeeController extends Controller
         ], self::DOCUMENT_RULES));
 
         $validated['employee_code'] = strtoupper($validated['employee_code']);
+
 
         $employee = Employee::create(collect($validated)->except(['documents', 'remove_documents'])->all());
 
@@ -155,8 +162,11 @@ class EmployeeController extends Controller
         return view('admin.employees.edit', compact('employee', 'departments', 'positions', 'documents', 'users'));
     }
 
-    public function update(Request $request, Employee $employee): RedirectResponse
+    public function update(EmployeeRequest $request, Employee $employee): RedirectResponse
     {
+
+        $validated = $request->validated();
+
         $validated = $request->validate(array_merge([
             'employee_code' => ['required', 'string', 'max:20', 'unique:employees,employee_code,'.$employee->id],
             'full_name' => ['required', 'string', 'max:100'],
@@ -173,6 +183,7 @@ class EmployeeController extends Controller
         ], self::DOCUMENT_RULES));
 
         $validated['employee_code'] = strtoupper($validated['employee_code']);
+
 
         $employee->update(collect($validated)->except(['documents', 'remove_documents'])->all());
 
