@@ -6,6 +6,7 @@ use App\Models\KPI;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class StoreKPIAssignmentRequest extends FormRequest
 {
@@ -16,6 +17,8 @@ class StoreKPIAssignmentRequest extends FormRequest
 
     public function rules(): array
     {
+        $assignmentId = $this->route('assignment')?->id;
+
         return [
             'kpi_id' => [
                 'required',
@@ -23,7 +26,8 @@ class StoreKPIAssignmentRequest extends FormRequest
                 Rule::unique('kpi_assignments', 'kpi_id')
                     ->where(function ($query) {
                         return $query->whereIn('status', ['pending', 'active']);
-                    }),
+                    })
+                    ->ignore($assignmentId),
             ],
 
             'manager_id' => [
@@ -37,7 +41,6 @@ class StoreKPIAssignmentRequest extends FormRequest
 
                     $kpiDeptIds = $kpi->departments->pluck('id')->all();
 
-                    // KPI không gắn phòng ban nào -> cho phép mọi manager.
                     if (empty($kpiDeptIds)) {
                         return;
                     }
@@ -51,29 +54,47 @@ class StoreKPIAssignmentRequest extends FormRequest
                 },
             ],
 
-            'target' => [
-                'required',
-                'numeric',
-                'min:0',
-            ],
-
-            'start_date' => [
-                'required',
-                'date',
-                'before_or_equal:end_date',
-            ],
-
-            'end_date' => [
-                'required',
-                'date',
-                'after_or_equal:start_date',
-            ],
-
             'note' => [
                 'nullable',
                 'string',
                 'max:1000',
             ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function assignmentPayload(): array
+    {
+        $data = $this->validated();
+        $kpi = KPI::with('departments')->findOrFail($data['kpi_id']);
+
+        $target = $kpi->numericTargetForAssignment();
+
+        if ($target === null) {
+            throw ValidationException::withMessages([
+                'kpi_id' => 'KPI này chưa có mục tiêu hợp lệ. Vui lòng cập nhật KPI trước khi giao.',
+            ]);
+        }
+
+        if (! $kpi->hasAssignmentSchedule()) {
+            throw ValidationException::withMessages([
+                'kpi_id' => 'KPI này chưa có ngày bắt đầu và ngày kết thúc. Vui lòng cập nhật KPI trước khi giao.',
+            ]);
+        }
+
+        if ($kpi->is_percent_unit && ($target < 0 || $target > 100)) {
+            throw ValidationException::withMessages([
+                'kpi_id' => 'Mục tiêu phần trăm của KPI phải từ 0 đến 100.',
+            ]);
+        }
+
+        return [
+            ...$data,
+            'target' => $target,
+            'start_date' => $kpi->start_date->toDateString(),
+            'end_date' => $kpi->end_date->toDateString(),
         ];
     }
 
@@ -83,19 +104,8 @@ class StoreKPIAssignmentRequest extends FormRequest
             'kpi_id.required' => 'Vui lòng chọn KPI.',
             'kpi_id.exists' => 'KPI không hợp lệ.',
             'kpi_id.unique' => 'KPI này đã được giao và chưa hoàn thành.',
-
             'manager_id.required' => 'Vui lòng chọn Manager.',
             'manager_id.exists' => 'Manager không hợp lệ.',
-
-            'target.required' => 'Vui lòng nhập target.',
-            'target.numeric' => 'Target phải là số.',
-            'target.min' => 'Target không được âm.',
-
-            'start_date.required' => 'Vui lòng nhập ngày bắt đầu.',
-            'start_date.before_or_equal' => 'Ngày bắt đầu phải <= ngày kết thúc.',
-
-            'end_date.required' => 'Vui lòng nhập ngày kết thúc.',
-            'end_date.after_or_equal' => 'Ngày kết thúc phải >= ngày bắt đầu.',
         ];
     }
 }

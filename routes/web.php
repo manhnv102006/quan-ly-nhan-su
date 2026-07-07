@@ -131,6 +131,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
     Route::get('/attendances', [AttendanceController::class, 'index'])->name('attendances');
     Route::get('/attendances/departments/{department}', [AttendanceController::class, 'department'])->name('attendances.department');
+    Route::get('/attendances/departments/{department}/employees/{employee}', [AttendanceController::class, 'employeeAttendance'])->name('attendances.employee');
     Route::get('/attendances/{attendance}', [AttendanceController::class, 'show'])->name('attendances.show');
     Route::get('/attendances/{attendance}/edit', [AttendanceController::class, 'edit'])->name('attendances.edit');
     Route::put('/attendances/{attendance}', [AttendanceController::class, 'update'])->name('attendances.update');

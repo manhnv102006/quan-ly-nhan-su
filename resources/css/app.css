@@ -28,7 +28,7 @@
     }
 
     .page-loader-card {
-        @apply flex w-full max-w-xs items-center gap-4 rounded-[1.75rem] border border-white/70 bg-white/85 px-5 py-4 text-slate-700 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl sm:max-w-sm;
+        @apply flex w-full max-w-xs items-center gap-4 rounded-[1.75rem] border border-white/70 bg-white/80 px-5 py-4 text-slate-700 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl sm:max-w-sm;
     }
 
     .page-loader-spinner {
@@ -51,19 +51,19 @@
     }
 
     .admin-sidebar {
-        @apply bg-white/80 backdrop-blur-xl border-r border-white/60 shadow-[4px_0_24px_-12px_rgba(15,23,42,0.12)];
+        @apply border-r border-white/70 bg-white/80 shadow-[8px_0_32px_-20px_rgba(15,23,42,0.22)] backdrop-blur-2xl;
     }
 
     .admin-header {
-        @apply bg-white/70 backdrop-blur-xl border-b border-white/60;
+        @apply border-b border-white/70 bg-white/75 shadow-sm shadow-slate-200/40 backdrop-blur-2xl;
     }
 
     .admin-card {
-        @apply bg-white/80 backdrop-blur-sm rounded-2xl border border-white/80 shadow-sm shadow-slate-200/50;
+        @apply rounded-[1.5rem] border border-white/80 bg-white/80 shadow-sm shadow-slate-200/60 backdrop-blur-sm;
     }
 
     .admin-menu-item {
-        @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200;
+        @apply flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-all duration-200;
     }
 
     .admin-menu-item-active {
@@ -71,7 +71,7 @@
     }
 
     .admin-menu-item-inactive {
-        @apply text-slate-600 hover:bg-violet-50 hover:text-violet-700;
+        @apply text-slate-600 hover:bg-white hover:text-violet-700 hover:shadow-sm hover:shadow-violet-100/60;
     }
 
     .admin-stat-card {
@@ -107,6 +107,178 @@
 
     .admin-field:disabled {
         @apply cursor-not-allowed bg-slate-50 text-slate-500;
+    }
+
+    .admin-page {
+        @apply space-y-6;
+    }
+
+    .admin-page-header {
+        @apply flex flex-wrap items-start justify-between gap-4;
+    }
+
+    .admin-kicker {
+        @apply text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600;
+    }
+
+    .admin-title {
+        @apply mt-1 text-2xl font-bold tracking-tight text-slate-900;
+    }
+
+    .admin-subtitle {
+        @apply mt-1 text-sm leading-6 text-slate-500;
+    }
+
+    .admin-panel {
+        @apply rounded-[1.5rem] border border-white/80 bg-white/80 shadow-sm shadow-slate-200/60 backdrop-blur-sm;
+    }
+
+    .admin-panel-header {
+        @apply border-b border-slate-100 px-5 py-4 sm:px-6;
+    }
+
+    .admin-section-title {
+        @apply text-sm font-bold text-slate-900;
+    }
+
+    .admin-section-subtitle {
+        @apply mt-0.5 text-xs text-slate-500;
+    }
+
+    .admin-action {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition;
+    }
+
+    .admin-action-primary {
+        @apply admin-action bg-violet-600 text-white shadow-md shadow-violet-500/20 hover:bg-violet-700;
+    }
+
+    .admin-action-secondary {
+        @apply admin-action border border-slate-200 bg-white text-slate-600 hover:bg-slate-50;
+    }
+
+    .admin-table-wrap {
+        @apply overflow-hidden rounded-[1.5rem] border border-white/80 bg-white/90 shadow-sm shadow-slate-200/60 backdrop-blur-sm;
+    }
+
+    .admin-table {
+        @apply min-w-full divide-y divide-slate-100;
+    }
+
+    .admin-table thead {
+        @apply bg-slate-50/90;
+    }
+
+    .admin-table th {
+        @apply px-5 py-4 text-left text-[11px] font-black uppercase tracking-wide text-slate-500;
+    }
+
+    .admin-table td {
+        @apply px-5 py-4 text-sm text-slate-600;
+    }
+
+    .admin-table tbody tr {
+        @apply border-t border-slate-100 transition hover:bg-violet-50/35;
+    }
+
+    .admin-badge {
+        @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
+    }
+
+    .admin-badge-dot {
+        @apply h-1.5 w-1.5 rounded-full;
+    }
+
+    .admin-empty-state {
+        @apply px-5 py-14 text-center;
+    }
+
+    .admin-empty-icon {
+        @apply mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400;
+    }
+
+    .admin-empty-title {
+        @apply mt-4 text-sm font-bold text-slate-700;
+    }
+
+    .admin-empty-text {
+        @apply mt-1 text-sm text-slate-500;
+    }
+
+    .admin-body .table {
+        @apply mb-0 align-middle;
+    }
+
+    .admin-body .table > :not(caption) > * > * {
+        @apply border-slate-100 px-5 py-4 text-sm text-slate-600;
+    }
+
+    .admin-body .table thead th {
+        @apply bg-slate-50 text-[11px] font-black uppercase tracking-wide text-slate-500;
+    }
+
+    .admin-body .table tbody tr {
+        @apply transition hover:bg-violet-50/35;
+    }
+
+    .admin-body .card {
+        @apply rounded-[1.5rem] border border-white/80 bg-white/80 shadow-sm shadow-slate-200/60 backdrop-blur-sm;
+    }
+
+    .admin-body .card-header {
+        @apply rounded-t-[1.5rem] border-slate-100 bg-white/60 px-5 py-4 font-bold text-slate-900;
+    }
+
+    .admin-body .form-control,
+    .admin-body .form-select {
+        @apply rounded-xl border-slate-200 text-sm shadow-sm transition focus:border-violet-500 focus:ring-violet-500/20;
+    }
+
+    .admin-body .btn {
+        @apply rounded-xl font-semibold shadow-sm transition;
+    }
+
+    .admin-body .alert {
+        @apply rounded-2xl border px-5 py-4 text-sm font-semibold shadow-sm;
+    }
+
+    .admin-body .pagination {
+        @apply gap-1;
+    }
+
+    .admin-body .page-link {
+        @apply rounded-xl border-slate-200 text-sm font-semibold text-slate-600 shadow-sm hover:bg-violet-50 hover:text-violet-700;
+    }
+
+    .admin-body .active > .page-link,
+    .admin-body .page-link.active {
+        @apply border-violet-600 bg-violet-600 text-white;
+    }
+
+    .admin-body main table:not(.no-admin-theme) {
+        @apply min-w-full overflow-hidden;
+    }
+
+    .admin-body main table:not(.no-admin-theme) thead {
+        @apply bg-slate-50/90;
+    }
+
+    .admin-body main table:not(.no-admin-theme) th {
+        @apply text-[11px] font-black uppercase tracking-wide text-slate-500;
+    }
+
+    .admin-body main table:not(.no-admin-theme) tbody tr {
+        @apply transition hover:bg-violet-50/35;
+    }
+
+    .admin-body main input:not([type='checkbox']):not([type='radio']),
+    .admin-body main select,
+    .admin-body main textarea {
+        @apply rounded-xl border-slate-200 text-sm shadow-sm transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20;
+    }
+
+    .admin-body main label {
+        @apply font-semibold text-slate-600;
     }
 
     .staff-shell {

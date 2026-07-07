@@ -45,7 +45,7 @@ class KPIController extends Controller
         abort_if($assignment->manager_id !== Auth::id(), 403);
 
         $assignment->load([
-            'kpi',
+            'kpi.tasks',
             'assignedBy',
             'employeeKpis.employee', // Tải các mục tiêu đã giao cho nhân viên
         ]);

@@ -247,9 +247,26 @@
                     <td>Lương cơ bản thực tế (Tính theo {{ $payroll->actual_working_days }}/{{ $payroll->standard_working_days }} ngày công)</td>
                     <td class="text-right">{{ number_format($payroll->basic_salary, 0, ',', '.') }} ₫</td>
                 </tr>
+                @php
+                    $pdfTotalAllowance = (float) $payroll->allowance
+                        + (float) ($payroll->allowance_meal ?? 0)
+                        + (float) ($payroll->allowance_phone ?? 0)
+                        + (float) ($payroll->allowance_fuel ?? 0)
+                        + (float) ($payroll->allowance_position ?? 0);
+                    $pdfAllowanceParts = array_filter([
+                        'Cố định' => (float) $payroll->allowance,
+                        'Ăn trưa' => (float) ($payroll->allowance_meal ?? 0),
+                        'Điện thoại' => (float) ($payroll->allowance_phone ?? 0),
+                        'Xăng xe' => (float) ($payroll->allowance_fuel ?? 0),
+                        'Chức vụ' => (float) ($payroll->allowance_position ?? 0),
+                    ], fn ($v) => $v > 0);
+                    $pdfAllowanceLabel = count($pdfAllowanceParts)
+                        ? implode(' + ', array_map(fn ($k, $v) => $k . ': ' . number_format($v, 0, ',', '.'), array_keys($pdfAllowanceParts), $pdfAllowanceParts))
+                        : 'Không có';
+                @endphp
                 <tr>
-                    <td>Phụ cấp (Cố định hàng tháng)</td>
-                    <td class="text-right">{{ number_format($payroll->allowance, 0, ',', '.') }} ₫</td>
+                    <td>Tổng phụ cấp ({{ $pdfAllowanceLabel }})</td>
+                    <td class="text-right">{{ number_format($pdfTotalAllowance, 0, ',', '.') }} ₫</td>
                 </tr>
                 <tr>
                     <td>Thưởng KPI (Tính theo kết quả đánh giá)</td>

@@ -21,42 +21,50 @@
 <body class="admin-body admin-shell" x-data="{ sidebarOpen: false }">
     @include('partials.page-loader')
 
-    <div class="min-h-screen flex relative">
+    <div class="relative flex min-h-screen">
         {{-- Decorative blobs --}}
-        <div class="pointer-events-none fixed top-20 left-[280px] w-72 h-72 bg-violet-400/10 rounded-full blur-3xl"></div>
-        <div class="pointer-events-none fixed bottom-10 right-10 w-96 h-96 bg-cyan-400/10 rounded-full blur-3xl"></div>
+        <div class="pointer-events-none fixed left-[280px] top-16 h-80 w-80 rounded-full bg-violet-400/15 blur-3xl"></div>
+        <div class="pointer-events-none fixed right-8 top-32 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl"></div>
+        <div class="pointer-events-none fixed bottom-0 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-fuchsia-300/10 blur-3xl"></div>
 
         {{-- Sidebar --}}
         <aside
-            class="admin-sidebar fixed inset-y-0 left-0 z-50 w-[270px] h-screen transform transition-transform duration-300 ease-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen flex flex-col shrink-0"
+            class="admin-sidebar fixed inset-y-0 left-0 z-50 flex h-screen w-[286px] shrink-0 transform flex-col transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
         >
             {{-- Brand --}}
-            <div class="flex flex-col items-center justify-center gap-2 px-5 py-6 border-b border-slate-100/50">
+            <div class="border-b border-white/70 px-5 py-6">
+                <div class="flex items-center gap-3">
                 <div class="relative">
-                    <div class="w-20 h-20 rounded-2xl overflow-hidden bg-white flex items-center justify-center shadow-md border border-slate-100">
+                    <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-white bg-white shadow-md shadow-violet-200/50">
                         <x-application-logo class="w-full h-full object-contain p-1.5" />
                     </div>
-                    <span class="absolute bottom-1 right-1 w-4 h-4 bg-emerald-400 border-2 border-white rounded-full"></span>
+                    <span class="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-white bg-emerald-400"></span>
                 </div>
-                <div class="text-center mt-1">
-                    <p class="font-extrabold text-slate-800 tracking-tight text-xl leading-tight">Quản lý nhân sự</p>
-                    <p class="text-[11px] font-semibold text-violet-600 uppercase tracking-widest mt-0.5">Trang quản trị</p>
+                <div class="min-w-0">
+                    <p class="truncate text-lg font-extrabold leading-tight tracking-tight text-slate-900">Quản lý nhân sự</p>
+                    <p class="mt-0.5 text-[11px] font-bold uppercase tracking-[0.2em] text-violet-600">Trang quản trị</p>
+                </div>
                 </div>
             </div>
 
-            <div class="px-4 mb-2">
-                <p class="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">Menu chính</p>
+            <div class="mb-2 mt-5 px-4">
+                <p class="px-3 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Menu chính</p>
             </div>
 
-            <nav class="flex-1 px-3 space-y-0.5 overflow-y-auto">
+            <nav class="flex-1 space-y-1 overflow-y-auto px-3 pb-2">
                 @include('admin.partials.sidebar-menu')
             </nav>
 
             {{-- Sidebar footer --}}
-            <div class="p-4 m-3 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 text-white">
-                <p class="text-xs font-semibold opacity-90">Cần hỗ trợ?</p>
-                <p class="text-[11px] mt-1 text-violet-200 leading-relaxed">Liên hệ IT để được hỗ trợ hệ thống HR.</p>
+            <div class="m-3 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-violet-900 to-indigo-800 p-4 text-white shadow-lg shadow-violet-500/20">
+                <div class="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.178-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M12 17.25h.008v.008H12v-.008z" />
+                    </svg>
+                </div>
+                <p class="text-xs font-bold opacity-95">Cần hỗ trợ?</p>
+                <p class="mt-1 text-[11px] leading-relaxed text-violet-100/85">Liên hệ IT để được hỗ trợ hệ thống HR.</p>
             </div>
         </aside>
 
@@ -75,22 +83,10 @@
         ></div>
 
         {{-- Main content --}}
-        <div class="flex-1 flex flex-col min-w-0 min-h-screen relative">
+        <div class="relative flex min-h-screen min-w-0 flex-1 flex-col">
             @include('admin.partials.header')
 
-            <main class="relative z-0 flex-1 p-4 sm:p-6 lg:p-8 pb-10">
-                {{-- Session Messages --}}
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @elseif (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @endif
+            <main class="relative z-0 flex-1 p-4 pb-10 sm:p-6 lg:p-8">
                 {{ $slot }}
             </main>
         </div>
