@@ -9,6 +9,7 @@ use App\Models\Employee;
 use App\Models\EmployeeDocument;
 use App\Models\Position;
 use App\Models\User;
+use App\Services\ManagerDepartmentSyncService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,20 +24,59 @@ use ZipArchive;
 
 class EmployeeController extends Controller
 {
+
+    public function __construct(
+        private readonly ManagerDepartmentSyncService $managerDepartmentSync,
+    ) {}
+
+    private const DOCUMENT_RULES = [
+        'documents' => ['nullable', 'array'],
+        'documents.*.document_name' => ['nullable', 'string', 'max:255'],
+        'documents.*.document_type' => ['nullable', 'in:cccd,cv,certificate,degree,contract'],
+        'documents.*.file' => ['nullable', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,doc,docx'],
+        'remove_documents' => ['nullable', 'array'],
+        'remove_documents.*' => ['integer', 'exists:employee_documents,id'],
+    ];
+
+
     public function create(): View
     {
         $departments = Department::query()->orderBy('department_name')->get(['id', 'department_name']);
         $positions = Position::query()->orderBy('position_name')->get(['id', 'position_name']);
-        $users = \App\Models\User::orderBy('name')->get();
+        $users = User::query()
+            ->availableForEmployeeLink()
+            ->orderBy('name')
+            ->get(['id', 'username', 'name', 'email']);
 
         return view('admin.employees.create', compact('departments', 'positions', 'users'));
     }
 
     public function store(EmployeeRequest $request): RedirectResponse
     {
+
         $validated = $request->validated();
 
+        $validated = $request->validate(array_merge([
+            'employee_code' => ['required', 'string', 'max:20', 'unique:employees,employee_code'],
+            'full_name' => ['required', 'string', 'max:100'],
+            'gender' => ['required', 'in:male,female,other'],
+            'date_of_birth' => ['required', 'date'],
+            'phone' => ['required', 'string', 'max:20'],
+            'email' => ['required', 'email', 'max:100', 'unique:employees,email'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'position_id' => ['nullable', 'exists:positions,id'],
+            'hire_date' => ['required', 'date'],
+            'status' => ['required', 'in:active,inactive,resigned'],
+            'user_id' => ['nullable', 'exists:users,id', Rule::unique('employees', 'user_id')],
+        ], self::DOCUMENT_RULES));
+
+        $validated['employee_code'] = strtoupper($validated['employee_code']);
+
+
         $employee = Employee::create(collect($validated)->except(['documents', 'remove_documents'])->all());
+
+        $this->managerDepartmentSync->syncAfterEmployeeSaved($employee->fresh());
 
         $this->storeUploadedDocuments($employee, $request);
 
@@ -90,14 +130,9 @@ class EmployeeController extends Controller
             ->limit(10)
             ->get();
 
-        $linkedUserIds = Employee::query()
-            ->whereNotNull('user_id')
-            ->whereIn('user_id', User::query()->select('id'))
-            ->pluck('user_id');
-
         $availableAccounts = User::query()
             ->with('role')
-            ->whereNotIn('id', $linkedUserIds)
+            ->availableForEmployeeLink()
             ->orderBy('username')
             ->get(['id', 'username', 'name', 'email', 'role_id', 'status']);
 
@@ -119,16 +154,40 @@ class EmployeeController extends Controller
         $departments = Department::query()->orderBy('department_name')->get(['id', 'department_name']);
         $positions = Position::query()->orderBy('position_name')->get(['id', 'position_name']);
         $documents = $employee->documents()->latest()->get();
-        $users = \App\Models\User::orderBy('name')->get();
+        $users = User::query()
+            ->availableForEmployeeLink($employee->id)
+            ->orderBy('name')
+            ->get(['id', 'username', 'name', 'email']);
 
         return view('admin.employees.edit', compact('employee', 'departments', 'positions', 'documents', 'users'));
     }
 
     public function update(EmployeeRequest $request, Employee $employee): RedirectResponse
     {
+
         $validated = $request->validated();
 
+        $validated = $request->validate(array_merge([
+            'employee_code' => ['required', 'string', 'max:20', 'unique:employees,employee_code,'.$employee->id],
+            'full_name' => ['required', 'string', 'max:100'],
+            'gender' => ['required', 'in:male,female,other'],
+            'date_of_birth' => ['required', 'date'],
+            'phone' => ['required', 'string', 'max:20'],
+            'email' => ['required', 'email', 'max:100', 'unique:employees,email,'.$employee->id],
+            'address' => ['nullable', 'string', 'max:255'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'position_id' => ['nullable', 'exists:positions,id'],
+            'hire_date' => ['required', 'date'],
+            'status' => ['required', 'in:active,inactive,resigned'],
+            'user_id' => ['nullable', 'exists:users,id', Rule::unique('employees', 'user_id')->ignore($employee->id)],
+        ], self::DOCUMENT_RULES));
+
+        $validated['employee_code'] = strtoupper($validated['employee_code']);
+
+
         $employee->update(collect($validated)->except(['documents', 'remove_documents'])->all());
+
+        $this->managerDepartmentSync->syncAfterEmployeeSaved($employee->fresh());
 
         $this->removeDocuments($employee, $request->input('remove_documents', []));
         $this->storeUploadedDocuments($employee, $request);
@@ -180,6 +239,8 @@ class EmployeeController extends Controller
 
         $employee->update(['department_id' => $validated['to_department_id']]);
 
+        $this->managerDepartmentSync->syncAfterEmployeeSaved($employee->fresh());
+
         return redirect()
             ->route('admin.employees.show', $employee)
             ->with('success', "Đã điều chuyển nhân viên từ {$fromDepartmentName} sang {$toDepartment->department_name}.");
@@ -218,6 +279,8 @@ class EmployeeController extends Controller
         }
 
         $employee->update(['user_id' => $user->id]);
+
+        app(ManagerDepartmentSyncService::class)->syncAfterEmployeeSaved($employee->fresh());
 
         return redirect()
             ->route('admin.employees.show', $employee)
