@@ -33,6 +33,28 @@
         </div>
 
         <div class="flex items-center gap-2 sm:gap-3">
+            @php
+                $adminPending = Auth::user()?->isAdmin()
+                    ? app(\App\Services\AdminPendingApprovalService::class)->counts()
+                    : ['total' => 0];
+                $adminPendingUrl = Auth::user()?->isAdmin()
+                    ? app(\App\Services\AdminPendingApprovalService::class)->primaryActionUrl($adminPending)
+                    : route('admin.dashboard');
+            @endphp
+
+            @if (($adminPending['total'] ?? 0) > 0)
+                <a href="{{ $adminPendingUrl }}"
+                   title="{{ $adminPending['total'] }} việc cần xử lý"
+                   class="relative inline-flex rounded-xl p-2.5 text-slate-500 transition hover:bg-violet-50 hover:text-violet-700">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="absolute top-1.5 right-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                        {{ $adminPending['total'] > 9 ? '9+' : $adminPending['total'] }}
+                    </span>
+                </a>
+            @endif
+
             @include('admin.partials.notification-dropdown')
             <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-violet-100 to-indigo-100 text-violet-700">
                 <span class="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></span>

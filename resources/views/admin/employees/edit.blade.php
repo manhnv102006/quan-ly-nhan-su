@@ -125,6 +125,7 @@
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700">Tài khoản liên kết</label>
+
                     <select name="user_id" class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('user_id') border-rose-400 @else border-slate-200 @enderror">
                         <option value="">-- Chọn tài khoản để liên kết --</option>
                         @foreach ($users as $usr)
@@ -132,6 +133,23 @@
                         @endforeach
                     </select>
                     @error('user_id') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
+
+                    @if ($users->isEmpty())
+                        <p class="mt-1 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                            Không còn tài khoản nào chưa liên kết. Hãy tạo tài khoản mới hoặc gỡ liên kết tài khoản khác trước.
+                        </p>
+                    @else
+                        <select name="user_id" class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">
+                            <option value="">-- Chọn tài khoản để liên kết --</option>
+                            @foreach ($users as $usr)
+                                <option value="{{ $usr->id }}" @selected(old('user_id', $employee->user_id ?? null) == $usr->id)>
+                                    {{ $usr->name }} ({{ $usr->email }})
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
+                    @error('user_id') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
+
                 </div>
 
                 @if ($documents->isNotEmpty())

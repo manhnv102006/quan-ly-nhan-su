@@ -288,7 +288,6 @@
                                         </button>
                                         <a href="{{ route('admin.leave-requests.show', $leaveRequest) }}"
                                            class="text-xs font-medium text-violet-600 hover:text-violet-700">Xem</a>
-
                                     </div>
                                 @else
                                     <x-view-only-badge :href="route('admin.leave-requests.show', $leaveRequest)" />
