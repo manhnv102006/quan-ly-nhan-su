@@ -1,8 +1,6 @@
-<x-staff-layout
+<x-manager-layout
     title="Thông báo"
     subtitle="{{ $managedDepartment ? 'Thông báo phòng ban '.$managedDepartment->department_name : 'Chưa gắn phòng ban quản lý' }}"
-    role="manager"
-    :navigation="$navigation"
 >
     @include('notifications.partials.content', [
         'indexRoute' => 'manager.notifications.index',
@@ -10,6 +8,6 @@
         'readRoute' => 'manager.notifications.read',
         'createRoute' => $managedDepartment ? 'manager.notifications.create' : null,
         'showRoute' => 'manager.notifications.show',
-        'showaccent' => 'violet',
+        'showaccent' => 'teal',
     ])
-</x-staff-layout>
+</x-manager-layout>
