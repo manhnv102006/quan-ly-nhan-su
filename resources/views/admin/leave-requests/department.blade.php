@@ -38,6 +38,7 @@
             'filterRoute' => route('admin.leave-requests.department', $selectedDepartment),
             'clearFilterRoute' => route('admin.leave-requests.department', $selectedDepartment),
             'showDepartmentColumn' => false,
+            'showDepartmentFilter' => false,
             'scopeLabel' => $selectedDepartment->department_name,
         ])
     </div>

@@ -6,12 +6,6 @@
     $scopeLabel = $scopeLabel ?? 'Toàn công ty';
     $statusClasses = OvertimeRequest::STATUS_TAILWIND_CLASSES;
     $statusLabels = OvertimeRequest::STATUS_LABELS;
-    $statusSelectClasses = [
-        OvertimeRequest::STATUS_PENDING => 'border-amber-200 bg-amber-50 text-amber-800 focus:ring-amber-300',
-        OvertimeRequest::STATUS_APPROVED => 'border-emerald-200 bg-emerald-50 text-emerald-800 focus:ring-emerald-300',
-        OvertimeRequest::STATUS_REJECTED => 'border-rose-200 bg-rose-50 text-rose-800 focus:ring-rose-300',
-        OvertimeRequest::STATUS_COMPLETED => 'border-sky-200 bg-sky-50 text-sky-800 focus:ring-sky-300',
-    ];
     $displayHours = fn ($item) => number_format(abs((float) $item->total_hours), 2);
     $tableColspan = $showDepartmentColumn ? 9 : 8;
 @endphp
@@ -82,6 +76,9 @@
                                     <div>
                                         <p class="font-semibold text-slate-800">{{ $item->employee?->full_name ?? '—' }}</p>
                                         <p class="text-xs text-slate-500">{{ $item->employee?->employee_code ?? '—' }}</p>
+                                        @if ($item->employee?->hasManagerRole())
+                                            <span class="mt-1 inline-flex rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-600">Quản lý</span>
+                                        @endif
                                     </div>
                                 </div>
                             </td>
@@ -109,22 +106,10 @@
                                     {{ $displayHours($item) }}h
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
-                                <form method="POST"
-                                      action="{{ route('admin.overtime-requests.status', $item) }}"
-                                      class="overtime-status-form mx-auto w-fit"
-                                      data-current="{{ $item->status }}">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="reject_reason" value="">
-                                    <select name="status"
-                                            class="overtime-status-select cursor-pointer rounded-xl border px-3 py-2 text-xs font-bold shadow-sm outline-none transition focus:ring-2 {{ $statusSelectClasses[$item->status] ?? 'border-slate-200 bg-white text-slate-700 focus:ring-violet-300' }}"
-                                            aria-label="Trạng thái đơn tăng ca">
-                                        @foreach ($statusLabels as $value => $label)
-                                            <option value="{{ $value }}" @selected($item->status === $value)>{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </form>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-bold {{ $statusClasses[$item->status] ?? 'bg-slate-100 text-slate-600 border-slate-200' }}">
+                                    {{ $statusLabels[$item->status] ?? $item->status }}
+                                </span>
                             </td>
                             <td class="px-6 py-4 text-xs text-slate-500">
                                 {{ optional($item->created_at)->format('d/m/Y') }}
@@ -138,10 +123,15 @@
                                             @method('PATCH')
                                             <button type="submit"
                                                     class="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
-                                                    onclick="return confirm('Duyệt đơn tăng ca này?')">
+                                                    onclick="return confirm('Duyệt đơn tăng ca của {{ $item->employee?->full_name }}?')">
                                                 <i class="bi bi-check-lg"></i> Duyệt
                                             </button>
                                         </form>
+                                        <button type="button"
+                                                onclick="openOvertimeRejectModal('{{ route('admin.overtime-requests.reject', $item) }}', @js($item->employee?->full_name))"
+                                                class="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700">
+                                            <i class="bi bi-x-lg"></i> Từ chối
+                                        </button>
                                     @endif
                                     <a href="{{ route('admin.overtime-requests.show', $item) }}"
                                        class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
@@ -185,38 +175,53 @@
     </div>
 </section>
 
+<div id="overtime-reject-modal"
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+    <div class="mx-4 w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+        <h3 class="mb-2 text-lg font-bold text-slate-800">Từ chối đơn tăng ca</h3>
+        <p class="mb-4 text-sm text-slate-500">
+            Nhập lý do từ chối cho nhân viên <strong id="overtime-reject-name" class="text-slate-800"></strong>:
+        </p>
+        <form id="overtime-reject-form" action="" method="POST">
+            @csrf
+            @method('PATCH')
+            <div class="mb-5">
+                <label for="overtime_reject_reason" class="mb-2 block text-sm font-semibold text-slate-700">Lý do từ chối</label>
+                <textarea id="overtime_reject_reason" name="reject_reason" required rows="3"
+                          placeholder="Nhập lý do từ chối..."
+                          class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeOvertimeRejectModal()"
+                        class="flex-1 rounded-xl bg-slate-100 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200">
+                    Hủy
+                </button>
+                <button type="submit"
+                        class="flex-1 rounded-xl bg-rose-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-rose-700">
+                    Xác nhận từ chối
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @once
     @push('scripts')
     <script>
-        document.querySelectorAll('.overtime-status-select').forEach(function (select) {
-            select.addEventListener('change', function () {
-                const form = this.closest('.overtime-status-form');
-                const current = form.dataset.current;
-                const next = this.value;
+        function openOvertimeRejectModal(actionUrl, employeeName) {
+            const modal = document.getElementById('overtime-reject-modal');
+            const form = document.getElementById('overtime-reject-form');
+            document.getElementById('overtime-reject-name').textContent = employeeName || '';
+            form.setAttribute('action', actionUrl);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
 
-                if (next === current) {
-                    return;
-                }
-
-                if (next === 'rejected') {
-                    const reason = prompt('Nhập lý do từ chối:');
-                    if (!reason || !reason.trim()) {
-                        this.value = current;
-                        return;
-                    }
-                    form.querySelector('[name="reject_reason"]').value = reason.trim();
-                } else {
-                    form.querySelector('[name="reject_reason"]').value = '';
-                }
-
-                if (!confirm('Cập nhật trạng thái đơn tăng ca này?')) {
-                    this.value = current;
-                    return;
-                }
-
-                form.submit();
-            });
-        });
+        function closeOvertimeRejectModal() {
+            const modal = document.getElementById('overtime-reject-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
     </script>
     @endpush
 @endonce
