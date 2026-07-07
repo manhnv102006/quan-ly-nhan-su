@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ManagerDepartmentSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -86,10 +87,7 @@ class AccountController extends Controller
         $user->load(['role', 'employee.department', 'employee.position']);
 
         $availableEmployees = Employee::query()
-            ->where(function ($query) {
-                $query->whereNull('user_id')
-                    ->orWhereNotIn('user_id', User::query()->select('id'));
-            })
+            ->withoutLinkedAccount()
             ->orderBy('full_name')
             ->get(['id', 'employee_code', 'full_name', 'email']);
 
@@ -326,16 +324,16 @@ class AccountController extends Controller
         ]);
 
         $employee = Employee::query()->findOrFail($validated['employee_id']);
-        $employee->clearStaleUserLink();
-        $employee->refresh();
 
-        if ($employee->hasLinkedAccount()) {
+        if (! Employee::query()->withoutLinkedAccount()->whereKey($employee->id)->exists()) {
             return redirect()
                 ->route('admin.accounts.show', $user)
                 ->with('error', 'Nhân viên này đã được liên kết với tài khoản khác.');
         }
 
         $employee->update(['user_id' => $user->id]);
+
+        app(ManagerDepartmentSyncService::class)->syncAfterEmployeeSaved($employee->fresh());
 
         return redirect()
             ->route('admin.accounts.show', $user)

@@ -6,7 +6,7 @@ class ManagerNavigation
 {
     public static function items(): array
     {
-        return [
+        $items = [
             [
                 'label' => 'Dashboard',
                 'href' => route('manager.dashboard'),
@@ -89,5 +89,7 @@ class ManagerNavigation
                 'note' => 'Thông tin tài khoản',
             ],
         ];
+
+        return $items;
     }
 }

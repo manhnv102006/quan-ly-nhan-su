@@ -8,7 +8,7 @@
                 <p class="text-sm text-slate-500 mt-1">Điền thông tin kỳ lương mới bên dưới</p>
             </div>
 
-            <a href="{{ route('admin.payroll-periods.index') }}"
+            <a href="{{ route('admin.payroll-periods.index', ['year' => $prefillYear ?? date('Y')]) }}"
                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
                 ← Quay lại
             </a>
@@ -39,7 +39,7 @@
                                 class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('month') border-red-400 @enderror">
                             <option value="">-- Chọn tháng --</option>
                             @for ($m = 1; $m <= 12; $m++)
-                                <option value="{{ $m }}" @selected(old('month') == $m || (!old('month') && $m == date('n')))>
+                                <option value="{{ $m }}" @selected(old('month', $prefillMonth) == $m || (! old('month') && ! $prefillMonth && $m == date('n')))>
                                     Tháng {{ str_pad($m, 2, '0', STR_PAD_LEFT) }}
                                 </option>
                             @endfor
@@ -55,8 +55,13 @@
                         </label>
                         <select id="year" name="year" required
                                 class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('year') border-red-400 @enderror">
-                            @for ($y = date('Y') - 1; $y <= date('Y') + 3; $y++)
-                                <option value="{{ $y }}" @selected(old('year') == $y || (!old('year') && $y == date('Y')))>
+                            @php
+                                $defaultYear = old('year', $prefillYear ?? date('Y'));
+                                $yearFrom = min(date('Y') - 2, $defaultYear);
+                                $yearTo = max(date('Y') + 3, $defaultYear);
+                            @endphp
+                            @for ($y = $yearFrom; $y <= $yearTo; $y++)
+                                <option value="{{ $y }}" @selected($defaultYear == $y)>
                                     Năm {{ $y }}
                                 </option>
                             @endfor
@@ -111,7 +116,7 @@
                             class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
                         + Thêm kỳ lương
                     </button>
-                    <a href="{{ route('admin.payroll-periods.index') }}"
+                    <a href="{{ route('admin.payroll-periods.index', ['year' => $prefillYear ?? date('Y')]) }}"
                        class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
                         Hủy
                     </a>

@@ -73,6 +73,10 @@
     } else {
         $menuItems = [];
     }
+
+    if ($user?->isAdmin()) {
+        $menuItems = app(\App\Services\AdminPendingApprovalService::class)->applyBadgesToMenuItems($menuItems);
+    }
 @endphp
 
 @foreach ($menuItems as $item)
@@ -81,12 +85,20 @@
     <div>
         <a href="{{ route($item['route']) }}"
            class="admin-menu-item {{ request()->routeIs($item['match'] ?? $item['route']) ? 'admin-menu-item-active' : 'admin-menu-item-inactive' }}">
-            <span class="flex items-center justify-center w-8 h-8 rounded-lg shrink-0">
+            <span class="relative flex items-center justify-center w-8 h-8 rounded-lg shrink-0">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}" />
                 </svg>
+                @if (! empty($item['badge']) && $item['badge'] > 0)
+                    <span class="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white"></span>
+                @endif
             </span>
-            <span class="truncate">{{ $item['label'] }}</span>
+            <span class="flex min-w-0 flex-1 items-center justify-between gap-2">
+                <span class="truncate">{{ $item['label'] }}</span>
+                @if (! empty($item['badge']) && $item['badge'] > 0)
+                    <x-nav-badge :count="$item['badge']" />
+                @endif
+            </span>
         </a>
 
         @if(isset($item['children']))
@@ -94,8 +106,11 @@
                 @foreach($item['children'] as $child)
                     @if(Route::has($child['route']))
                         <a href="{{ route($child['route']) }}"
-                           class="block px-3 py-2 text-sm rounded-lg text-slate-600 hover:bg-violet-50 hover:text-violet-600">
-                            • {{ $child['label'] }}
+                           class="flex items-center justify-between gap-2 px-3 py-2 text-sm rounded-lg text-slate-600 hover:bg-violet-50 hover:text-violet-600">
+                            <span>• {{ $child['label'] }}</span>
+                            @if (! empty($child['badge']) && $child['badge'] > 0)
+                                <x-nav-badge :count="$child['badge']" />
+                            @endif
                         </a>
                     @endif
                 @endforeach
