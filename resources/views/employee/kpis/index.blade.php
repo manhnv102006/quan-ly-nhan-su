@@ -53,6 +53,24 @@
                                     @if($employeeKpi->comment)
                                         <p class="text-xs text-slate-500 mt-1 max-w-xs">{{ Str::limit($employeeKpi->comment, 90) }}</p>
                                     @endif
+                                    @if($employeeKpi->kpi && $employeeKpi->kpi->tasks->isNotEmpty())
+                                        <div class="mt-2 max-w-xs">
+                                            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Nhiệm vụ</p>
+                                            <ul class="mt-1 space-y-1">
+                                                @foreach($employeeKpi->kpi->tasks as $task)
+                                                    <li class="flex gap-1.5 text-xs text-slate-600">
+                                                        <span class="text-sky-500">•</span>
+                                                        <span>
+                                                            {{ $task->title }}
+                                                            @if($task->description)
+                                                                <span class="block text-[11px] text-slate-400">{{ Str::limit($task->description, 70) }}</span>
+                                                            @endif
+                                                        </span>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="px-5 py-4">
                                     <div class="w-32">

@@ -33,7 +33,7 @@ class EmployeeKPIController extends Controller
 
         // Sử dụng relationship để lấy KPI, đảm bảo chỉ lấy của nhân viên đang đăng nhập
         $employeeKpis = $employee->employeeKpis()
-            ->with(['kpi', 'kpiAssignment.manager']) // Eager load để tối ưu query
+            ->with(['kpi.tasks', 'kpiAssignment.manager']) // Eager load để tối ưu query
             ->latest()
             ->paginate(10);
 

@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
+use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\Payroll;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class EmployeePayrollController extends Controller
@@ -99,7 +101,57 @@ class EmployeePayrollController extends Controller
             'payer',
         ]);
 
-        return view('employee.payrolls.show', compact('employee', 'payroll'));
+        [$attendances, $attendanceStats] = $this->buildAttendanceData($employee, $payroll);
+
+        return view('employee.payrolls.show', compact('employee', 'payroll', 'attendances', 'attendanceStats'));
+    }
+
+    /**
+     * Tổng hợp dữ liệu chấm công trong kỳ lương để nhân viên xem chi tiết:
+     * tổng giờ làm, tổng ca, và từng ngày đi làm / đi muộn / nghỉ.
+     *
+     * @return array{0: Collection, 1: array<string, mixed>}
+     */
+    private function buildAttendanceData(Employee $employee, Payroll $payroll): array
+    {
+        $period = $payroll->payrollPeriod;
+
+        $emptyStats = [
+            'total_work_hours' => 0.0,
+            'total_overtime_hours' => 0.0,
+            'total_shifts' => 0,
+            'present_days' => 0,
+            'late_days' => 0,
+            'absent_days' => 0,
+            'leave_days' => 0,
+            'total_late_minutes' => 0,
+        ];
+
+        if (! $period) {
+            return [collect(), $emptyStats];
+        }
+
+        $attendances = Attendance::query()
+            ->with('shift')
+            ->where('employee_id', $employee->id)
+            ->whereBetween('attendance_date', [$period->start_date, $period->end_date])
+            ->orderBy('attendance_date')
+            ->get();
+
+        $workedStatuses = ['present', 'late'];
+
+        $stats = [
+            'total_work_hours' => (float) $attendances->sum('work_hours'),
+            'total_overtime_hours' => (float) $attendances->sum('overtime_hours'),
+            'total_shifts' => $attendances->whereIn('status', $workedStatuses)->count(),
+            'present_days' => $attendances->where('status', 'present')->count(),
+            'late_days' => $attendances->where('status', 'late')->count(),
+            'absent_days' => $attendances->where('status', 'absent')->count(),
+            'leave_days' => $attendances->where('status', 'leave')->count(),
+            'total_late_minutes' => (int) $attendances->sum('late_minutes'),
+        ];
+
+        return [$attendances, $stats];
     }
 
     public function exportPdf(Payroll $payroll)

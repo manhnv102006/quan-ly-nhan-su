@@ -82,11 +82,15 @@
 @foreach ($menuItems as $item)
     @continue(!Route::has($item['route']))
 
+    @php
+        $isActive = request()->routeIs($item['match'] ?? $item['route']);
+    @endphp
+
     <div>
         <a href="{{ route($item['route']) }}"
-           class="admin-menu-item {{ request()->routeIs($item['match'] ?? $item['route']) ? 'admin-menu-item-active' : 'admin-menu-item-inactive' }}">
-            <span class="relative flex items-center justify-center w-8 h-8 rounded-lg shrink-0">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+           class="admin-menu-item group {{ $isActive ? 'admin-menu-item-active' : 'admin-menu-item-inactive' }}">
+            <span class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $isActive ? 'bg-white/15' : 'bg-slate-100 text-slate-500 group-hover:bg-violet-100' }}">
+                <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}" />
                 </svg>
                 @if (! empty($item['badge']) && $item['badge'] > 0)
@@ -102,12 +106,13 @@
         </a>
 
         @if(isset($item['children']))
-            <div class="ml-10 mt-2 space-y-1">
+            <div class="ml-5 mt-2 space-y-1 border-l border-slate-200/80 pl-5">
                 @foreach($item['children'] as $child)
                     @if(Route::has($child['route']))
+                        @php $childActive = request()->routeIs($child['route']); @endphp
                         <a href="{{ route($child['route']) }}"
-                           class="flex items-center justify-between gap-2 px-3 py-2 text-sm rounded-lg text-slate-600 hover:bg-violet-50 hover:text-violet-600">
-                            <span>• {{ $child['label'] }}</span>
+                           class="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm font-medium transition {{ $childActive ? 'bg-violet-50 text-violet-700' : 'text-slate-500 hover:bg-violet-50 hover:text-violet-700' }}">
+                            <span class="truncate">{{ $child['label'] }}</span>
                             @if (! empty($child['badge']) && $child['badge'] > 0)
                                 <x-nav-badge :count="$child['badge']" />
                             @endif

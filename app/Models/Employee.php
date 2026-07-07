@@ -187,10 +187,9 @@ class Employee extends Model
             && in_array((int) $this->department_id, $departmentIds, true);
     }
 
-
+    /**
      * Nhân viên thuộc phòng ban do quản lý này phụ trách.
      */
-
     public function isManagedBy(self $manager): bool
     {
         if (! $this->department_id) {

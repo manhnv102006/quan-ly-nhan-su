@@ -59,8 +59,20 @@ class PayrollService
         $standardWorkingDays = $this->calculateStandardWorkingDays($startDate, $endDate);
 
         foreach ($employees as $employee) {
-            // A. Lương hợp đồng (full tháng): Ưu tiên lấy từ hợp đồng active, nếu không thì lấy từ chức vụ
-            $activeContract = $employee->contracts->first();
+            // A. Lương hợp đồng (full tháng): Ưu tiên hợp đồng active còn hiệu lực trong kỳ, nếu không thì lấy từ chức vụ
+            $activeContract = $employee->contracts
+                ->filter(function ($contract) use ($startDate, $endDate) {
+                    // Hợp đồng phải có khoảng hiệu lực giao với kỳ lương
+                    $contractStart = $contract->start_date;
+                    $contractEnd = $contract->end_date;
+
+                    $startsBeforePeriodEnds = ! $contractStart || $contractStart <= $endDate;
+                    $endsAfterPeriodStarts = ! $contractEnd || $contractEnd >= $startDate;
+
+                    return $startsBeforePeriodEnds && $endsAfterPeriodStarts;
+                })
+                ->sortByDesc('start_date')
+                ->first();
             $contractSalary = 0;
 
             if ($activeContract) {
@@ -136,8 +148,11 @@ class PayrollService
             }
             $allowanceMeal = round($mealRate * $presentDays, 0);
 
-            // Nếu không đi làm ngày nào trong tháng thì không được hưởng bất kỳ phụ cấp nào
-            if ($presentDays == 0) {
+            // Hợp đồng thực tập hoặc không đi làm ngày nào: không được hưởng phụ cấp
+            $isInternship = $activeContract?->contractType?->isInternship() ?? false;
+            $noAllowance = $presentDays == 0 || $isInternship;
+
+            if ($noAllowance) {
                 $allowanceMeal = 0;
                 $allowancePhone = 0;
                 $allowanceFuel = 0;
@@ -145,9 +160,10 @@ class PayrollService
             }
 
             // Phụ cấp cố định 1.500.000đ cho mọi nhân viên (dùng chung hằng số với hợp đồng).
-            // Hợp đồng thực tập: không có phụ cấp. Không đi làm ngày nào: cũng không hưởng phụ cấp.
-            $isInternship = $activeContract?->contractType?->isInternship() ?? false;
-            $allowance = ($presentDays == 0 || $isInternship) ? 0 : ContractService::FIXED_ALLOWANCE;
+            $allowance = $noAllowance ? 0 : ContractService::FIXED_ALLOWANCE;
+
+            // Tổng phụ cấp thực nhận (cố định + ăn trưa + điện thoại + xăng xe + chức vụ)
+            $totalAllowance = $allowance + $allowanceMeal + $allowancePhone + $allowanceFuel + $allowancePosition;
 
             // F. Lương cơ bản PRO-RATA theo ngày công thực tế
             $basicSalary = $standardWorkingDays > 0
@@ -203,8 +219,8 @@ class PayrollService
                 : 0;
             $overtimePay = round($overtimeHours * $hourlyRate * self::OVERTIME_RATE_MULTIPLIER, 0);
 
-            // J. Thực lĩnh = Lương cơ bản (pro-rata) + Phụ cấp + Thưởng KPI + Lương tăng ca - Khấu trừ
-            $totalSalary = $basicSalary + $allowance + $bonus + $overtimePay - $deduction;
+            // J. Thực lĩnh = Lương cơ bản (pro-rata) + Tổng phụ cấp + Thưởng KPI + Lương tăng ca - Khấu trừ
+            $totalSalary = $basicSalary + $totalAllowance + $bonus + $overtimePay - $deduction;
 
             if ($totalSalary < 0) {
                 $totalSalary = 0; // Không thể âm thực lĩnh
@@ -341,8 +357,18 @@ class PayrollService
 
         $overtimePay = round($overtimeHours * $hourlyRate * self::OVERTIME_RATE_MULTIPLIER, 0);
 
-        // Tính lại tổng lương thực lĩnh
-        $totalSalary = $payroll->basic_salary + $payroll->allowance + $payroll->bonus + $overtimePay - $payroll->deduction;
+        // Tính lại tổng lương thực lĩnh (cộng đủ các khoản phụ cấp đã lưu)
+        $totalAllowance = (float) $payroll->allowance
+            + (float) $payroll->allowance_meal
+            + (float) $payroll->allowance_phone
+            + (float) $payroll->allowance_fuel
+            + (float) $payroll->allowance_position;
+
+        $totalSalary = (float) $payroll->basic_salary
+            + $totalAllowance
+            + (float) $payroll->bonus
+            + $overtimePay
+            - (float) $payroll->deduction;
 
         $payroll->update([
             'overtime_hours' => $overtimeHours,
