@@ -97,4 +97,57 @@ class KPIAssignment extends Model
             default => 'bg-gray-100 text-gray-700',
         };
     }
+
+    public function getStatusTailwindAttribute(): string
+    {
+        return match ($this->status) {
+            'pending' => 'bg-amber-50 text-amber-700 border-amber-100',
+            'active' => 'bg-sky-50 text-sky-700 border-sky-100',
+            'completed' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+            'cancelled' => 'bg-rose-50 text-rose-700 border-rose-100',
+            default => 'bg-slate-100 text-slate-600 border-slate-200',
+        };
+    }
+
+    public function getTargetUnitAttribute(): string
+    {
+        return $this->kpi?->unit ?: '%';
+    }
+
+    public function getIsPercentTargetAttribute(): bool
+    {
+        return $this->target_unit === '%';
+    }
+
+    public function getFormattedTargetAttribute(): string
+    {
+        $value = $this->formatTargetValue((float) $this->target);
+
+        return $this->is_percent_target
+            ? $value.'%'
+            : $value.' '.$this->target_unit;
+    }
+
+    public function getTargetShortAttribute(): string
+    {
+        return $this->formatTargetValue((float) $this->target);
+    }
+
+    public function getTargetProgressAttribute(): float
+    {
+        if (! $this->is_percent_target) {
+            return 0;
+        }
+
+        return min(100, max(0, (float) $this->target));
+    }
+
+    private function formatTargetValue(float $value): string
+    {
+        if (floor($value) == $value) {
+            return (string) (int) $value;
+        }
+
+        return rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
+    }
 }

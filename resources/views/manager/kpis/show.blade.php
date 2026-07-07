@@ -69,6 +69,38 @@
             </div>
         </div>
 
+        {{-- Nhiệm vụ cần thực hiện của KPI --}}
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100 flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-slate-800">Nhiệm vụ cần thực hiện</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Các đầu việc cụ thể của KPI này</p>
+                </div>
+            </div>
+            <div class="p-6">
+                @forelse ($assignment->kpi?->tasks ?? [] as $index => $task)
+                    <div class="flex gap-3 {{ ! $loop->last ? 'mb-3 pb-3 border-b border-slate-50' : '' }}">
+                        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-700">
+                            {{ $index + 1 }}
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-800">{{ $task->title }}</p>
+                            @if ($task->description)
+                                <p class="text-xs text-slate-500 mt-0.5">{{ $task->description }}</p>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-sm text-slate-400">KPI này chưa có nhiệm vụ chi tiết.</p>
+                @endforelse
+            </div>
+        </div>
+
         {{-- Danh sách mục tiêu đã giao cho nhân viên --}}
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div class="px-6 py-5 border-b border-slate-100">

@@ -22,12 +22,6 @@ class ManagerNavigation
                 'note' => 'Nhân sự & vai trò',
             ],
             [
-                'label' => 'Phê duyệt',
-                'href' => route('manager.dashboard').'#approvals',
-                'icon' => 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-                'note' => 'Đơn nghỉ đang chờ',
-            ],
-            [
                 'label' => 'KPI',
                 'href' => route('manager.kpis.index'),
                 'route' => 'manager.kpis*',

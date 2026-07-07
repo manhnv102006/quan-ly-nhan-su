@@ -64,6 +64,13 @@
                         @enderror
                     </div>
 
+                    @include('admin.kpis.partials.tasks-field', [
+                        'existingTasks' => old('tasks', $kpi->tasks->map(fn ($task) => [
+                            'title' => $task->title,
+                            'description' => $task->description,
+                        ])->all()),
+                    ])
+
                     {{-- Phòng ban áp dụng (nhiều) --}}
                     <div class="md:col-span-2">
                         <label class="block text-sm font-semibold text-slate-700 mb-2">
@@ -114,31 +121,14 @@
                         @enderror
                     </div>
 
-                    {{-- Mục tiêu --}}
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">
-                            Mục tiêu
-                        </label>
-
-                        <input
-                            type="text"
-                            name="target"
-                            value="{{ old('target', $kpi->target) }}"
-                            class="w-full rounded-xl border border-slate-300 focus:border-violet-500 focus:ring-violet-500"
-                            placeholder="Ví dụ: 30 Task, 100%, 300 triệu">
-
-                        @error('target')
-                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
                     {{-- Đơn vị đo --}}
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">
+                        <label for="kpi_unit" class="block text-sm font-semibold text-slate-700 mb-2">
                             Đơn vị đo
                         </label>
 
                         <select
+                            id="kpi_unit"
                             name="unit"
                             class="w-full rounded-xl border border-slate-300 focus:border-violet-500 focus:ring-violet-500">
                             <option value="">-- Chọn đơn vị --</option>
@@ -148,6 +138,27 @@
                         </select>
 
                         @error('unit')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Mục tiêu --}}
+                    <div>
+                        <label for="kpi_target" class="block text-sm font-semibold text-slate-700 mb-2">
+                            Mục tiêu
+                        </label>
+
+                        <input
+                            id="kpi_target"
+                            type="text"
+                            name="target"
+                            value="{{ old('target', preg_match('/^[\d,.]+%?$/', (string) $kpi->target) ? preg_replace('/[^0-9,.]/', '', (string) $kpi->target) : $kpi->target) }}"
+                            class="w-full rounded-xl border border-slate-300 focus:border-violet-500 focus:ring-violet-500"
+                            placeholder="Ví dụ: 90">
+
+                        <p id="kpi_target_hint" class="mt-1 text-xs text-slate-500">Nhập mục tiêu theo đơn vị đo đã chọn.</p>
+
+                        @error('target')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
@@ -285,5 +296,30 @@
         </div>
 
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const unitSelect = document.getElementById('kpi_unit');
+            const targetInput = document.getElementById('kpi_target');
+            const hint = document.getElementById('kpi_target_hint');
+
+            function syncTargetField() {
+                const unit = unitSelect.value;
+                const isPercent = unit === '%';
+
+                targetInput.type = isPercent ? 'number' : 'text';
+                targetInput.step = isPercent ? '0.01' : '';
+                targetInput.min = isPercent ? '0' : '';
+                targetInput.max = isPercent ? '100' : '';
+                targetInput.placeholder = isPercent ? 'Ví dụ: 90' : 'Ví dụ: 30 Task, 300 triệu';
+                hint.textContent = isPercent
+                    ? 'Mục tiêu phần trăm từ 0 đến 100.'
+                    : 'Nhập mục tiêu theo đơn vị: ' + (unit || 'đã chọn') + '.';
+            }
+
+            unitSelect.addEventListener('change', syncTargetField);
+            syncTargetField();
+        });
+    </script>
 
 </x-admin-layout>

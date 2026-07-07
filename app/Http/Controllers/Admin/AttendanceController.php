@@ -9,6 +9,7 @@ use App\Models\Employee;
 use App\Models\EmployeeShift;
 use App\Support\DepartmentSummaryBuilder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AttendanceController extends Controller
@@ -22,12 +23,90 @@ class AttendanceController extends Controller
 
     public function department(Request $request, Department $department): View
     {
-        return view('admin.attendances.department', [
-            ...$this->buildListData($request, $department->id),
-            'selectedDepartment' => $department,
-            'scopeLabel' => $department->department_name,
-            'showDepartmentColumn' => false,
-        ]);
+        $search = trim((string) $request->input('search', ''));
+
+        $employeesQuery = Employee::query()
+            ->where('department_id', $department->id)
+            ->where('status', 'active')
+            ->with('position')
+            ->when($search, fn ($q) => $q->where(function ($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                  ->orWhere('employee_code', 'like', "%{$search}%");
+            }))
+            ->orderBy('full_name');
+
+        $employees = $employeesQuery->paginate(15)->withQueryString();
+
+        // Tổng hợp thống kê chấm công theo nhân viên trong tháng hiện tại
+        $month      = now()->month;
+        $year       = now()->year;
+        $empIds     = $employees->pluck('id')->all();
+
+        $statsMap = DB::table('attendances')
+            ->selectRaw('employee_id,
+                COUNT(*) as total,
+                SUM(CASE WHEN status = "present" THEN 1 ELSE 0 END) as present,
+                SUM(CASE WHEN status = "late"    THEN 1 ELSE 0 END) as late,
+                SUM(CASE WHEN status = "absent"  THEN 1 ELSE 0 END) as absent,
+                SUM(work_hours) as total_hours')
+            ->whereIn('employee_id', $empIds)
+            ->whereMonth('attendance_date', $month)
+            ->whereYear('attendance_date', $year)
+            ->groupBy('employee_id')
+            ->get()
+            ->keyBy('employee_id');
+
+        // Ngày cuối cùng chấm công
+        $lastDateMap = DB::table('attendances')
+            ->selectRaw('employee_id, MAX(attendance_date) as last_date')
+            ->whereIn('employee_id', $empIds)
+            ->groupBy('employee_id')
+            ->pluck('last_date', 'employee_id');
+
+        return view('admin.attendances.department', compact(
+            'department', 'employees', 'statsMap', 'lastDateMap', 'search', 'month', 'year'
+        ));
+    }
+
+    public function employeeAttendance(Request $request, Department $department, Employee $employee): View
+    {
+        $filters = [
+            'month'  => (int) $request->input('month', now()->month),
+            'year'   => (int) $request->input('year',  now()->year),
+            'status' => $request->input('status', ''),
+        ];
+
+        $attendancesQuery = Attendance::query()
+            ->where('employee_id', $employee->id)
+            ->whereMonth('attendance_date', $filters['month'])
+            ->whereYear('attendance_date', $filters['year'])
+            ->when($filters['status'], fn ($q) => $q->where('status', $filters['status']))
+            ->orderBy('attendance_date');
+
+        $attendances = $attendancesQuery->get();
+
+        // Tải ca làm cho từng bản ghi
+        $attendances->each(function ($att) {
+            $att->employeeShift = EmployeeShift::with('shift')
+                ->where('employee_id', $att->employee_id)
+                ->whereDate('work_date', $att->attendance_date)
+                ->first();
+        });
+
+        $summary = [
+            'total'       => $attendances->count(),
+            'present'     => $attendances->where('status', 'present')->count(),
+            'late'        => $attendances->where('status', 'late')->count(),
+            'absent'      => $attendances->where('status', 'absent')->count(),
+            'leave'       => $attendances->where('status', 'leave')->count(),
+            'total_hours' => round($attendances->sum('work_hours'), 1),
+        ];
+
+        $employee->load('department', 'position');
+
+        return view('admin.attendances.employee', compact(
+            'department', 'employee', 'attendances', 'summary', 'filters'
+        ));
     }
 
     public function show(Attendance $attendance): View

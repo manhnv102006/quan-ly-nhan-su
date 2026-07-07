@@ -77,6 +77,8 @@ class ManagerPendingApprovalService
                 $item['badge'] = $counts['overtime'];
             } elseif ($route === 'manager.kpis*') {
                 $item['badge'] = $counts['kpi'];
+            } elseif (str_contains((string) ($item['href'] ?? ''), 'manager/kpis') || str_contains((string) ($item['href'] ?? ''), '#kpi')) {
+                $item['badge'] = $counts['kpi'];
             } elseif (str_contains((string) ($item['href'] ?? ''), '#approvals')) {
                 $item['badge'] = $counts['leave'] + $counts['overtime'];
             }
@@ -113,18 +115,26 @@ class ManagerPendingApprovalService
             return 0;
         }
 
+        // KPI mới admin giao (chờ admin duyệt) — manager cần biết có KPI mới
+        $newFromAdmin = KPIAssignment::query()
+            ->where('manager_id', $userId)
+            ->where('status', 'pending')
+            ->count();
+
+        // KPI đã duyệt, chưa giao xuống nhân viên
         $unassigned = KPIAssignment::query()
             ->where('manager_id', $userId)
             ->where('status', 'active')
             ->doesntHave('employeeKpis')
             ->count();
 
+        // KPI nhân viên hoàn thành, chờ manager chấm điểm
         $needsReview = EmployeeKPI::query()
             ->where('status', EmployeeKPI::STATUS_COMPLETED)
             ->whereNull('score')
             ->whereHas('kpiAssignment', fn ($query) => $query->where('manager_id', $userId))
             ->count();
 
-        return $unassigned + $needsReview;
+        return $newFromAdmin + $unassigned + $needsReview;
     }
 }
