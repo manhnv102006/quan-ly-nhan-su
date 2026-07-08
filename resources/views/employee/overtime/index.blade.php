@@ -1,15 +1,17 @@
 @php
     $user = Auth::user();
     $isManager = $user->role->name === 'manager';
-    $navigation = $isManager
-        ? \App\Support\ManagerNavigation::items()
-        : \App\Support\EmployeeNavigation::items();
+    $layout = $isManager ? 'manager-layout' : 'employee-layout';
+    $layoutParams = [
+        'title' => 'Đơn tăng ca',
+        'subtitle' => 'Xem và gửi yêu cầu tăng ca.',
+    ];
 
     $statusLabels = \App\Models\OvertimeRequest::STATUS_LABELS;
     $statusClasses = \App\Models\OvertimeRequest::STATUS_TAILWIND_CLASSES;
 @endphp
 
-<x-staff-layout title="Đơn tăng ca" subtitle="Xem và gửi yêu cầu tăng ca." :role="$isManager ? 'manager' : 'employee'" :navigation="$navigation">
+<x-dynamic-component :component="$layout" :attributes="new \Illuminate\View\ComponentAttributeBag($layoutParams)">
 
     <div class="space-y-6">
 
@@ -87,4 +89,4 @@
         </div>
     </div>
 
-</x-staff-layout>
+</x-dynamic-component>

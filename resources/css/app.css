@@ -332,6 +332,452 @@
     .staff-stat-card {
         @apply staff-card p-5 transition-all duration-300 hover:-translate-y-1;
     }
+
+    /* ── Manager UI (Teal/Emerald — phân biệt với Admin Violet) ── */
+    body.manager-body {
+        @apply text-slate-800 antialiased;
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+
+    .manager-shell {
+        @apply relative min-h-screen overflow-x-hidden;
+        background:
+            radial-gradient(ellipse 80% 50% at 18% -10%, rgba(20, 184, 166, 0.18), transparent),
+            radial-gradient(ellipse 60% 40% at 92% 8%, rgba(16, 185, 129, 0.15), transparent),
+            radial-gradient(ellipse 50% 30% at 50% 100%, rgba(251, 191, 36, 0.08), transparent),
+            linear-gradient(180deg, #f8fafc 0%, #ecfdf5 100%);
+    }
+
+    .manager-sidebar {
+        @apply border-r border-white/70 bg-white/80 shadow-[8px_0_32px_-20px_rgba(15,23,42,0.22)] backdrop-blur-2xl;
+    }
+
+    .manager-header {
+        @apply border-b border-white/70 bg-white/75 shadow-sm shadow-slate-200/40 backdrop-blur-2xl;
+    }
+
+    .manager-card {
+        @apply rounded-[1.5rem] border border-white/80 bg-white/80 shadow-sm shadow-slate-200/60 backdrop-blur-sm;
+    }
+
+    .manager-menu-item {
+        @apply flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-all duration-200;
+    }
+
+    .manager-menu-item-active {
+        @apply bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-lg shadow-teal-500/25;
+    }
+
+    .manager-menu-item-inactive {
+        @apply text-slate-600 hover:bg-white hover:text-teal-700 hover:shadow-sm hover:shadow-teal-100/60;
+    }
+
+    .manager-stat-card {
+        @apply manager-card p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-teal-200/40;
+    }
+
+    .manager-page {
+        @apply space-y-6;
+    }
+
+    .manager-page-header {
+        @apply flex flex-wrap items-start justify-between gap-4;
+    }
+
+    .manager-kicker {
+        @apply text-[11px] font-bold uppercase tracking-[0.24em] text-teal-600;
+    }
+
+    .manager-title {
+        @apply mt-1 text-2xl font-bold tracking-tight text-slate-900;
+    }
+
+    .manager-subtitle {
+        @apply mt-1 text-sm leading-6 text-slate-500;
+    }
+
+    .manager-hero {
+        @apply relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-800 p-6 text-white shadow-2xl shadow-teal-900/20 sm:p-8;
+    }
+
+    .manager-panel {
+        @apply rounded-[1.5rem] border border-white/80 bg-white/80 shadow-sm shadow-slate-200/60 backdrop-blur-sm overflow-hidden;
+    }
+
+    .manager-panel-header {
+        @apply border-b border-slate-100 px-5 py-4 sm:px-6;
+    }
+
+    .manager-section-title {
+        @apply text-sm font-bold text-slate-900;
+    }
+
+    .manager-section-subtitle {
+        @apply mt-0.5 text-xs text-slate-500;
+    }
+
+    .manager-action {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition;
+    }
+
+    .manager-action-primary {
+        @apply manager-action bg-teal-600 text-white shadow-md shadow-teal-500/20 hover:bg-teal-700;
+    }
+
+    .manager-action-secondary {
+        @apply manager-action border border-slate-200 bg-white text-slate-600 hover:bg-slate-50;
+    }
+
+    .manager-btn-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-500/20 transition hover:bg-teal-700;
+    }
+
+    .manager-btn-secondary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50;
+    }
+
+    .manager-btn-ghost {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-teal-50 hover:text-teal-700;
+    }
+
+    .manager-label {
+        @apply mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500;
+    }
+
+    .manager-field {
+        @apply w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20;
+    }
+
+    .manager-field:disabled {
+        @apply cursor-not-allowed bg-slate-50 text-slate-500;
+    }
+
+    .manager-table-wrap {
+        @apply overflow-hidden rounded-[1.5rem] border border-white/80 bg-white/90 shadow-sm shadow-slate-200/60 backdrop-blur-sm;
+    }
+
+    .manager-table {
+        @apply min-w-full divide-y divide-slate-100;
+    }
+
+    .manager-table thead {
+        @apply bg-slate-50/90;
+    }
+
+    .manager-table th {
+        @apply px-5 py-4 text-left text-[11px] font-black uppercase tracking-wide text-slate-500;
+    }
+
+    .manager-table td {
+        @apply px-5 py-4 text-sm text-slate-600;
+    }
+
+    .manager-table tbody tr {
+        @apply border-t border-slate-100 transition hover:bg-teal-50/35;
+    }
+
+    .manager-badge {
+        @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
+    }
+
+    .manager-empty-state {
+        @apply px-5 py-14 text-center;
+    }
+
+    .manager-empty-icon {
+        @apply mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400;
+    }
+
+    .manager-empty-title {
+        @apply mt-4 text-sm font-bold text-slate-700;
+    }
+
+    .manager-empty-text {
+        @apply mt-1 text-sm text-slate-500;
+    }
+
+    .manager-alert {
+        @apply flex items-center gap-3 rounded-2xl border px-5 py-4 text-sm font-semibold shadow-sm;
+    }
+
+    .manager-alert-success {
+        @apply manager-alert border-emerald-200 bg-emerald-50 text-emerald-700;
+    }
+
+    .manager-alert-error {
+        @apply manager-alert border-rose-200 bg-rose-50 text-rose-700;
+    }
+
+    .manager-alert-warning {
+        @apply manager-alert border-amber-200 bg-amber-50 text-amber-800;
+    }
+
+    .manager-body .table {
+        @apply mb-0 align-middle;
+    }
+
+    .manager-body .table > :not(caption) > * > * {
+        @apply border-slate-100 px-5 py-4 text-sm text-slate-600;
+    }
+
+    .manager-body .table thead th {
+        @apply bg-slate-50 text-[11px] font-black uppercase tracking-wide text-slate-500;
+    }
+
+    .manager-body .table tbody tr {
+        @apply transition hover:bg-teal-50/35;
+    }
+
+    .manager-body .card {
+        @apply rounded-[1.5rem] border border-white/80 bg-white/80 shadow-sm shadow-slate-200/60 backdrop-blur-sm;
+    }
+
+    .manager-body .card-header {
+        @apply rounded-t-[1.5rem] border-slate-100 bg-white/60 px-5 py-4 font-bold text-slate-900;
+    }
+
+    .manager-body .form-control,
+    .manager-body .form-select {
+        @apply rounded-xl border-slate-200 text-sm shadow-sm transition focus:border-teal-500 focus:ring-teal-500/20;
+    }
+
+    .manager-body .btn {
+        @apply rounded-xl font-semibold shadow-sm transition;
+    }
+
+    .manager-body .alert {
+        @apply rounded-2xl border px-5 py-4 text-sm font-semibold shadow-sm;
+    }
+
+    .manager-body main table:not(.no-manager-theme) {
+        @apply min-w-full overflow-hidden;
+    }
+
+    .manager-body main table:not(.no-manager-theme) thead {
+        @apply bg-slate-50/90;
+    }
+
+    .manager-body main table:not(.no-manager-theme) th {
+        @apply text-[11px] font-black uppercase tracking-wide text-slate-500;
+    }
+
+    .manager-body main table:not(.no-manager-theme) tbody tr {
+        @apply transition hover:bg-teal-50/35;
+    }
+
+    .manager-body main input:not([type='checkbox']):not([type='radio']),
+    .manager-body main select,
+    .manager-body main textarea {
+        @apply rounded-xl border-slate-200 text-sm shadow-sm transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20;
+    }
+
+    .manager-body main label {
+        @apply font-semibold text-slate-600;
+    }
+
+    .manager-body main .pagination {
+        @apply gap-1;
+    }
+
+    .manager-body main .page-link {
+        @apply rounded-xl border-slate-200 text-sm font-semibold text-slate-600 shadow-sm hover:bg-teal-50 hover:text-teal-700;
+    }
+
+    .manager-body main .active > .page-link,
+    .manager-body main .page-link.active {
+        @apply border-teal-600 bg-teal-600 text-white;
+    }
+
+    /* ── Employee UI (Sky/Blue — phân biệt Admin Violet & Manager Teal) ── */
+    body.employee-body {
+        @apply text-slate-800 antialiased;
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+
+    .employee-shell {
+        @apply relative min-h-screen overflow-x-hidden;
+        background:
+            radial-gradient(ellipse 80% 50% at 15% -10%, rgba(14, 165, 233, 0.18), transparent),
+            radial-gradient(ellipse 60% 40% at 92% 8%, rgba(59, 130, 246, 0.15), transparent),
+            radial-gradient(ellipse 50% 30% at 50% 100%, rgba(99, 102, 241, 0.08), transparent),
+            linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%);
+    }
+
+    .employee-sidebar {
+        @apply border-r border-white/70 bg-white/80 shadow-[8px_0_32px_-20px_rgba(15,23,42,0.22)] backdrop-blur-2xl;
+    }
+
+    .employee-header {
+        @apply border-b border-white/70 bg-white/75 shadow-sm shadow-slate-200/40 backdrop-blur-2xl;
+    }
+
+    .employee-card {
+        @apply rounded-[1.5rem] border border-white/80 bg-white/80 shadow-sm shadow-slate-200/60 backdrop-blur-sm;
+    }
+
+    .employee-menu-item {
+        @apply flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-all duration-200;
+    }
+
+    .employee-menu-item-active {
+        @apply bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-lg shadow-sky-500/25;
+    }
+
+    .employee-menu-item-inactive {
+        @apply text-slate-600 hover:bg-white hover:text-sky-700 hover:shadow-sm hover:shadow-sky-100/60;
+    }
+
+    .employee-stat-card {
+        @apply employee-card p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-sky-200/40;
+    }
+
+    .employee-page {
+        @apply space-y-6;
+    }
+
+    .employee-page-header {
+        @apply flex flex-wrap items-start justify-between gap-4;
+    }
+
+    .employee-kicker {
+        @apply text-[11px] font-bold uppercase tracking-[0.24em] text-sky-600;
+    }
+
+    .employee-title {
+        @apply mt-1 text-2xl font-bold tracking-tight text-slate-900;
+    }
+
+    .employee-subtitle {
+        @apply mt-1 text-sm leading-6 text-slate-500;
+    }
+
+    .employee-hero {
+        @apply relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 via-sky-900 to-blue-800 p-6 text-white shadow-2xl shadow-sky-900/20 sm:p-8;
+    }
+
+    .employee-panel {
+        @apply rounded-[1.5rem] border border-white/80 bg-white/80 shadow-sm shadow-slate-200/60 backdrop-blur-sm overflow-hidden;
+    }
+
+    .employee-panel-header {
+        @apply border-b border-slate-100 px-5 py-4 sm:px-6;
+    }
+
+    .employee-section-title {
+        @apply text-sm font-bold text-slate-900;
+    }
+
+    .employee-section-subtitle {
+        @apply mt-0.5 text-xs text-slate-500;
+    }
+
+    .employee-action-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-sky-500/20 transition hover:bg-sky-700;
+    }
+
+    .employee-action-secondary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50;
+    }
+
+    .employee-btn-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-sky-500/20 transition hover:bg-sky-700;
+    }
+
+    .employee-btn-secondary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50;
+    }
+
+    .employee-label {
+        @apply mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500;
+    }
+
+    .employee-field {
+        @apply w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20;
+    }
+
+    .employee-table-wrap {
+        @apply overflow-hidden rounded-[1.5rem] border border-white/80 bg-white/90 shadow-sm shadow-slate-200/60 backdrop-blur-sm;
+    }
+
+    .employee-table {
+        @apply min-w-full divide-y divide-slate-100;
+    }
+
+    .employee-table thead {
+        @apply bg-slate-50/90;
+    }
+
+    .employee-table th {
+        @apply px-5 py-4 text-left text-[11px] font-black uppercase tracking-wide text-slate-500;
+    }
+
+    .employee-table td {
+        @apply px-5 py-4 text-sm text-slate-600;
+    }
+
+    .employee-table tbody tr {
+        @apply border-t border-slate-100 transition hover:bg-sky-50/35;
+    }
+
+    .employee-alert {
+        @apply flex items-center gap-3 rounded-2xl border px-5 py-4 text-sm font-semibold shadow-sm;
+    }
+
+    .employee-alert-success {
+        @apply employee-alert border-emerald-200 bg-emerald-50 text-emerald-700;
+    }
+
+    .employee-alert-error {
+        @apply employee-alert border-rose-200 bg-rose-50 text-rose-700;
+    }
+
+    .employee-body .table {
+        @apply mb-0 align-middle;
+    }
+
+    .employee-body .table > :not(caption) > * > * {
+        @apply border-slate-100 px-5 py-4 text-sm text-slate-600;
+    }
+
+    .employee-body .table thead th {
+        @apply bg-slate-50 text-[11px] font-black uppercase tracking-wide text-slate-500;
+    }
+
+    .employee-body .table tbody tr {
+        @apply transition hover:bg-sky-50/35;
+    }
+
+    .employee-body .card {
+        @apply rounded-[1.5rem] border border-white/80 bg-white/80 shadow-sm shadow-slate-200/60 backdrop-blur-sm;
+    }
+
+    .employee-body .form-control,
+    .employee-body .form-select {
+        @apply rounded-xl border-slate-200 text-sm shadow-sm transition focus:border-sky-500 focus:ring-sky-500/20;
+    }
+
+    .employee-body main input:not([type='checkbox']):not([type='radio']),
+    .employee-body main select,
+    .employee-body main textarea {
+        @apply rounded-xl border-slate-200 text-sm shadow-sm transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20;
+    }
+
+    .employee-body main label {
+        @apply font-semibold text-slate-600;
+    }
+
+    .employee-body main .pagination {
+        @apply gap-1;
+    }
+
+    .employee-body main .page-link {
+        @apply rounded-xl border-slate-200 text-sm font-semibold text-slate-600 shadow-sm hover:bg-sky-50 hover:text-sky-700;
+    }
+
+    .employee-body main .active > .page-link,
+    .employee-body main .page-link.active {
+        @apply border-sky-600 bg-sky-600 text-white;
+    }
 }
 
 @keyframes page-loader-spin {

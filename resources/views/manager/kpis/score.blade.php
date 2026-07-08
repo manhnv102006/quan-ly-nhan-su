@@ -1,12 +1,6 @@
-@php
-    $navigation = \App\Support\ManagerNavigation::items();
-@endphp
-
-<x-staff-layout
+<x-manager-layout
     :title="'Chấm KPI cho ' . ($employeeKpi->employee->full_name ?? '')"
     subtitle="Nhập điểm và nhận xét cho mục tiêu KPI của nhân viên."
-    role="manager"
-    :navigation="$navigation"
 >
     <div class="max-w-3xl mx-auto space-y-6">
 
@@ -20,13 +14,13 @@
             </div>
 
             <a href="{{ route('manager.kpis.index') }}"
-               class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition">
+               class="manager-btn-secondary">
                 ← Quay lại
             </a>
         </div>
 
         {{-- Thông tin KPI --}}
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="manager-panel">
             <div class="px-6 py-5 border-b border-slate-100">
                 <h3 class="font-semibold text-slate-800">Thông tin mục tiêu</h3>
             </div>
@@ -81,7 +75,7 @@
                     </label>
                     <input id="score" type="number" name="score" min="0" max="100" required
                         value="{{ old('score', $employeeKpi->score !== null ? (int) $employeeKpi->score : '') }}"
-                        class="w-full rounded-xl border @error('score') border-red-400 @else border-slate-300 @enderror focus:border-violet-500 focus:ring-violet-500">
+                        class="w-full rounded-xl border @error('score') border-red-400 @else border-slate-300 @enderror focus:border-teal-500 focus:ring-teal-500">
                     @error('score')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -93,7 +87,7 @@
                     </label>
                     <textarea id="review" name="review" rows="4"
                         placeholder="Nhập nhận xét cho nhân viên..."
-                        class="w-full rounded-xl border @error('review') border-red-400 @else border-slate-300 @enderror focus:border-violet-500 focus:ring-violet-500">{{ old('review', $employeeKpi->review) }}</textarea>
+                        class="w-full rounded-xl border @error('review') border-red-400 @else border-slate-300 @enderror focus:border-teal-500 focus:ring-teal-500">{{ old('review', $employeeKpi->review) }}</textarea>
                     @error('review')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -113,4 +107,4 @@
         </div>
 
     </div>
-</x-staff-layout>
+</x-manager-layout>
