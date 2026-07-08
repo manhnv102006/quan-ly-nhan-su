@@ -4,13 +4,11 @@
     $isRead = (bool) $notification->is_read;
 @endphp
 
-<x-staff-layout
+<x-employee-layout
     title="Chi tiết thông báo"
     subtitle="{{ $notification->title }}"
-    role="employee"
-    :navigation="$navigation"
 >
-    <div class="space-y-6">
+    <div class="employee-page">
         <div class="flex flex-wrap items-center justify-between gap-4">
             <a href="{{ route('employee.notifications.index') }}"
                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-medium hover:bg-slate-50 transition">
@@ -80,4 +78,4 @@
             </div>
         </article>
     </div>
-</x-staff-layout>
+</x-employee-layout>

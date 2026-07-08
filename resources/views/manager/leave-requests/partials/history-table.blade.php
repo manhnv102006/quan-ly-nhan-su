@@ -16,9 +16,9 @@
     ];
 @endphp
 
-<section class="staff-card overflow-hidden">
+<section class="manager-card overflow-hidden">
     <div class="border-b border-slate-100 px-6 py-5 sm:px-7">
-        <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-indigo-600">Lịch sử</p>
+        <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-teal-600">Lịch sử</p>
         <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-800">Lịch sử phê duyệt gần đây</h3>
     </div>
 
