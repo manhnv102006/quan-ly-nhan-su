@@ -14,9 +14,14 @@
         + (float) ($payroll->allowance_fuel ?? 0)
         + (float) ($payroll->allowance_position ?? 0);
     $income = (float) $payroll->basic_salary + $totalAllowance + (float) $payroll->bonus + (float) ($payroll->overtime_pay ?? 0);
+    $layout = $isManager ? 'manager-layout' : 'employee-layout';
+    $layoutParams = [
+        'title' => 'Chi tiết phiếu lương',
+        'subtitle' => 'Xem đầy đủ các khoản lương của kỳ đã chọn.',
+    ];
 @endphp
 
-<x-staff-layout title="Chi tiết phiếu lương" subtitle="Xem đầy đủ các khoản lương của kỳ đã chọn." :role="$isManager ? 'manager' : 'employee'" :navigation="$navigation">
+<x-dynamic-component :component="$layout" :attributes="new \Illuminate\View\ComponentAttributeBag($layoutParams)">
 @php
     $statusColor = match($payroll->displayStatus()) {
         'paid', 'closed'    => 'emerald',
@@ -472,4 +477,4 @@
         @endif
     </div>
 </div>
-</x-staff-layout>
+</x-dynamic-component>

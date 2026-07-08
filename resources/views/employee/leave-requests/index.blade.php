@@ -10,14 +10,16 @@
         $navigation = \App\Support\EmployeeNavigation::items();
     }
 
-    $layout = $isAdmin ? 'admin-layout' : 'staff-layout';
+    $layout = match (true) {
+        $isAdmin => 'admin-layout',
+        $isManager => 'manager-layout',
+        default => 'employee-layout',
+    };
     $layoutParams = $isAdmin
         ? ['title' => 'Đơn nghỉ phép của tôi']
         : [
             'title' => 'Đơn nghỉ phép của tôi',
             'subtitle' => 'Xem danh sách và gửi yêu cầu nghỉ phép.',
-            'role' => $isManager ? 'manager' : 'employee',
-            'navigation' => $navigation
         ];
 
     $leaveTypes = [

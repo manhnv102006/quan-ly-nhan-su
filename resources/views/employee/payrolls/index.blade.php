@@ -8,15 +8,17 @@
         ? \App\Support\ManagerNavigation::items()
         : \App\Support\EmployeeNavigation::items();
 
-    $layout = $isAdmin ? 'admin-layout' : 'staff-layout';
+    $layout = match (true) {
+        $isAdmin => 'admin-layout',
+        $isManager => 'manager-layout',
+        default => 'employee-layout',
+    };
     $backRoute = $isAdmin ? route('admin.dashboard') : ($isManager ? route('manager.dashboard') : route('employee.dashboard'));
     $layoutParams = $isAdmin
         ? ['title' => 'Phiếu lương của tôi']
         : [
             'title' => 'Phiếu lương của tôi',
             'subtitle' => 'Xem lịch sử và tải phiếu lương dành cho bạn.',
-            'role' => $isManager ? 'manager' : 'employee',
-            'navigation' => $navigation,
         ];
 @endphp
 
