@@ -75,7 +75,7 @@ class KPIAssignmentController extends Controller
      */
     public function create()
     {
-        $kpis = KPI::with('departments')
+        $kpis = KPI::with('departments', 'tasks')
             ->where('status', 'active')
             ->whereDoesntHave('assignments', function ($query) {
                 $query->whereIn('status', ['pending', 'active']);
@@ -96,7 +96,7 @@ class KPIAssignmentController extends Controller
      */
     public function store(StoreKPIAssignmentRequest $request)
     {
-        $data = $request->validated();
+        $data = $request->assignmentPayload();
         $data['assigned_by'] = Auth::id();
         $data['status'] = 'pending';
 
@@ -144,7 +144,7 @@ class KPIAssignmentController extends Controller
      */
     public function update(StoreKPIAssignmentRequest $request, KPIAssignment $assignment)
     {
-        $assignment->update($request->validated());
+        $assignment->update($request->assignmentPayload());
 
         return redirect()
             ->route('admin.kpi-assignments.index')

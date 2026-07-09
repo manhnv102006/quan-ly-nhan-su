@@ -1,14 +1,8 @@
-@php
-    $navigation = \App\Support\ManagerNavigation::items();
-@endphp
-
-<x-staff-layout
+<x-manager-layout
     :title="'Chi tiết KPI: ' . $assignment->kpi_title"
     subtitle="Xem thông tin KPI và các mục tiêu đã giao cho nhân viên."
-    role="manager"
-    :navigation="$navigation"
 >
-    <div class="space-y-6">
+    <div class="manager-page">
 
         {{-- Header --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -23,18 +17,18 @@
 
             <div class="flex items-center gap-2">
                 <a href="{{ route('manager.kpis.index') }}"
-                   class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition">
+                   class="manager-btn-secondary">
                     ← Quay lại
                 </a>
                 <a href="{{ route('manager.kpis.assign', $assignment) }}"
-                   class="px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
+                   class="manager-btn-primary">
                     + Giao mục tiêu mới
                 </a>
             </div>
         </div>
 
         {{-- Thông tin KPI gốc --}}
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="manager-panel">
             <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                 <h3 class="font-semibold text-slate-800">Thông tin KPI được giao cho bạn</h3>
                 <span class="inline-block px-3 py-1 rounded-lg text-xs font-medium {{ $assignment->status_color }}">
@@ -69,8 +63,40 @@
             </div>
         </div>
 
+        {{-- Nhiệm vụ cần thực hiện của KPI --}}
+        <div class="manager-panel">
+            <div class="px-6 py-5 border-b border-slate-100 flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-slate-800">Nhiệm vụ cần thực hiện</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Các đầu việc cụ thể của KPI này</p>
+                </div>
+            </div>
+            <div class="p-6">
+                @forelse ($assignment->kpi?->tasks ?? [] as $index => $task)
+                    <div class="flex gap-3 {{ ! $loop->last ? 'mb-3 pb-3 border-b border-slate-50' : '' }}">
+                        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-bold text-teal-700">
+                            {{ $index + 1 }}
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-800">{{ $task->title }}</p>
+                            @if ($task->description)
+                                <p class="text-xs text-slate-500 mt-0.5">{{ $task->description }}</p>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-sm text-slate-400">KPI này chưa có nhiệm vụ chi tiết.</p>
+                @endforelse
+            </div>
+        </div>
+
         {{-- Danh sách mục tiêu đã giao cho nhân viên --}}
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="manager-panel">
             <div class="px-6 py-5 border-b border-slate-100">
                 <h3 class="font-semibold text-slate-800">
                     Các mục tiêu đã giao cho nhân viên ({{ $assignment->employeeKpis->count() }})
@@ -116,7 +142,7 @@
                                             <span>{{ $progress }}%</span>
                                         </div>
                                         <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                                            <div class="h-full bg-violet-500 rounded-full" style="width: {{ $progress }}%"></div>
+                                            <div class="h-full bg-teal-500 rounded-full" style="width: {{ $progress }}%"></div>
                                         </div>
                                     </div>
                                 </td>
@@ -151,4 +177,4 @@
         </div>
 
     </div>
-</x-staff-layout>
+</x-manager-layout>

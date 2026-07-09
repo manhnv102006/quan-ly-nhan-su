@@ -57,7 +57,6 @@
                 'label' => 'Quản lý KPI',
                 'icon' => 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z',
                 'children' => [
-                    ['route' => 'admin.kpis.index', 'label' => 'Danh sách KPI'],
                     ['route' => 'admin.kpi-assignments.index', 'label' => 'Giao KPI cho Manager'],
                 ],
             ],
@@ -74,29 +73,49 @@
     } else {
         $menuItems = [];
     }
+
+    if ($user?->isAdmin()) {
+        $menuItems = app(\App\Services\AdminPendingApprovalService::class)->applyBadgesToMenuItems($menuItems);
+    }
 @endphp
 
 @foreach ($menuItems as $item)
     @continue(!Route::has($item['route']))
 
+    @php
+        $isActive = request()->routeIs($item['match'] ?? $item['route']);
+    @endphp
+
     <div>
         <a href="{{ route($item['route']) }}"
-           class="admin-menu-item {{ request()->routeIs($item['match'] ?? $item['route']) ? 'admin-menu-item-active' : 'admin-menu-item-inactive' }}">
-            <span class="flex items-center justify-center w-8 h-8 rounded-lg shrink-0">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+           class="admin-menu-item group {{ $isActive ? 'admin-menu-item-active' : 'admin-menu-item-inactive' }}">
+            <span class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $isActive ? 'bg-white/15' : 'bg-slate-100 text-slate-500 group-hover:bg-violet-100' }}">
+                <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}" />
                 </svg>
+                @if (! empty($item['badge']) && $item['badge'] > 0)
+                    <span class="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white"></span>
+                @endif
             </span>
-            <span class="truncate">{{ $item['label'] }}</span>
+            <span class="flex min-w-0 flex-1 items-center justify-between gap-2">
+                <span class="truncate">{{ $item['label'] }}</span>
+                @if (! empty($item['badge']) && $item['badge'] > 0)
+                    <x-nav-badge :count="$item['badge']" />
+                @endif
+            </span>
         </a>
 
         @if(isset($item['children']))
-            <div class="ml-10 mt-2 space-y-1">
+            <div class="ml-5 mt-2 space-y-1 border-l border-slate-200/80 pl-5">
                 @foreach($item['children'] as $child)
                     @if(Route::has($child['route']))
+                        @php $childActive = request()->routeIs($child['route']); @endphp
                         <a href="{{ route($child['route']) }}"
-                           class="block px-3 py-2 text-sm rounded-lg text-slate-600 hover:bg-violet-50 hover:text-violet-600">
-                            • {{ $child['label'] }}
+                           class="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm font-medium transition {{ $childActive ? 'bg-violet-50 text-violet-700' : 'text-slate-500 hover:bg-violet-50 hover:text-violet-700' }}">
+                            <span class="truncate">{{ $child['label'] }}</span>
+                            @if (! empty($child['badge']) && $child['badge'] > 0)
+                                <x-nav-badge :count="$child['badge']" />
+                            @endif
                         </a>
                     @endif
                 @endforeach

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ManagerDepartmentSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -17,10 +18,29 @@ use Illuminate\View\View;
 
 class AccountController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $filters = [
+            'search' => trim((string) $request->input('search', '')),
+            'role_id' => (string) $request->input('role_id', ''),
+            'status' => (string) $request->input('status', ''),
+            'verified' => (string) $request->input('verified', ''),
+        ];
+
         $users = User::query()
             ->with('role')
+            ->when($filters['search'] !== '', function ($query) use ($filters) {
+                $search = $filters['search'];
+                $query->where(function ($q) use ($search) {
+                    $q->where('username', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->when($filters['role_id'] !== '', fn ($q) => $q->where('role_id', $filters['role_id']))
+            ->when($filters['status'] !== '', fn ($q) => $q->where('status', $filters['status']))
+            ->when($filters['verified'] === 'yes', fn ($q) => $q->whereNotNull('email_verified_at'))
+            ->when($filters['verified'] === 'no', fn ($q) => $q->whereNull('email_verified_at'))
             ->orderByDesc('created_at')
             ->paginate(10)
             ->withQueryString();
@@ -32,7 +52,9 @@ class AccountController extends Controller
             'trashed' => User::onlyTrashed()->count(),
         ];
 
-        return view('admin.accounts.index', compact('users', 'stats'));
+        $roles = Role::query()->orderBy('id')->get();
+
+        return view('admin.accounts.index', compact('users', 'stats', 'filters', 'roles'));
     }
 
     public function create(): View
@@ -86,10 +108,7 @@ class AccountController extends Controller
         $user->load(['role', 'employee.department', 'employee.position']);
 
         $availableEmployees = Employee::query()
-            ->where(function ($query) {
-                $query->whereNull('user_id')
-                    ->orWhereNotIn('user_id', User::query()->select('id'));
-            })
+            ->withoutLinkedAccount()
             ->orderBy('full_name')
             ->get(['id', 'employee_code', 'full_name', 'email']);
 
@@ -326,16 +345,16 @@ class AccountController extends Controller
         ]);
 
         $employee = Employee::query()->findOrFail($validated['employee_id']);
-        $employee->clearStaleUserLink();
-        $employee->refresh();
 
-        if ($employee->hasLinkedAccount()) {
+        if (! Employee::query()->withoutLinkedAccount()->whereKey($employee->id)->exists()) {
             return redirect()
                 ->route('admin.accounts.show', $user)
                 ->with('error', 'Nhân viên này đã được liên kết với tài khoản khác.');
         }
 
         $employee->update(['user_id' => $user->id]);
+
+        app(ManagerDepartmentSyncService::class)->syncAfterEmployeeSaved($employee->fresh());
 
         return redirect()
             ->route('admin.accounts.show', $user)

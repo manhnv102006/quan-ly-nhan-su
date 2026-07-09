@@ -66,7 +66,7 @@ class KPIController extends Controller
         $data = $request->validated();
 
         $departmentIds = $data['departments'];
-        unset($data['departments']);
+        unset($data['departments'], $data['tasks']);
 
         // Giữ department_id (phòng ban chính) để tương thích ngược
         $data['department_id'] = $departmentIds[0];
@@ -79,6 +79,7 @@ class KPIController extends Controller
         $kpi->update(['code' => 'KPI' . str_pad((string) $kpi->id, 4, '0', STR_PAD_LEFT)]);
 
         $kpi->departments()->sync($departmentIds);
+        $this->syncTasks($kpi, $request->cleanedTasks());
 
         return redirect()
             ->route('admin.kpis.index')
@@ -98,7 +99,7 @@ class KPIController extends Controller
      */
     public function edit($id)
     {
-        $kpi = KPI::with('departments')->findOrFail($id);
+        $kpi = KPI::with('departments', 'tasks')->findOrFail($id);
         $departments = Department::all();
         $selectedDepartments = $kpi->departments->pluck('id')->all();
 
@@ -115,7 +116,7 @@ class KPIController extends Controller
         $data = $request->validated();
 
         $departmentIds = $data['departments'];
-        unset($data['departments']);
+        unset($data['departments'], $data['tasks']);
 
         $data['department_id'] = $departmentIds[0];
         $data['max_score'] = $data['max_score'] ?? 100;
@@ -124,10 +125,25 @@ class KPIController extends Controller
 
         $kpi->update($data);
         $kpi->departments()->sync($departmentIds);
+        $this->syncTasks($kpi, $request->cleanedTasks());
 
         return redirect()
             ->route('admin.kpis.index')
             ->with('success', 'Cập nhật KPI thành công');
+    }
+
+    /**
+     * Đồng bộ danh sách nhiệm vụ của KPI: xoá hết cũ và tạo lại theo dữ liệu mới.
+     *
+     * @param  array<int, array<string, mixed>>  $tasks
+     */
+    private function syncTasks(KPI $kpi, array $tasks): void
+    {
+        $kpi->tasks()->delete();
+
+        if (! empty($tasks)) {
+            $kpi->tasks()->createMany($tasks);
+        }
     }
 
     /**

@@ -10,13 +10,19 @@
 
 <section class="space-y-4">
     <div>
-        <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-indigo-600">Theo phòng ban</p>
-        <h2 class="mt-1 text-lg font-bold text-slate-800">Bấm vào phòng ban để xem chi tiết</h2>
+        <p class="admin-kicker">Theo phòng ban</p>
+        <h2 class="mt-1 text-lg font-bold text-slate-900">Bấm vào phòng ban để xem chi tiết</h2>
     </div>
 
     @if ($departmentSummaries->isEmpty())
-        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center text-sm text-slate-500">
-            Chưa có phòng ban nào.
+        <div class="admin-empty-state rounded-[1.5rem] border border-dashed border-slate-200 bg-white/70">
+            <div class="admin-empty-icon">
+                <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75" />
+                </svg>
+            </div>
+            <p class="admin-empty-title">Chưa có phòng ban nào</p>
+            <p class="admin-empty-text">Dữ liệu sẽ hiển thị tại đây sau khi có phòng ban.</p>
         </div>
     @else
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -27,13 +33,16 @@
                     $url = route($routeName, array_merge($routeParams, ['department' => $dept->id]));
                 @endphp
                 <a href="{{ $url }}"
-                   class="group block rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition hover:border-violet-300 hover:shadow-md hover:-translate-y-0.5">
+                   class="group block overflow-hidden rounded-[1.5rem] border border-white/80 bg-white/85 p-5 shadow-sm shadow-slate-200/60 backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-violet-200 hover:bg-white hover:shadow-xl hover:shadow-violet-200/30">
                     <div class="flex items-start justify-between gap-3">
-                        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white shadow-sm">
+                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-500 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition group-hover:scale-105">
                             {{ strtoupper(mb_substr($dept->department_name, 0, 1)) }}
                         </div>
-                        <span class="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-600 group-hover:bg-violet-100">
-                            Xem chi tiết →
+                        <span class="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-600 transition group-hover:bg-violet-100">
+                            Xem
+                            <svg class="h-3 w-3 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5 15.75 12l-7.5 7.5" />
+                            </svg>
                         </span>
                     </div>
 
@@ -62,7 +71,7 @@
                                         $val = $formatters[$key]($val);
                                     }
                                 @endphp
-                                <div class="flex justify-between items-center py-0.5 text-xs">
+                                <div class="flex items-center justify-between rounded-xl px-2 py-1 text-xs transition group-hover:bg-slate-50">
                                     <span class="text-slate-500">{{ $statLabels[$i] ?? $key }}</span>
                                     <span class="{{ $textClass }}">{{ $val }}</span>
                                 </div>
@@ -111,7 +120,7 @@
                                         $val = $formatters[$key]($val);
                                     }
                                 @endphp
-                                <div class="rounded-xl {{ $bgClass }} px-2 py-2.5 flex flex-col justify-center items-center min-h-[64px]">
+                                <div class="flex min-h-[64px] flex-col items-center justify-center rounded-2xl {{ $bgClass }} px-2 py-2.5 ring-1 ring-white/70">
                                     <p class="text-xs text-slate-500 mb-1 font-medium">{{ $statLabels[$i] ?? $key }}</p>
                                     <p class="{{ $key === 'status_label' ? 'text-sm font-bold' : 'text-xl font-extrabold' }} {{ $textClass }}">{{ $val }}</p>
                                 </div>

@@ -6,7 +6,7 @@
             <div>
                 <h2 class="text-2xl font-bold text-slate-800">Danh sách kỳ lương</h2>
                 <p class="text-sm text-slate-500 mt-1">
-                    Tổng cộng {{ $stats['total'] }} kỳ lương
+                    Năm {{ $selectedYear }} · {{ $stats['total'] }}/12 kỳ đã tạo
                 </p>
             </div>
 
@@ -23,10 +23,15 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                <p class="text-slate-500 text-xs font-medium">Tổng kỳ lương</p>
-                <h3 class="text-2xl font-bold mt-1">{{ $stats['total'] }}</h3>
+                <p class="text-slate-500 text-xs font-medium">Đã tạo / 12 tháng</p>
+                <h3 class="text-2xl font-bold mt-1">{{ $stats['total'] }}/12</h3>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-xs font-medium">Chưa tạo</p>
+                <h3 class="text-2xl font-bold mt-1 text-slate-400">{{ $stats['missing'] }}</h3>
             </div>
 
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
@@ -56,8 +61,22 @@
         </div>
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="px-6 py-5 border-b border-slate-100">
-                <h3 class="font-semibold text-slate-800">Danh sách kỳ lương</h3>
+            <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h3 class="font-semibold text-slate-800">Danh sách kỳ lương theo tháng</h3>
+                    <p class="text-xs text-slate-500 mt-1">Hiển thị đủ 12 tháng của năm {{ $selectedYear }}</p>
+                </div>
+
+                <form action="{{ route('admin.payroll-periods.index') }}" method="GET" class="flex items-center gap-3">
+                    <label for="year" class="text-sm font-semibold text-slate-600">Lọc theo năm</label>
+                    <select id="year" name="year"
+                            onchange="this.form.submit()"
+                            class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
+                        @foreach ($availableYears as $year)
+                            <option value="{{ $year }}" @selected($year == $selectedYear)>Năm {{ $year }}</option>
+                        @endforeach
+                    </select>
+                </form>
             </div>
 
             <div class="overflow-x-auto">
@@ -77,103 +96,121 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($periods as $period)
-                            <tr class="border-t border-slate-100 hover:bg-slate-50 transition">
-                                <td class="px-6 py-4 text-slate-600">{{ ($periods->currentPage() - 1) * $periods->perPage() + $loop->iteration }}</td>
-                                <td class="px-6 py-4 text-slate-600 font-semibold">BL{{ str_pad($period->id, 6, '0', STR_PAD_LEFT) }}</td>
+                        @foreach ($monthSlots as $slot)
+                            @php($period = $slot['period'])
+                            <tr class="border-t border-slate-100 hover:bg-slate-50 transition {{ $period ? '' : 'bg-slate-50/40' }}">
+                                <td class="px-6 py-4 text-slate-600">{{ str_pad($slot['month'], 2, '0', STR_PAD_LEFT) }}</td>
+                                <td class="px-6 py-4 text-slate-600 font-semibold">
+                                    @if ($period)
+                                        BL{{ str_pad($period->id, 6, '0', STR_PAD_LEFT) }}
+                                    @else
+                                        <span class="text-slate-400">—</span>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 font-semibold text-slate-800">
-                                    {{ $period->name }}
+                                    {{ $slot['name'] }}
                                 </td>
                                 <td class="px-6 py-4 text-slate-600">Hàng tháng</td>
                                 <td class="px-6 py-4 text-slate-600">
-                                    {{ $period->start_date?->format('d/m/Y') }} - {{ $period->end_date?->format('d/m/Y') }}
+                                    {{ $slot['work_range'] }}
                                 </td>
                                 <td class="px-6 py-4 text-right font-semibold text-slate-900">
-                                    {{ number_format($period->payrolls_sum_total_salary ?? 0, 0, ',', '.') }} ₫
+                                    @if ($period)
+                                        {{ number_format($period->payrolls_sum_total_salary ?? 0, 0, ',', '.') }} ₫
+                                    @else
+                                        <span class="text-slate-400">—</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 text-right font-semibold text-emerald-600">
-                                    {{ number_format($period->paid_salary_sum ?? 0, 0, ',', '.') }} ₫
+                                    @if ($period)
+                                        {{ number_format($period->paid_salary_sum ?? 0, 0, ',', '.') }} ₫
+                                    @else
+                                        <span class="text-slate-400">—</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 text-right font-semibold text-rose-600">
-                                    {{ number_format($period->unpaid_salary_sum ?? 0, 0, ',', '.') }} ₫
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    @if ($period->status === 'open')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">Tạm tính</span>
-                                    @elseif ($period->status === 'calculated')
-                                        @if ($period->is_all_calculated)
-                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-800">Đã tính xong</span>
-                                        @else
-                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Chưa tính xong</span>
-                                        @endif
-                                    @elseif ($period->status === 'approved')
-                                        @if ($period->is_all_approved)
-                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-700">Đã duyệt xong</span>
-                                        @else
-                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-fuchsia-100 text-fuchsia-700">Chưa duyệt xong</span>
-                                        @endif
-                                    @elseif ($period->status === 'paid')
-                                        @if ($period->is_all_paid)
-                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Đã chi trả</span>
-                                        @else
-                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">Chưa chi trả xong</span>
-                                        @endif
+                                    @if ($period)
+                                        {{ number_format($period->unpaid_salary_sum ?? 0, 0, ',', '.') }} ₫
                                     @else
-                                        @if ($period->is_all_closed)
-                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Đã đóng</span>
-                                        @else
-                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-600">Chưa đóng xong</span>
-                                        @endif
+                                        <span class="text-slate-400">—</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <div class="flex justify-center items-center gap-2">
-                                        <a href="{{ route('admin.payroll-periods.show', $period) }}"
-                                           class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-semibold transition"
-                                           title="Xem chi tiết">
-                                            👁️ Xem chi tiết
-                                        </a>
+                                    @if ($period)
+                                        @if ($period->status === 'open')
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">Tạm tính</span>
+                                        @elseif ($period->status === 'calculated')
+                                            @if ($period->is_all_calculated)
+                                                <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-800">Đã tính xong</span>
+                                            @else
+                                                <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Chưa tính xong</span>
+                                            @endif
+                                        @elseif ($period->status === 'approved')
+                                            @if ($period->is_all_approved)
+                                                <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-700">Đã duyệt xong</span>
+                                            @else
+                                                <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-fuchsia-100 text-fuchsia-700">Chưa duyệt xong</span>
+                                            @endif
+                                        @elseif ($period->status === 'paid')
+                                            @if ($period->is_all_paid)
+                                                <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Đã chi trả</span>
+                                            @else
+                                                <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">Chưa chi trả xong</span>
+                                            @endif
+                                        @else
+                                            @if ($period->is_all_closed)
+                                                <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Đã đóng</span>
+                                            @else
+                                                <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-600">Chưa đóng xong</span>
+                                            @endif
+                                        @endif
+                                    @else
+                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500">Chưa tạo</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    @if ($period)
+                                        <div class="flex justify-center items-center gap-2">
+                                            <a href="{{ route('admin.payroll-periods.show', $period) }}"
+                                               class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-semibold transition"
+                                               title="Xem chi tiết">
+                                                👁️ Xem chi tiết
+                                            </a>
 
-                                        <a href="{{ route('admin.payroll-periods.edit', $period) }}"
-                                           class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 text-xs font-semibold transition"
-                                           title="Chỉnh sửa kỳ lương">
-                                            ✏️ Chỉnh sửa
-                                        </a>
+                                            <a href="{{ route('admin.payroll-periods.edit', $period) }}"
+                                               class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 text-xs font-semibold transition"
+                                               title="Chỉnh sửa kỳ lương">
+                                                ✏️ Chỉnh sửa
+                                            </a>
 
-                                        <form action="{{ route('admin.payroll-periods.destroy', $period) }}"
-                                              method="POST"
-                                              id="delete-form-{{ $period->id }}"
-                                              class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="button"
-                                                    data-id="{{ $period->id }}"
-                                                    data-name="{{ $period->name }}"
-                                                    onclick="triggerDelete(this)"
-                                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition"
-                                                    title="Xóa kỳ lương">
-                                                🗑️ Xóa
-                                            </button>
-                                        </form>
-                                    </div>
+                                            <form action="{{ route('admin.payroll-periods.destroy', $period) }}"
+                                                  method="POST"
+                                                  id="delete-form-{{ $period->id }}"
+                                                  class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button"
+                                                        data-id="{{ $period->id }}"
+                                                        data-name="{{ $period->name }}"
+                                                        onclick="triggerDelete(this)"
+                                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition"
+                                                        title="Xóa kỳ lương">
+                                                    🗑️ Xóa
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @else
+                                        <a href="{{ route('admin.payroll-periods.create', ['year' => $selectedYear, 'month' => $slot['month']]) }}"
+                                           class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 text-xs font-semibold transition">
+                                            + Tạo kỳ lương
+                                        </a>
+                                    @endif
                                 </td>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="10" class="text-center py-12 text-slate-400">
-                                    Chưa có kỳ lương nào được tạo
-                                </td>
-                            </tr>
-                        @endforelse
+                        @endforeach
                     </tbody>
                 </table>
             </div>
-
-            @if ($periods->hasPages())
-                <div class="px-6 py-4 border-t border-slate-100">
-                    {{ $periods->links() }}
-                </div>
-            @endif
         </div>
 
     </div>

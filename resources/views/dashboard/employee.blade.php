@@ -1,5 +1,4 @@
 @php
-    $navigation = \App\Support\EmployeeNavigation::items();
     $firstName = collect(explode(' ', trim(Auth::user()->name)))->filter()->first() ?? Auth::user()->name;
     $employeeName = $employeeProfile?->full_name ?? Auth::user()->name;
     $attendanceLabels = ['present' => 'Đúng giờ', 'late' => 'Đi muộn', 'absent' => 'Vắng mặt', 'leave' => 'Nghỉ phép'];
@@ -29,8 +28,9 @@
     $completionRate = ($kpiSummary->total ?? 0) > 0 ? round((($kpiSummary->completed ?? 0) / max($kpiSummary->total, 1)) * 100) : 0;
 @endphp
 
-<x-staff-layout title="Employee Dashboard" subtitle="Chấm công, KPI, lương và thông báo đều được gom về một nơi." role="employee" :navigation="$navigation">
-    <section class="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-sky-600 via-blue-600 to-indigo-600 p-6 text-white shadow-xl shadow-sky-500/20 sm:p-8">
+<x-employee-layout title="Bảng điều khiển nhân viên" subtitle="Chấm công, KPI, lương và thông báo đều được gom về một nơi.">
+    <div class="employee-page">
+    <section class="employee-hero">
         <div class="absolute -right-16 top-0 h-48 w-48 rounded-full bg-white/10 blur-3xl"></div>
         <div class="absolute bottom-0 left-0 h-40 w-40 -translate-x-1/4 translate-y-1/4 rounded-full bg-sky-300/20 blur-3xl"></div>
         <div class="relative flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
@@ -52,7 +52,7 @@
     </section>
 
     @if (! $employeeProfile)
-        <div class="staff-card mb-8 border border-amber-100 bg-amber-50/90 p-5">
+        <div class="employee-card mb-8 border border-amber-100 bg-amber-50/90 p-5">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div><h3 class="text-base font-bold text-amber-800">Tài khoản employee chưa liên kết hồ sơ nhân sự</h3><p class="mt-1 text-sm text-amber-700">Để dashboard hiển thị đầy đủ chấm công, KPI và lương, tài khoản này cần được gắn với bản ghi trong bảng `employees`.</p></div>
                 <a href="{{ route('profile.edit') }}" class="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-700">Cập nhật hồ sơ</a>
@@ -61,16 +61,16 @@
     @endif
 
     <section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <div class="staff-stat-card border border-emerald-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-700">Month</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format((int) ($attendanceSummary->shifts_completed ?? 0)) }}</p><p class="mt-1 text-sm font-medium text-slate-500">Ca làm tháng này</p></div>
-        <div class="staff-stat-card border border-cyan-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-600 text-white shadow-lg shadow-cyan-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0l3-3m-3 3L9 9m12 3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><span class="rounded-full bg-cyan-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-700">Hours</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format((float) ($attendanceSummary->work_hours ?? 0), 1) }}</p><p class="mt-1 text-sm font-medium text-slate-500">Tổng giờ công</p></div>
-        <div class="staff-stat-card border border-amber-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zM12 16.5h.008v.008H12V16.5z" /></svg></div><span class="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-amber-700">Leave</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format((int) ($leaveSummary->pending ?? 0)) }}</p><p class="mt-1 text-sm font-medium text-slate-500">Đơn nghỉ chờ phản hồi</p></div>
-        <div class="staff-stat-card border border-sky-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-500 text-white shadow-lg shadow-sky-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg></div><span class="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-sky-700">KPI</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ $completionRate }}%</p><p class="mt-1 text-sm font-medium text-slate-500">KPI đã hoàn thành</p></div>
-        <div class="staff-stat-card border border-indigo-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg></div><span class="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-indigo-700">Inbox</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format($unreadNotifications) }}</p><p class="mt-1 text-sm font-medium text-slate-500">Thông báo chưa đọc</p></div>
+        <div class="employee-stat-card border border-emerald-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-700">Month</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format((int) ($attendanceSummary->shifts_completed ?? 0)) }}</p><p class="mt-1 text-sm font-medium text-slate-500">Ca làm tháng này</p></div>
+        <div class="employee-stat-card border border-cyan-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-600 text-white shadow-lg shadow-cyan-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0l3-3m-3 3L9 9m12 3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><span class="rounded-full bg-cyan-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-700">Hours</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format((float) ($attendanceSummary->work_hours ?? 0), 1) }}</p><p class="mt-1 text-sm font-medium text-slate-500">Tổng giờ công</p></div>
+        <div class="employee-stat-card border border-amber-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zM12 16.5h.008v.008H12V16.5z" /></svg></div><span class="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-amber-700">Leave</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format((int) ($leaveSummary->pending ?? 0)) }}</p><p class="mt-1 text-sm font-medium text-slate-500">Đơn nghỉ chờ phản hồi</p></div>
+        <div class="employee-stat-card border border-sky-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-500 text-white shadow-lg shadow-sky-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg></div><span class="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-sky-700">KPI</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ $completionRate }}%</p><p class="mt-1 text-sm font-medium text-slate-500">KPI đã hoàn thành</p></div>
+        <div class="employee-stat-card border border-indigo-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg></div><span class="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-indigo-700">Inbox</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format($unreadNotifications) }}</p><p class="mt-1 text-sm font-medium text-slate-500">Thông báo chưa đọc</p></div>
     </section>
 
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div class="space-y-6 xl:col-span-2">
-            <section id="attendance" class="staff-card overflow-hidden">
+            <section id="attendance" class="employee-panel overflow-hidden">
                 <div class="border-b border-slate-100 px-6 py-5 sm:px-7"><p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-600">Attendance</p><h3 class="mt-2 text-2xl font-bold tracking-tight text-slate-800">Lịch sử chấm công gần đây</h3><p class="mt-1 text-sm text-slate-500">Theo dõi ca làm, thời gian vào ra và trạng thái công gần nhất.</p></div>
                 <div class="px-6 py-5 sm:px-7">
                     @if ($attendanceHistory->isEmpty())
@@ -90,7 +90,7 @@
                 </div>
             </section>
 
-            <section id="kpi" class="staff-card overflow-hidden">
+            <section id="kpi" class="employee-panel overflow-hidden">
                 <div class="border-b border-slate-100 px-6 py-5 sm:px-7"><div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-600">KPI tracker</p><h3 class="mt-2 text-2xl font-bold tracking-tight text-slate-800">Tiến độ mục tiêu cá nhân</h3><p class="mt-1 text-sm text-slate-500">Xem mức độ hoàn thành và điểm số mới nhất cho từng KPI.</p></div><div class="rounded-3xl bg-slate-50 px-4 py-3 text-right"><p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Tiến độ trung bình</p><p class="text-2xl font-bold text-slate-800">{{ round($kpiSummary->average_progress ?? 0) }}%</p></div></div></div>
                 <div class="px-6 py-5 sm:px-7">
                     @if ($kpiItems->isEmpty())
@@ -119,7 +119,7 @@
         </div>
 
         <div class="space-y-6">
-            <section id="payroll" class="staff-card overflow-hidden">
+            <section id="payroll" class="employee-panel overflow-hidden">
                 <div class="bg-gradient-to-br from-sky-600 via-blue-600 to-indigo-600 px-6 py-6 text-white"><p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-100">Payroll snapshot</p><h3 class="mt-2 text-2xl font-bold">Bảng lương gần nhất</h3>@if ($latestPayroll)<p class="mt-3 text-4xl font-extrabold tracking-tight">{{ number_format((float) $latestPayroll->total_salary, 0, ',', '.') }}đ</p><p class="mt-2 text-sm text-sky-50/85">Kỳ lương {{ str_pad((string) $latestPayroll->month, 2, '0', STR_PAD_LEFT) }}/{{ $latestPayroll->year }}</p>@else<p class="mt-3 text-lg font-semibold text-sky-50">Chưa có dữ liệu lương</p><p class="mt-2 text-sm text-sky-50/85">Phiếu lương sẽ xuất hiện tại đây sau khi hệ thống tính lương.</p>@endif</div>
                 <div class="px-6 py-5">
                     @if ($latestPayroll)
@@ -139,7 +139,7 @@
                 </div>
             </section>
 
-            <section class="staff-card p-6">
+            <section class="employee-panel p-6">
                 <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Hồ sơ cá nhân</p><h3 class="mt-2 text-xl font-bold text-slate-800">Thông tin nhanh</h3>
                 <div class="mt-6 space-y-4">
                     <div class="rounded-3xl bg-slate-50 p-4"><p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Họ tên</p><p class="mt-2 text-base font-bold text-slate-800">{{ $employeeName }}</p></div>
@@ -149,7 +149,7 @@
                 </div>
             </section>
 
-            <section id="notices" class="staff-card p-6">
+            <section id="notices" class="employee-panel p-6">
                 <div class="flex items-start justify-between gap-3"><div><p class="text-[11px] font-bold uppercase tracking-[0.24em] text-indigo-600">Notifications</p><h3 class="mt-2 text-xl font-bold text-slate-800">Thông báo mới</h3><p class="mt-1 text-sm text-slate-500">Những cập nhật gần nhất dành cho bạn.</p></div><span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">{{ number_format($unreadNotifications) }} chưa đọc</span></div>
                 @if ($notifications->isEmpty())
                     <div class="mt-6 rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center"><p class="text-sm font-semibold text-slate-700">Hiện chưa có thông báo nào.</p></div>
@@ -168,4 +168,4 @@
             </section>
         </div>
     </div>
-</x-staff-layout>
+</x-employee-layout>
