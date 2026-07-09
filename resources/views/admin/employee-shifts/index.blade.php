@@ -33,14 +33,14 @@
                         @forelse ($employeeShifts as $item)
                             <tr class="border-b border-slate-100 hover:bg-slate-50/50">
                                 <td class="p-4">
-                                    <p class="font-medium text-slate-800">{{ $item->employee->full_name }}</p>
-                                    <p class="text-xs text-slate-500">{{ $item->employee->employee_code }}</p>
+                                    <p class="font-medium text-slate-800">{{ $item->employee?->full_name ?? '—' }}</p>
+                                    <p class="text-xs text-slate-500">{{ $item->employee?->employee_code ?? '—' }}</p>
                                 </td>
                                 <td class="p-4 text-slate-600">
-                                    {{ $item->employee->department?->department_name ?? '—' }}
+                                    {{ $item->employee?->department?->department_name ?? '—' }}
                                 </td>
                                 <td class="p-4 text-slate-700">
-                                    {{ $item->shift->shift_name }}
+                                    {{ $item->shift?->shift_name ?? '—' }}
                                 </td>
                                 <td class="p-4 text-slate-700">
                                     {{ $item->work_date->format('d/m/Y') }}

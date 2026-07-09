@@ -1,5 +1,4 @@
 @php
-    $navigation = \App\Support\ManagerNavigation::items();
     $statusClasses = [
         'pending' => 'bg-amber-50 text-amber-700 border-amber-100',
         'approved' => 'bg-blue-50 text-blue-700 border-blue-100',
@@ -17,53 +16,28 @@
     ];
 @endphp
 
-<x-staff-layout
+<x-manager-layout
     title="Quản lý nghỉ phép"
     subtitle="Duyệt đơn nhân viên cấp dưới và quản lý đơn nghỉ phép cá nhân của bạn."
-    role="manager"
-    :navigation="$navigation"
 >
-    <div class="space-y-6">
-        <div class="flex flex-wrap items-start justify-between gap-4">
+    <div class="manager-page">
+        <div class="manager-page-header">
             <div>
-                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Nghỉ phép</p>
-                <h2 class="mt-1 text-2xl font-bold text-slate-800">Quản lý nghỉ phép</h2>
-                <p class="mt-1 text-sm text-slate-500">
+                <p class="manager-kicker">Nghỉ phép</p>
+                <h2 class="manager-title">Quản lý nghỉ phép</h2>
+                <p class="manager-subtitle">
                     Duyệt đơn của <span class="font-semibold text-slate-700">nhân viên</span>.
                     Đơn của bạn do <span class="font-semibold text-slate-700">Admin</span> phê duyệt.
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('employee.leave-requests') }}"
-                   class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
-                    Đơn của tôi
-                </a>
-                <a href="{{ route('employee.leave-requests.create') }}"
-                   class="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-violet-500/20 transition hover:bg-violet-700">
-                    Tạo đơn nghỉ phép
-                </a>
+                <a href="{{ route('employee.leave-requests') }}" class="manager-btn-secondary text-xs">Đơn của tôi</a>
+                <a href="{{ route('employee.leave-requests.create') }}" class="manager-btn-primary text-xs">Tạo đơn nghỉ phép</a>
             </div>
         </div>
 
-        @if (session('success'))
-            <div class="flex items-center gap-3 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4 shadow-sm">
-                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100">
-                    <svg class="h-4 w-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                    </svg>
-                </div>
-                <p class="text-sm font-medium text-violet-800">{{ session('success') }}</p>
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div class="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 shadow-sm">
-                <p class="text-sm font-medium text-rose-800">{{ session('error') }}</p>
-            </div>
-        @endif
-
         @if(!($managerLinked ?? true))
-            <div class="staff-card border border-amber-100 bg-amber-50/90 p-5">
+            <div class="manager-card border border-amber-100 bg-amber-50/90 p-5">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <h3 class="text-base font-bold text-amber-800">Chưa liên kết hồ sơ nhân viên</h3>
@@ -72,9 +46,8 @@
                             nên không thể tải danh sách đơn nghỉ phép cần duyệt.
                         </p>
                         <p class="mt-2 text-xs text-amber-600/90">
-                            Vui lòng liên hệ quản trị viên để gán <code class="rounded bg-amber-100 px-1">user_id</code>
-                            trên bảng nhân viên. Sau khi liên kết, hệ thống sẽ lấy đơn cấp dưới theo
-                            <code class="rounded bg-amber-100 px-1">manager_id</code> hoặc phòng ban được giao quản lý.
+                            Vui lòng liên hệ quản trị viên để gán <code class="rounded bg-amber-100 px-1">Trưởng phòng ban</code>
+                            trong mục Quản lý phòng ban. Chỉ quản lý được gán trưởng phòng mới nhận đơn nghỉ phép của nhân viên cùng phòng ban.
                         </p>
                     </div>
                     <a href="{{ route('profile.edit') }}" class="inline-flex shrink-0 items-center justify-center rounded-2xl bg-amber-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-700">
@@ -84,7 +57,7 @@
             </div>
         @else
             @if ($myLeaveStats)
-                <section class="staff-card border border-sky-100/80 bg-sky-50/40 p-5 sm:p-6">
+                <section class="manager-card border border-sky-100/80 bg-sky-50/40 p-5 sm:p-6">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-600">Đơn cá nhân</p>
@@ -111,7 +84,7 @@
             @endif
 
             <section class="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div class="staff-stat-card border border-amber-100/80 bg-white/90">
+                <div class="manager-stat-card border border-amber-100/80 bg-white/90">
                     <div class="flex items-start justify-between">
                         <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-200">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor">
@@ -124,20 +97,20 @@
                     <p class="mt-1 text-sm font-medium text-slate-500">Đơn nhân viên chờ duyệt</p>
                 </div>
 
-                <div class="staff-stat-card border border-violet-100/80 bg-white/90">
+                <div class="manager-stat-card border border-teal-100/80 bg-white/90">
                     <div class="flex items-start justify-between">
-                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-200">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-200">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
-                        <span class="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-violet-700">OK</span>
+                        <span class="rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-teal-700">OK</span>
                     </div>
                     <p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format($stats['approved']) }}</p>
                     <p class="mt-1 text-sm font-medium text-slate-500">Đã duyệt</p>
                 </div>
 
-                <div class="staff-stat-card border border-rose-100/80 bg-white/90">
+                <div class="manager-stat-card border border-rose-100/80 bg-white/90">
                     <div class="flex items-start justify-between">
                         <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-rose-200">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor">
@@ -151,9 +124,9 @@
                 </div>
             </section>
 
-            <section class="staff-card overflow-hidden">
+            <section class="manager-card overflow-hidden">
                 <div class="border-b border-slate-100 px-6 py-5 sm:px-7">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-600">Bộ lọc</p>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-teal-600">Bộ lọc</p>
                     <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-800">Tìm kiếm đơn nghỉ phép</h3>
                 </div>
                 <div class="px-6 py-5 sm:px-7">
@@ -162,17 +135,17 @@
                             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Tên nhân viên</label>
                             <input type="text" name="employee_name" value="{{ $filters['employee_name'] ?? '' }}"
                                    placeholder="Nhập tên nhân viên"
-                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-violet-500/30">
+                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-teal-500/30">
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Mã nhân viên</label>
                             <input type="text" name="employee_code" value="{{ $filters['employee_code'] ?? '' }}"
                                    placeholder="Nhập mã nhân viên"
-                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-violet-500/30">
+                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-teal-500/30">
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Loại nghỉ</label>
-                            <select name="leave_type" class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-violet-500/30">
+                            <select name="leave_type" class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-teal-500/30">
                                 <option value="">Tất cả</option>
                                 @foreach(\App\Models\LeaveRequest::LEAVE_TYPE_LABELS as $value => $label)
                                     <option value="{{ $value }}" @selected(($filters['leave_type'] ?? '') === $value)>{{ $label }}</option>
@@ -181,7 +154,7 @@
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Trạng thái</label>
-                            <select name="status" class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-violet-500/30">
+                            <select name="status" class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-teal-500/30">
                                 <option value="">Tất cả</option>
                                 <option value="pending" @selected(($filters['status'] ?? '') === 'pending')>Chờ duyệt</option>
                                 <option value="approved" @selected(($filters['status'] ?? '') === 'approved')>Đã duyệt</option>
@@ -191,15 +164,15 @@
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Nghỉ từ ngày</label>
                             <input type="date" name="start_from" value="{{ $filters['start_from'] ?? '' }}"
-                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-violet-500/30">
+                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-teal-500/30">
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Nghỉ đến ngày</label>
                             <input type="date" name="start_to" value="{{ $filters['start_to'] ?? '' }}"
-                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-violet-500/30">
+                                   class="w-full rounded-xl border-0 bg-slate-100/90 px-4 py-2.5 text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-teal-500/30">
                         </div>
                         <div class="flex flex-wrap items-end justify-end gap-2 md:col-span-2 xl:col-span-3">
-                            <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-violet-900/20 transition hover:bg-violet-700">
+                            <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-900/20 transition hover:bg-teal-700">
                                 Tìm kiếm
                             </button>
                             @if(collect($filters)->filter()->isNotEmpty())
@@ -212,9 +185,9 @@
                 </div>
             </section>
 
-            <section class="staff-card overflow-hidden">
+            <section class="manager-card overflow-hidden">
                 <div class="border-b border-slate-100 px-6 py-5 sm:px-7">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-indigo-600">Danh sách</p>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-600">Danh sách</p>
                     <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-800">Đơn nghỉ phép nhân viên</h3>
                     <p class="mt-1 text-xs text-slate-500">Chỉ hiển thị đơn của nhân viên thường thuộc quyền quản lý</p>
                 </div>
@@ -255,7 +228,7 @@
                                     </td>
                                     <td class="px-6 py-4 text-center">
                                         <a href="{{ route('manager.leave-requests.show', $item) }}"
-                                           class="inline-flex items-center rounded-lg border border-violet-100 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100">
+                                           class="inline-flex items-center rounded-lg border border-teal-100 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100">
                                             Chi tiết
                                         </a>
                                     </td>
@@ -284,4 +257,4 @@
             ])
         @endif
     </div>
-</x-staff-layout>
+</x-manager-layout>

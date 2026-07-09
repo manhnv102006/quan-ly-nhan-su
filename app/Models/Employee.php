@@ -148,6 +148,8 @@ class Employee extends Model
     }
 
     /**
+     * Các phòng ban mà nhân viên này được giao làm trưởng phòng.
+     *
      * @return list<int>
      */
     public static function managedDepartmentIdsFor(self $manager): array
@@ -160,10 +162,38 @@ class Employee extends Model
             ->all();
     }
 
+    /**
+
+     * Phòng ban mà quản lý được phép duyệt đơn cấp dưới.
+     *
+     * @return list<int>
+     */
+    public static function departmentIdsForManagerApproval(self $manager): array
+    {
+        $managedDepartmentIds = self::managedDepartmentIdsFor($manager);
+
+        if ($managedDepartmentIds !== []) {
+            return $managedDepartmentIds;
+        }
+
+        return $manager->department_id ? [(int) $manager->department_id] : [];
+    }
+
+    public function isInManagerDepartments(self $manager): bool
+    {
+        $departmentIds = self::departmentIdsForManagerApproval($manager);
+
+        return $departmentIds !== []
+            && in_array((int) $this->department_id, $departmentIds, true);
+    }
+
+    /**
+     * Nhân viên thuộc phòng ban do quản lý này phụ trách.
+     */
     public function isManagedBy(self $manager): bool
     {
-        if ($this->manager_id === $manager->id) {
-            return true;
+        if (! $this->department_id) {
+            return false;
         }
 
         $managedDepartmentIds = self::managedDepartmentIdsFor($manager);
@@ -179,25 +209,58 @@ class Employee extends Model
     {
         $managedDepartmentIds = self::managedDepartmentIdsFor($manager);
 
-        return $query->where(function (Builder $scope) use ($manager, $managedDepartmentIds) {
-            $scope->where('manager_id', $manager->id);
+        if ($managedDepartmentIds === []) {
+            return $query->whereRaw('0 = 1');
+        }
 
-            if ($managedDepartmentIds !== []) {
-                $scope->orWhereIn('department_id', $managedDepartmentIds);
-            }
-        });
+        return $query->whereIn('department_id', $managedDepartmentIds);
+    }
+
+    /**
+     * Nhân viên thường thuộc phòng ban quản lý (không gồm quản lý khác hoặc chính mình).
+     *
+     * @param  Builder<Employee>  $query
+     */
+    public function scopeForManagerDepartmentApproval(Builder $query, self $manager): Builder
+    {
+        $departmentIds = self::departmentIdsForManagerApproval($manager);
+
+        if ($departmentIds === []) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query
+            ->whereIn('department_id', $departmentIds)
+            ->where('id', '!=', $manager->id)
+            ->where(function (Builder $scope) {
+                $scope->whereDoesntHave('user')
+                    ->orWhereHas('user', fn (Builder $userQuery) => $userQuery->whereDoesntHave('role', fn ($roleQuery) => $roleQuery->where('name', 'manager')));
+            });
     }
 
     public function employeeShifts(): HasMany
     {
         return $this->hasMany(EmployeeShift::class);
     }
-   public function todayShift()
-{
-    return $this->employeeShifts()
-        ->whereDate('work_date', today())
-        ->with('shift')
-        ->first();
-}
 
+    /**
+     * Nhân viên chưa liên kết với tài khoản hợp lệ.
+     *
+     * @param  Builder<Employee>  $query
+     */
+    public function scopeWithoutLinkedAccount(Builder $query): Builder
+    {
+        return $query->where(function (Builder $scope) {
+            $scope->whereNull('user_id')
+                ->orWhereDoesntHave('user');
+        });
+    }
+
+    public function todayShift()
+    {
+        return $this->employeeShifts()
+            ->whereDate('work_date', today())
+            ->with('shift')
+            ->first();
+    }
 }
