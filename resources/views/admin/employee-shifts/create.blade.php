@@ -4,11 +4,17 @@
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-800">Gán ca làm</h2>
-                <p class="text-sm text-slate-500 mt-1">Gán ca theo ngày, tháng, năm hoặc khoảng thời gian — cho nhân viên, phòng ban hoặc toàn công ty.</p>
+                <p class="text-sm text-slate-500 mt-1">
+                    @if ($selectedShift)
+                        Gán ca <strong>{{ $selectedShift->shift_name }}</strong> cho nhân viên, phòng ban hoặc toàn công ty.
+                    @else
+                        Gán ca theo ngày, tháng, năm hoặc khoảng thời gian — cho nhân viên, phòng ban hoặc toàn công ty.
+                    @endif
+                </p>
             </div>
-            <a href="{{ route('admin.employee-shifts.index') }}"
+            <a href="{{ $selectedShift ? route('admin.shifts.index') : route('admin.employee-shifts.index') }}"
                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-medium hover:bg-slate-50 transition">
-                ← Danh sách gán ca
+                ← {{ $selectedShift ? 'Quản lý ca làm việc' : 'Danh sách gán ca' }}
             </a>
         </div>
 
@@ -167,17 +173,31 @@
                 {{-- Ca làm --}}
                 <div class="space-y-2">
                     <label for="shift_id" class="block text-xs font-semibold uppercase tracking-wider text-slate-400">3. Ca làm</label>
-                    <select id="shift_id" name="shift_id" required
-                            class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">
-                        <option value="">-- Chọn ca --</option>
-                        @foreach ($shifts as $shift)
-                            <option value="{{ $shift->id }}" @selected(old('shift_id') == $shift->id)>
-                                {{ $shift->shift_name }}
-                                ({{ $shift->start_time?->format('H:i') ?? substr((string) $shift->start_time, 0, 5) }}
-                                - {{ $shift->end_time?->format('H:i') ?? substr((string) $shift->end_time, 0, 5) }})
-                            </option>
-                        @endforeach
-                    </select>
+
+                    @if ($selectedShift)
+                        <input type="hidden" name="shift_id" value="{{ $selectedShift->id }}">
+                        <div class="rounded-2xl border border-violet-200 bg-violet-50/60 px-4 py-3">
+                            <p class="text-sm font-semibold text-violet-900">{{ $selectedShift->shift_name }}</p>
+                            <p class="text-xs text-violet-700 mt-0.5">
+                                {{ \Carbon\Carbon::parse($selectedShift->start_time)->format('H:i') }}
+                                -
+                                {{ \Carbon\Carbon::parse($selectedShift->end_time)->format('H:i') }}
+                            </p>
+                            <p class="text-xs text-violet-600 mt-2">Ca đã chọn từ danh sách quản lý ca làm việc.</p>
+                        </div>
+                    @else
+                        <select id="shift_id" name="shift_id" required
+                                class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">
+                            <option value="">-- Chọn ca --</option>
+                            @foreach ($shifts as $shift)
+                                <option value="{{ $shift->id }}" @selected(old('shift_id') == $shift->id)>
+                                    {{ $shift->shift_name }}
+                                    ({{ $shift->start_time?->format('H:i') ?? substr((string) $shift->start_time, 0, 5) }}
+                                    - {{ $shift->end_time?->format('H:i') ?? substr((string) $shift->end_time, 0, 5) }})
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
                 </div>
 
                 <div class="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3">
@@ -187,7 +207,7 @@
                 </div>
 
                 <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
-                    <a href="{{ route('admin.employee-shifts.index') }}"
+                    <a href="{{ $selectedShift ? route('admin.shifts.index') : route('admin.employee-shifts.index') }}"
                        class="inline-flex items-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
                         Hủy
                     </a>

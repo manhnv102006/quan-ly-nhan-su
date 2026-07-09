@@ -72,7 +72,8 @@
                                     Sửa
 
                                 </a>
-                                <a href="{{ route('admin.employee-shifts.index') }}" class="px-3 py-1 bg-blue-600 text-white rounded-lg">
+                                <a href="{{ route('admin.employee-shifts.create', ['shift_id' => $shift->id]) }}"
+                                    class="px-3 py-1 bg-blue-600 text-white rounded-lg">
                                     Gán ca làm
                                 </a>
 

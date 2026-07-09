@@ -425,10 +425,15 @@
             document.getElementById('modalOvertime').innerText = data.overtime_pay + ' ₫';
             
             // Tính tổng thu nhập
-            let basic = parseFloat(data.basic_salary.replace(/\./g, ''));
-            let allowance = parseFloat(data.allowance.replace(/\./g, ''));
-            let bonus = parseFloat(data.bonus.replace(/\./g, ''));
-            let overtime = parseFloat(data.overtime_pay.replace(/\./g, ''));
+            const num = (v) => parseFloat(String(v).replace(/\./g, '')) || 0;
+            let basic = num(data.basic_salary);
+            let allowance = num(data.allowance)
+                + num(data.allowance_meal)
+                + num(data.allowance_phone)
+                + num(data.allowance_fuel)
+                + num(data.allowance_position);
+            let bonus = num(data.bonus);
+            let overtime = num(data.overtime_pay);
             let totalIncome = basic + allowance + bonus + overtime;
             
             document.getElementById('modalTotalIncome').innerText = totalIncome.toLocaleString('vi-VN') + ' ₫';

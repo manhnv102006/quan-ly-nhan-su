@@ -20,66 +20,70 @@ class PayrollPeriodController extends Controller
 
     public function index(Request $request): View
     {
-        $periods = PayrollPeriod::query()
+        $selectedYear = (int) $request->input('year', now()->year);
+        $selectedYear = max(2020, min(2100, $selectedYear));
+
+        $dbYears = PayrollPeriod::query()
+            ->select('year')
+            ->distinct()
+            ->pluck('year')
+            ->map(fn ($year) => (int) $year);
+
+        $minYear = min($dbYears->min() ?? $selectedYear, now()->year - 2, $selectedYear);
+        $maxYear = max($dbYears->max() ?? $selectedYear, now()->year + 3, $selectedYear);
+
+        $availableYears = collect(range($maxYear, $minYear))->values();
+
+        $periodsByMonth = PayrollPeriod::query()
             ->withSum('payrolls', 'total_salary')
-            ->orderBy('year', 'desc')
-            ->orderBy('month', 'desc')
-            ->paginate(10)
-            ->withQueryString();
+            ->where('year', $selectedYear)
+            ->get()
+            ->keyBy('month');
 
         $totalDepartments = \App\Models\Department::where('status', 'active')
-            ->whereHas('employees', fn($q) => $q->where('status', 'active'))
+            ->whereHas('employees', fn ($q) => $q->where('status', 'active'))
             ->count();
 
-        foreach ($periods as $period) {
-            $payrolls = \App\Models\Payroll::query()
-                ->where('payroll_period_id', $period->id)
-                ->join('employees', 'payrolls.employee_id', '=', 'employees.id')
-                ->where('employees.status', 'active')
-                ->get(['employees.department_id', 'payrolls.status', 'payrolls.total_salary']);
+        $monthSlots = collect(range(1, 12))->map(function (int $month) use ($periodsByMonth, $selectedYear, $totalDepartments) {
+            $period = $periodsByMonth->get($month);
 
-            // 1. Tính toán tính lương
-            $calculatedDepts = $payrolls->pluck('department_id')->unique();
-            $period->is_all_calculated = ($totalDepartments > 0 && $calculatedDepts->count() >= $totalDepartments);
+            if ($period) {
+                $this->enrichPeriod($period, $totalDepartments);
+            }
 
-            // 2. Tính toán duyệt lương
-            $approvedDepts = $payrolls->groupBy('department_id')->filter(function ($group) {
-                return $group->every(fn($p) => in_array($p->status, ['approved', 'paid', 'closed']));
-            });
-            $period->is_all_approved = ($totalDepartments > 0 && $approvedDepts->count() >= $totalDepartments);
+            $workRange = $this->monthWorkRange($selectedYear, $month);
 
-            // 3. Tính toán chi trả
-            $paidDepts = $payrolls->groupBy('department_id')->filter(function ($group) {
-                return $group->every(fn($p) => in_array($p->status, ['paid', 'closed']));
-            });
-            $period->is_all_paid = ($totalDepartments > 0 && $paidDepts->count() >= $totalDepartments);
+            return [
+                'month' => $month,
+                'period' => $period,
+                'name' => $period?->name ?? "Kỳ lương tháng {$workRange['month_label']}/{$selectedYear}",
+                'work_range' => $period
+                    ? ($period->start_date?->format('d/m/Y') . ' - ' . $period->end_date?->format('d/m/Y'))
+                    : $workRange['label'],
+            ];
+        });
 
-            // 4. Tính toán đóng kỳ
-            $closedDepts = $payrolls->groupBy('department_id')->filter(function ($group) {
-                return $group->every(fn($p) => $p->status === 'closed');
-            });
-            $period->is_all_closed = ($totalDepartments > 0 && $closedDepts->count() >= $totalDepartments);
-
-            // 5. Tính toán tổng lương đã trả và còn cần trả
-            $period->paid_salary_sum = $payrolls->filter(fn($p) => in_array($p->status, ['paid', 'closed']))->sum('total_salary');
-            $period->unpaid_salary_sum = $payrolls->filter(fn($p) => !in_array($p->status, ['paid', 'closed']))->sum('total_salary');
-        }
+        $createdCount = PayrollPeriod::where('year', $selectedYear)->count();
 
         $stats = [
-            'total' => PayrollPeriod::count(),
-            'open' => PayrollPeriod::where('status', 'open')->count(),
-            'calculated' => PayrollPeriod::where('status', 'calculated')->count(),
-            'approved' => PayrollPeriod::where('status', 'approved')->count(),
-            'paid' => PayrollPeriod::where('status', 'paid')->count(),
-            'closed' => PayrollPeriod::where('status', 'closed')->count(),
+            'total' => $createdCount,
+            'missing' => 12 - $createdCount,
+            'open' => PayrollPeriod::where('year', $selectedYear)->where('status', 'open')->count(),
+            'calculated' => PayrollPeriod::where('year', $selectedYear)->where('status', 'calculated')->count(),
+            'approved' => PayrollPeriod::where('year', $selectedYear)->where('status', 'approved')->count(),
+            'paid' => PayrollPeriod::where('year', $selectedYear)->where('status', 'paid')->count(),
+            'closed' => PayrollPeriod::where('year', $selectedYear)->where('status', 'closed')->count(),
         ];
 
-        return view('admin.payroll-periods.index', compact('periods', 'stats'));
+        return view('admin.payroll-periods.index', compact('monthSlots', 'stats', 'selectedYear', 'availableYears'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('admin.payroll-periods.create');
+        return view('admin.payroll-periods.create', [
+            'prefillMonth' => $request->integer('month') ?: null,
+            'prefillYear' => $request->integer('year') ?: null,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -121,7 +125,7 @@ class PayrollPeriodController extends Controller
         PayrollPeriod::create($validated);
 
         return redirect()
-            ->route('admin.payroll-periods.index')
+            ->route('admin.payroll-periods.index', ['year' => $validated['year']])
             ->with('success', 'Thêm kỳ lương mới thành công.');
     }
 
@@ -242,7 +246,7 @@ class PayrollPeriodController extends Controller
         $payrollPeriod->delete();
 
         return redirect()
-            ->route('admin.payroll-periods.index')
+            ->route('admin.payroll-periods.index', ['year' => $payrollPeriod->year])
             ->with('success', 'Đã xóa mềm kỳ lương thành công. Bạn có thể khôi phục từ Thùng rác.');
     }
 
@@ -394,6 +398,47 @@ class PayrollPeriodController extends Controller
         $this->syncPeriodStatus($payrollPeriod);
 
         return redirect()->back()->with('success', 'Đã đóng bảng lương thành công.');
+    }
+
+    private function enrichPeriod(PayrollPeriod $period, int $totalDepartments): void
+    {
+        $payrolls = Payroll::query()
+            ->where('payroll_period_id', $period->id)
+            ->join('employees', 'payrolls.employee_id', '=', 'employees.id')
+            ->where('employees.status', 'active')
+            ->get(['employees.department_id', 'payrolls.status', 'payrolls.total_salary']);
+
+        $calculatedDepts = $payrolls->pluck('department_id')->unique();
+        $period->is_all_calculated = ($totalDepartments > 0 && $calculatedDepts->count() >= $totalDepartments);
+
+        $approvedDepts = $payrolls->groupBy('department_id')->filter(function ($group) {
+            return $group->every(fn ($p) => in_array($p->status, ['approved', 'paid', 'closed']));
+        });
+        $period->is_all_approved = ($totalDepartments > 0 && $approvedDepts->count() >= $totalDepartments);
+
+        $paidDepts = $payrolls->groupBy('department_id')->filter(function ($group) {
+            return $group->every(fn ($p) => in_array($p->status, ['paid', 'closed']));
+        });
+        $period->is_all_paid = ($totalDepartments > 0 && $paidDepts->count() >= $totalDepartments);
+
+        $closedDepts = $payrolls->groupBy('department_id')->filter(function ($group) {
+            return $group->every(fn ($p) => $p->status === 'closed');
+        });
+        $period->is_all_closed = ($totalDepartments > 0 && $closedDepts->count() >= $totalDepartments);
+
+        $period->paid_salary_sum = $payrolls->filter(fn ($p) => in_array($p->status, ['paid', 'closed']))->sum('total_salary');
+        $period->unpaid_salary_sum = $payrolls->filter(fn ($p) => ! in_array($p->status, ['paid', 'closed']))->sum('total_salary');
+    }
+
+    private function monthWorkRange(int $year, int $month): array
+    {
+        $start = \Carbon\Carbon::createFromDate($year, $month, 1);
+        $end = $start->copy()->endOfMonth();
+
+        return [
+            'month_label' => str_pad((string) $month, 2, '0', STR_PAD_LEFT),
+            'label' => $start->format('d/m/Y') . ' - ' . $end->format('d/m/Y'),
+        ];
     }
 
     private function syncPeriodStatus(PayrollPeriod $payrollPeriod): void

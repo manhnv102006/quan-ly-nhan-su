@@ -10,6 +10,7 @@ use App\Models\EmployeeShift;
 use App\Models\Shift;
 use App\Services\EmployeeShiftAssignmentService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class EmployeeShiftController extends Controller
@@ -21,17 +22,20 @@ class EmployeeShiftController extends Controller
 
     public function index(): View
     {
-        $employeeShifts = EmployeeShift::with([
-            'employee.department',
-            'shift',
-        ])
+        $employeeShifts = EmployeeShift::query()
+            ->with([
+                'employee.department',
+                'shift',
+            ])
+            ->whereHas('employee')
+            ->whereHas('shift')
             ->latest()
             ->paginate(10);
 
         return view('admin.employee-shifts.index', compact('employeeShifts'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $employees = Employee::query()
             ->where('status', 'active')
@@ -52,11 +56,17 @@ class EmployeeShiftController extends Controller
 
         $shifts = Shift::orderBy('start_time')->get();
 
+        $selectedShiftId = (int) old('shift_id', $request->integer('shift_id'));
+        $selectedShift = $selectedShiftId > 0
+            ? Shift::query()->find($selectedShiftId)
+            : null;
+
         return view('admin.employee-shifts.create', compact(
             'employees',
             'departments',
             'companyEmployeeCount',
             'shifts',
+            'selectedShift',
         ));
     }
 

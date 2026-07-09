@@ -120,6 +120,16 @@ class OvertimeRequest extends Model
     }
 
     /**
+     * Đơn tăng ca mà quản lý được phép duyệt: nhân viên thường trong phòng ban của mình.
+     *
+     * @param  Builder<OvertimeRequest>  $query
+     */
+    public function scopeForManagerApproval(Builder $query, Employee $manager): Builder
+    {
+        return $query->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->forManagerDepartmentApproval($manager));
+    }
+
+    /**
      * @param  Builder<OvertimeRequest>  $query
      */
     public function scopeFilter(Builder $query, array $filters): Builder

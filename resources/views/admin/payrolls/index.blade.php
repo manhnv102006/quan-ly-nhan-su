@@ -180,7 +180,7 @@
                                                     'period_name' => $payroll->payrollPeriod?->name ?: '—',
                                                     'period_range' => ($payroll->payrollPeriod?->start_date?->format('d/m/Y') ?: '') . ' - ' . ($payroll->payrollPeriod?->end_date?->format('d/m/Y') ?: ''),
                                                     'basic_salary' => number_format($payroll->basic_salary, 0, ',', '.'),
-                                                    'allowance' => number_format($payroll->allowance, 0, ',', '.'),
+                                                    'allowance' => number_format((float) $payroll->allowance + (float) $payroll->allowance_meal + (float) $payroll->allowance_phone + (float) $payroll->allowance_fuel + (float) $payroll->allowance_position, 0, ',', '.'),
                                                     'bonus' => number_format($payroll->bonus, 0, ',', '.'),
                                                     'overtime_hours' => $payroll->overtime_hours,
                                                     'overtime_pay' => number_format($payroll->overtime_pay, 0, ',', '.'),
