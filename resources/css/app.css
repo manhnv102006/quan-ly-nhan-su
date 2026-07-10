@@ -281,6 +281,89 @@
         @apply font-semibold text-slate-600;
     }
 
+    @media (max-width: 640px) {
+        .admin-shell {
+            background:
+                radial-gradient(ellipse 90% 38% at 20% -10%, rgba(139, 92, 246, 0.16), transparent),
+                linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+
+        .admin-page {
+            @apply space-y-4;
+        }
+
+        .admin-page-header {
+            @apply gap-3;
+        }
+
+        .admin-title {
+            @apply text-xl;
+        }
+
+        .admin-subtitle {
+            @apply text-xs;
+        }
+
+        .admin-card,
+        .admin-panel,
+        .admin-table-wrap,
+        .admin-body .card {
+            @apply rounded-2xl;
+        }
+
+        .admin-stat-card {
+            @apply p-4;
+        }
+
+        .admin-panel-header,
+        .admin-body .card-header {
+            @apply rounded-t-2xl px-4 py-3;
+        }
+
+        .admin-body main table:not(.no-admin-theme),
+        .admin-body main .table:not(.no-admin-theme) {
+            display: block;
+            width: 100%;
+            max-width: calc(100vw - 1.5rem);
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .admin-body main table:not(.no-admin-theme) th,
+        .admin-body main table:not(.no-admin-theme) td,
+        .admin-body .table > :not(caption) > * > * {
+            @apply px-3 py-3 text-xs;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            @apply px-3 py-3;
+        }
+
+        .admin-body main input:not([type='checkbox']):not([type='radio']),
+        .admin-body main select,
+        .admin-body main textarea,
+        .admin-field {
+            @apply min-h-[2.75rem] text-sm;
+        }
+
+        .admin-action,
+        .admin-btn-primary,
+        .admin-btn-secondary,
+        .admin-btn-violet {
+            @apply min-h-[2.5rem] px-3 py-2 text-xs;
+        }
+
+        .admin-body .pagination {
+            @apply flex-wrap justify-center;
+        }
+
+        .admin-body .page-link {
+            @apply px-3 py-2 text-xs;
+        }
+    }
+
     .staff-shell {
         @apply relative min-h-screen overflow-x-hidden;
     }
@@ -777,6 +860,92 @@
     .employee-body main .active > .page-link,
     .employee-body main .page-link.active {
         @apply border-sky-600 bg-sky-600 text-white;
+    }
+
+    @media (max-width: 640px) {
+        .employee-shell {
+            background:
+                radial-gradient(ellipse 90% 38% at 20% -10%, rgba(14, 165, 233, 0.16), transparent),
+                linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%);
+        }
+
+        .employee-page {
+            @apply space-y-4;
+        }
+
+        .employee-page-header {
+            @apply gap-3;
+        }
+
+        .employee-title {
+            @apply text-xl;
+        }
+
+        .employee-subtitle {
+            @apply text-xs;
+        }
+
+        .employee-hero {
+            @apply mb-5 rounded-2xl p-5;
+        }
+
+        .employee-card,
+        .employee-panel,
+        .employee-table-wrap,
+        .employee-body .card {
+            @apply rounded-2xl;
+        }
+
+        .employee-stat-card {
+            @apply p-4;
+        }
+
+        .employee-panel-header {
+            @apply rounded-t-2xl px-4 py-3;
+        }
+
+        .employee-body main table:not(.no-employee-theme),
+        .employee-body main .table:not(.no-employee-theme) {
+            display: block;
+            width: 100%;
+            max-width: calc(100vw - 1.5rem);
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .employee-body main table:not(.no-employee-theme) th,
+        .employee-body main table:not(.no-employee-theme) td,
+        .employee-body .table > :not(caption) > * > * {
+            @apply px-3 py-3 text-xs;
+        }
+
+        .employee-table th,
+        .employee-table td {
+            @apply px-3 py-3;
+        }
+
+        .employee-body main input:not([type='checkbox']):not([type='radio']),
+        .employee-body main select,
+        .employee-body main textarea,
+        .employee-field {
+            @apply min-h-[2.75rem] text-sm;
+        }
+
+        .employee-action-primary,
+        .employee-action-secondary,
+        .employee-btn-primary,
+        .employee-btn-secondary {
+            @apply min-h-[2.5rem] px-3 py-2 text-xs;
+        }
+
+        .employee-body main .pagination {
+            @apply flex-wrap justify-center;
+        }
+
+        .employee-body main .page-link {
+            @apply px-3 py-2 text-xs;
+        }
     }
 }
 
