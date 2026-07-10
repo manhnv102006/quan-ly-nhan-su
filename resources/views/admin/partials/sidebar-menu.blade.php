@@ -48,6 +48,7 @@
                     ['route' => 'admin.shifts.index', 'label' => 'Quản lý ca'],
                     ['route' => 'admin.leave-requests', 'label' => 'Quản lý nghỉ phép'],
                     ['route' => 'admin.overtime-requests.index', 'label' => 'Duyệt tăng ca'],
+                    ['route' => 'admin.face-enrollments.index', 'label' => 'Chấm công khuôn mặt'],
                     ['route' => 'admin.attendance-reports.index', 'label' => 'Báo cáo chấm công'],
                 ],
             ],
