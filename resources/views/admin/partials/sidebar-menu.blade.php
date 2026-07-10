@@ -90,7 +90,7 @@
         <a href="{{ route($item['route']) }}"
            class="admin-menu-item group {{ $isActive ? 'admin-menu-item-active' : 'admin-menu-item-inactive' }}">
             <span class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $isActive ? 'bg-white/15' : 'bg-slate-100 text-slate-500 group-hover:bg-violet-100' }}">
-                <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}" />
                 </svg>
                 @if (! empty($item['badge']) && $item['badge'] > 0)
