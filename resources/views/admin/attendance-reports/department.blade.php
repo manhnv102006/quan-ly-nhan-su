@@ -19,6 +19,7 @@
 
         @include('admin.attendance-reports.partials.report-filter', [
             'filterAction' => route('admin.attendance-reports.department', $selectedDepartment),
+            'pdfAction' => route('admin.attendance-reports.department.pdf', $selectedDepartment),
         ])
 
         @include('admin.attendance-reports.partials.report-body')

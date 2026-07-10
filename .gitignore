@@ -23,6 +23,7 @@
 /vendor
 /venv
 /.venv
+/face-service/.env
 __pycache__/
 *.py[cod]
 _ide_helper.php
