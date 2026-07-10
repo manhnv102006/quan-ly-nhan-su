@@ -21,31 +21,39 @@
 <body class="admin-body admin-shell" x-data="{ sidebarOpen: false }">
     @include('partials.page-loader')
 
-    <div class="relative flex min-h-screen">
+    <div class="relative flex min-h-screen overflow-x-hidden">
         {{-- Decorative blobs --}}
-        <div class="pointer-events-none fixed left-[280px] top-16 h-80 w-80 rounded-full bg-violet-400/15 blur-3xl"></div>
-        <div class="pointer-events-none fixed right-8 top-32 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl"></div>
-        <div class="pointer-events-none fixed bottom-0 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-fuchsia-300/10 blur-3xl"></div>
+        <div class="pointer-events-none fixed left-[280px] top-16 hidden h-80 w-80 rounded-full bg-violet-400/15 blur-3xl sm:block"></div>
+        <div class="pointer-events-none fixed right-8 top-32 hidden h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl sm:block"></div>
+        <div class="pointer-events-none fixed bottom-0 left-1/2 hidden h-80 w-80 -translate-x-1/2 rounded-full bg-fuchsia-300/10 blur-3xl sm:block"></div>
 
         {{-- Sidebar --}}
         <aside
-            class="admin-sidebar fixed inset-y-0 left-0 z-50 flex h-screen w-[286px] shrink-0 transform flex-col transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
+            class="admin-sidebar fixed inset-y-0 left-0 z-50 flex h-screen w-[min(88vw,320px)] shrink-0 transform flex-col transition-transform duration-300 ease-out lg:w-[286px] lg:translate-x-0"
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
         >
             {{-- Brand --}}
-            <div class="border-b border-white/70 px-5 py-6">
+            <div class="border-b border-white/70 px-4 py-4 sm:px-5 sm:py-6">
                 <div class="flex items-center gap-3">
-                <div class="relative">
-                    <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-white bg-white shadow-md shadow-violet-200/50">
-                        <x-application-logo class="w-full h-full object-contain p-1.5" />
+                    <div class="relative">
+                        <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-white bg-white shadow-md shadow-violet-200/50 sm:h-14 sm:w-14">
+                            <x-application-logo class="h-full w-full object-contain p-1.5" />
+                        </div>
+                        <span class="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-white bg-emerald-400"></span>
                     </div>
-                    <span class="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-white bg-emerald-400"></span>
-                </div>
-                <div class="min-w-0">
-                    <p class="truncate text-lg font-extrabold leading-tight tracking-tight text-slate-900">Quản lý nhân sự</p>
-                    <p class="mt-0.5 text-[11px] font-bold uppercase tracking-[0.2em] text-violet-600">Trang quản trị</p>
-                </div>
-                </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-base font-extrabold leading-tight tracking-tight text-slate-900 sm:text-lg">Quản lý nhân sự</p>
+                        <p class="mt-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-violet-600 sm:text-[11px]">Trang quản trị</p>
+                    </div>
+                    <button type="button"
+                            @click="sidebarOpen = false"
+                            class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 lg:hidden"
+                            aria-label="Đóng menu">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    </div>
             </div>
 
             <div class="mb-2 mt-5 px-4">
@@ -57,7 +65,7 @@
             </nav>
 
             {{-- Sidebar footer --}}
-            <div class="m-3 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-violet-900 to-indigo-800 p-4 text-white shadow-lg shadow-violet-500/20">
+            <div class="m-3 hidden overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-violet-900 to-indigo-800 p-4 text-white shadow-lg shadow-violet-500/20 sm:block">
                 <div class="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.178-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M12 17.25h.008v.008H12v-.008z" />
@@ -78,15 +86,15 @@
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
             @click="sidebarOpen = false"
-            class="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm lg:hidden"
+            class="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm lg:hidden"
             style="display: none;"
         ></div>
 
         {{-- Main content --}}
-        <div class="relative flex min-h-screen min-w-0 flex-1 flex-col">
+        <div class="relative flex min-h-screen min-w-0 flex-1 flex-col lg:pl-[286px]">
             @include('admin.partials.header')
 
-            <main class="relative z-0 flex-1 p-4 pb-10 sm:p-6 lg:p-8">
+            <main class="relative z-0 min-w-0 flex-1 p-3 pb-10 sm:p-6 lg:p-8">
                 {{ $slot }}
             </main>
         </div>
