@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\EmployeeShiftController;
+use App\Http\Controllers\Admin\FaceEnrollmentController;
 use App\Http\Controllers\Admin\InterviewController;
 use App\Http\Controllers\Admin\JobPostController;
 use App\Http\Controllers\Admin\LeaveRequestController;
@@ -154,6 +155,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::patch('/overtime-requests/{overtime_request}/status', [OvertimeRequestController::class, 'updateStatus'])->name('overtime-requests.status');
     Route::get('/attendance-reports', [AttendanceReportController::class, 'index'])->name('attendance-reports.index');
     Route::get('/attendance-reports/departments/{department}', [AttendanceReportController::class, 'department'])->name('attendance-reports.department');
+    Route::get('/attendance-reports/departments/{department}/pdf', [AttendanceReportController::class, 'exportPdf'])->name('attendance-reports.department.pdf');
+
+    Route::get('/face-enrollments', [FaceEnrollmentController::class, 'index'])->name('face-enrollments.index');
+    Route::delete('/face-enrollments/{employee}', [FaceEnrollmentController::class, 'destroy'])->name('face-enrollments.destroy');
 
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
 

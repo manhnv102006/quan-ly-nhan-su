@@ -82,6 +82,16 @@ class Employee extends Model
         return $this->hasMany(Attendance::class);
     }
 
+    public function faceDescriptors(): HasMany
+    {
+        return $this->hasMany(EmployeeFaceDescriptor::class);
+    }
+
+    public function hasFaceEnrolled(): bool
+    {
+        return $this->faceDescriptors()->exists();
+    }
+
     public function leaveRequests(): HasMany
     {
         return $this->hasMany(LeaveRequest::class);

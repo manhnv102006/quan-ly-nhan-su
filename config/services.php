@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    // Chấm công bằng khuôn mặt (kiosk Python gọi API Laravel).
+    'face' => [
+        'kiosk_token' => env('FACE_KIOSK_TOKEN'),
+        'model_name' => env('FACE_MODEL_NAME', 'buffalo_l'),
+    ],
+
 ];

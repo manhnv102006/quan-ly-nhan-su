@@ -22,7 +22,7 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
     <div class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
         <p class="text-sm text-slate-500">Tổng giờ làm</p>
         <h2 class="mt-1 text-2xl font-bold text-violet-600">{{ number_format($stats['total_hours'], 2) }} giờ</h2>
@@ -35,6 +35,10 @@
         <p class="text-sm text-slate-500">Đi muộn nhiều nhất</p>
         <h2 class="mt-1 text-lg font-bold text-rose-600">{{ $stats['top_late_employee'] ?? 'Không có' }}</h2>
     </div>
+    <div class="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5 shadow-sm">
+        <p class="text-sm text-slate-500">Chấm công bằng khuôn mặt</p>
+        <h2 class="mt-1 text-2xl font-bold text-indigo-600">{{ number_format($stats['face_count'] ?? 0) }}</h2>
+    </div>
 </div>
 
 {{-- Bảng chi tiết --}}
@@ -45,7 +49,7 @@
     </div>
 
     <div class="overflow-x-auto">
-        <table class="w-full min-w-[960px] text-sm">
+        <table class="w-full min-w-[1100px] text-sm">
             <thead>
                 <tr class="border-b border-slate-100 bg-slate-50/80 text-left">
                     <th class="px-4 py-3 text-xs font-bold uppercase text-slate-400">Nhân viên</th>
@@ -56,6 +60,9 @@
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-slate-400">Ca làm</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-slate-400">Giờ vào</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-slate-400">Giờ ra</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-slate-400">Phương thức</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-slate-400">Độ tin cậy</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-slate-400">Liveness</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-slate-400">Đi muộn</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-slate-400">Giờ làm</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-slate-400">Trạng thái</th>
@@ -89,6 +96,20 @@
                         <td class="px-4 py-3 text-center text-slate-700">
                             {{ $checkOut ? $checkOut->format('H:i') : '—' }}
                         </td>
+                        <td class="px-4 py-3 text-center text-xs text-slate-600">
+                            @if ($attendance->usesFaceRecognition())
+                                <span class="block">Vào: {{ $attendance->check_in_method_label }}</span>
+                                <span class="block">Ra: {{ $attendance->check_out_method_label }}</span>
+                            @else
+                                Thủ công
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-center text-slate-700">
+                            {{ $attendance->recognition_confidence !== null ? number_format($attendance->recognition_confidence, 2) : '—' }}
+                        </td>
+                        <td class="px-4 py-3 text-center text-slate-700">
+                            {{ $attendance->liveness_score !== null ? number_format($attendance->liveness_score, 2) : '—' }}
+                        </td>
                         <td class="px-4 py-3 text-center font-semibold text-orange-600">
                             {{ $attendance->display_late_minutes ?? 0 }} phút
                         </td>
@@ -113,7 +134,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="{{ $showDepartmentColumn ? 9 : 8 }}" class="px-4 py-12 text-center text-slate-500">
+                        <td colspan="{{ $showDepartmentColumn ? 12 : 11 }}" class="px-4 py-12 text-center text-slate-500">
                             Không có dữ liệu chấm công trong kỳ đã chọn.
                         </td>
                     </tr>
