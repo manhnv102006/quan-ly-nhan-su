@@ -30,6 +30,8 @@
             <p class="text-sm text-slate-500 mt-1">{{ now()->format('d/m/Y') }}</p>
         </div>
 
+        @include('employee.attendance.partials.face-scanner')
+
         {{-- Ca làm --}}
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
             <h2 class="text-base font-semibold text-slate-800 mb-4">Ca làm hôm nay</h2>
