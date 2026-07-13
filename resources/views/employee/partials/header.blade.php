@@ -4,19 +4,20 @@
 @endphp
 
 <header class="employee-header sticky top-0 z-50 overflow-visible">
-    <div class="flex h-[76px] items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div class="flex min-w-0 flex-1 items-center gap-4">
+    <div class="flex h-16 items-center justify-between gap-2 px-3 sm:h-[76px] sm:px-6 lg:px-8">
+        <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
             <button
                 @click="sidebarOpen = !sidebarOpen"
-                class="rounded-xl p-2.5 text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 lg:hidden"
+                class="shrink-0 rounded-xl p-2.5 text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 lg:hidden"
+                aria-label="Mở menu"
             >
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                 </svg>
             </button>
 
-            <div class="min-w-0">
-                <h1 class="truncate text-xl font-extrabold tracking-tight text-slate-900">{{ $title ?? 'Dashboard' }}</h1>
+            <div class="min-w-0 flex-1">
+                <h1 class="truncate text-base font-extrabold tracking-tight text-slate-900 sm:text-xl">{{ $title ?? 'Dashboard' }}</h1>
                 <p class="hidden text-xs text-slate-500 sm:block">
                     Xin chào <span class="font-semibold text-sky-600">{{ Auth::user()->name }}</span>
                     @if (! empty($subtitle))
@@ -39,11 +40,11 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-2 sm:gap-3">
+        <div class="flex shrink-0 items-center gap-1.5 sm:gap-3">
             @if (($employeePendingActions['total'] ?? 0) > 0)
                 <a href="{{ route('employee.kpis.index') }}"
                    title="{{ $employeePendingActions['total'] }} KPI cần cập nhật"
-                   class="relative inline-flex rounded-2xl border border-white/70 bg-white/70 p-2.5 text-slate-500 shadow-sm transition hover:bg-sky-50 hover:text-sky-700">
+                   class="relative inline-flex rounded-xl border border-white/70 bg-white/70 p-2.5 text-slate-500 shadow-sm transition hover:bg-sky-50 hover:text-sky-700 sm:rounded-2xl">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75z" />
                     </svg>
@@ -55,19 +56,29 @@
 
             @include('admin.partials.notification-dropdown')
 
-            <span class="hidden items-center gap-1.5 rounded-full bg-gradient-to-r from-sky-100 to-blue-100 px-3 py-1.5 text-xs font-semibold text-sky-700 sm:inline-flex">
+            <span class="hidden items-center gap-1.5 rounded-full bg-gradient-to-r from-sky-100 to-blue-100 px-3 py-1.5 text-xs font-semibold text-sky-700 md:inline-flex">
                 <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-500"></span>
                 Nhân viên
             </span>
 
-            <div class="flex items-center gap-2 pl-2 sm:border-l sm:border-slate-200/80 sm:pl-3">
-                <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-blue-500 to-indigo-400 text-sm font-bold text-white shadow-md shadow-sky-500/20 ring-2 ring-white">
+            <div class="flex items-center gap-1.5 pl-1 sm:gap-2 sm:border-l sm:border-slate-200/80 sm:pl-3">
+                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 via-blue-500 to-indigo-400 text-sm font-bold text-white shadow-md shadow-sky-500/20 ring-2 ring-white sm:h-10 sm:w-10 sm:rounded-2xl">
                     {{ $initial }}
                 </div>
                 <form method="POST" action="{{ route('logout') }}" class="hidden sm:block">
                     @csrf
                     <button type="submit" class="rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 transition hover:bg-rose-50 hover:text-rose-600">
                         Đăng xuất
+                    </button>
+                </form>
+                <form method="POST" action="{{ route('logout') }}" class="sm:hidden">
+                    @csrf
+                    <button type="submit"
+                            class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                            aria-label="Đăng xuất">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6A2.25 2.25 0 0 0 5.25 5.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                        </svg>
                     </button>
                 </form>
             </div>
