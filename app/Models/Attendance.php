@@ -22,6 +22,9 @@ class Attendance extends Model
             'afternoon_check_out' => 'datetime',
 
             'is_overtime' => 'boolean',
+
+            'recognition_confidence' => 'float',
+            'liveness_score' => 'float',
         ];
     }
     protected $fillable = [
@@ -39,6 +42,11 @@ class Attendance extends Model
 
         'status',
         'work_hours',
+
+        'check_in_method',
+        'check_out_method',
+        'recognition_confidence',
+        'liveness_score',
 
         'late_minutes',
         'morning_late_minutes',
@@ -68,6 +76,27 @@ class Attendance extends Model
         return $this->is_overtime
             ? $this->overtime_hours . ' giờ'
             : 'Không';
+    }
+
+    public function getCheckInMethodLabelAttribute(): string
+    {
+        return match ($this->check_in_method) {
+            'face' => 'Khuôn mặt',
+            default => 'Thủ công',
+        };
+    }
+
+    public function getCheckOutMethodLabelAttribute(): string
+    {
+        return match ($this->check_out_method) {
+            'face' => 'Khuôn mặt',
+            default => 'Thủ công',
+        };
+    }
+
+    public function usesFaceRecognition(): bool
+    {
+        return $this->check_in_method === 'face' || $this->check_out_method === 'face';
     }
 
 }

@@ -9,6 +9,7 @@ use App\Services\EmployeeAttendanceService;
 use App\Support\DepartmentSummaryBuilder;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
@@ -42,6 +43,31 @@ class AttendanceReportController extends Controller
             'scopeLabel' => $department->department_name,
             'showDepartmentColumn' => false,
         ]);
+    }
+
+    public function exportPdf(Request $request, Department $department): Response
+    {
+        [$month, $year, $allAttendances] = $this->loadReportData($request);
+
+        $attendances = $this->filterByDepartment($allAttendances, $department->id);
+        $stats = $this->buildStats($attendances);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.attendance-reports.pdf', [
+            'attendances' => $attendances,
+            'stats' => $stats,
+            'month' => $month,
+            'year' => $year,
+            'department' => $department,
+        ]);
+
+        $filename = sprintf(
+            'bao_cao_cham_cong_%s_%02d_%d.pdf',
+            $department->department_code ?? $department->id,
+            $month,
+            $year,
+        );
+
+        return $pdf->download($filename);
     }
 
     /**
@@ -96,6 +122,7 @@ class AttendanceReportController extends Controller
             'absent' => 0,
             'total_hours' => 0,
             'late_minutes' => 0,
+            'face_count' => 0,
             'top_late_employee' => null,
             'employee_count' => $attendances->pluck('employee_id')->unique()->count(),
             'record_count' => $attendances->count(),
@@ -106,6 +133,10 @@ class AttendanceReportController extends Controller
         foreach ($attendances as $attendance) {
             if (isset($stats[$attendance->status])) {
                 $stats[$attendance->status]++;
+            }
+
+            if ($attendance->check_in_method === 'face' || $attendance->check_out_method === 'face') {
+                $stats['face_count']++;
             }
 
             $stats['total_hours'] += (float) ($attendance->work_hours ?? 0);

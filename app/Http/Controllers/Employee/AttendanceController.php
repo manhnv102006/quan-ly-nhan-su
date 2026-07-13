@@ -7,10 +7,14 @@ use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
 use App\Services\EmployeeAttendanceService;
+use App\Services\FaceAttendanceService;
+use App\Services\FaceVerificationService;
 use App\Services\OvertimeAttendanceService;
 use App\Services\OvertimeSettlementService;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -21,6 +25,8 @@ class AttendanceController extends Controller
         private readonly OvertimeSettlementService $overtimeSettlement,
         private readonly OvertimeAttendanceService $overtimeAttendance,
         private readonly EmployeeAttendanceService $attendanceService,
+        private readonly FaceVerificationService $faceVerification,
+        private readonly FaceAttendanceService $faceAttendance,
     ) {
     }
 
@@ -90,6 +96,17 @@ class AttendanceController extends Controller
 
         $overtimeSessions = $this->overtimeAttendance->sessionsForDate($employee, $today);
 
+        $faceEnrolled = $employee->hasFaceEnrolled();
+        $canFaceScan = $faceEnrolled
+            && $todayShift?->shift
+            && $this->faceAttendance->canScanNow(
+                $employee,
+                $attendance,
+                $todayShift->shift,
+                (bool) $isFullDayShift,
+                $now,
+            );
+
         return view('employee.attendance.index', compact(
             'employee',
             'todayShift',
@@ -99,7 +116,49 @@ class AttendanceController extends Controller
             'regularSession',
             'overtimeInfo',
             'overtimeSessions',
+            'faceEnrolled',
+            'canFaceScan',
         ));
+    }
+
+    /**
+     * Quét khuôn mặt tự động chấm công (gọi từ webcam trên trang web).
+     */
+    public function faceScan(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'image_base64' => ['required', 'string'],
+        ]);
+
+        $employee = Employee::where('user_id', Auth::id())->firstOrFail();
+
+        if (! $employee->hasFaceEnrolled()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn chưa đăng ký khuôn mặt. Liên hệ quản trị viên.',
+            ], 422);
+        }
+
+        $verification = $this->faceVerification->verify($employee->id, $data['image_base64']);
+
+        if (! $verification['verified']) {
+            return response()->json([
+                'success' => false,
+                'message' => $verification['message'],
+                'score' => $verification['score'],
+            ], 422);
+        }
+
+        $result = $this->faceAttendance->recordAuto($employee, $verification['score']);
+
+        $status = $result['success'] ? 200 : 422;
+
+        return response()->json([
+            'success' => $result['success'],
+            'action' => $result['action'],
+            'message' => $result['message'],
+            'score' => $result['confidence'],
+        ], $status);
     }
 
     public function overtimeCheckIn(OvertimeRequest $overtimeRequest): RedirectResponse
