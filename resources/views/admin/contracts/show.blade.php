@@ -19,6 +19,7 @@
                 @if($contract->isEditable())
                     <a href="{{ route('admin.contracts.edit', $contract) }}" class="admin-btn-secondary">Sửa</a>
                     <a href="{{ route('admin.contracts.extend.form', $contract) }}" class="admin-btn-violet">Gia hạn</a>
+                    <a href="{{ route('admin.contracts.convert.form', $contract) }}" class="admin-btn-secondary">Chuyển loại HĐ</a>
                 @endif
             </div>
         </div>
@@ -40,13 +41,47 @@
                             ['label' => 'Ngày kết thúc', 'value' => optional($contract->end_date)->format('d/m/Y') ?? 'Không xác định'],
                             ['label' => 'Ngày ký', 'value' => optional($contract->signed_date)->format('d/m/Y') ?? '—'],
                             ['label' => 'Lương cơ bản', 'value' => number_format($contract->salary, 0, ',', '.') . '₫'],
-                            ['label' => 'Phụ cấp', 'value' => number_format($contract->allowance ?? 0, 0, ',', '.') . '₫'],
+                            ['label' => 'Tổng phụ cấp', 'value' => number_format($totalAllowance, 0, ',', '.') . '₫'],
                         ] as $field)
                             <div>
                                 <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">{{ $field['label'] }}</p>
                                 <p class="mt-1 text-sm font-semibold text-slate-800">{{ $field['value'] }}</p>
                             </div>
                         @endforeach
+                    </div>
+
+                    <div class="mt-5 border-t border-slate-100 pt-5">
+                        <h4 class="mb-3 text-sm font-bold text-slate-800">Chi tiết phụ cấp</h4>
+                        <div class="overflow-x-auto rounded-xl border border-slate-100">
+                            <table class="w-full min-w-[480px] text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 text-left text-xs font-bold uppercase text-slate-500">
+                                        <th class="px-4 py-3">Loại phụ cấp</th>
+                                        <th class="px-4 py-3">Ghi chú</th>
+                                        <th class="px-4 py-3 text-right">Số tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @foreach($allowanceBreakdown as $item)
+                                        <tr>
+                                            <td class="px-4 py-3 font-medium text-slate-800">{{ $item['name'] }}</td>
+                                            <td class="px-4 py-3 text-slate-500">{{ $item['note'] ?: '—' }}</td>
+                                            <td class="px-4 py-3 text-right font-semibold text-slate-800">
+                                                {{ number_format($item['amount'], 0, ',', '.') }}₫
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr class="bg-violet-50/60">
+                                        <td colspan="2" class="px-4 py-3 text-sm font-bold text-violet-800">Tổng phụ cấp</td>
+                                        <td class="px-4 py-3 text-right text-sm font-bold text-violet-800">
+                                            {{ number_format($totalAllowance, 0, ',', '.') }}₫
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
 
                     <div class="mt-5 grid grid-cols-1 gap-4 border-t border-slate-100 pt-5">
@@ -122,34 +157,58 @@
                 <div class="admin-card p-5 sm:p-6">
                     <h3 class="mb-4 text-sm font-bold text-slate-800">Hành động</h3>
 
+                    @if($contract->status === \App\Models\Contract::STATUS_DRAFT)
+                        <form method="POST" action="{{ route('admin.contracts.activate', $contract) }}" class="mb-3">
+                            @csrf
+                            <button type="submit"
+                                    onclick="return confirm('Kích hoạt hợp đồng này? Hợp đồng active cũ (nếu có) sẽ hết hiệu lực.')"
+                                    class="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700">
+                                Kích hoạt hợp đồng
+                            </button>
+                        </form>
+                    @endif
+
                     @if($contract->isEditable())
                         <div class="space-y-3">
                             <a href="{{ route('admin.contracts.extend.form', $contract) }}"
                                class="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
                                 Gia hạn hợp đồng
                             </a>
+                            <a href="{{ route('admin.contracts.convert.form', $contract) }}"
+                               class="flex w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100">
+                                Chuyển loại (VD: thử việc → chính thức)
+                            </a>
 
                             <details class="rounded-xl border border-rose-100 bg-rose-50/50">
                                 <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-rose-700">
-                                    Hủy hợp đồng
+                                    Chấm dứt hợp đồng
                                 </summary>
-                                <form method="POST" action="{{ route('admin.contracts.cancel', $contract) }}" class="space-y-3 border-t border-rose-100 px-4 py-4">
+                                <form method="POST" action="{{ route('admin.contracts.terminate', $contract) }}" class="space-y-3 border-t border-rose-100 px-4 py-4">
                                     @csrf
                                     <div>
-                                        <label for="cancel_end_date" class="admin-label">Ngày hủy hiệu lực</label>
-                                        <input type="date" id="cancel_end_date" name="end_date" class="admin-field"
+                                        <label for="terminate_reason" class="admin-label">Lý do chấm dứt *</label>
+                                        <select id="terminate_reason" name="reason" class="admin-field" required>
+                                            <option value="">— Chọn lý do —</option>
+                                            @foreach(\App\Models\ContractTermination::REASON_LABELS as $value => $label)
+                                                <option value="{{ $value }}" @selected(old('reason') === $value)>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('reason')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+                                    </div>
+                                    <div>
+                                        <label for="terminate_end_date" class="admin-label">Ngày chấm dứt *</label>
+                                        <input type="date" id="terminate_end_date" name="end_date" class="admin-field" required
                                                value="{{ old('end_date', now()->format('Y-m-d')) }}">
                                         @error('end_date')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
                                     </div>
                                     <div>
-                                        <label for="cancel_note" class="admin-label">Lý do / ghi chú</label>
-                                        <textarea id="cancel_note" name="note" rows="2" class="admin-field" placeholder="Lý do hủy hợp đồng">{{ old('note') }}</textarea>
-                                        @error('note')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+                                        <label for="terminate_note" class="admin-label">Ghi chú</label>
+                                        <textarea id="terminate_note" name="note" rows="2" class="admin-field">{{ old('note') }}</textarea>
                                     </div>
                                     <button type="submit"
-                                            onclick="return confirm('Xác nhận hủy hợp đồng này?')"
+                                            onclick="return confirm('Xác nhận chấm dứt hợp đồng này?')"
                                             class="w-full rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700">
-                                        Xác nhận hủy
+                                        Xác nhận chấm dứt
                                     </button>
                                 </form>
                             </details>

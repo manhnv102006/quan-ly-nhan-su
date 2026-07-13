@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\OvertimeRequestController;
 use App\Http\Controllers\Admin\PayrollController;
 
 use App\Http\Controllers\Admin\KPIAssignmentController;
+use App\Http\Controllers\Admin\AllowanceTypeController;
 use App\Http\Controllers\Admin\ContractController;
 use App\Http\Controllers\Admin\ContractTypeController;
 
@@ -32,11 +33,13 @@ use App\Http\Controllers\Admin\ShiftController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Employee\NotificationController as EmployeeNotificationController;
 use App\Http\Controllers\Manager\EmployeeController as ManagerEmployeeController;
+use App\Http\Controllers\Manager\ManagerContractController;
 use App\Http\Controllers\Manager\KPIController as ManagerKPIController;
 use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
 use App\Http\Controllers\Employee\EmployeePayrollController;
+use App\Http\Controllers\Employee\EmployeeContractController;
 
 use App\Http\Controllers\Employee\EmployeeKPIController;
 
@@ -175,12 +178,18 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/contract-types/trash', [ContractTypeController::class, 'trash'])->name('contract-types.trash');
     Route::post('/contract-types/{id}/restore', [ContractTypeController::class, 'restore'])->name('contract-types.restore');
 
+    Route::resource('allowance-types', AllowanceTypeController::class)->except(['show']);
+
     Route::get('/contracts/trash', [ContractController::class, 'trash'])->name('contracts.trashed');
     Route::post('/contracts/{contract}/restore', [ContractController::class, 'restore'])->name('contracts.restore');
     Route::delete('/contracts/{contract}/force-delete', [ContractController::class, 'forceDelete'])->name('contracts.forceDelete');
     Route::get('/contracts/{contract}/extend', [ContractController::class, 'extendForm'])->name('contracts.extend.form');
     Route::post('/contracts/{contract}/extend', [ContractController::class, 'extendStore'])->name('contracts.extend');
     Route::post('/contracts/{contract}/cancel', [ContractController::class, 'cancel'])->name('contracts.cancel');
+    Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate');
+    Route::get('/contracts/{contract}/convert', [ContractController::class, 'convertForm'])->name('contracts.convert.form');
+    Route::post('/contracts/{contract}/convert', [ContractController::class, 'convertStore'])->name('contracts.convert');
+    Route::post('/contracts/{contract}/activate', [ContractController::class, 'activate'])->name('contracts.activate');
     Route::resource('contracts', ContractController::class);
 
     Route::get('/recruitment', [RecruitmentController::class, 'index'])->name('recruitment');
@@ -211,6 +220,9 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
 
     Route::get('/employees', [ManagerEmployeeController::class, 'index'])->name('employees.index');
     Route::get('/employees/{employee}', [ManagerEmployeeController::class, 'show'])->name('employees.show');
+
+    Route::get('/contracts', [ManagerContractController::class, 'index'])->name('contracts.index');
+    Route::get('/contracts/{contract}', [ManagerContractController::class, 'show'])->name('contracts.show');
 
     Route::get('/notifications', [ManagerNotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/create', [ManagerNotificationController::class, 'create'])->name('notifications.create');
@@ -265,7 +277,11 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(fu
     Route::get('/employee/payrolls', [EmployeePayrollController::class, 'index'])->name('employee.payrolls.index');
     Route::get('/employee/payrolls/{payroll}/pdf', [EmployeePayrollController::class, 'exportPdf'])->name('employee.payrolls.pdf');
     Route::get('/employee/payrolls/{payroll}', [EmployeePayrollController::class, 'show'])->name('employee.payrolls.show');
+    Route::get('/employee/contracts', [EmployeeContractController::class, 'index'])->name('employee.contracts.index');
+    Route::get('/employee/contracts/{contract}', [EmployeeContractController::class, 'show'])->name('employee.contracts.show');
+    Route::get('/employee/contracts/{contract}/download', [EmployeeContractController::class, 'download'])->name('employee.contracts.download');
     Route::get('/employee/attendance', [EmployeeAttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('/attendance/face-scan', [EmployeeAttendanceController::class, 'faceScan'])->name('attendance.face-scan');
     Route::post('/attendance/check-in/{shift}', [EmployeeAttendanceController::class, 'checkIn'])->name('attendance.check-in');
     Route::post('/attendance/check-out/{shift}', [EmployeeAttendanceController::class, 'checkOut'])->name('attendance.check-out');
     Route::post('/attendance/overtime/{overtime_request}/check-in', [EmployeeAttendanceController::class, 'overtimeCheckIn'])->name('attendance.overtime.check-in');

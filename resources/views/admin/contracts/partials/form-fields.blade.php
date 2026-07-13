@@ -81,41 +81,25 @@
         @error('salary')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
     </div>
 
-    <div>
-        <label for="allowance_meal" class="admin-label">Phụ cấp ăn trưa</label>
-        <input type="number" id="allowance_meal" name="allowance_meal" class="admin-field sub-allowance" min="0"
-               value="{{ old('allowance_meal', $isEdit ? (int)$contract->allowance_meal : 0) }}">
-        @error('allowance_meal')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
-    </div>
+    @if(! $isEdit)
+        <div>
+            <label for="status" class="admin-label">Trạng thái ban đầu</label>
+            <select id="status" name="status" class="admin-field">
+                <option value="active" @selected(old('status', 'active') === 'active')>Kích hoạt ngay</option>
+                <option value="draft" @selected(old('status') === 'draft')>Lưu nháp (Đang soạn)</option>
+            </select>
+            @error('status')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+        </div>
+    @endif
+</div>
 
-    <div>
-        <label for="allowance_phone" class="admin-label">Phụ cấp điện thoại</label>
-        <input type="number" id="allowance_phone" name="allowance_phone" class="admin-field sub-allowance" min="0"
-               value="{{ old('allowance_phone', $isEdit ? (int)$contract->allowance_phone : 0) }}">
-        @error('allowance_phone')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
-    </div>
+@include('admin.contracts.partials.allowance-fields', [
+    'allowanceTypes' => $allowanceTypes ?? collect(),
+    'allowanceValues' => $allowanceValues ?? [],
+    'positions' => $positions ?? collect(),
+])
 
-    <div>
-        <label for="allowance_fuel" class="admin-label">Phụ cấp xăng xe</label>
-        <input type="number" id="allowance_fuel" name="allowance_fuel" class="admin-field sub-allowance" min="0"
-               value="{{ old('allowance_fuel', $isEdit ? (int)$contract->allowance_fuel : 0) }}">
-        @error('allowance_fuel')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
-    </div>
-
-    <div>
-        <label for="allowance_position" class="admin-label">Phụ cấp chức vụ</label>
-        <input type="number" id="allowance_position" name="allowance_position" class="admin-field sub-allowance" min="0"
-               value="{{ old('allowance_position', $isEdit ? (int)$contract->allowance_position : 0) }}">
-        @error('allowance_position')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
-    </div>
-
-    <div>
-        <label for="allowance" class="admin-label">Phụ cấp hàng tháng (cố định)</label>
-        <input type="text" id="allowance" name="allowance" class="admin-field money-input bg-slate-50 cursor-not-allowed" inputmode="numeric"
-               value="1500000" readonly>
-        <p class="mt-1 text-[11px] text-slate-400">Cố định 1.500.000đ cho mọi hợp đồng.</p>
-        @error('allowance')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
-    </div>
+<div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 mt-4">
 
     <div>
         <label for="start_date" class="admin-label">Ngày bắt đầu *</label>
@@ -125,9 +109,10 @@
     </div>
 
     <div>
-        <label for="end_date" class="admin-label">Ngày kết thúc *</label>
+        <label for="end_date" class="admin-label">Ngày kết thúc</label>
         <input type="date" id="end_date" name="end_date" class="admin-field"
-               value="{{ old('end_date', $isEdit ? $contract->end_date?->format('Y-m-d') : '') }}" required>
+               value="{{ old('end_date', $isEdit ? $contract->end_date?->format('Y-m-d') : '') }}">
+        <p class="mt-1 text-[11px] text-slate-400">Để trống nếu loại HĐ không xác định thời hạn.</p>
         @error('end_date')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
     </div>
 
@@ -196,7 +181,6 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Định dạng ô tiền: phân tách hàng nghìn bằng dấu chấm (VD: 15.000.000).
             const moneyInputs = document.querySelectorAll('.money-input');
 
             function formatMoney(value) {
@@ -214,32 +198,11 @@
 
                 const form = input.closest('form');
                 if (form) {
-                    // Bỏ dấu chấm trước khi gửi để server nhận số thuần.
                     form.addEventListener('submit', function () {
                         input.value = (input.value || '').replace(/\D/g, '');
                     });
                 }
             });
-        });
-    </script>
-@endpush
-
-@push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Hợp đồng thực tập -> phụ cấp = 0; loại khác -> 1.500.000.
-            const typeSelect = document.querySelector('[data-contract-type-select]');
-            const allowanceInput = document.getElementById('allowance');
-            if (!typeSelect || !allowanceInput) return;
-
-            function syncAllowance() {
-                const opt = typeSelect.selectedOptions[0];
-                const isInternship = opt && opt.dataset.internship === '1';
-                allowanceInput.value = isInternship ? '0' : '1.500.000';
-            }
-
-            typeSelect.addEventListener('change', syncAllowance);
-            syncAllowance();
         });
     </script>
 @endpush

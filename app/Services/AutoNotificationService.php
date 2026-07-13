@@ -203,7 +203,7 @@ class AutoNotificationService
         });
     }
 
-    public function notifyExpiringContracts(array $reminderDays = [30, 14, 7, 1]): int
+    public function notifyExpiringContracts(array $reminderDays = [30, 15, 7, 1]): int
     {
         $sent = 0;
         $placeholders = implode(',', array_fill(0, count($reminderDays), '?'));

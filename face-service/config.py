@@ -105,6 +105,7 @@ class Config:
 
     # HTTP
     request_timeout: int
+    api_port: int
 
     @property
     def det_size_tuple(self) -> tuple[int, int]:
@@ -138,4 +139,5 @@ def load_config() -> Config:
         active_window_seconds=_get_float("FACE_ACTIVE_WINDOW_SECONDS", 6.0),
         yaw_delta_threshold=_get_float("FACE_YAW_DELTA", 0.35),
         request_timeout=_get_int("FACE_REQUEST_TIMEOUT", 15),
+        api_port=_get_int("FACE_API_PORT", 5555),
     )

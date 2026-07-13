@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\ContractType;
 use App\Models\Employee;
 use App\Rules\NoContractOverlap;
 use Illuminate\Foundation\Http\FormRequest;
@@ -17,10 +18,17 @@ class ContractStoreRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         if ($this->has('salary')) {
-            // Bỏ dấu chấm phân tách hàng nghìn (VD: "15.000.000" -> "15000000").
             $this->merge([
                 'salary' => str_replace('.', '', (string) $this->input('salary')),
             ]);
+        }
+
+        if (is_array($this->input('allowances'))) {
+            $normalized = [];
+            foreach ($this->input('allowances') as $key => $value) {
+                $normalized[$key] = str_replace('.', '', (string) $value);
+            }
+            $this->merge(['allowances' => $normalized]);
         }
     }
 
@@ -33,13 +41,11 @@ class ContractStoreRequest extends FormRequest
             'position_id' => ['required', 'exists:positions,id'],
             'contract_code' => ['nullable', 'string', 'max:50', Rule::unique('contracts', 'contract_code')],
             'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after:start_date'],
+            'end_date' => ['nullable', 'date', 'after:start_date'],
             'salary' => ['required', 'numeric', 'min:1'],
-            'allowance' => ['nullable', 'numeric', 'min:0'],
-            'allowance_meal' => ['nullable', 'numeric', 'min:0'],
-            'allowance_phone' => ['nullable', 'numeric', 'min:0'],
-            'allowance_fuel' => ['nullable', 'numeric', 'min:0'],
-            'allowance_position' => ['nullable', 'numeric', 'min:0'],
+            'status' => ['nullable', Rule::in(['draft', 'active'])],
+            'allowances' => ['nullable', 'array'],
+            'allowances.*' => ['nullable', 'numeric', 'min:0'],
             'signed_date' => ['nullable', 'date', 'before_or_equal:start_date'],
             'description' => ['nullable', 'string', 'max:1000'],
             'note' => ['nullable', 'string', 'max:1000'],
@@ -65,6 +71,13 @@ class ContractStoreRequest extends FormRequest
             $rule->validate('start_date', null, function (string $message) use ($v) {
                 $v->errors()->add('start_date', $message);
             });
+
+            if ($this->contract_type_id) {
+                $type = ContractType::find($this->contract_type_id);
+                if ($type?->requiresEndDate() && empty($this->end_date)) {
+                    $v->errors()->add('end_date', 'Loại hợp đồng này yêu cầu ngày kết thúc.');
+                }
+            }
         });
     }
 }

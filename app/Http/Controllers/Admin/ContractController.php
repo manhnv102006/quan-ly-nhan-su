@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ContractCancelRequest;
+use App\Http\Requests\ContractTerminateRequest;
 use App\Http\Requests\ContractExtendRequest;
 use App\Http\Requests\ContractStoreRequest;
 use App\Http\Requests\ContractUpdateRequest;
@@ -12,6 +13,7 @@ use App\Models\ContractType;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Position;
+use App\Services\ContractAllowanceService;
 use App\Services\ContractService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,8 +21,10 @@ use Illuminate\View\View;
 
 class ContractController extends Controller
 {
-    public function __construct(private readonly ContractService $service)
-    {
+    public function __construct(
+        private readonly ContractService $service,
+        private readonly ContractAllowanceService $allowanceService,
+    ) {
     }
 
     public function index(Request $request): View
@@ -80,7 +84,6 @@ class ContractController extends Controller
             'contractTypes' => ContractType::orderBy('contract_name')->get(),
             'employees' => Employee::with(['department', 'position'])
                 ->where('status', 'active')
-                // Ẩn nhân viên đã có hợp đồng đang hiệu lực (mỗi nhân viên chỉ 1 HĐ active).
                 ->whereDoesntHave('contracts', function ($q) {
                     $q->where('status', Contract::STATUS_ACTIVE);
                 })
@@ -89,6 +92,8 @@ class ContractController extends Controller
             'departments' => Department::orderBy('department_name')->get(),
             'positions' => Position::orderBy('position_name')->get(),
             'nextCode' => $this->service->generateCode(),
+            'allowanceTypes' => $this->allowanceService->activeTypes(),
+            'allowanceValues' => $this->allowanceService->valuesForForm(),
         ]);
     }
 
@@ -107,7 +112,7 @@ class ContractController extends Controller
     public function show(int $id): View
     {
         $contract = Contract::withTrashed()
-            ->with(['employee.department', 'employee.position', 'department', 'position', 'contractType', 'creator'])
+            ->with(['employee.department', 'employee.position', 'department', 'position', 'contractType', 'creator', 'extensions', 'terminations'])
             ->findOrFail($id);
 
         $history = Contract::withTrashed()
@@ -119,6 +124,8 @@ class ContractController extends Controller
             'contract' => $contract,
             'history' => $history,
             'statuses' => $this->statusOptions(),
+            'allowanceBreakdown' => $this->allowanceService->breakdown($contract),
+            'totalAllowance' => $this->allowanceService->totalAllowance($contract),
         ]);
     }
 
@@ -132,6 +139,8 @@ class ContractController extends Controller
             'employees' => Employee::where('status', 'active')->orderBy('full_name')->get(),
             'departments' => Department::orderBy('department_name')->get(),
             'positions' => Position::orderBy('position_name')->get(),
+            'allowanceTypes' => $this->allowanceService->activeTypes(),
+            'allowanceValues' => $this->allowanceService->valuesForForm($contract, $contract->position_id),
         ]);
     }
 
@@ -202,6 +211,9 @@ class ContractController extends Controller
             'contract' => $contract,
             'contractTypes' => ContractType::orderBy('contract_name')->get(),
             'nextCode' => $this->service->generateCode(),
+            'allowanceTypes' => $this->allowanceService->activeTypes(),
+            'allowanceValues' => $this->allowanceService->valuesForForm($contract, $contract->position_id),
+            'positions' => Position::orderBy('position_name')->get(),
         ]);
     }
 
@@ -214,6 +226,38 @@ class ContractController extends Controller
             ->with('success', 'Gia hạn hợp đồng thành công.');
     }
 
+    public function terminate(ContractTerminateRequest $request, Contract $contract): RedirectResponse
+    {
+        $this->service->terminate($contract, $request->validated());
+
+        return redirect()
+            ->route('admin.contracts.show', $contract)
+            ->with('success', 'Chấm dứt hợp đồng thành công.');
+    }
+
+    public function convertForm(Contract $contract): View
+    {
+        abort_unless($contract->isEditable(), 403);
+
+        return view('admin.contracts.convert', [
+            'contract' => $contract,
+            'contractTypes' => ContractType::orderBy('contract_name')->get(),
+            'nextCode' => $this->service->generateCode(),
+            'allowanceTypes' => $this->allowanceService->activeTypes(),
+            'allowanceValues' => $this->allowanceService->valuesForForm($contract, $contract->position_id),
+            'positions' => Position::orderBy('position_name')->get(),
+        ]);
+    }
+
+    public function convertStore(ContractExtendRequest $request, Contract $contract): RedirectResponse
+    {
+        $this->service->convertType($contract, $request->validated(), $request->user()?->id);
+
+        return redirect()
+            ->route('admin.contracts.index')
+            ->with('success', 'Chuyển loại hợp đồng thành công.');
+    }
+
     public function cancel(ContractCancelRequest $request, Contract $contract): RedirectResponse
     {
         $this->service->cancel($contract, $request->validated());
@@ -221,6 +265,15 @@ class ContractController extends Controller
         return redirect()
             ->route('admin.contracts.index')
             ->with('success', 'Hủy hợp đồng thành công.');
+    }
+
+    public function activate(Contract $contract): RedirectResponse
+    {
+        $this->service->activate($contract);
+
+        return redirect()
+            ->route('admin.contracts.show', $contract)
+            ->with('success', 'Kích hoạt hợp đồng thành công.');
     }
 
     private function statusOptions(): array

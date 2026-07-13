@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Models\ContractType;
 
 class ContractTypeRequest extends FormRequest
 {
@@ -23,19 +24,15 @@ class ContractTypeRequest extends FormRequest
                 'max:100',
                 Rule::unique('contract_types', 'contract_name')->ignore($contractTypeId),
             ],
-            'duration_month' => ['required', 'integer', 'min:1'],
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            'contract_name.required' => 'Tên loại hợp đồng là bắt buộc.',
-            'contract_name.unique' => 'Tên loại hợp đồng đã tồn tại.',
-            'contract_name.max' => 'Tên loại hợp đồng không được vượt quá 100 ký tự.',
-            'duration_month.required' => 'Thời hạn hợp đồng là bắt buộc.',
-            'duration_month.integer' => 'Thời hạn hợp đồng phải là số nguyên.',
-            'duration_month.min' => 'Thời hạn hợp đồng phải lớn hơn hoặc bằng 1 tháng.',
+            'code' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('contract_types', 'code')->ignore($contractTypeId),
+            ],
+            'category' => ['required', Rule::in(array_keys(ContractType::CATEGORY_LABELS))],
+            'duration_month' => ['required', 'integer', 'min:0', 'max:120'],
+            'description' => ['nullable', 'string', 'max:500'],
         ];
     }
 }
