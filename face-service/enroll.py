@@ -59,7 +59,19 @@ def main() -> int:
     client = LaravelClient(config.laravel_base_url, config.kiosk_token, config.request_timeout)
 
     print("Đang tra cứu nhân viên...")
-    employee = resolve_employee(client, args.employee_id, args.employee_code)
+    try:
+        employee = resolve_employee(client, args.employee_id, args.employee_code)
+    except Exception as exc:  # noqa: BLE001
+        if "Connection" in type(exc).__name__ or "connect" in str(exc).lower():
+            print(
+                f"\nKhông kết nối được Laravel tại {config.laravel_base_url}.\n"
+                "Camera chỉ mở SAU KHI tra cứu nhân viên thành công.\n"
+                "Hãy bật server trước: php artisan serve\n"
+                "Rồi kiểm tra LARAVEL_BASE_URL trong face-service/.env (ví dụ http://127.0.0.1:8000).",
+                file=sys.stderr,
+            )
+            return 1
+        raise
     print(f"Nhân viên: {employee['full_name']} ({employee['employee_code']}) - id={employee['employee_id']}")
 
     print("Đang khởi tạo InsightFace (lần đầu có thể tải model)...")

@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Contract;
+use App\Models\ContractExtension;
+use App\Models\ContractTermination;
 use App\Models\ContractType;
 use App\Models\Employee;
 use Carbon\Carbon;
@@ -19,6 +21,11 @@ class ContractService
      * Phụ cấp cố định cho mọi hợp đồng: 1.500.000đ.
      */
     public const FIXED_ALLOWANCE = 1_500_000;
+
+    public function __construct(
+        private readonly ContractAllowanceService $allowanceService,
+    ) {
+    }
 
     /**
      * Phụ cấp áp dụng theo loại hợp đồng: HĐ thực tập không có phụ cấp.
@@ -58,23 +65,39 @@ class ContractService
                 throw ValidationException::withMessages(['employee_id' => 'Nhân viên không còn hoạt động.']);
             }
 
+            $allowanceInput = $data['allowances'] ?? [];
+            unset($data['allowances']);
+
             $data['contract_code'] = $data['contract_code'] ?? $this->generateCode();
-            $data['status'] = Contract::STATUS_ACTIVE;
+            $data['status'] = $data['status'] ?? Contract::STATUS_ACTIVE;
             $data['created_by'] = $creatorId;
             $data['department_id'] = $data['department_id'] ?? $employee->department_id;
             $data['position_id'] = $data['position_id'] ?? $employee->position_id;
-            $data['allowance'] = $this->allowanceForContractType($data['contract_type_id'] ?? null);
+
+            $data = array_merge(
+                $data,
+                $this->allowanceService->applyAllowanceInput(
+                    $allowanceInput,
+                    $data['contract_type_id'] ?? null,
+                    $data['position_id'] ?? null,
+                )
+            );
 
             $this->assertNoOverlap($data['employee_id'], $data['start_date'], $data['end_date']);
 
-            $this->deactivateActiveContract($data['employee_id']);
+            if ($data['status'] === Contract::STATUS_ACTIVE) {
+                $this->deactivateActiveContract($data['employee_id']);
+            }
 
             if (isset($data['contract_file']) && $data['contract_file'] instanceof UploadedFile) {
                 $data['file_path'] = $this->storeFile($data['contract_file'], $data['employee_id']);
             }
             unset($data['contract_file']);
 
-            return Contract::create($data);
+            $contract = Contract::create($data);
+            $this->allowanceService->syncContractAllowances($contract, $allowanceInput, $data['contract_type_id'] ?? null);
+
+            return $contract;
         });
     }
 
@@ -85,8 +108,16 @@ class ContractService
         }
 
         return DB::transaction(function () use ($contract, $data) {
-            $data['allowance'] = $this->allowanceForContractType(
-                $data['contract_type_id'] ?? $contract->contract_type_id
+            $allowanceInput = $data['allowances'] ?? [];
+            unset($data['allowances']);
+
+            $data = array_merge(
+                $data,
+                $this->allowanceService->applyAllowanceInput(
+                    $allowanceInput,
+                    $data['contract_type_id'] ?? $contract->contract_type_id,
+                    $data['position_id'] ?? $contract->position_id,
+                )
             );
 
             $this->assertNoOverlap(
@@ -105,6 +136,32 @@ class ContractService
             unset($data['contract_file']);
 
             $contract->update($data);
+            $this->allowanceService->syncContractAllowances(
+                $contract,
+                $allowanceInput,
+                $data['contract_type_id'] ?? $contract->contract_type_id
+            );
+
+            return $contract->refresh();
+        });
+    }
+
+    public function activate(Contract $contract): Contract
+    {
+        if ($contract->status !== Contract::STATUS_DRAFT) {
+            throw ValidationException::withMessages(['status' => 'Chỉ kích hoạt được hợp đồng ở trạng thái Đang soạn.']);
+        }
+
+        return DB::transaction(function () use ($contract) {
+            $this->assertNoOverlap(
+                $contract->employee_id,
+                $contract->start_date->toDateString(),
+                $contract->end_date?->toDateString(),
+                $contract->id
+            );
+
+            $this->deactivateActiveContract($contract->employee_id);
+            $contract->update(['status' => Contract::STATUS_ACTIVE]);
 
             return $contract->refresh();
         });
@@ -126,21 +183,43 @@ class ContractService
                 $data['end_date']
             );
 
+            $oldEndDate = $contract->end_date;
             $contract->update([
                 'status' => Contract::STATUS_EXPIRED,
                 'end_date' => $data['start_date'],
             ]);
 
+            ContractExtension::create([
+                'contract_id' => $contract->id,
+                'old_end_date' => $oldEndDate,
+                'new_end_date' => $data['end_date'],
+                'note' => $data['note'] ?? null,
+            ]);
+
+            $allowanceInput = $data['allowances'] ?? [];
+            unset($data['allowances']);
+
+            $contractTypeId = $data['contract_type_id'] ?? $contract->contract_type_id;
+            $allowanceColumns = $this->allowanceService->applyAllowanceInput(
+                $allowanceInput,
+                $contractTypeId,
+                $contract->position_id
+            );
+
             $payload = [
                 'employee_id' => $contract->employee_id,
                 'department_id' => $contract->department_id ?? $contract->employee?->department_id,
                 'position_id' => $contract->position_id ?? $contract->employee?->position_id,
-                'contract_type_id' => $data['contract_type_id'] ?? $contract->contract_type_id,
+                'contract_type_id' => $contractTypeId,
                 'contract_code' => $data['contract_code'] ?? $this->generateCode(),
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
                 'salary' => $data['salary'] ?? $contract->salary,
-                'allowance' => $this->allowanceForContractType($data['contract_type_id'] ?? $contract->contract_type_id),
+                'allowance' => $allowanceColumns['allowance'] ?? $this->allowanceForContractType($contractTypeId),
+                'allowance_meal' => $allowanceColumns['allowance_meal'] ?? $contract->allowance_meal,
+                'allowance_phone' => $allowanceColumns['allowance_phone'] ?? $contract->allowance_phone,
+                'allowance_fuel' => $allowanceColumns['allowance_fuel'] ?? $contract->allowance_fuel,
+                'allowance_position' => $allowanceColumns['allowance_position'] ?? $contract->allowance_position,
                 'description' => $data['description'] ?? $contract->description,
                 'note' => $data['note'] ?? null,
                 'status' => Contract::STATUS_ACTIVE,
@@ -151,7 +230,10 @@ class ContractService
                 $payload['file_path'] = $this->storeFile($data['contract_file'], $contract->employee_id);
             }
 
-            return Contract::create($payload);
+            $newContract = Contract::create($payload);
+            $this->allowanceService->syncContractAllowances($newContract, $allowanceInput, $contractTypeId);
+
+            return $newContract;
         });
     }
 
@@ -164,12 +246,51 @@ class ContractService
         return DB::transaction(function () use ($contract, $data) {
             $contract->update([
                 'status' => Contract::STATUS_CANCELLED,
-                'end_date' => $data['end_date'] ?? $contract->end_date,
+                'end_date' => $data['end_date'] ?? $contract->end_date ?? Carbon::today(),
                 'note' => $data['note'] ?? $contract->note,
             ]);
 
             return $contract->refresh();
         });
+    }
+
+    public function terminate(Contract $contract, array $data): Contract
+    {
+        if (! $contract->isCancellable()) {
+            throw ValidationException::withMessages(['contract' => 'Chỉ chấm dứt được hợp đồng Draft hoặc Active.']);
+        }
+
+        return DB::transaction(function () use ($contract, $data) {
+            $endDate = $data['end_date'] ?? Carbon::today();
+
+            $contract->update([
+                'status' => Contract::STATUS_TERMINATED,
+                'end_date' => $endDate,
+                'note' => $data['note'] ?? $contract->note,
+            ]);
+
+            ContractTermination::create([
+                'contract_id' => $contract->id,
+                'reason' => $data['reason'],
+                'end_date' => $endDate,
+                'note' => $data['note'] ?? null,
+                'file_path' => null,
+            ]);
+
+            return $contract->refresh();
+        });
+    }
+
+    /**
+     * Chuyển loại HĐ (VD: thử việc → chính thức): tạo HĐ mới, HĐ cũ hết hiệu lực.
+     */
+    public function convertType(Contract $contract, array $data, ?int $creatorId = null): Contract
+    {
+        $data['note'] = ($data['note'] ?? '') !== ''
+            ? 'Chuyển loại HĐ: '.$data['note']
+            : 'Chuyển loại HĐ từ '.$contract->contract_code;
+
+        return $this->extend($contract, $data, $creatorId);
     }
 
     public function softDelete(Contract $contract): void
