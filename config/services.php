@@ -39,6 +39,7 @@ return [
     'face' => [
         'kiosk_token' => env('FACE_KIOSK_TOKEN'),
         'model_name' => env('FACE_MODEL_NAME', 'buffalo_l'),
+        'api_url' => env('FACE_API_URL', 'http://127.0.0.1:5555'),
     ],
 
 ];

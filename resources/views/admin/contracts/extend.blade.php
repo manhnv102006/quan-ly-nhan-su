@@ -57,13 +57,6 @@
                                value="{{ old('salary', (int) $contract->salary) }}" placeholder="VD: 15.000.000">
                         @error('salary')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
                     </div>
-                    <div>
-                        <label for="allowance" class="admin-label">Phụ cấp (cố định)</label>
-                        <input type="text" id="allowance" name="allowance" class="admin-field money-input bg-slate-50 cursor-not-allowed" inputmode="numeric"
-                               value="{{ old('allowance', (int) $contract->allowance) }}" readonly>
-                        <p class="mt-1 text-[11px] text-slate-400">Thực tập: 0đ · loại khác: 1.500.000đ.</p>
-                        @error('allowance')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
-                    </div>
                     <div class="md:col-span-2">
                         <label for="contract_file" class="admin-label">File hợp đồng mới (tùy chọn)</label>
                         <input type="file" id="contract_file" name="contract_file" class="admin-field" accept=".pdf,.doc,.docx">
@@ -76,6 +69,17 @@
                     </div>
                 </div>
 
+                <input type="hidden" name="position_id" value="{{ $contract->position_id }}">
+                <select class="hidden" data-position-select>
+                    <option value="{{ $contract->position_id }}" selected></option>
+                </select>
+
+                @include('admin.contracts.partials.allowance-fields', [
+                    'allowanceTypes' => $allowanceTypes,
+                    'allowanceValues' => $allowanceValues,
+                    'positions' => $positions,
+                ])
+
                 <div class="mt-6 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-5">
                     <a href="{{ route('admin.contracts.index') }}" class="admin-btn-secondary">Hủy</a>
                     <button type="submit" class="admin-btn-violet px-6">Lưu hợp đồng mới</button>
@@ -87,43 +91,22 @@
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                // Định dạng ô tiền: phân tách hàng nghìn bằng dấu chấm (VD: 15.000.000).
                 const moneyInputs = document.querySelectorAll('.money-input');
-
                 function formatMoney(value) {
                     const digits = (value || '').toString().replace(/\D/g, '');
                     if (digits === '') return '';
                     return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
                 }
-
                 moneyInputs.forEach(function (input) {
                     input.value = formatMoney(input.value);
-
-                    input.addEventListener('input', function () {
-                        this.value = formatMoney(this.value);
-                    });
-
+                    input.addEventListener('input', function () { this.value = formatMoney(this.value); });
                     const form = input.closest('form');
                     if (form) {
-                        // Bỏ dấu chấm trước khi gửi để server nhận số thuần.
                         form.addEventListener('submit', function () {
                             input.value = (input.value || '').replace(/\D/g, '');
                         });
                     }
                 });
-
-                // Hợp đồng thực tập -> phụ cấp = 0; loại khác -> 1.500.000.
-                const typeSelect = document.querySelector('[data-contract-type-select]');
-                const allowanceInput = document.getElementById('allowance');
-                if (typeSelect && allowanceInput) {
-                    function syncAllowance() {
-                        const opt = typeSelect.selectedOptions[0];
-                        const isInternship = opt && opt.dataset.internship === '1';
-                        allowanceInput.value = isInternship ? '0' : '1.500.000';
-                    }
-                    typeSelect.addEventListener('change', syncAllowance);
-                    syncAllowance();
-                }
             });
         </script>
     @endpush

@@ -15,12 +15,14 @@ class Contract extends Model
     public const STATUS_DRAFT = 'draft';
     public const STATUS_ACTIVE = 'active';
     public const STATUS_EXPIRED = 'expired';
+    public const STATUS_TERMINATED = 'terminated';
     public const STATUS_CANCELLED = 'cancelled';
 
     public const STATUS_LABELS = [
         self::STATUS_DRAFT => 'Đang soạn',
-        self::STATUS_ACTIVE => 'Đang hiệu lực',
-        self::STATUS_EXPIRED => 'Hết hiệu lực',
+        self::STATUS_ACTIVE => 'Còn hiệu lực',
+        self::STATUS_EXPIRED => 'Đã hết hạn',
+        self::STATUS_TERMINATED => 'Đã chấm dứt',
         self::STATUS_CANCELLED => 'Đã hủy',
     ];
 
@@ -96,6 +98,11 @@ class Contract extends Model
         return $this->hasMany(ContractTermination::class)->orderByDesc('created_at');
     }
 
+    public function contractAllowances(): HasMany
+    {
+        return $this->hasMany(ContractAllowance::class);
+    }
+
     /*
      * Scopes & helpers
      */
@@ -149,28 +156,49 @@ class Contract extends Model
 
     public function getStatusLabelAttribute(): string
     {
+        if ($this->status === self::STATUS_ACTIVE && $this->isExpiringSoon()) {
+            return 'Sắp hết hạn';
+        }
+
         return self::STATUS_LABELS[$this->status] ?? 'Không xác định';
     }
 
     public function getStatusBadgeClassAttribute(): string
     {
+        if ($this->status === self::STATUS_ACTIVE && $this->isExpiringSoon()) {
+            return 'badge text-bg-warning';
+        }
+
         return match ($this->status) {
             self::STATUS_ACTIVE => 'badge text-bg-success',
             self::STATUS_EXPIRED => 'badge text-bg-warning',
-            self::STATUS_CANCELLED => 'badge text-bg-danger',
+            self::STATUS_TERMINATED => 'badge text-bg-danger',
+            self::STATUS_CANCELLED => 'badge text-bg-secondary',
             default => 'badge text-bg-secondary',
         };
     }
 
     public function getStatusTailwindClassAttribute(): string
     {
+        if ($this->status === self::STATUS_ACTIVE && $this->isExpiringSoon()) {
+            return 'bg-amber-50 text-amber-700 border-amber-100';
+        }
+
         return match ($this->status) {
             self::STATUS_ACTIVE => 'bg-emerald-50 text-emerald-700 border-emerald-100',
             self::STATUS_EXPIRED => 'bg-amber-50 text-amber-700 border-amber-100',
             self::STATUS_DRAFT => 'bg-slate-100 text-slate-700 border-slate-200',
-            self::STATUS_CANCELLED => 'bg-rose-50 text-rose-700 border-rose-100',
+            self::STATUS_TERMINATED => 'bg-rose-50 text-rose-700 border-rose-100',
+            self::STATUS_CANCELLED => 'bg-slate-100 text-slate-600 border-slate-200',
             default => 'bg-slate-100 text-slate-600 border-slate-200',
         };
+    }
+
+    public function getLatestTerminationAttribute(): ?ContractTermination
+    {
+        return $this->relationLoaded('terminations')
+            ? $this->terminations->first()
+            : $this->terminations()->first();
     }
 
     public function getDisplayDepartmentNameAttribute(): string
