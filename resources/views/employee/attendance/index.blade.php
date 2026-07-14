@@ -36,16 +36,22 @@
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
             <h2 class="text-base font-semibold text-slate-800 mb-4">Ca làm hôm nay</h2>
 
-            @if ($todayShift && $todayShift->shift)
-                <div class="space-y-1">
-                    <p class="text-sm font-semibold text-slate-800">{{ $todayShift->shift->shift_name }}</p>
-                    <p class="text-sm text-slate-500">
-                        {{ \Carbon\Carbon::parse($todayShift->shift->start_time)->format('H:i') }}
-                        -
-                        {{ \Carbon\Carbon::parse($todayShift->shift->end_time)->format('H:i') }}
-                    </p>
+            @if ($todayShifts->isNotEmpty())
+                <div class="space-y-3">
+                    @foreach ($todayShifts as $assignedShift)
+                        @if ($assignedShift->shift)
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+                                <p class="text-sm font-semibold text-slate-800">{{ $assignedShift->shift->shift_name }}</p>
+                                <p class="text-sm text-slate-500">
+                                    {{ \Carbon\Carbon::parse($assignedShift->shift->start_time)->format('H:i') }}
+                                    -
+                                    {{ \Carbon\Carbon::parse($assignedShift->shift->end_time)->format('H:i') }}
+                                </p>
+                            </div>
+                        @endif
+                    @endforeach
                     @if ($isFullDayShift)
-                        <p class="text-xs text-amber-600 font-medium mt-1">Ca hành chính — cần chấm công 2 buổi (sáng + chiều)</p>
+                        <p class="text-xs text-amber-600 font-medium">Ca hành chính — cần chấm công 2 buổi (sáng + chiều)</p>
                     @endif
                 </div>
             @else
