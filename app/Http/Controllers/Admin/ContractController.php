@@ -10,6 +10,7 @@ use App\Http\Requests\ContractExtendRequest;
 use App\Http\Requests\ContractStoreRequest;
 use App\Http\Requests\ContractUpdateRequest;
 use App\Models\Contract;
+use App\Models\ContractHistory;
 use App\Models\ContractType;
 use App\Models\Department;
 use App\Models\Employee;
@@ -115,7 +116,7 @@ class ContractController extends Controller
     public function show(int $id): View
     {
         $contract = Contract::withTrashed()
-            ->with(['employee.department', 'employee.position', 'department', 'position', 'contractType', 'creator', 'extensions', 'terminations', 'previousContract', 'activityLogs.performer'])
+            ->with(['employee.department', 'employee.position', 'department', 'position', 'contractType', 'creator', 'extensions', 'terminations', 'previousContract'])
             ->findOrFail($id);
 
         $history = Contract::withTrashed()
@@ -123,9 +124,16 @@ class ContractController extends Controller
             ->orderByDesc('start_date')
             ->get();
 
+        $activityHistories = ContractHistory::query()
+            ->where('employee_id', $contract->employee_id)
+            ->with(['performer', 'contract', 'relatedContract'])
+            ->orderByDesc('created_at')
+            ->get();
+
         return view('admin.contracts.show', [
             'contract' => $contract,
             'history' => $history,
+            'activityHistories' => $activityHistories,
             'statuses' => $this->statusOptions(),
             'allowanceBreakdown' => $this->allowanceService->breakdown($contract),
             'totalAllowance' => $this->allowanceService->totalAllowance($contract),
@@ -149,16 +157,16 @@ class ContractController extends Controller
 
     public function update(ContractUpdateRequest $request, Contract $contract): RedirectResponse
     {
-        $this->service->update($contract, $request->validated());
+        $this->service->update($contract, $request->validated(), $request->user()?->id);
 
         return redirect()
             ->route('admin.contracts.index')
             ->with('success', 'Cập nhật hợp đồng thành công.');
     }
 
-    public function destroy(Contract $contract): RedirectResponse
+    public function destroy(Request $request, Contract $contract): RedirectResponse
     {
-        $this->service->softDelete($contract);
+        $this->service->softDelete($contract, $request->user()?->id);
 
         return redirect()
             ->route('admin.contracts.index')
@@ -186,20 +194,20 @@ class ContractController extends Controller
         ]);
     }
 
-    public function restore(int $id): RedirectResponse
+    public function restore(Request $request, int $id): RedirectResponse
     {
         $contract = Contract::onlyTrashed()->findOrFail($id);
-        $this->service->restore($contract);
+        $this->service->restore($contract, $request->user()?->id);
 
         return redirect()
             ->route('admin.contracts.trashed')
             ->with('success', 'Khôi phục hợp đồng thành công.');
     }
 
-    public function forceDelete(int $id): RedirectResponse
+    public function forceDelete(Request $request, int $id): RedirectResponse
     {
         $contract = Contract::onlyTrashed()->findOrFail($id);
-        $this->service->forceDelete($contract);
+        $this->service->forceDelete($contract, $request->user()?->id);
 
         return redirect()
             ->route('admin.contracts.trashed')
@@ -256,7 +264,7 @@ class ContractController extends Controller
 
     public function terminate(ContractTerminateRequest $request, Contract $contract): RedirectResponse
     {
-        $this->service->terminate($contract, $request->validated());
+        $this->service->terminate($contract, $request->validated(), $request->user()?->id);
 
         return redirect()
             ->route('admin.contracts.show', $contract)
@@ -300,20 +308,50 @@ class ContractController extends Controller
 
     public function cancel(ContractCancelRequest $request, Contract $contract): RedirectResponse
     {
-        $this->service->cancel($contract, $request->validated());
+        $this->service->cancel($contract, $request->validated(), $request->user()?->id);
 
         return redirect()
             ->route('admin.contracts.index')
             ->with('success', 'Hủy hợp đồng thành công.');
     }
 
-    public function activate(Contract $contract): RedirectResponse
+    public function activate(Request $request, Contract $contract): RedirectResponse
     {
-        $this->service->activate($contract);
+        $this->service->activate($contract, $request->user()?->id);
 
         return redirect()
             ->route('admin.contracts.show', $contract)
             ->with('success', 'Kích hoạt hợp đồng thành công.');
+    }
+
+    public function history(Request $request): View
+    {
+        $histories = ContractHistory::query()
+            ->with(['employee.department', 'contract', 'relatedContract', 'performer'])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $term = $request->string('search')->trim();
+                $q->where('summary', 'like', "%{$term}%")
+                    ->orWhereHas('employee', function ($sub) use ($term) {
+                        $sub->where('full_name', 'like', "%{$term}%")
+                            ->orWhere('employee_code', 'like', "%{$term}%");
+                    })
+                    ->orWhereHas('contract', fn ($sub) => $sub->where('contract_code', 'like', "%{$term}%"));
+            })
+            ->when($request->filled('action'), fn ($q) => $q->where('action', $request->action))
+            ->when($request->filled('employee_id'), fn ($q) => $q->where('employee_id', $request->employee_id))
+            ->when($request->filled('performed_by'), fn ($q) => $q->where('performed_by', $request->performed_by))
+            ->when($request->filled('date_from'), fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
+            ->orderByDesc('created_at')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.contracts.history', [
+            'histories' => $histories,
+            'employees' => Employee::orderBy('full_name')->get(['id', 'full_name', 'employee_code']),
+            'actions' => ContractHistory::ACTION_LABELS,
+            'filters' => $request->only(['search', 'action', 'employee_id', 'performed_by', 'date_from', 'date_to']),
+        ]);
     }
 
     private function statusOptions(): array
