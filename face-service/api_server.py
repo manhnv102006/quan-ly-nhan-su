@@ -197,6 +197,59 @@ def verify():
         _infer_lock.release()
 
 
+@app.post("/enroll/extract-batch")
+def enroll_extract_batch():
+    assert _engine is not None
+
+    if not _infer_lock.acquire(blocking=False):
+        return jsonify({
+            "success": False,
+            "message": "Máy chủ đang xử lý ảnh trước, vui lòng chờ...",
+        }), 429
+
+    try:
+        data = request.get_json(silent=True) or {}
+        images = data.get("images") or []
+
+        if not isinstance(images, list) or not images:
+            return jsonify({"success": False, "message": "Thiếu ảnh mẫu."}), 400
+
+        embeddings: list[np.ndarray] = []
+        last_image_base64: str | None = None
+
+        for image_base64 in images:
+            frame = _decode_image(str(image_base64))
+            if frame is None:
+                continue
+
+            frame = _resize_frame(frame)
+            faces = _engine.detect(frame)
+            face = _engine.largest_face(faces)
+            if face is None:
+                continue
+
+            embeddings.append(l2_normalize(face.embedding))
+            last_image_base64 = str(image_base64)
+
+        if not embeddings:
+            return jsonify({
+                "success": False,
+                "message": "Không thấy khuôn mặt trong các mẫu. Hãy nhìn thẳng vào camera.",
+            }), 422
+
+        mean_embedding = l2_normalize(np.mean(np.vstack(embeddings), axis=0))
+
+        return jsonify({
+            "success": True,
+            "embedding": mean_embedding.tolist(),
+            "sample_count": len(embeddings),
+            "image_base64": last_image_base64,
+            "message": f"Đã trích xuất {len(embeddings)} mẫu khuôn mặt.",
+        })
+    finally:
+        _infer_lock.release()
+
+
 def main() -> int:
     _init()
     port = _config.api_port  # type: ignore[union-attr]
