@@ -20,6 +20,7 @@ class StoreEmployeeOvertimeRequest extends FormRequest
             'work_date' => ['required', 'date'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'rate_multiplier' => ['required', 'numeric', 'in:1.5,2.0,3.0'],
             'reason' => ['required', 'string', 'max:500'],
         ];
     }
@@ -31,6 +32,8 @@ class StoreEmployeeOvertimeRequest extends FormRequest
             'start_time.required' => 'Vui lòng nhập giờ bắt đầu.',
             'end_time.required' => 'Vui lòng nhập giờ kết thúc.',
             'end_time.after' => 'Giờ kết thúc phải lớn hơn giờ bắt đầu.',
+            'rate_multiplier.required' => 'Vui lòng chọn loại ngày tăng ca.',
+            'rate_multiplier.in' => 'Loại ngày tăng ca không hợp lệ.',
             'reason.required' => 'Vui lòng nhập lý do tăng ca.',
         ];
     }

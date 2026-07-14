@@ -340,7 +340,7 @@
                             <span class="font-bold text-slate-800 text-emerald-600" id="modalBonus">0 ₫</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-slate-600 font-medium">Tăng ca:</span>
+                            <span class="text-slate-600 font-medium" id="modalOvertimeLabel">Tăng ca:</span>
                             <span class="font-bold text-slate-800 text-emerald-600" id="modalOvertime">0 ₫</span>
                         </div>
                         <div class="border-t border-slate-200/60 my-2"></div>
@@ -477,6 +477,7 @@
             document.getElementById('modalAllowanceFuel').innerText = data.allowance_fuel + ' ₫';
             document.getElementById('modalAllowancePosition').innerText = data.allowance_position + ' ₫';
             document.getElementById('modalBonus').innerText = data.bonus + ' ₫';
+            document.getElementById('modalOvertimeLabel').innerText = 'Tăng ca (' + data.overtime_hours + ' giờ):';
             document.getElementById('modalOvertime').innerText = data.overtime_pay + ' ₫';
             
             // Tính tổng thu nhập

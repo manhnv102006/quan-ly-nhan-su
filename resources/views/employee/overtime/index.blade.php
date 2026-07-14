@@ -59,6 +59,7 @@
                                 </td>
                                 <td class="px-6 py-4 text-center text-sm font-bold text-slate-800">
                                     {{ number_format(abs((float) $ot->total_hours), 1) }}h
+                                    <div class="text-[10px] text-slate-500 font-normal mt-0.5">Hệ số: x{{ $ot->rate_multiplier ?: 1.5 }}</div>
                                 </td>
                                 <td class="px-6 py-4 text-xs text-slate-500 max-w-[220px] truncate" title="{{ $ot->reason }}">
                                     {{ $ot->reason }}

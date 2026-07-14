@@ -34,12 +34,17 @@ class OvertimeRequest extends Model
         self::STATUS_COMPLETED => 'bg-sky-50 text-sky-700 border-sky-100',
     ];
 
+    public const RATE_NORMAL = 1.5;
+    public const RATE_WEEKEND = 2.0;
+    public const RATE_HOLIDAY = 3.0;
+
     protected $fillable = [
         'employee_id',
         'work_date',
         'start_time',
         'end_time',
         'total_hours',
+        'rate_multiplier',
         'reason',
         'status',
         'approved_by',
