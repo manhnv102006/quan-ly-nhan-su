@@ -21,6 +21,7 @@ class PayrollPeriod extends Model
         'approved_at',
         'paid_by',
         'paid_at',
+        'is_active',
     ];
 
     protected $casts = [
@@ -28,6 +29,7 @@ class PayrollPeriod extends Model
         'end_date' => 'date',
         'approved_at' => 'datetime',
         'paid_at' => 'datetime',
+        'is_active' => 'boolean',
     ];
 
     public function payrolls(): HasMany

@@ -101,10 +101,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::delete('/positions/{id}/force-delete', [PositionController::class, 'forceDelete'])->name('positions.forceDelete');
 
     // Kỳ lương
-    Route::get('/payroll-periods/trash', [PayrollPeriodController::class, 'trash'])->name('payroll-periods.trash');
-    Route::post('/payroll-periods/{id}/restore', [PayrollPeriodController::class, 'restore'])->name('payroll-periods.restore');
-    Route::delete('/payroll-periods/{id}/force-delete', [PayrollPeriodController::class, 'forceDelete'])->name('payroll-periods.forceDelete');
-    Route::resource('payroll-periods', PayrollPeriodController::class);
+    Route::patch('/payroll-periods/{payrollPeriod}/toggle-active', [PayrollPeriodController::class, 'toggleActive'])->name('payroll-periods.toggle-active');
+    Route::resource('payroll-periods', PayrollPeriodController::class)->except(['destroy']);
 
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
     Route::get('/employees/trash', [EmployeeController::class, 'trash'])->name('employees.trash');

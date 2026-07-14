@@ -11,10 +11,7 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
-                <a href="{{ route('admin.payroll-periods.trash') }}"
-                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition text-sm">
-                    🗑️ Thùng rác ({{ \App\Models\PayrollPeriod::onlyTrashed()->count() }})
-                </a>
+
                 <a href="{{ route('admin.payroll-periods.create') }}"
                    class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition text-sm">
                     <span>+</span>
@@ -137,7 +134,9 @@
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     @if ($period)
-                                        @if ($period->status === 'open')
+                                        @if (!$period->is_active)
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Đã khóa</span>
+                                        @elseif ($period->status === 'open')
                                             <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">Tạm tính</span>
                                         @elseif ($period->status === 'calculated')
                                             @if ($period->is_all_calculated)
@@ -183,19 +182,17 @@
                                                 ✏️ Chỉnh sửa
                                             </a>
 
-                                            <form action="{{ route('admin.payroll-periods.destroy', $period) }}"
-                                                  method="POST"
-                                                  id="delete-form-{{ $period->id }}"
-                                                  class="inline">
+                                            <form action="{{ route('admin.payroll-periods.toggle-active', $period) }}" method="POST" class="inline">
                                                 @csrf
-                                                @method('DELETE')
-                                                <button type="button"
-                                                        data-id="{{ $period->id }}"
-                                                        data-name="{{ $period->name }}"
-                                                        onclick="triggerDelete(this)"
-                                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition"
-                                                        title="Xóa kỳ lương">
-                                                    🗑️ Xóa
+                                                @method('PATCH')
+                                                <button type="submit"
+                                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg {{ $period->is_active ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' }} text-xs font-semibold transition"
+                                                        title="{{ $period->is_active ? 'Khóa kỳ lương' : 'Mở khóa kỳ lương' }}">
+                                                    @if ($period->is_active)
+                                                        🔒 Khóa
+                                                    @else
+                                                        🔓 Mở khóa
+                                                    @endif
                                                 </button>
                                             </form>
                                         </div>
@@ -215,34 +212,6 @@
 
     </div>
 
-    <!-- Modal Xóa -->
-    <div id="delete-modal"
-         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm mx-4 p-6 text-center">
-            <div class="w-16 h-16 mx-auto rounded-2xl bg-red-100 flex items-center justify-center">
-                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-            </div>
-            <h3 class="mt-5 text-lg font-bold text-slate-800">Xóa kỳ lương?</h3>
-            <p class="mt-2 text-sm text-slate-500">
-                Bạn có chắc chắn muốn xóa
-                <span id="delete-period-name" class="font-semibold text-slate-700"></span>?
-                Hành động này không thể hoàn tác nếu không có bản sao lưu.
-            </p>
-            <div class="mt-6 flex gap-3">
-                <button type="button" onclick="closeDeleteModal()"
-                        class="flex-1 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
-                    Hủy
-                </button>
-                <button type="button" onclick="confirmDelete()"
-                        class="flex-1 px-5 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition">
-                    Xóa
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- Thông báo Success -->
     @if (session('success'))
