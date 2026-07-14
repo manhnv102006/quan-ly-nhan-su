@@ -62,6 +62,7 @@ Route::get('/dashboard', [DashboardController::class, 'redirect'])
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+    Route::resource('holidays', App\Http\Controllers\Admin\HolidayController::class)->except(['show']);
     Route::get('/notifications/create', [NotificationController::class, 'create'])->name('notifications.create');
     Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
     Route::get('/accounts', [AccountController::class, 'index'])->name('accounts');
