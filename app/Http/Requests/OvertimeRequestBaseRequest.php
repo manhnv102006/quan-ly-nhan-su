@@ -38,6 +38,7 @@ abstract class OvertimeRequestBaseRequest extends FormRequest
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'total_hours' => ['nullable', 'numeric', 'min:0'],
+            'rate_multiplier' => ['required', 'numeric', 'in:1.5,2.0,3.0'],
             'reason' => ['required', 'string', 'max:1000'],
         ];
     }
@@ -54,6 +55,8 @@ abstract class OvertimeRequestBaseRequest extends FormRequest
             'end_time.required' => 'Vui lòng nhập giờ kết thúc.',
             'end_time.date_format' => 'Giờ kết thúc phải đúng định dạng HH:MM (24 giờ).',
             'end_time.after' => 'Giờ kết thúc phải lớn hơn giờ bắt đầu.',
+            'rate_multiplier.required' => 'Vui lòng chọn loại ngày tăng ca.',
+            'rate_multiplier.in' => 'Loại ngày tăng ca không hợp lệ.',
             'reason.required' => 'Vui lòng nhập lý do tăng ca.',
         ];
     }

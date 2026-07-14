@@ -105,6 +105,7 @@
                                 <span class="inline-flex min-w-[3.5rem] items-center justify-center rounded-full bg-violet-50 px-3 py-1 text-sm font-bold text-violet-700">
                                     {{ $displayHours($item) }}h
                                 </span>
+                                <div class="text-[10px] text-slate-500 font-normal mt-1">Hệ số: x{{ $item->rate_multiplier ?: 1.5 }}</div>
                             </td>
                             <td class="px-6 py-4 text-center">
                                 <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-bold {{ $statusClasses[$item->status] ?? 'bg-slate-100 text-slate-600 border-slate-200' }}">
