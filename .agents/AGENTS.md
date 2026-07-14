@@ -1,0 +1,1 @@
+# Project-Scoped Rules`n`n## Defense and Business Logic First`nWhen analyzing or testing features, ALWAYS consider real-world HR business logic. Proactively provide "defense-style" counter-arguments and edge cases (like a thesis committee teacher would) to help the user prepare for all scenarios.

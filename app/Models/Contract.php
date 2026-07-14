@@ -123,7 +123,7 @@ class Contract extends Model
 
     public function scopeOverlapping($query, Carbon $start, ?Carbon $end = null, ?int $ignoreId = null)
     {
-        $endDate = $end ?? Carbon::maxValue();
+        $endDate = $end ?? Carbon::parse('9999-12-31');
 
         return $query
             ->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId))
