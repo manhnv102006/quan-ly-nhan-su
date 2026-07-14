@@ -72,7 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return null;
         }
 
+        ctx.save();
+        ctx.translate(width, 0);
+        ctx.scale(-1, 1);
         ctx.drawImage(video, 0, 0, width, height);
+        ctx.restore();
         return canvas.toDataURL('image/jpeg', 0.8);
     };
 
