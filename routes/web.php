@@ -180,6 +180,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
     Route::resource('allowance-types', AllowanceTypeController::class)->except(['show']);
 
+    Route::get('/contracts/history', [ContractController::class, 'history'])->name('contracts.history');
     Route::get('/contracts/trash', [ContractController::class, 'trash'])->name('contracts.trashed');
     Route::post('/contracts/{contract}/restore', [ContractController::class, 'restore'])->name('contracts.restore');
     Route::delete('/contracts/{contract}/force-delete', [ContractController::class, 'forceDelete'])->name('contracts.forceDelete');
