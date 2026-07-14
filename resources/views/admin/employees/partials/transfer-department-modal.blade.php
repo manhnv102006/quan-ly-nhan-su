@@ -20,11 +20,13 @@
             <div>
                 <label for="to_department_id" class="block text-sm font-medium text-slate-700 mb-2">Phòng ban đích <span class="text-red-500">*</span></label>
                 @php
-                    $availableDepartments = $departments->where('id', '!=', $employee->department_id);
+                    $availableDepartments = $departments
+                        ->where('id', '!=', $employee->department_id)
+                        ->filter(fn ($department) => (int) ($department->employees_count ?? 0) < $department->maxEmployeesLimit());
                 @endphp
                 @if ($availableDepartments->isEmpty())
                     <p class="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                        Không có phòng ban khác để điều chuyển.
+                        Không có phòng ban khác còn chỗ trống.
                     </p>
                 @else
                     <select name="to_department_id" id="to_department_id" required
@@ -33,9 +35,11 @@
                         @foreach ($availableDepartments as $department)
                             <option value="{{ $department->id }}" @selected(old('to_department_id') == $department->id)>
                                 {{ $department->department_name }}
+                                ({{ $department->employees_count ?? 0 }}/{{ $department->maxEmployeesLimit() }})
                             </option>
                         @endforeach
                     </select>
+                    <p class="mt-1 text-xs text-slate-400">Chỉ hiển thị phòng ban còn chỗ theo giới hạn đã cấu hình.</p>
                 @endif
                 @error('to_department_id') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
             </div>

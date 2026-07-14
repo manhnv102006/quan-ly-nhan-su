@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\DepartmentEmployeeCapacity;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -46,7 +47,11 @@ class EmployeeRequest extends FormRequest
                 Rule::unique('employees', 'email')->ignore($employeeId),
             ],
             'address' => ['nullable', 'string', 'max:255'],
-            'department_id' => ['required', 'exists:departments,id'],
+            'department_id' => [
+                'required',
+                'exists:departments,id',
+                new DepartmentEmployeeCapacity($employeeId),
+            ],
             'position_id' => ['required', 'exists:positions,id'],
             'hire_date' => ['required', 'date', 'after_or_equal:date_of_birth'],
             'status' => ['required', Rule::in(['active', 'inactive', 'resigned'])],

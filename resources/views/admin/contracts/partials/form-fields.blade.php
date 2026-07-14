@@ -82,13 +82,16 @@
     </div>
 
     @if(! $isEdit)
-        <div>
-            <label for="status" class="admin-label">Trạng thái ban đầu</label>
-            <select id="status" name="status" class="admin-field">
-                <option value="active" @selected(old('status', 'active') === 'active')>Kích hoạt ngay</option>
-                <option value="draft" @selected(old('status') === 'draft')>Lưu nháp (Đang soạn)</option>
-            </select>
-            @error('status')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+        <div class="md:col-span-2 xl:col-span-3 rounded-xl border border-sky-100 bg-sky-50/60 px-4 py-3 text-sm text-sky-900">
+            <p class="font-semibold">Quy tắc tạo hợp đồng mới</p>
+            <ul class="mt-2 list-disc list-inside space-y-1 text-sky-800">
+                <li>Chỉ tạo mới khi nhân viên <strong>chưa có HĐ đang hiệu lực</strong> (đã có thì dùng Gia hạn / Chuyển loại).</li>
+                <li>Thử việc: có ngày kết thúc, tối đa 60 ngày.</li>
+                <li>Xác định thời hạn: có ngày kết thúc, tối đa 36 tháng.</li>
+                <li>Không xác định thời hạn: không nhập ngày kết thúc.</li>
+                <li>Thời vụ: có ngày kết thúc, dưới 12 tháng.</li>
+                <li>Trạng thái tự động: ngày bắt đầu ≤ hôm nay → <strong>Còn hiệu lực</strong>; ngày bắt đầu &gt; hôm nay → <strong>Chờ hiệu lực</strong>.</li>
+            </ul>
         </div>
     @endif
 </div>
