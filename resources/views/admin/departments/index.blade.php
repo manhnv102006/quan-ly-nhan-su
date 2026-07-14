@@ -107,6 +107,10 @@
                             </th>
 
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">
+                                Giới hạn NV
+                            </th>
+
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">
                                 Quản lý
                             </th>
 
@@ -153,7 +157,24 @@
                             </td>
 
                             <td class="px-6 py-4">
-                                {{ $dept->manager_id ?? 'Chưa chỉ định' }}
+                                @php($count = (int) ($dept->employees_count ?? 0))
+                                @php($limit = $dept->maxEmployeesLimit())
+                                <span @class([
+                                    'inline-flex px-3 py-1 rounded-full text-xs font-semibold',
+                                    'bg-emerald-100 text-emerald-700' => $count < $limit,
+                                    'bg-amber-100 text-amber-700' => $count >= $limit,
+                                ])>
+                                    {{ $count }}/{{ $limit }}
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                @if($dept->manager)
+                                    <span class="text-sm font-medium text-slate-800">{{ $dept->manager->full_name }}</span>
+                                    <span class="block text-xs text-slate-500">{{ $dept->manager->employee_code }}</span>
+                                @else
+                                    <span class="text-sm text-slate-400">Chưa chỉ định</span>
+                                @endif
                             </td>
 
                             <td class="px-6 py-4">
@@ -216,7 +237,7 @@
 
                         <tr>
 
-                            <td colspan="8"
+                            <td colspan="9"
                                 class="text-center py-12 text-slate-400">
 
                                 Chưa có phòng ban nào

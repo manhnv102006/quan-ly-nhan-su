@@ -5,20 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ContractExtension extends Model
+class ContractActivityLog extends Model
 {
+    public const ACTION_EXTEND = 'extend';
+
+    public const ACTION_CONVERT = 'convert';
+
+    public const ACTION_TERMINATE = 'terminate';
+
+    public const ACTION_CREATE = 'create';
+
     protected $fillable = [
         'contract_id',
-        'new_contract_id',
-        'old_end_date',
-        'new_end_date',
-        'note',
+        'related_contract_id',
+        'action',
+        'description',
         'performed_by',
-    ];
-
-    protected $casts = [
-        'old_end_date' => 'date',
-        'new_end_date' => 'date',
     ];
 
     public function contract(): BelongsTo
@@ -26,9 +28,9 @@ class ContractExtension extends Model
         return $this->belongsTo(Contract::class);
     }
 
-    public function newContract(): BelongsTo
+    public function relatedContract(): BelongsTo
     {
-        return $this->belongsTo(Contract::class, 'new_contract_id');
+        return $this->belongsTo(Contract::class, 'related_contract_id');
     }
 
     public function performer(): BelongsTo

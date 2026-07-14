@@ -15,10 +15,15 @@
                 </p>
             </div>
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('admin.contracts.index') }}" class="admin-btn-secondary">Danh sách</a>
+                <a href="{{ route('admin.contracts.by-employee', $contract->employee_id) }}" class="admin-btn-secondary">← Hợp đồng NV</a>
+                <a href="{{ route('admin.contracts.index') }}" class="admin-btn-secondary">Phòng ban</a>
                 @if($contract->isEditable())
                     <a href="{{ route('admin.contracts.edit', $contract) }}" class="admin-btn-secondary">Sửa</a>
+                @endif
+                @if($contract->canBeExtended() && ! $contract->isFixedTermRenewalBlocked())
                     <a href="{{ route('admin.contracts.extend.form', $contract) }}" class="admin-btn-violet">Gia hạn</a>
+                @endif
+                @if($contract->canBeExtended() || $contract->isEditable())
                     <a href="{{ route('admin.contracts.convert.form', $contract) }}" class="admin-btn-secondary">Chuyển loại HĐ</a>
                 @endif
             </div>
@@ -150,6 +155,23 @@
                         </table>
                     </div>
                 </div>
+
+                {{-- Lịch sử thao tác --}}
+                <div class="admin-card overflow-hidden">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800">Lịch sử thao tác hợp đồng</h3>
+                            <p class="text-xs text-slate-500">Ai thêm, sửa, gia hạn, chuyển loại, hủy hoặc chấm dứt hợp đồng</p>
+                        </div>
+                        <a href="{{ route('admin.contracts.history', ['employee_id' => $contract->employee_id]) }}"
+                           class="text-xs font-semibold text-violet-600 hover:underline">
+                            Xem tất cả
+                        </a>
+                    </div>
+                    <div class="p-5 sm:p-6">
+                        @include('admin.contracts.partials.history-timeline', ['histories' => $activityHistories])
+                    </div>
+                </div>
             </div>
 
             {{-- Hành động --}}
@@ -168,12 +190,22 @@
                         </form>
                     @endif
 
-                    @if($contract->isEditable())
+                @if($contract->canBeExtended())
                         <div class="space-y-3">
-                            <a href="{{ route('admin.contracts.extend.form', $contract) }}"
-                               class="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                                Gia hạn hợp đồng
-                            </a>
+                            @if($contract->isFixedTermRenewalBlocked())
+                                <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                    <p class="font-semibold">{{ \App\Models\Contract::fixedTermRenewalBlockedMessage() }}</p>
+                                    <a href="{{ route('admin.contracts.convert.form', $contract) }}"
+                                       class="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700">
+                                        Chuyển loại HĐ
+                                    </a>
+                                </div>
+                            @else
+                                <a href="{{ route('admin.contracts.extend.form', $contract) }}"
+                                   class="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                                    Gia hạn hợp đồng
+                                </a>
+                            @endif
                             <a href="{{ route('admin.contracts.convert.form', $contract) }}"
                                class="flex w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100">
                                 Chuyển loại (VD: thử việc → chính thức)
@@ -213,8 +245,22 @@
                                 </form>
                             </details>
                         </div>
+                    @elseif($contract->isEditable())
+                        <p class="text-sm text-slate-500">Hợp đồng chưa hiệu lực — chỉ sửa hoặc kích hoạt.</p>
                     @else
-                        <p class="text-sm text-slate-500">Hợp đồng không ở trạng thái cho phép sửa hoặc hủy.</p>
+                        <p class="text-sm text-slate-500">Hợp đồng không ở trạng thái cho phép thao tác.</p>
+                    @endif
+
+                    @if(session('error'))
+                        <div class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                            {{ session('error') }}
+                            @if(session('suggest_convert') && $contract->canBeExtended())
+                                <a href="{{ route('admin.contracts.convert.form', $contract) }}"
+                                   class="mt-2 inline-flex text-sm font-semibold text-violet-700 underline">
+                                    → Chuyển loại HĐ
+                                </a>
+                            @endif
+                        </div>
                     @endif
 
                     @if($contract->isDeletable())
