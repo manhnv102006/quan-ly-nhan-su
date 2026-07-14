@@ -107,6 +107,83 @@
             ])
         </div>
 
+        <!-- Lịch sử hoạt động -->
+        <div class="mt-8">
+            <h3 class="text-xl font-bold text-slate-800 mb-4">Lịch sử thay đổi (Activity Log)</h3>
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+                @if(isset($activities) && $activities->count() > 0)
+                    <div class="relative border-l-2 border-slate-200 ml-4 space-y-8 py-2">
+                        @foreach($activities as $activity)
+                            <div class="relative pl-6">
+                                <!-- Điểm mốc (dot) -->
+                                <div class="absolute -left-[11px] top-1.5 w-5 h-5 rounded-full bg-violet-500 border-4 border-white shadow-sm"></div>
+                                
+                                <div class="flex items-start gap-4">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-semibold text-slate-800">{{ $activity->causer ? $activity->causer->name : 'Hệ thống' }}</span>
+                                            <span class="text-slate-400 text-sm">•</span>
+                                            <span class="text-slate-500 text-sm" title="{{ $activity->created_at?->format('d/m/Y H:i:s') }}">
+                                                {{ $activity->created_at?->diffForHumans() }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="mt-1 text-slate-700">
+                                            @if($activity->event === 'created')
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-50 text-emerald-700 text-xs font-semibold">✨ Đã tạo kỳ lương</span>
+                                            @elseif($activity->event === 'updated')
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-amber-50 text-amber-700 text-xs font-semibold">📝 Đã cập nhật</span>
+                                                @if($activity->properties->has('attributes') && $activity->properties->has('old'))
+                                                    <div class="mt-2 text-sm bg-slate-50 border border-slate-100 rounded-xl p-3">
+                                                        <ul class="space-y-1">
+                                                            @foreach($activity->properties['attributes'] as $key => $newValue)
+                                                                @php
+                                                                    $oldValue = $activity->properties['old'][$key] ?? 'N/A';
+                                                                @endphp
+                                                                @if($oldValue != $newValue)
+                                                                    <li class="flex items-center gap-2">
+                                                                        <span class="font-medium text-slate-600 w-24">{{ $key }}:</span> 
+                                                                        <span class="text-rose-500 line-through bg-rose-50 px-1 rounded">{{ is_bool($oldValue) ? ($oldValue ? 'true' : 'false') : $oldValue }}</span> 
+                                                                        <span class="text-slate-400">→</span> 
+                                                                        <span class="text-emerald-600 font-medium bg-emerald-50 px-1 rounded">{{ is_bool($newValue) ? ($newValue ? 'true' : 'false') : $newValue }}</span>
+                                                                    </li>
+                                                                @endif
+                                                            @endforeach
+                                                        </ul>
+                                                    </div>
+                                                @endif
+                                            @elseif($activity->event === 'deleted')
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-rose-50 text-rose-700 text-xs font-semibold">🗑️ Đã xóa</span>
+                                            @elseif($activity->event === 'calculate')
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-violet-50 text-violet-700 text-xs font-semibold">⚡ {{ $activity->description }}</span>
+                                            @elseif($activity->event === 'recalculate')
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-orange-50 text-orange-700 text-xs font-semibold">🔄 {{ $activity->description }}</span>
+                                            @elseif($activity->event === 'approve')
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-indigo-50 text-indigo-700 text-xs font-semibold">✅ {{ $activity->description }}</span>
+                                            @elseif($activity->event === 'pay')
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-50 text-emerald-700 text-xs font-semibold">💰 {{ $activity->description }}</span>
+                                            @elseif($activity->event === 'close')
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs font-semibold">🔒 {{ $activity->description }}</span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs font-semibold">{{ $activity->description }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-6">
+                        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-2xl">📜</span>
+                        </div>
+                        <p class="text-slate-500 font-medium">Chưa có lịch sử thay đổi nào được ghi nhận.</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+
     </div>
 
     <!-- Thông báo Success -->
