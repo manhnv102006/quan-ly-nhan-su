@@ -60,6 +60,19 @@
     </div>
 @endif
 
+<div class="col-md-4">
+    <label for="rate_multiplier" class="form-label fw-semibold">Loại ngày tăng ca</label>
+    <select id="rate_multiplier" name="rate_multiplier" class="form-select @error('rate_multiplier') is-invalid @enderror" required>
+        <option value="1.5" @selected(old('rate_multiplier', $model?->rate_multiplier) == '1.5')>Ngày thường (x1.5)</option>
+        <option value="2.0" @selected(old('rate_multiplier', $model?->rate_multiplier) == '2.0')>Ngày nghỉ cuối tuần (x2.0)</option>
+        <option value="3.0" @selected(old('rate_multiplier', $model?->rate_multiplier) == '3.0')>Ngày Lễ, Tết (x3.0)</option>
+    </select>
+    @error('rate_multiplier')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+</div>
+
+
 @if($showStatus ?? false)
     <div class="col-md-4">
         <label for="status" class="form-label fw-semibold">Trạng thái</label>

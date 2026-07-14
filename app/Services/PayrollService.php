@@ -162,6 +162,15 @@ class PayrollService
             // Phụ cấp cố định 1.500.000đ cho mọi nhân viên (dùng chung hằng số với hợp đồng).
             $allowance = $noAllowance ? 0 : ContractService::FIXED_ALLOWANCE;
 
+            // Pro-rata các khoản phụ cấp cố định theo ngày làm việc thực tế
+            if (!$noAllowance && $standardWorkingDays > 0) {
+                $prorataRatio = $actualWorkingDays / $standardWorkingDays;
+                $allowancePhone = round($allowancePhone * $prorataRatio, 0);
+                $allowanceFuel = round($allowanceFuel * $prorataRatio, 0);
+                $allowancePosition = round($allowancePosition * $prorataRatio, 0);
+                $allowance = round($allowance * $prorataRatio, 0);
+            }
+
             // Tổng phụ cấp thực nhận (cố định + ăn trưa + điện thoại + xăng xe + chức vụ)
             $totalAllowance = $allowance + $allowanceMeal + $allowancePhone + $allowanceFuel + $allowancePosition;
 
@@ -206,18 +215,28 @@ class PayrollService
                 }
             }
 
-            // I. Lương tăng ca: tổng giờ OT đã duyệt hoặc hoàn thành trong kỳ * hệ số 1.5
-            $overtimeHours = (float) OvertimeRequest::query()
+            // I. Lương tăng ca: tính theo từng loại ngày (từng hệ số)
+            $overtimeRequests = OvertimeRequest::query()
                 ->where('employee_id', $employee->id)
                 ->whereIn('status', [OvertimeRequest::STATUS_APPROVED, OvertimeRequest::STATUS_COMPLETED])
                 ->whereBetween('work_date', [$startDate, $endDate])
-                ->sum('total_hours');
+                ->get(['total_hours', 'rate_multiplier']);
 
             $standardMonthlyHours = $standardWorkingDays * 8;
             $hourlyRate = ($contractSalary > 0 && $standardMonthlyHours > 0)
                 ? ($contractSalary / $standardMonthlyHours)
                 : 0;
-            $overtimePay = round($overtimeHours * $hourlyRate * self::OVERTIME_RATE_MULTIPLIER, 0);
+            
+            $overtimeHours = 0;
+            $overtimePay = 0;
+
+            foreach ($overtimeRequests as $ot) {
+                $hours = (float) $ot->total_hours;
+                $rate = (float) $ot->rate_multiplier ?: self::OVERTIME_RATE_MULTIPLIER;
+                $overtimeHours += $hours;
+                $overtimePay += $hours * $hourlyRate * $rate;
+            }
+            $overtimePay = round($overtimePay, 0);
 
             // J. Thực lĩnh = Lương cơ bản (pro-rata) + Tổng phụ cấp + Thưởng KPI + Lương tăng ca - Khấu trừ
             $totalSalary = $basicSalary + $totalAllowance + $bonus + $overtimePay - $deduction;
@@ -333,11 +352,11 @@ class PayrollService
         $endDate = $period->end_date;
 
         // Tính lại tổng số giờ tăng ca của nhân viên đó trong kỳ (chỉ tính những đơn đã duyệt hoặc hoàn thành)
-        $overtimeHours = (float) OvertimeRequest::query()
+        $overtimeRequests = OvertimeRequest::query()
             ->where('employee_id', $employeeId)
             ->whereIn('status', [OvertimeRequest::STATUS_APPROVED, OvertimeRequest::STATUS_COMPLETED])
             ->whereBetween('work_date', [$startDate, $endDate])
-            ->sum('total_hours');
+            ->get(['total_hours', 'rate_multiplier']);
 
         // Tìm lương hợp đồng / lương cơ bản gốc
         $employee = $payroll->employee;
@@ -355,7 +374,16 @@ class PayrollService
             ? ($contractSalary / $standardMonthlyHours)
             : 0;
 
-        $overtimePay = round($overtimeHours * $hourlyRate * self::OVERTIME_RATE_MULTIPLIER, 0);
+        $overtimeHours = 0;
+        $overtimePay = 0;
+
+        foreach ($overtimeRequests as $ot) {
+            $hours = (float) $ot->total_hours;
+            $rate = (float) $ot->rate_multiplier ?: self::OVERTIME_RATE_MULTIPLIER;
+            $overtimeHours += $hours;
+            $overtimePay += $hours * $hourlyRate * $rate;
+        }
+        $overtimePay = round($overtimePay, 0);
 
         // Tính lại tổng lương thực lĩnh (cộng đủ các khoản phụ cấp đã lưu)
         $totalAllowance = (float) $payroll->allowance

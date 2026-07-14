@@ -52,6 +52,7 @@ class OvertimeController extends Controller
             'work_date' => $validated['work_date'],
             'start_time' => $validated['start_time'],
             'end_time' => $validated['end_time'],
+            'rate_multiplier' => $validated['rate_multiplier'],
             'reason' => $validated['reason'],
         ]);
 
