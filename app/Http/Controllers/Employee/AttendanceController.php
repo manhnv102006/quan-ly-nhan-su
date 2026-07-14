@@ -33,6 +33,7 @@ class AttendanceController extends Controller
     public function index(): View
     {
         $employee = Employee::where('user_id', Auth::id())->firstOrFail();
+        $todayShifts = $employee->todayShifts();
         $todayShift = $employee->todayShift();
         $today = Carbon::today();
         $now = Carbon::now();
@@ -110,6 +111,7 @@ class AttendanceController extends Controller
         return view('employee.attendance.index', compact(
             'employee',
             'todayShift',
+            'todayShifts',
             'attendance',
             'isFullDayShift',
             'attendanceSessions',

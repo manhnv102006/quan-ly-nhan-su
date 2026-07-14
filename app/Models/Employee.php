@@ -271,11 +271,36 @@ class Employee extends Model
         });
     }
 
-    public function todayShift()
+    public function todayShifts()
     {
         return $this->employeeShifts()
             ->whereDate('work_date', today())
             ->with('shift')
-            ->first();
+            ->get()
+            ->sortBy(fn (EmployeeShift $employeeShift) => $employeeShift->shift?->start_time)
+            ->values();
+    }
+
+    public function todayShift()
+    {
+        $today = today();
+        $now = now();
+
+        foreach ($this->todayShifts() as $employeeShift) {
+            $shift = $employeeShift->shift;
+
+            if (! $shift) {
+                continue;
+            }
+
+            $start = \Carbon\Carbon::parse($shift->start_time)->setDateFrom($today);
+            $end = \Carbon\Carbon::parse($shift->end_time)->setDateFrom($today);
+
+            if ($now->between($start, $end) || $now->lt($start)) {
+                return $employeeShift;
+            }
+        }
+
+        return $this->todayShifts()->last();
     }
 }
