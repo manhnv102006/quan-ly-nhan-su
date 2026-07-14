@@ -6,7 +6,9 @@ use App\Models\Employee;
 use App\Models\OvertimeRequest;
 use App\Models\Payroll;
 use App\Models\PayrollPeriod;
+use App\Models\Holiday;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class PayrollService
 {
@@ -57,6 +59,20 @@ class PayrollService
 
         // Tính ngày công chuẩn trong kỳ (Thứ 2 - Thứ 7, trừ Chủ nhật)
         $standardWorkingDays = $this->calculateStandardWorkingDays($startDate, $endDate);
+
+        // Lấy danh sách ngày Lễ / Sự kiện trong kỳ
+        $holidays = Holiday::inRange($startDate, $endDate)->get();
+        $holidayDates = [];
+        foreach ($holidays as $holiday) {
+            $hStart = Carbon::parse($holiday->start_date)->max($startDate);
+            $hEnd = Carbon::parse($holiday->end_date)->min($endDate);
+            for ($date = $hStart->copy(); $date->lte($hEnd); $date->addDay()) {
+                if (!$date->isSunday()) {
+                    $holidayDates[] = $date->format('Y-m-d');
+                }
+            }
+        }
+        $holidayDates = array_unique($holidayDates);
 
         foreach ($employees as $employee) {
             // A. Lương hợp đồng (full tháng): Ưu tiên hợp đồng active còn hiệu lực trong kỳ, nếu không thì lấy từ chức vụ
@@ -113,7 +129,24 @@ class PayrollService
             $approvedPaidLeavesCount = 0;
             $unapprovedAbsences = 0;
 
+            // Lấy các ngày nghỉ lễ mà nhân viên KHÔNG ĐI LÀM (Nếu đi làm thì đã tính ở presentDays)
+            $holidayPaidDays = 0;
+            foreach ($holidayDates as $hDate) {
+                $hasPresentRecord = $employee->attendances()
+                    ->where('attendance_date', $hDate)
+                    ->whereIn('status', ['present', 'late'])
+                    ->exists();
+                if (!$hasPresentRecord) {
+                    $holidayPaidDays++;
+                }
+            }
+
             foreach ($absentRecords as $record) {
+                // Bỏ qua nếu ngày vắng mặt trùng với ngày Lễ (Vì đã tính là holidayPaidDays)
+                if (in_array($record->attendance_date->format('Y-m-d'), $holidayDates)) {
+                    continue;
+                }
+
                 // Kiểm tra xem ngày vắng mặt này có đơn nghỉ phép có lương (annual, sick) được duyệt không
                 $hasLeave = $employee->leaveRequests()
                     ->where('status', 'approved')
@@ -136,8 +169,8 @@ class PayrollService
             // Số ngày nghỉ bị trừ tiền = nghỉ không phép + nghỉ có phép vượt quá hạn mức
             $unpaidLeaveDays = $unapprovedAbsences + $excessPaidLeaves;
 
-            // E. Ngày công thực tế = ngày đi làm (present+late) + ngày nghỉ phép hưởng lương
-            $actualWorkingDays = $presentDays + $paidLeaveDays;
+            // E. Ngày công thực tế = ngày đi làm (present+late) + nghỉ phép hưởng lương + nghỉ lễ
+            $actualWorkingDays = $presentDays + $paidLeaveDays + $holidayPaidDays;
             // Đảm bảo không vượt quá ngày công chuẩn
             $actualWorkingDays = min($actualWorkingDays, $standardWorkingDays);
 
@@ -161,6 +194,15 @@ class PayrollService
 
             // Phụ cấp cố định 1.500.000đ cho mọi nhân viên (dùng chung hằng số với hợp đồng).
             $allowance = $noAllowance ? 0 : ContractService::FIXED_ALLOWANCE;
+
+            // Pro-rata các khoản phụ cấp cố định theo ngày làm việc thực tế
+            if (!$noAllowance && $standardWorkingDays > 0) {
+                $prorataRatio = $actualWorkingDays / $standardWorkingDays;
+                $allowancePhone = round($allowancePhone * $prorataRatio, 0);
+                $allowanceFuel = round($allowanceFuel * $prorataRatio, 0);
+                $allowancePosition = round($allowancePosition * $prorataRatio, 0);
+                $allowance = round($allowance * $prorataRatio, 0);
+            }
 
             // Tổng phụ cấp thực nhận (cố định + ăn trưa + điện thoại + xăng xe + chức vụ)
             $totalAllowance = $allowance + $allowanceMeal + $allowancePhone + $allowanceFuel + $allowancePosition;
@@ -206,18 +248,28 @@ class PayrollService
                 }
             }
 
-            // I. Lương tăng ca: tổng giờ OT đã duyệt hoặc hoàn thành trong kỳ * hệ số 1.5
-            $overtimeHours = (float) OvertimeRequest::query()
+            // I. Lương tăng ca: tính theo từng loại ngày (từng hệ số)
+            $overtimeRequests = OvertimeRequest::query()
                 ->where('employee_id', $employee->id)
                 ->whereIn('status', [OvertimeRequest::STATUS_APPROVED, OvertimeRequest::STATUS_COMPLETED])
                 ->whereBetween('work_date', [$startDate, $endDate])
-                ->sum('total_hours');
+                ->get(['total_hours', 'rate_multiplier']);
 
             $standardMonthlyHours = $standardWorkingDays * 8;
             $hourlyRate = ($contractSalary > 0 && $standardMonthlyHours > 0)
                 ? ($contractSalary / $standardMonthlyHours)
                 : 0;
-            $overtimePay = round($overtimeHours * $hourlyRate * self::OVERTIME_RATE_MULTIPLIER, 0);
+            
+            $overtimeHours = 0;
+            $overtimePay = 0;
+
+            foreach ($overtimeRequests as $ot) {
+                $hours = (float) $ot->total_hours;
+                $rate = (float) $ot->rate_multiplier ?: self::OVERTIME_RATE_MULTIPLIER;
+                $overtimeHours += $hours;
+                $overtimePay += $hours * $hourlyRate * $rate;
+            }
+            $overtimePay = round($overtimePay, 0);
 
             // J. Thực lĩnh = Lương cơ bản (pro-rata) + Tổng phụ cấp + Thưởng KPI + Lương tăng ca - Khấu trừ
             $totalSalary = $basicSalary + $totalAllowance + $bonus + $overtimePay - $deduction;
@@ -333,11 +385,11 @@ class PayrollService
         $endDate = $period->end_date;
 
         // Tính lại tổng số giờ tăng ca của nhân viên đó trong kỳ (chỉ tính những đơn đã duyệt hoặc hoàn thành)
-        $overtimeHours = (float) OvertimeRequest::query()
+        $overtimeRequests = OvertimeRequest::query()
             ->where('employee_id', $employeeId)
             ->whereIn('status', [OvertimeRequest::STATUS_APPROVED, OvertimeRequest::STATUS_COMPLETED])
             ->whereBetween('work_date', [$startDate, $endDate])
-            ->sum('total_hours');
+            ->get(['total_hours', 'rate_multiplier']);
 
         // Tìm lương hợp đồng / lương cơ bản gốc
         $employee = $payroll->employee;
@@ -355,7 +407,16 @@ class PayrollService
             ? ($contractSalary / $standardMonthlyHours)
             : 0;
 
-        $overtimePay = round($overtimeHours * $hourlyRate * self::OVERTIME_RATE_MULTIPLIER, 0);
+        $overtimeHours = 0;
+        $overtimePay = 0;
+
+        foreach ($overtimeRequests as $ot) {
+            $hours = (float) $ot->total_hours;
+            $rate = (float) $ot->rate_multiplier ?: self::OVERTIME_RATE_MULTIPLIER;
+            $overtimeHours += $hours;
+            $overtimePay += $hours * $hourlyRate * $rate;
+        }
+        $overtimePay = round($overtimePay, 0);
 
         // Tính lại tổng lương thực lĩnh (cộng đủ các khoản phụ cấp đã lưu)
         $totalAllowance = (float) $payroll->allowance

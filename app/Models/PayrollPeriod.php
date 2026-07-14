@@ -7,9 +7,22 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 class PayrollPeriod extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'month', 'year', 'start_date', 'end_date', 'status', 'is_active'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => "This model has been {$eventName}");
+    }
+
     protected $fillable = [
         'name',
         'month',
@@ -21,6 +34,7 @@ class PayrollPeriod extends Model
         'approved_at',
         'paid_by',
         'paid_at',
+        'is_active',
     ];
 
     protected $casts = [
@@ -28,6 +42,7 @@ class PayrollPeriod extends Model
         'end_date' => 'date',
         'approved_at' => 'datetime',
         'paid_at' => 'datetime',
+        'is_active' => 'boolean',
     ];
 
     public function payrolls(): HasMany
