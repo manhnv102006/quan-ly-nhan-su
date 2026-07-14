@@ -135,6 +135,11 @@ class EmployeeController extends Controller
             ->limit(10)
             ->get();
 
+        $contractHistories = $employee->contractHistories()
+            ->with(['performer', 'contract', 'relatedContract'])
+            ->limit(10)
+            ->get();
+
         $availableAccounts = User::query()
             ->with('role')
             ->availableForEmployeeLink()
@@ -150,6 +155,7 @@ class EmployeeController extends Controller
             'documents',
             'departments',
             'transferHistory',
+            'contractHistories',
             'availableAccounts',
         ));
     }

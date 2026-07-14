@@ -11,6 +11,9 @@
                 <p class="text-sm text-slate-500">Lọc, tìm kiếm, gia hạn, hủy và quản lý thùng rác hợp đồng lao động.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('admin.contracts.history') }}" class="admin-btn-secondary">
+                    Lịch sử thao tác
+                </a>
                 <a href="{{ route('admin.contracts.trashed') }}"
                    class="admin-btn-secondary">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">

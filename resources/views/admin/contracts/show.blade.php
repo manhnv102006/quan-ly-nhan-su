@@ -154,6 +154,23 @@
                         </table>
                     </div>
                 </div>
+
+                {{-- Lịch sử thao tác --}}
+                <div class="admin-card overflow-hidden">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800">Lịch sử thao tác hợp đồng</h3>
+                            <p class="text-xs text-slate-500">Ai thêm, sửa, gia hạn, chuyển loại, hủy hoặc chấm dứt hợp đồng</p>
+                        </div>
+                        <a href="{{ route('admin.contracts.history', ['employee_id' => $contract->employee_id]) }}"
+                           class="text-xs font-semibold text-violet-600 hover:underline">
+                            Xem tất cả
+                        </a>
+                    </div>
+                    <div class="p-5 sm:p-6">
+                        @include('admin.contracts.partials.history-timeline', ['histories' => $activityHistories])
+                    </div>
+                </div>
             </div>
 
             {{-- Hành động --}}
@@ -242,20 +259,6 @@
                                     → Chuyển loại HĐ
                                 </a>
                             @endif
-                        </div>
-                    @endif
-
-                    @if($contract->activityLogs->isNotEmpty())
-                        <div class="mt-5 border-t border-slate-100 pt-5">
-                            <h4 class="mb-3 text-sm font-bold text-slate-800">Nhật ký thao tác</h4>
-                            <ul class="space-y-2 text-xs text-slate-600">
-                                @foreach($contract->activityLogs->take(5) as $log)
-                                    <li class="rounded-lg bg-slate-50 px-3 py-2">
-                                        <span class="font-medium text-slate-800">{{ $log->created_at?->format('d/m/Y H:i') }}</span>
-                                        · {{ $log->description }}
-                                    </li>
-                                @endforeach
-                            </ul>
                         </div>
                     @endif
 
