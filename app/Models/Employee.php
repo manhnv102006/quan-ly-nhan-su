@@ -67,6 +67,11 @@ class Employee extends Model
         return $this->hasMany(Contract::class);
     }
 
+    public function contractHistories(): HasMany
+    {
+        return $this->hasMany(ContractHistory::class)->orderByDesc('created_at');
+    }
+
     public function overtimeRequests(): HasMany
     {
         return $this->hasMany(OvertimeRequest::class);

@@ -21,9 +21,12 @@
                     ['label' => 'Phòng ban', 'value' => $contract->display_department_name],
                     ['label' => 'Chức vụ', 'value' => $contract->display_position_name],
                     ['label' => 'Loại hợp đồng', 'value' => $contract->contractType->contract_name ?? '—'],
+                    ['label' => 'Lần gia hạn', 'value' => (string) ($contract->renewal_count ?? 0)],
+                    ['label' => 'HĐ trước đó', 'value' => $contract->previousContract?->contract_code ?? '—'],
                     ['label' => 'Ngày ký', 'value' => optional($contract->signed_date)->format('d/m/Y') ?? '—'],
                     ['label' => 'Ngày bắt đầu', 'value' => optional($contract->start_date)->format('d/m/Y') ?? '—'],
                     ['label' => 'Ngày kết thúc', 'value' => optional($contract->end_date)->format('d/m/Y') ?? 'Không xác định'],
+                    ['label' => 'Ngày kết thúc thực tế', 'value' => optional($contract->actual_end_date)->format('d/m/Y') ?? '—'],
                     ['label' => 'Lương cơ bản', 'value' => number_format($contract->salary, 0, ',', '.') . '₫'],
                     ['label' => 'Tổng phụ cấp', 'value' => number_format($totalAllowance, 0, ',', '.') . '₫'],
                 ] as $field)

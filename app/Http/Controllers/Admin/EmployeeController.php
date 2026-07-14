@@ -9,6 +9,7 @@ use App\Models\Employee;
 use App\Models\EmployeeDocument;
 use App\Models\Position;
 use App\Models\User;
+use App\Rules\DepartmentEmployeeCapacity;
 use App\Services\ManagerDepartmentSyncService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -41,7 +42,10 @@ class EmployeeController extends Controller
 
     public function create(): View
     {
-        $departments = Department::query()->orderBy('department_name')->get(['id', 'department_name']);
+        $departments = Department::query()
+            ->withCount('employees')
+            ->orderBy('department_name')
+            ->get(['id', 'department_name', 'max_employees']);
         $positions = Position::query()->orderBy('position_name')->get(['id', 'position_name']);
         $users = User::query()
             ->availableForEmployeeLink()
@@ -64,7 +68,7 @@ class EmployeeController extends Controller
             'phone' => ['required', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:100', 'unique:employees,email'],
             'address' => ['nullable', 'string', 'max:255'],
-            'department_id' => ['nullable', 'exists:departments,id'],
+            'department_id' => ['nullable', 'exists:departments,id', new DepartmentEmployeeCapacity()],
             'position_id' => ['nullable', 'exists:positions,id'],
             'hire_date' => ['required', 'date'],
             'status' => ['required', 'in:active,inactive,resigned'],
@@ -121,8 +125,9 @@ class EmployeeController extends Controller
 
         $departments = Department::query()
             ->where('status', 'active')
+            ->withCount('employees')
             ->orderBy('department_name')
-            ->get(['id', 'department_name']);
+            ->get(['id', 'department_name', 'max_employees']);
 
         $transferHistory = $employee->departmentTransfers()
             ->with(['fromDepartment', 'toDepartment', 'transferredBy'])
@@ -151,7 +156,10 @@ class EmployeeController extends Controller
 
     public function edit(Employee $employee): View
     {
-        $departments = Department::query()->orderBy('department_name')->get(['id', 'department_name']);
+        $departments = Department::query()
+            ->withCount('employees')
+            ->orderBy('department_name')
+            ->get(['id', 'department_name', 'max_employees']);
         $positions = Position::query()->orderBy('position_name')->get(['id', 'position_name']);
         $documents = $employee->documents()->latest()->get();
         $users = User::query()
@@ -175,7 +183,7 @@ class EmployeeController extends Controller
             'phone' => ['required', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:100', 'unique:employees,email,'.$employee->id],
             'address' => ['nullable', 'string', 'max:255'],
-            'department_id' => ['nullable', 'exists:departments,id'],
+            'department_id' => ['nullable', 'exists:departments,id', new DepartmentEmployeeCapacity($employee->id)],
             'position_id' => ['nullable', 'exists:positions,id'],
             'hire_date' => ['required', 'date'],
             'status' => ['required', 'in:active,inactive,resigned'],
@@ -198,7 +206,7 @@ class EmployeeController extends Controller
     public function transferDepartment(Request $request, Employee $employee): RedirectResponse
     {
         $validated = $request->validate([
-            'to_department_id' => ['required', 'exists:departments,id'],
+            'to_department_id' => ['required', 'exists:departments,id', new DepartmentEmployeeCapacity()],
             'effective_date' => ['required', 'date'],
             'note' => ['nullable', 'string', 'max:500'],
         ], [

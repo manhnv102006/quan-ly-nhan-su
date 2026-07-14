@@ -85,12 +85,10 @@
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700">Phòng ban <span class="text-rose-500">*</span></label>
-                    <select name="department_id" required class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('department_id') border-rose-400 @else border-slate-200 @enderror">
-                        <option value="">-- Chọn phòng ban --</option>
-                        @foreach ($departments as $dept)
-                            <option value="{{ $dept->id }}" @selected(old('department_id') == $dept->id)>{{ $dept->department_name }}</option>
-                        @endforeach
-                    </select>
+                    @include('admin.partials.department-select', [
+                        'departments' => $departments,
+                        'selected' => old('department_id'),
+                    ])
                     @error('department_id') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
