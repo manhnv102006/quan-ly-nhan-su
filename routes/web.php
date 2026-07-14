@@ -102,6 +102,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
     // Kỳ lương
     Route::patch('/payroll-periods/{payrollPeriod}/toggle-active', [PayrollPeriodController::class, 'toggleActive'])->name('payroll-periods.toggle-active');
+    Route::post('/payroll-periods/{payrollPeriod}/payrolls/{payroll}/adjust', [PayrollPeriodController::class, 'adjustPayroll'])->name('payroll-periods.adjust-payroll');
     Route::resource('payroll-periods', PayrollPeriodController::class)->except(['destroy']);
 
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');

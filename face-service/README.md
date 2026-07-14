@@ -68,4 +68,4 @@ Nhấn `Q` để thoát.
 ## Ghi chú
 
 - `venv/` và `face-service/.env` không được đẩy lên Git.
-- Kiosk cần cùng mạng với server Laravel.
+- Kiosk cần cùng mạng với server Laravel.  
