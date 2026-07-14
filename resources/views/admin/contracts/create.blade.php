@@ -5,7 +5,7 @@
                 <h2 class="text-2xl font-bold text-slate-800">Tạo hợp đồng mới</h2>
                 <p class="text-sm text-slate-500">Nhập thông tin hợp đồng lao động cho nhân viên đang hoạt động.</p>
             </div>
-            <a href="{{ route('admin.contracts.index') }}" class="admin-btn-secondary">Quay lại danh sách</a>
+            <a href="{{ route('admin.contracts.index') }}" class="admin-btn-secondary">← Phòng ban</a>
         </div>
 
         <div class="admin-card p-5 sm:p-6">
@@ -17,6 +17,7 @@
                     'departments' => $departments,
                     'positions' => $positions,
                     'nextCode' => $nextCode,
+                    'selectedEmployeeId' => $selectedEmployeeId ?? null,
                 ])
 
                 <div class="mt-6 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-5">

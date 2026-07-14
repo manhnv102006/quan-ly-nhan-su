@@ -15,7 +15,8 @@
                 </p>
             </div>
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('admin.contracts.index') }}" class="admin-btn-secondary">Danh sách</a>
+                <a href="{{ route('admin.contracts.by-employee', $contract->employee_id) }}" class="admin-btn-secondary">← Hợp đồng NV</a>
+                <a href="{{ route('admin.contracts.index') }}" class="admin-btn-secondary">Phòng ban</a>
                 @if($contract->isEditable())
                     <a href="{{ route('admin.contracts.edit', $contract) }}" class="admin-btn-secondary">Sửa</a>
                 @endif

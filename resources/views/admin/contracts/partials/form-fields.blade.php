@@ -15,7 +15,7 @@
                     <option value="{{ $employee->id }}"
                             data-department-id="{{ $employee->department_id }}"
                             data-position-id="{{ $employee->position_id }}"
-                            @selected(old('employee_id') == $employee->id)>
+                            @selected(old('employee_id', $selectedEmployeeId ?? null) == $employee->id)>
                         {{ $employee->full_name }} ({{ $employee->employee_code }})
                     </option>
                 @endforeach
