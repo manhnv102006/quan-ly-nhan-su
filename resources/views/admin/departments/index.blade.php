@@ -169,7 +169,12 @@
                             </td>
 
                             <td class="px-6 py-4">
-                                {{ $dept->manager_id ?? 'Chưa chỉ định' }}
+                                @if($dept->manager)
+                                    <span class="text-sm font-medium text-slate-800">{{ $dept->manager->full_name }}</span>
+                                    <span class="block text-xs text-slate-500">{{ $dept->manager->employee_code }}</span>
+                                @else
+                                    <span class="text-sm text-slate-400">Chưa chỉ định</span>
+                                @endif
                             </td>
 
                             <td class="px-6 py-4">
