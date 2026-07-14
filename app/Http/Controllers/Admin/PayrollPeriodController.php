@@ -129,16 +129,34 @@ class PayrollPeriodController extends Controller
             ->with('success', 'Thêm kỳ lương mới thành công.');
     }
 
-    public function edit(PayrollPeriod $payrollPeriod): View
+    public function edit(PayrollPeriod $payrollPeriod): RedirectResponse|View
     {
-        return view('admin.payroll-periods.edit', compact('payrollPeriod'));
+        if (!$payrollPeriod->is_active) {
+            return redirect()->route('admin.payroll-periods.index', ['year' => $payrollPeriod->year])
+                ->with('error', 'Kỳ lương đã bị khóa, không thể chỉnh sửa.');
+        }
+
+        $hasPayrolls = $payrollPeriod->payrolls()->exists();
+        return view('admin.payroll-periods.edit', compact('payrollPeriod', 'hasPayrolls'));
     }
 
     public function update(Request $request, PayrollPeriod $payrollPeriod): RedirectResponse
     {
-        $validated = $request->validate([
+        if (!$payrollPeriod->is_active) {
+            return redirect()->route('admin.payroll-periods.index', ['year' => $payrollPeriod->year])
+                ->with('error', 'Kỳ lương đã bị khóa, không thể cập nhật.');
+        }
+
+        $hasPayrolls = $payrollPeriod->payrolls()->exists();
+
+        $rules = [
             'name' => 'required|string|max:255',
-            'month' => [
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ];
+
+        if (!$hasPayrolls) {
+            $rules['month'] = [
                 'required',
                 'integer',
                 'min:1',
@@ -146,11 +164,11 @@ class PayrollPeriodController extends Controller
                 Rule::unique('payroll_periods')->where(function ($query) use ($request, $payrollPeriod) {
                     return $query->where('year', $request->year);
                 })->ignore($payrollPeriod->id),
-            ],
-            'year' => 'required|integer|min:2020|max:2100',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-        ], [
+            ];
+            $rules['year'] = 'required|integer|min:2020|max:2100';
+        }
+
+        $validated = $request->validate($rules, [
             'name.required' => 'Tên kỳ lương là bắt buộc',
             'month.required' => 'Tháng là bắt buộc',
             'month.integer' => 'Tháng phải là số nguyên',

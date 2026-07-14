@@ -31,13 +31,21 @@
                 @csrf
                 @method('PUT')
 
+                @if ($hasPayrolls)
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 flex items-start gap-2">
+                        <span class="text-amber-500 mt-0.5">⚠️</span>
+                        <p>Kỳ lương này đã có dữ liệu bảng lương được tính, nên <b>không thể thay đổi Tháng / Năm</b>. Bạn chỉ có thể sửa Tên và thời gian bắt đầu/kết thúc.</p>
+                    </div>
+                @endif
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label for="month" class="block text-sm font-semibold text-slate-700 mb-2">
                             Tháng <span class="text-red-500">*</span>
                         </label>
                         <select id="month" name="month" required
-                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('month') border-red-400 @enderror">
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('month') border-red-400 @enderror disabled:bg-slate-50 disabled:text-slate-400 disabled:border-slate-200"
+                                {{ $hasPayrolls ? 'disabled' : '' }}>
                             <option value="">-- Chọn tháng --</option>
                             @for ($m = 1; $m <= 12; $m++)
                                 <option value="{{ $m }}" @selected(old('month', $payrollPeriod->month) == $m)>
@@ -55,7 +63,8 @@
                             Năm <span class="text-red-500">*</span>
                         </label>
                         <select id="year" name="year" required
-                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('year') border-red-400 @enderror">
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('year') border-red-400 @enderror disabled:bg-slate-50 disabled:text-slate-400 disabled:border-slate-200"
+                                {{ $hasPayrolls ? 'disabled' : '' }}>
                             @for ($y = date('Y') - 1; $y <= date('Y') + 3; $y++)
                                 <option value="{{ $y }}" @selected(old('year', $payrollPeriod->year) == $y)>
                                     Năm {{ $y }}
