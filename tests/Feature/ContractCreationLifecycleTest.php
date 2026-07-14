@@ -68,7 +68,7 @@ test('creates first contract with active status and lifecycle defaults', functio
         'salary' => 15000000,
     ]);
 
-    $response->assertRedirect(route('admin.contracts.index'));
+    $response->assertRedirect(route('admin.contracts.by-employee', $this->employee));
 
     $contract = Contract::query()->where('contract_code', 'HD-LIFE-001')->first();
 
