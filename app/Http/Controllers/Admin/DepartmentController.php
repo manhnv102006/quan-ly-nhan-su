@@ -58,6 +58,7 @@ class DepartmentController extends Controller
     public function index(): View
     {
         $departments = Department::query()
+            ->with('manager')
             ->withCount('employees')
             ->orderBy('department_name')
             ->get();
@@ -149,6 +150,7 @@ class DepartmentController extends Controller
     public function show(int $id): View
     {
         $department = Department::withCount('employees')->with([
+            'manager',
             'employees',
             'employees.position'
         ])->findOrFail($id);
