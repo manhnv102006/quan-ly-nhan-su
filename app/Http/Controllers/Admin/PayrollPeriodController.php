@@ -207,10 +207,13 @@ class PayrollPeriodController extends Controller
             'unpaid_salary' => $isPaidOrClosed ? 0 : $totalSalary,
         ];
 
+        $activities = $payrollPeriod->activities()->with('causer')->latest()->get();
+
         return view('admin.payroll-periods.show', [
             'payrollPeriod' => $payrollPeriod,
             'stats' => $stats,
             'departmentSummaries' => \App\Support\DepartmentSummaryBuilder::forPayrollPeriod($payrollPeriod),
+            'activities' => $activities,
         ]);
     }
 
@@ -280,6 +283,13 @@ class PayrollPeriodController extends Controller
 
         $this->syncPeriodStatus($payrollPeriod);
 
+        $departmentName = $departmentId ? \App\Models\Department::find($departmentId)?->department_name : 'Toàn công ty';
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('calculate')
+            ->log("Đã chạy tính lương tự động cho: {$departmentName}");
+
         return redirect()->back()->with('success', 'Tính lương tự động thành công.');
     }
 
@@ -301,6 +311,13 @@ class PayrollPeriodController extends Controller
         }
 
         $this->syncPeriodStatus($payrollPeriod);
+
+        $departmentName = $departmentId ? \App\Models\Department::find($departmentId)?->department_name : 'Toàn công ty';
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('recalculate')
+            ->log("Đã tính lại bảng lương cho: {$departmentName}");
 
         return redirect()->back()->with('success', 'Đã tính lại lương thành công.');
     }
@@ -329,6 +346,13 @@ class PayrollPeriodController extends Controller
         ]);
 
         $this->syncPeriodStatus($payrollPeriod);
+
+        $departmentName = $departmentId ? \App\Models\Department::find($departmentId)?->department_name : 'Toàn công ty';
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('approve')
+            ->log("Đã duyệt bảng lương cho: {$departmentName}");
 
         return redirect()->back()->with('success', 'Đã duyệt bảng lương thành công.');
     }
@@ -364,6 +388,13 @@ class PayrollPeriodController extends Controller
 
         $this->syncPeriodStatus($payrollPeriod);
 
+        $departmentName = $departmentId ? \App\Models\Department::find($departmentId)?->department_name : 'Toàn công ty';
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('pay')
+            ->log("Đã xác nhận chi trả lương cho: {$departmentName}");
+
         return redirect()->back()->with('success', 'Đã chi trả lương thành công.');
     }
 
@@ -395,6 +426,13 @@ class PayrollPeriodController extends Controller
         ]);
 
         $this->syncPeriodStatus($payrollPeriod);
+
+        $departmentName = $departmentId ? \App\Models\Department::find($departmentId)?->department_name : 'Toàn công ty';
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('close')
+            ->log("Đã đóng sổ bảng lương cho: {$departmentName}");
 
         return redirect()->back()->with('success', 'Đã đóng bảng lương thành công.');
     }
