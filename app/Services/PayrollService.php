@@ -6,7 +6,9 @@ use App\Models\Employee;
 use App\Models\OvertimeRequest;
 use App\Models\Payroll;
 use App\Models\PayrollPeriod;
+use App\Models\Holiday;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class PayrollService
 {
@@ -57,6 +59,20 @@ class PayrollService
 
         // Tính ngày công chuẩn trong kỳ (Thứ 2 - Thứ 7, trừ Chủ nhật)
         $standardWorkingDays = $this->calculateStandardWorkingDays($startDate, $endDate);
+
+        // Lấy danh sách ngày Lễ / Sự kiện trong kỳ
+        $holidays = Holiday::inRange($startDate, $endDate)->get();
+        $holidayDates = [];
+        foreach ($holidays as $holiday) {
+            $hStart = Carbon::parse($holiday->start_date)->max($startDate);
+            $hEnd = Carbon::parse($holiday->end_date)->min($endDate);
+            for ($date = $hStart->copy(); $date->lte($hEnd); $date->addDay()) {
+                if (!$date->isSunday()) {
+                    $holidayDates[] = $date->format('Y-m-d');
+                }
+            }
+        }
+        $holidayDates = array_unique($holidayDates);
 
         foreach ($employees as $employee) {
             // A. Lương hợp đồng (full tháng): Ưu tiên hợp đồng active còn hiệu lực trong kỳ, nếu không thì lấy từ chức vụ
@@ -113,7 +129,24 @@ class PayrollService
             $approvedPaidLeavesCount = 0;
             $unapprovedAbsences = 0;
 
+            // Lấy các ngày nghỉ lễ mà nhân viên KHÔNG ĐI LÀM (Nếu đi làm thì đã tính ở presentDays)
+            $holidayPaidDays = 0;
+            foreach ($holidayDates as $hDate) {
+                $hasPresentRecord = $employee->attendances()
+                    ->where('attendance_date', $hDate)
+                    ->whereIn('status', ['present', 'late'])
+                    ->exists();
+                if (!$hasPresentRecord) {
+                    $holidayPaidDays++;
+                }
+            }
+
             foreach ($absentRecords as $record) {
+                // Bỏ qua nếu ngày vắng mặt trùng với ngày Lễ (Vì đã tính là holidayPaidDays)
+                if (in_array($record->attendance_date->format('Y-m-d'), $holidayDates)) {
+                    continue;
+                }
+
                 // Kiểm tra xem ngày vắng mặt này có đơn nghỉ phép có lương (annual, sick) được duyệt không
                 $hasLeave = $employee->leaveRequests()
                     ->where('status', 'approved')
@@ -136,8 +169,8 @@ class PayrollService
             // Số ngày nghỉ bị trừ tiền = nghỉ không phép + nghỉ có phép vượt quá hạn mức
             $unpaidLeaveDays = $unapprovedAbsences + $excessPaidLeaves;
 
-            // E. Ngày công thực tế = ngày đi làm (present+late) + ngày nghỉ phép hưởng lương
-            $actualWorkingDays = $presentDays + $paidLeaveDays;
+            // E. Ngày công thực tế = ngày đi làm (present+late) + nghỉ phép hưởng lương + nghỉ lễ
+            $actualWorkingDays = $presentDays + $paidLeaveDays + $holidayPaidDays;
             // Đảm bảo không vượt quá ngày công chuẩn
             $actualWorkingDays = min($actualWorkingDays, $standardWorkingDays);
 
