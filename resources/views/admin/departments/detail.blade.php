@@ -72,7 +72,12 @@
                                 </label>
 
                                 <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
-                                    {{ $department->manager_id ?? 'Chưa chỉ định' }}
+                                    @if($department->manager)
+                                        {{ $department->manager->full_name }}
+                                        <span class="text-slate-500">({{ $department->manager->employee_code }})</span>
+                                    @else
+                                        Chưa chỉ định
+                                    @endif
                                 </div>
                             </div>
 
