@@ -33,56 +33,111 @@ class ContractController extends Controller
 
     public function index(Request $request): View
     {
-        $query = Contract::with(['employee.department', 'employee.position', 'department', 'position', 'contractType', 'creator'])
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $term = $request->string('search')->trim();
-                $q->where('contract_code', 'like', "%{$term}%")
-                    ->orWhereHas('employee', function ($sub) use ($term) {
-                        $sub->where('full_name', 'like', "%{$term}%")
-                            ->orWhere('employee_code', 'like', "%{$term}%");
-                    });
-            })
-            ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
-            ->when($request->filled('contract_type_id'), fn($q) => $q->where('contract_type_id', $request->contract_type_id))
-            ->when($request->filled('employee_id'), fn($q) => $q->where('employee_id', $request->employee_id))
-            ->when($request->filled('department_id'), function ($q) use ($request) {
-                $deptId = $request->department_id;
-                $q->where(function ($sub) use ($deptId) {
-                    $sub->where('department_id', $deptId)
-                        ->orWhereHas('employee', fn ($e) => $e->where('department_id', $deptId));
-                });
-            })
-            ->when($request->filled('position_id'), function ($q) use ($request) {
-                $posId = $request->position_id;
-                $q->where(function ($sub) use ($posId) {
-                    $sub->where('position_id', $posId)
-                        ->orWhereHas('employee', fn ($e) => $e->where('position_id', $posId));
-                });
-            })
-            ->when($request->filled('start_from'), fn ($q) => $q->whereDate('start_date', '>=', $request->start_from))
-            ->when($request->filled('end_to'), fn ($q) => $q->whereDate('end_date', '<=', $request->end_to));
+        $search = $request->string('search')->trim();
 
-        $contracts = $query
-            ->orderByDesc('created_at')
-            ->paginate(15)
-            ->withQueryString();
+        $departments = Department::query()
+            ->where('status', 'active')
+            ->withCount('employees')
+            ->orderBy('department_name')
+            ->get()
+            ->map(function (Department $department) {
+                $employeeIds = Employee::query()
+                    ->where('department_id', $department->id)
+                    ->pluck('id');
 
-        $statuses = $this->statusOptions();
-        $stats = $this->contractStats();
+                $department->contracts_count = $employeeIds->isEmpty()
+                    ? 0
+                    : Contract::query()->whereIn('employee_id', $employeeIds)->count();
+
+                $department->active_contracts_count = $employeeIds->isEmpty()
+                    ? 0
+                    : Contract::query()
+                        ->whereIn('employee_id', $employeeIds)
+                        ->where('status', Contract::STATUS_ACTIVE)
+                        ->count();
+
+                return $department;
+            });
+
+        $searchResults = collect();
+
+        if ($search->isNotEmpty()) {
+            $searchResults = Employee::query()
+                ->with(['department', 'position'])
+                ->withCount('contracts')
+                ->where(function ($q) use ($search) {
+                    $q->where('full_name', 'like', "%{$search}%")
+                        ->orWhere('employee_code', 'like', "%{$search}%");
+                })
+                ->orderBy('full_name')
+                ->limit(10)
+                ->get();
+        }
 
         return view('admin.contracts.index', [
-            'contracts' => $contracts,
-            'statuses' => $statuses,
-            'stats' => $stats,
-            'contractTypes' => ContractType::orderBy('contract_name')->get(),
-            'employees' => Employee::orderBy('full_name')->get(),
-            'departments' => Department::orderBy('department_name')->get(),
-            'positions' => Position::orderBy('position_name')->get(),
-            'filters' => $request->only(['search', 'status', 'contract_type_id', 'employee_id', 'department_id', 'position_id', 'start_from', 'end_to']),
+            'departments' => $departments,
+            'stats' => $this->contractStats(),
+            'search' => $search->toString(),
+            'searchResults' => $searchResults,
         ]);
     }
 
-    public function create(): View
+    public function departmentEmployees(Department $department, Request $request): View
+    {
+        $search = $request->string('search')->trim();
+
+        $employees = Employee::query()
+            ->where('department_id', $department->id)
+            ->with(['position'])
+            ->withCount('contracts')
+            ->with(['contracts' => function ($q) {
+                $q->with('contractType')
+                    ->where('status', Contract::STATUS_ACTIVE)
+                    ->latest('start_date')
+                    ->limit(1);
+            }])
+            ->when($search->isNotEmpty(), function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('full_name', 'like', "%{$search}%")
+                        ->orWhere('employee_code', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('full_name')
+            ->get();
+
+        return view('admin.contracts.department-employees', [
+            'department' => $department,
+            'employees' => $employees,
+            'stats' => $this->contractStats(),
+            'search' => $search->toString(),
+        ]);
+    }
+
+    public function employeeContracts(Employee $employee, Request $request): View
+    {
+        $employee->load(['department', 'position']);
+
+        $contracts = Contract::query()
+            ->where('employee_id', $employee->id)
+            ->with(['contractType', 'creator'])
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('contract_type_id'), fn ($q) => $q->where('contract_type_id', $request->contract_type_id))
+            ->orderByDesc('start_date')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('admin.contracts.employee-contracts', [
+            'employee' => $employee,
+            'department' => $employee->department,
+            'contracts' => $contracts,
+            'stats' => $this->contractStats(),
+            'statuses' => $this->statusOptions(),
+            'contractTypes' => ContractType::orderBy('contract_name')->get(),
+            'filters' => $request->only(['status', 'contract_type_id']),
+        ]);
+    }
+
+    public function create(Request $request): View
     {
         return view('admin.contracts.create', [
             'contractTypes' => ContractType::orderBy('contract_name')->get(),
@@ -98,6 +153,7 @@ class ContractController extends Controller
             'nextCode' => $this->service->generateCode(),
             'allowanceTypes' => $this->allowanceService->activeTypes(),
             'allowanceValues' => $this->allowanceService->valuesForForm(),
+            'selectedEmployeeId' => $request->integer('employee_id') ?: null,
         ]);
     }
 
@@ -106,10 +162,10 @@ class ContractController extends Controller
         $data = $request->validated();
         $data['created_by'] = $request->user()?->id;
 
-        $this->service->create($data, $request->user()?->id);
+        $contract = $this->service->create($data, $request->user()?->id);
 
         return redirect()
-            ->route('admin.contracts.index')
+            ->route('admin.contracts.by-employee', $contract->employee_id)
             ->with('success', 'Tạo hợp đồng thành công.');
     }
 
@@ -160,16 +216,17 @@ class ContractController extends Controller
         $this->service->update($contract, $request->validated(), $request->user()?->id);
 
         return redirect()
-            ->route('admin.contracts.index')
+            ->route('admin.contracts.by-employee', $contract->employee_id)
             ->with('success', 'Cập nhật hợp đồng thành công.');
     }
 
     public function destroy(Request $request, Contract $contract): RedirectResponse
     {
+        $employeeId = $contract->employee_id;
         $this->service->softDelete($contract, $request->user()?->id);
 
         return redirect()
-            ->route('admin.contracts.index')
+            ->route('admin.contracts.by-employee', $employeeId)
             ->with('success', 'Đã chuyển hợp đồng vào thùng rác.');
     }
 
@@ -311,7 +368,7 @@ class ContractController extends Controller
         $this->service->cancel($contract, $request->validated(), $request->user()?->id);
 
         return redirect()
-            ->route('admin.contracts.index')
+            ->route('admin.contracts.by-employee', $contract->employee_id)
             ->with('success', 'Hủy hợp đồng thành công.');
     }
 
