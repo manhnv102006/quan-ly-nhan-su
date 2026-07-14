@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ContractCancelRequest;
+use App\Http\Requests\ContractConvertRequest;
 use App\Http\Requests\ContractTerminateRequest;
 use App\Http\Requests\ContractExtendRequest;
 use App\Http\Requests\ContractStoreRequest;
@@ -15,6 +16,7 @@ use App\Models\Employee;
 use App\Models\Position;
 use App\Services\ContractAllowanceService;
 use App\Services\ContractService;
+use App\Services\ContractTypeConversionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -24,6 +26,7 @@ class ContractController extends Controller
     public function __construct(
         private readonly ContractService $service,
         private readonly ContractAllowanceService $allowanceService,
+        private readonly ContractTypeConversionService $conversionService,
     ) {
     }
 
@@ -112,7 +115,7 @@ class ContractController extends Controller
     public function show(int $id): View
     {
         $contract = Contract::withTrashed()
-            ->with(['employee.department', 'employee.position', 'department', 'position', 'contractType', 'creator', 'extensions', 'terminations'])
+            ->with(['employee.department', 'employee.position', 'department', 'position', 'contractType', 'creator', 'extensions', 'terminations', 'previousContract', 'activityLogs.performer'])
             ->findOrFail($id);
 
         $history = Contract::withTrashed()
@@ -205,7 +208,17 @@ class ContractController extends Controller
 
     public function extendForm(Contract $contract): View
     {
-        abort_unless($contract->isEditable(), 403, 'Chỉ gia hạn hợp đồng Draft hoặc Active.');
+        $contract->load(['employee', 'contractType']);
+
+        abort_unless($contract->canBeExtended(), 403, 'Chỉ gia hạn được hợp đồng đang còn hiệu lực hoặc sắp hết hạn.');
+
+        $suggestedStart = $contract->end_date
+            ? $contract->end_date->copy()->addDay()->format('Y-m-d')
+            : now()->format('Y-m-d');
+
+        $suggestedEnd = $contract->end_date
+            ? $contract->end_date->copy()->addDay()->addYear()->subDay()->format('Y-m-d')
+            : null;
 
         return view('admin.contracts.extend', [
             'contract' => $contract,
@@ -214,16 +227,31 @@ class ContractController extends Controller
             'allowanceTypes' => $this->allowanceService->activeTypes(),
             'allowanceValues' => $this->allowanceService->valuesForForm($contract, $contract->position_id),
             'positions' => Position::orderBy('position_name')->get(),
+            'renewalBlocked' => $contract->isFixedTermRenewalBlocked(),
+            'suggestedStart' => $suggestedStart,
+            'suggestedEnd' => $suggestedEnd,
         ]);
     }
 
     public function extendStore(ContractExtendRequest $request, Contract $contract): RedirectResponse
     {
-        $this->service->extend($contract, $request->validated(), $request->user()?->id);
+        if ($contract->isFixedTermRenewalBlocked()) {
+            return redirect()
+                ->route('admin.contracts.show', $contract)
+                ->with('error', Contract::fixedTermRenewalBlockedMessage())
+                ->with('suggest_convert', true);
+        }
+
+        $newContract = $this->service->extend($contract, $request->validated(), $request->user()?->id);
 
         return redirect()
-            ->route('admin.contracts.index')
-            ->with('success', 'Gia hạn hợp đồng thành công.');
+            ->route('admin.contracts.show', $newContract)
+            ->with('success', sprintf(
+                'Gia hạn thành công. HĐ #%d → HĐ mới #%d (%s).',
+                $contract->id,
+                $newContract->id,
+                $newContract->contract_code,
+            ));
     }
 
     public function terminate(ContractTerminateRequest $request, Contract $contract): RedirectResponse
@@ -237,11 +265,18 @@ class ContractController extends Controller
 
     public function convertForm(Contract $contract): View
     {
-        abort_unless($contract->isEditable(), 403);
+        $contract->load(['employee', 'contractType']);
+
+        abort_unless($contract->canBeExtended(), 403, 'Chỉ chuyển loại được hợp đồng đang còn hiệu lực hoặc sắp hết hạn.');
+
+        $allTypes = ContractType::orderBy('contract_name')->get();
+        $allowedTypes = $allTypes->filter(
+            fn (ContractType $type) => $this->conversionService->isTargetAllowed($contract, $type)
+        );
 
         return view('admin.contracts.convert', [
             'contract' => $contract,
-            'contractTypes' => ContractType::orderBy('contract_name')->get(),
+            'contractTypes' => $allowedTypes,
             'nextCode' => $this->service->generateCode(),
             'allowanceTypes' => $this->allowanceService->activeTypes(),
             'allowanceValues' => $this->allowanceService->valuesForForm($contract, $contract->position_id),
@@ -249,13 +284,18 @@ class ContractController extends Controller
         ]);
     }
 
-    public function convertStore(ContractExtendRequest $request, Contract $contract): RedirectResponse
+    public function convertStore(ContractConvertRequest $request, Contract $contract): RedirectResponse
     {
-        $this->service->convertType($contract, $request->validated(), $request->user()?->id);
+        $newContract = $this->service->convertType($contract, $request->validated(), $request->user()?->id);
 
         return redirect()
-            ->route('admin.contracts.index')
-            ->with('success', 'Chuyển loại hợp đồng thành công.');
+            ->route('admin.contracts.show', $newContract)
+            ->with('success', sprintf(
+                'Chuyển loại thành công. HĐ #%d → HĐ mới #%d (%s).',
+                $contract->id,
+                $newContract->id,
+                $newContract->contract_code,
+            ));
     }
 
     public function cancel(ContractCancelRequest $request, Contract $contract): RedirectResponse

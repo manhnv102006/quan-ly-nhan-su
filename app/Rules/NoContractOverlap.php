@@ -20,11 +20,11 @@ class NoContractOverlap implements ValidationRule
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         $start = Carbon::parse($this->startDate);
-        $end = $this->endDate ? Carbon::parse($this->endDate) : Carbon::maxValue();
+        $end = $this->endDate ? Carbon::parse($this->endDate) : Contract::farFutureDate();
 
         $overlaps = Contract::query()
             ->forEmployee($this->employeeId)
-            ->notCancelled()
+            ->occupyingPeriod()
             ->whereNull('deleted_at')
             ->overlapping($start, $end, $this->ignoreContractId)
             ->exists();
