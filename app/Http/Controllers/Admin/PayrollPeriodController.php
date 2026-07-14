@@ -437,6 +437,59 @@ class PayrollPeriodController extends Controller
         return redirect()->back()->with('success', 'Đã đóng bảng lương thành công.');
     }
 
+    public function adjustPayroll(Request $request, PayrollPeriod $payrollPeriod, Payroll $payroll): RedirectResponse
+    {
+        if (!$payrollPeriod->is_active) {
+            return redirect()->back()->with('error', 'Kỳ lương đã bị khóa, không thể thực hiện thao tác.');
+        }
+
+        if ($payroll->payroll_period_id !== $payrollPeriod->id) {
+            return redirect()->back()->with('error', 'Dữ liệu bảng lương không hợp lệ.');
+        }
+
+        if (!in_array($payroll->status, ['calculated'])) {
+            return redirect()->back()->with('error', 'Chỉ có thể điều chỉnh bảng lương khi ở trạng thái đang tính (chưa duyệt).');
+        }
+
+        $validated = $request->validate([
+            'bonus' => 'required|numeric|min:0',
+            'deduction' => 'required|numeric|min:0',
+            'reason' => 'required|string|max:1000',
+        ]);
+
+        $oldBonus = $payroll->bonus;
+        $oldDeduction = $payroll->deduction;
+
+        $payroll->bonus = $validated['bonus'];
+        $payroll->deduction = $validated['deduction'];
+        
+        $payroll->total_salary = $payroll->basic_salary 
+            + $payroll->allowance 
+            + $payroll->bonus 
+            + $payroll->overtime_pay 
+            - $payroll->deduction;
+            
+        $payroll->save();
+
+        $employeeName = $payroll->employee?->full_name ?? 'Nhân viên';
+        $reason = $validated['reason'];
+        
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('updated')
+            ->withProperties([
+                'employee_id' => $payroll->employee_id,
+                'old' => ['bonus' => $oldBonus, 'deduction' => $oldDeduction],
+                'attributes' => ['bonus' => $payroll->bonus, 'deduction' => $payroll->deduction]
+            ])
+            ->log("Đã điều chỉnh lương cho {$employeeName}. Lý do: {$reason}");
+
+        $this->syncPeriodStatus($payrollPeriod);
+
+        return redirect()->back()->with('success', "Đã điều chỉnh lương cho {$employeeName} thành công.");
+    }
+
     private function enrichPeriod(PayrollPeriod $period, int $totalDepartments): void
     {
         $payrolls = Payroll::query()
