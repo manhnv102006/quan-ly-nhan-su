@@ -71,6 +71,8 @@
                     @enderror
                 </div>
 
+                @include('admin.departments.partials.max-employees-field', ['department' => $department])
+
                 <div>
                     <label for="manager_id" class="block text-sm font-semibold text-slate-700 mb-2">
                         Quản lý phòng ban
