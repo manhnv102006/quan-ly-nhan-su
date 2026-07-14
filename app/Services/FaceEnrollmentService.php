@@ -34,6 +34,14 @@ class FaceEnrollmentService
 
         $payload = $response->json() ?? [];
 
+        if ($response->status() === 404) {
+            throw new RuntimeException('Face API chưa cập nhật. Hãy khởi động lại: python face-service/api_server.py');
+        }
+
+        if (! $response->successful()) {
+            throw new RuntimeException((string) ($payload['message'] ?? "Face API lỗi HTTP {$response->status()}."));
+        }
+
         if (! ($payload['success'] ?? false)) {
             throw new RuntimeException((string) ($payload['message'] ?? 'Không trích xuất được khuôn mặt.'));
         }
