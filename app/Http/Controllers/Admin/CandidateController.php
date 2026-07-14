@@ -8,6 +8,7 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\JobPost;
 use App\Models\Position;
+use App\Rules\DepartmentEmployeeCapacity;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -174,7 +175,7 @@ class CandidateController extends Controller
             'employee_code' => ['required', 'string', 'max:20', 'unique:employees,employee_code'],
             'gender' => ['required', 'in:male,female,other'],
             'date_of_birth' => ['required', 'date'],
-            'department_id' => ['nullable', 'exists:departments,id'],
+            'department_id' => ['nullable', 'exists:departments,id', new DepartmentEmployeeCapacity()],
             'position_id' => ['nullable', 'exists:positions,id'],
             'hire_date' => ['required', 'date'],
             'status' => ['required', 'in:active,inactive,resigned'],
@@ -246,8 +247,9 @@ class CandidateController extends Controller
     {
         return Department::query()
             ->where('status', 'active')
+            ->withCount('employees')
             ->orderBy('department_name')
-            ->get(['id', 'department_name']);
+            ->get(['id', 'department_name', 'max_employees']);
     }
 
     private function activePositions()
