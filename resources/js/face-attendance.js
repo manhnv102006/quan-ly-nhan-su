@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = root.querySelector('canvas');
     const statusEl = root.querySelector('[data-face-status]');
     const ringEl = root.querySelector('[data-face-ring]');
+    const circleEl = root.querySelector('[data-face-circle]');
+    const frameEl = root.querySelector('[data-face-frame]');
 
     if (!video || !canvas) {
         return;
@@ -20,11 +22,52 @@ document.addEventListener('DOMContentLoaded', () => {
     let stopped = false;
     let timer = null;
     let failCount = 0;
+    let feedbackTimer = null;
 
     const setStatus = (text) => {
         if (statusEl) {
             statusEl.textContent = text;
         }
+    };
+
+    const setFeedback = (state) => {
+        if (feedbackTimer) {
+            clearTimeout(feedbackTimer);
+            feedbackTimer = null;
+        }
+
+        const ringClasses = ['face-ring-neutral', 'face-ring-success', 'face-ring-fail'];
+        const circleClasses = ['face-circle-neutral', 'face-circle-success', 'face-circle-fail'];
+        const frameClasses = ['face-frame-success', 'face-frame-fail'];
+        const statusClasses = ['face-status-success', 'face-status-fail'];
+
+        ringEl?.classList.remove(...ringClasses);
+        circleEl?.classList.remove(...circleClasses);
+        frameEl?.classList.remove(...frameClasses);
+        statusEl?.classList.remove(...statusClasses);
+
+        if (state === 'success') {
+            ringEl?.classList.add('face-ring-success');
+            circleEl?.classList.add('face-circle-success');
+            frameEl?.classList.add('face-frame-success');
+            statusEl?.classList.add('face-status-success');
+            return;
+        }
+
+        if (state === 'fail') {
+            ringEl?.classList.add('face-ring-fail');
+            circleEl?.classList.add('face-circle-fail');
+            frameEl?.classList.add('face-frame-fail');
+            statusEl?.classList.add('face-status-fail');
+
+            feedbackTimer = window.setTimeout(() => {
+                setFeedback('neutral');
+            }, 2500);
+            return;
+        }
+
+        ringEl?.classList.add('face-ring-neutral');
+        circleEl?.classList.add('face-circle-neutral');
     };
 
     const stopCamera = () => {
@@ -35,13 +78,14 @@ document.addEventListener('DOMContentLoaded', () => {
         video.srcObject = null;
     };
 
-    const stopScanning = (message) => {
+    const stopScanning = (message, success = false) => {
         stopped = true;
         if (timer) {
             clearInterval(timer);
             timer = null;
         }
         stopCamera();
+        setFeedback(success ? 'success' : 'neutral');
         if (message) {
             setStatus(message);
         }
@@ -63,7 +107,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return null;
         }
 
+        ctx.save();
+        ctx.translate(width, 0);
+        ctx.scale(-1, 1);
         ctx.drawImage(video, 0, 0, width, height);
+        ctx.restore();
+
         return canvas.toDataURL('image/jpeg', 0.72);
     };
 
@@ -99,7 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const message = String(payload.message || '');
 
             if (payload.success) {
-                stopScanning(message || 'Chấm công thành công.');
+                setFeedback('success');
+                stopScanning(message || 'Chấm công thành công.', true);
                 window.setTimeout(() => window.location.reload(), 1800);
                 return;
             }
@@ -114,18 +164,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            setFeedback('fail');
+
             if (message) {
                 failCount += 1;
-                if (typeof payload.score === 'number' && payload.score > 0) {
-                    const pct = Math.round(payload.score * 100);
-                    setStatus(`${message} (lần thử ${failCount})`);
-                } else {
-                    setStatus(`${message} (lần thử ${failCount})`);
-                }
+                setStatus(`${message} (lần thử ${failCount})`);
             } else {
                 setStatus('Không nhận diện được. Kiểm tra Face API (port 5555).');
             }
         } catch {
+            setFeedback('fail');
             setStatus('Không kết nối được máy chủ. Kiểm tra Laravel và Face API (port 5555).');
         } finally {
             scanning = false;
@@ -138,6 +186,8 @@ document.addEventListener('DOMContentLoaded', () => {
             setStatus('Trình duyệt không hỗ trợ webcam.');
             return;
         }
+
+        setFeedback('neutral');
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
