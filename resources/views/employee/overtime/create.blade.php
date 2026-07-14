@@ -71,6 +71,18 @@
                     </div>
                 </div>
 
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                        Loại ngày tăng ca <span class="text-rose-500">*</span>
+                    </label>
+                    <select name="rate_multiplier" required class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 transition bg-white">
+                        <option value="1.5" @selected(old('rate_multiplier') == '1.5')>Ngày thường (x1.5)</option>
+                        <option value="2.0" @selected(old('rate_multiplier') == '2.0')>Ngày nghỉ cuối tuần (x2.0)</option>
+                        <option value="3.0" @selected(old('rate_multiplier') == '3.0')>Ngày Lễ, Tết (x3.0)</option>
+                    </select>
+                    @error('rate_multiplier')<p class="text-rose-600 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+
                 {{-- Preview giờ realtime --}}
                 <div id="hours-preview" class="hidden bg-slate-50 rounded-xl px-4 py-3 text-sm text-slate-600">
                     Thời gian tăng ca: <span id="hours-value" class="font-bold text-amber-700"></span>
