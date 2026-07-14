@@ -129,16 +129,34 @@ class PayrollPeriodController extends Controller
             ->with('success', 'Thêm kỳ lương mới thành công.');
     }
 
-    public function edit(PayrollPeriod $payrollPeriod): View
+    public function edit(PayrollPeriod $payrollPeriod): RedirectResponse|View
     {
-        return view('admin.payroll-periods.edit', compact('payrollPeriod'));
+        if (!$payrollPeriod->is_active) {
+            return redirect()->route('admin.payroll-periods.index', ['year' => $payrollPeriod->year])
+                ->with('error', 'Kỳ lương đã bị khóa, không thể chỉnh sửa.');
+        }
+
+        $hasPayrolls = $payrollPeriod->payrolls()->exists();
+        return view('admin.payroll-periods.edit', compact('payrollPeriod', 'hasPayrolls'));
     }
 
     public function update(Request $request, PayrollPeriod $payrollPeriod): RedirectResponse
     {
-        $validated = $request->validate([
+        if (!$payrollPeriod->is_active) {
+            return redirect()->route('admin.payroll-periods.index', ['year' => $payrollPeriod->year])
+                ->with('error', 'Kỳ lương đã bị khóa, không thể cập nhật.');
+        }
+
+        $hasPayrolls = $payrollPeriod->payrolls()->exists();
+
+        $rules = [
             'name' => 'required|string|max:255',
-            'month' => [
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ];
+
+        if (!$hasPayrolls) {
+            $rules['month'] = [
                 'required',
                 'integer',
                 'min:1',
@@ -146,11 +164,11 @@ class PayrollPeriodController extends Controller
                 Rule::unique('payroll_periods')->where(function ($query) use ($request, $payrollPeriod) {
                     return $query->where('year', $request->year);
                 })->ignore($payrollPeriod->id),
-            ],
-            'year' => 'required|integer|min:2020|max:2100',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-        ], [
+            ];
+            $rules['year'] = 'required|integer|min:2020|max:2100';
+        }
+
+        $validated = $request->validate($rules, [
             'name.required' => 'Tên kỳ lương là bắt buộc',
             'month.required' => 'Tháng là bắt buộc',
             'month.integer' => 'Tháng phải là số nguyên',
@@ -189,10 +207,13 @@ class PayrollPeriodController extends Controller
             'unpaid_salary' => $isPaidOrClosed ? 0 : $totalSalary,
         ];
 
+        $activities = $payrollPeriod->activities()->with('causer')->latest()->get();
+
         return view('admin.payroll-periods.show', [
             'payrollPeriod' => $payrollPeriod,
             'stats' => $stats,
             'departmentSummaries' => \App\Support\DepartmentSummaryBuilder::forPayrollPeriod($payrollPeriod),
+            'activities' => $activities,
         ]);
     }
 
@@ -227,59 +248,24 @@ class PayrollPeriodController extends Controller
         return view('admin.payroll-periods.department', compact('payrollPeriod', 'department', 'payrolls', 'departmentStatus'));
     }
 
-    public function trash(Request $request): View
+    public function toggleActive(PayrollPeriod $payrollPeriod): RedirectResponse
     {
-        $periods = PayrollPeriod::onlyTrashed()
-            ->orderBy('deleted_at', 'desc')
-            ->paginate(10)
-            ->withQueryString();
+        $payrollPeriod->update([
+            'is_active' => !$payrollPeriod->is_active,
+        ]);
 
-        return view('admin.payroll-periods.trash', compact('periods'));
-    }
+        $statusMessage = $payrollPeriod->is_active ? 'mở khóa' : 'khóa';
 
-    public function destroy(PayrollPeriod $payrollPeriod): RedirectResponse
-    {
-        // Xóa mềm tất cả các bản ghi lương liên kết trước
-        $payrollPeriod->payrolls()->delete();
-
-        // Xóa mềm kỳ lương
-        $payrollPeriod->delete();
-
-        return redirect()
-            ->route('admin.payroll-periods.index', ['year' => $payrollPeriod->year])
-            ->with('success', 'Đã xóa mềm kỳ lương thành công. Bạn có thể khôi phục từ Thùng rác.');
-    }
-
-    public function restore(Request $request, int $id): RedirectResponse
-    {
-        $period = PayrollPeriod::onlyTrashed()->findOrFail($id);
-        $period->restore();
-
-        // Khôi phục tất cả bảng lương liên kết
-        Payroll::onlyTrashed()->where('payroll_period_id', $id)->restore();
-
-        return redirect()
-            ->route('admin.payroll-periods.trash')
-            ->with('success', 'Đã khôi phục kỳ lương và các bảng lương liên kết thành công.');
-    }
-
-    public function forceDelete(Request $request, int $id): RedirectResponse
-    {
-        $period = PayrollPeriod::onlyTrashed()->findOrFail($id);
-
-        // Xóa vĩnh viễn tất cả bảng lương liên kết
-        Payroll::onlyTrashed()->where('payroll_period_id', $id)->forceDelete();
-
-        // Xóa vĩnh viễn kỳ lương
-        $period->forceDelete();
-
-        return redirect()
-            ->route('admin.payroll-periods.trash')
-            ->with('success', 'Đã xóa vĩnh viễn kỳ lương khỏi hệ thống.');
+        return redirect()->back()
+            ->with('success', "Đã {$statusMessage} kỳ lương thành công.");
     }
 
     public function calculate(Request $request, PayrollPeriod $payrollPeriod, PayrollService $payrollService): RedirectResponse
     {
+        if (!$payrollPeriod->is_active) {
+            return redirect()->back()->with('error', 'Kỳ lương đã bị khóa, không thể thực hiện thao tác.');
+        }
+
         if (!in_array($payrollPeriod->status, ['open', 'calculated'])) {
             return redirect()->back()->with('error', 'Kỳ lương phải ở trạng thái mở hoặc đã tính mới có thể tính lương.');
         }
@@ -297,11 +283,22 @@ class PayrollPeriodController extends Controller
 
         $this->syncPeriodStatus($payrollPeriod);
 
+        $departmentName = $departmentId ? \App\Models\Department::find($departmentId)?->department_name : 'Toàn công ty';
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('calculate')
+            ->log("Đã chạy tính lương tự động cho: {$departmentName}");
+
         return redirect()->back()->with('success', 'Tính lương tự động thành công.');
     }
 
     public function recalculate(Request $request, PayrollPeriod $payrollPeriod, PayrollService $payrollService): RedirectResponse
     {
+        if (!$payrollPeriod->is_active) {
+            return redirect()->back()->with('error', 'Kỳ lương đã bị khóa, không thể thực hiện thao tác.');
+        }
+
         $departmentId = $request->input('department_id');
         $result = $payrollService->recalculatePayrollForPeriod($payrollPeriod, $departmentId);
 
@@ -315,11 +312,22 @@ class PayrollPeriodController extends Controller
 
         $this->syncPeriodStatus($payrollPeriod);
 
+        $departmentName = $departmentId ? \App\Models\Department::find($departmentId)?->department_name : 'Toàn công ty';
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('recalculate')
+            ->log("Đã tính lại bảng lương cho: {$departmentName}");
+
         return redirect()->back()->with('success', 'Đã tính lại lương thành công.');
     }
 
     public function approve(Request $request, PayrollPeriod $payrollPeriod): RedirectResponse
     {
+        if (!$payrollPeriod->is_active) {
+            return redirect()->back()->with('error', 'Kỳ lương đã bị khóa, không thể thực hiện thao tác.');
+        }
+
         $departmentId = $request->input('department_id');
         
         $query = $payrollPeriod->payrolls();
@@ -339,11 +347,22 @@ class PayrollPeriodController extends Controller
 
         $this->syncPeriodStatus($payrollPeriod);
 
+        $departmentName = $departmentId ? \App\Models\Department::find($departmentId)?->department_name : 'Toàn công ty';
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('approve')
+            ->log("Đã duyệt bảng lương cho: {$departmentName}");
+
         return redirect()->back()->with('success', 'Đã duyệt bảng lương thành công.');
     }
 
     public function pay(Request $request, PayrollPeriod $payrollPeriod): RedirectResponse
     {
+        if (!$payrollPeriod->is_active) {
+            return redirect()->back()->with('error', 'Kỳ lương đã bị khóa, không thể thực hiện thao tác.');
+        }
+
         $departmentId = $request->input('department_id');
         
         $query = $payrollPeriod->payrolls();
@@ -369,11 +388,22 @@ class PayrollPeriodController extends Controller
 
         $this->syncPeriodStatus($payrollPeriod);
 
+        $departmentName = $departmentId ? \App\Models\Department::find($departmentId)?->department_name : 'Toàn công ty';
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('pay')
+            ->log("Đã xác nhận chi trả lương cho: {$departmentName}");
+
         return redirect()->back()->with('success', 'Đã chi trả lương thành công.');
     }
 
     public function close(Request $request, PayrollPeriod $payrollPeriod): RedirectResponse
     {
+        if (!$payrollPeriod->is_active) {
+            return redirect()->back()->with('error', 'Kỳ lương đã bị khóa, không thể thực hiện thao tác.');
+        }
+
         $departmentId = $request->input('department_id');
         
         $query = $payrollPeriod->payrolls();
@@ -397,7 +427,67 @@ class PayrollPeriodController extends Controller
 
         $this->syncPeriodStatus($payrollPeriod);
 
+        $departmentName = $departmentId ? \App\Models\Department::find($departmentId)?->department_name : 'Toàn công ty';
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('close')
+            ->log("Đã đóng sổ bảng lương cho: {$departmentName}");
+
         return redirect()->back()->with('success', 'Đã đóng bảng lương thành công.');
+    }
+
+    public function adjustPayroll(Request $request, PayrollPeriod $payrollPeriod, Payroll $payroll): RedirectResponse
+    {
+        if (!$payrollPeriod->is_active) {
+            return redirect()->back()->with('error', 'Kỳ lương đã bị khóa, không thể thực hiện thao tác.');
+        }
+
+        if ($payroll->payroll_period_id !== $payrollPeriod->id) {
+            return redirect()->back()->with('error', 'Dữ liệu bảng lương không hợp lệ.');
+        }
+
+        if (!in_array($payroll->status, ['calculated'])) {
+            return redirect()->back()->with('error', 'Chỉ có thể điều chỉnh bảng lương khi ở trạng thái đang tính (chưa duyệt).');
+        }
+
+        $validated = $request->validate([
+            'bonus' => 'required|numeric|min:0',
+            'deduction' => 'required|numeric|min:0',
+            'reason' => 'required|string|max:1000',
+        ]);
+
+        $oldBonus = $payroll->bonus;
+        $oldDeduction = $payroll->deduction;
+
+        $payroll->bonus = $validated['bonus'];
+        $payroll->deduction = $validated['deduction'];
+        
+        $payroll->total_salary = $payroll->basic_salary 
+            + $payroll->allowance 
+            + $payroll->bonus 
+            + $payroll->overtime_pay 
+            - $payroll->deduction;
+            
+        $payroll->save();
+
+        $employeeName = $payroll->employee?->full_name ?? 'Nhân viên';
+        $reason = $validated['reason'];
+        
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('updated')
+            ->withProperties([
+                'employee_id' => $payroll->employee_id,
+                'old' => ['bonus' => $oldBonus, 'deduction' => $oldDeduction],
+                'attributes' => ['bonus' => $payroll->bonus, 'deduction' => $payroll->deduction]
+            ])
+            ->log("Đã điều chỉnh lương cho {$employeeName}. Lý do: {$reason}");
+
+        $this->syncPeriodStatus($payrollPeriod);
+
+        return redirect()->back()->with('success', "Đã điều chỉnh lương cho {$employeeName} thành công.");
     }
 
     private function enrichPeriod(PayrollPeriod $period, int $totalDepartments): void

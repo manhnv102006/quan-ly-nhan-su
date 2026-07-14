@@ -23,54 +23,62 @@
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-sky-100 text-sky-700 border border-sky-200">
                         🔵 Chưa tính lương (Open)
                     </span>
-                    <form action="{{ route('admin.payroll-periods.calculate', $payrollPeriod) }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="department_id" value="{{ $department->id }}">
-                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-medium shadow-lg transition text-sm">
-                            ⚡ Tính lương tự động
-                        </button>
-                    </form>
+                    @if ($payrollPeriod->is_active)
+                        <form action="{{ route('admin.payroll-periods.calculate', $payrollPeriod) }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="department_id" value="{{ $department->id }}">
+                            <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-medium shadow-lg transition text-sm">
+                                ⚡ Tính lương tự động
+                            </button>
+                        </form>
+                    @endif
                 @elseif ($departmentStatus === 'calculated')
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-amber-100 text-amber-700 border border-amber-200">
                         🟡 Đã tính lương (Calculated)
                     </span>
-                    <form action="{{ route('admin.payroll-periods.recalculate', $payrollPeriod) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn tính lại lương? Toàn bộ bảng lương hiện tại của kỳ này sẽ bị xóa và tính lại từ đầu.')">
-                        @csrf
-                        <input type="hidden" name="department_id" value="{{ $department->id }}">
-                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-lg transition text-sm">
-                            🔄 Tính lại
-                        </button>
-                    </form>
-                    <form action="{{ route('admin.payroll-periods.approve', $payrollPeriod) }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="department_id" value="{{ $department->id }}">
-                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg transition text-sm">
-                            ✅ Duyệt lương phòng ban
-                        </button>
-                    </form>
+                    @if ($payrollPeriod->is_active)
+                        <form action="{{ route('admin.payroll-periods.recalculate', $payrollPeriod) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn tính lại lương? Toàn bộ bảng lương hiện tại của kỳ này sẽ bị xóa và tính lại từ đầu.')">
+                            @csrf
+                            <input type="hidden" name="department_id" value="{{ $department->id }}">
+                            <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-lg transition text-sm">
+                                🔄 Tính lại
+                            </button>
+                        </form>
+                        <form action="{{ route('admin.payroll-periods.approve', $payrollPeriod) }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="department_id" value="{{ $department->id }}">
+                            <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg transition text-sm">
+                                ✅ Duyệt lương phòng ban
+                            </button>
+                        </form>
+                    @endif
                 @elseif ($departmentStatus === 'approved')
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-violet-100 text-violet-700 border border-violet-200">
                         🟣 Đã duyệt (Approved)
                     </span>
-                    <form action="{{ route('admin.payroll-periods.pay', $payrollPeriod) }}" method="POST"
-                          onsubmit="return confirm('Xác nhận đã thực hiện chi trả lương cho nhân viên thuộc phòng ban này?')">
-                        @csrf
-                        <input type="hidden" name="department_id" value="{{ $department->id }}">
-                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-lg transition text-sm">
-                            💰 Chi trả lương phòng ban
-                        </button>
-                    </form>
+                    @if ($payrollPeriod->is_active)
+                        <form action="{{ route('admin.payroll-periods.pay', $payrollPeriod) }}" method="POST"
+                              onsubmit="return confirm('Xác nhận đã thực hiện chi trả lương cho nhân viên thuộc phòng ban này?')">
+                            @csrf
+                            <input type="hidden" name="department_id" value="{{ $department->id }}">
+                            <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-lg transition text-sm">
+                                💰 Chi trả lương phòng ban
+                            </button>
+                        </form>
+                    @endif
                 @elseif ($departmentStatus === 'paid')
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
                         🟢 Đã chi trả (Paid)
                     </span>
-                    <form action="{{ route('admin.payroll-periods.close', $payrollPeriod) }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="department_id" value="{{ $department->id }}">
-                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-medium shadow-lg transition text-sm">
-                            🔒 Đóng lương phòng ban
-                        </button>
-                    </form>
+                    @if ($payrollPeriod->is_active)
+                        <form action="{{ route('admin.payroll-periods.close', $payrollPeriod) }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="department_id" value="{{ $department->id }}">
+                            <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-medium shadow-lg transition text-sm">
+                                🔒 Đóng lương phòng ban
+                            </button>
+                        </form>
+                    @endif
                 @else
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-600 border border-slate-200">
                         🔒 Đã đóng (Closed)
@@ -192,6 +200,14 @@
                                                 title="Xem chi tiết">
                                             👁️ Xem chi tiết
                                         </button>
+                                        @if($payroll->status === 'calculated' && $payrollPeriod->is_active)
+                                            <button type="button"
+                                                onclick="openAdjustModal({{ $payroll->id }}, {{ $payroll->bonus }}, {{ $payroll->deduction }}, '{{ $payroll->employee?->full_name }}')"
+                                                class="px-3 py-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 text-xs font-semibold transition flex items-center gap-1"
+                                                title="Điều chỉnh">
+                                                ✏️ Điều chỉnh
+                                            </button>
+                                        @endif
                                         <a href="{{ route('admin.payrolls.pdf', $payroll) }}"
                                            class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1"
                                            title="Xuất PDF">
@@ -324,7 +340,7 @@
                             <span class="font-bold text-slate-800 text-emerald-600" id="modalBonus">0 ₫</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-slate-600 font-medium">Tăng ca:</span>
+                            <span class="text-slate-600 font-medium" id="modalOvertimeLabel">Tăng ca:</span>
                             <span class="font-bold text-slate-800 text-emerald-600" id="modalOvertime">0 ₫</span>
                         </div>
                         <div class="border-t border-slate-200/60 my-2"></div>
@@ -406,6 +422,45 @@
         </div>
     </div>
 
+    <!-- Modal Điều chỉnh Phiếu lương -->
+    <div id="adjustPayrollModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeAdjustModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative w-full max-w-lg transform rounded-3xl bg-white p-6 shadow-2xl transition-all border border-slate-100">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                    <h3 class="text-xl font-bold text-slate-800">Điều chỉnh lương - <span id="adjustEmployeeName" class="text-indigo-600"></span></h3>
+                    <button onclick="closeAdjustModal()" class="text-slate-400 hover:text-slate-600 transition">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="adjustForm" method="POST" action="">
+                    @csrf
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Tiền thưởng / Truy lĩnh (VNĐ)</label>
+                            <input type="number" name="bonus" id="adjustBonus" min="0" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Tiền phạt / Khấu trừ (VNĐ)</label>
+                            <input type="number" name="deduction" id="adjustDeduction" min="0" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Lý do điều chỉnh <span class="text-rose-500">*</span></label>
+                            <textarea name="reason" rows="3" required placeholder="Ví dụ: Truy lĩnh tiền tăng ca sót của tháng trước..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"></textarea>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-3 mt-6 border-t border-slate-100 pt-4">
+                        <button type="button" onclick="closeAdjustModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition text-sm">Hủy</button>
+                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg transition text-sm">Lưu điều chỉnh</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Script điều khiển Modal -->
     <script>
         let currentTab = 'payment';
@@ -422,6 +477,7 @@
             document.getElementById('modalAllowanceFuel').innerText = data.allowance_fuel + ' ₫';
             document.getElementById('modalAllowancePosition').innerText = data.allowance_position + ' ₫';
             document.getElementById('modalBonus').innerText = data.bonus + ' ₫';
+            document.getElementById('modalOvertimeLabel').innerText = 'Tăng ca (' + data.overtime_hours + ' giờ):';
             document.getElementById('modalOvertime').innerText = data.overtime_pay + ' ₫';
             
             // Tính tổng thu nhập
@@ -487,6 +543,24 @@
                 contentPayment.classList.add('hidden');
                 contentAttendance.classList.remove('hidden');
             }
+        }
+
+        function openAdjustModal(payrollId, bonus, deduction, employeeName) {
+            document.getElementById('adjustEmployeeName').innerText = employeeName;
+            document.getElementById('adjustBonus').value = bonus;
+            document.getElementById('adjustDeduction').value = deduction;
+            
+            // Set form action
+            const form = document.getElementById('adjustForm');
+            form.action = `/admin/payroll-periods/{{ $payrollPeriod->id }}/payrolls/${payrollId}/adjust`;
+            
+            document.getElementById('adjustPayrollModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAdjustModal() {
+            document.getElementById('adjustPayrollModal').classList.add('hidden');
+            document.body.style.overflow = '';
         }
     </script>
 

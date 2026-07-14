@@ -81,7 +81,31 @@ class EmployeeLeaveController extends Controller
 
         $start = Carbon::parse($request->start_date);
         $end = Carbon::parse($request->end_date);
-        $totalDays = $start->diffInDays($end) + 1;
+        
+        // Lấy danh sách ngày Lễ trong khoảng thời gian xin nghỉ
+        $holidays = \App\Models\Holiday::inRange($start->format('Y-m-d'), $end->format('Y-m-d'))->get();
+        
+        $totalDays = 0;
+        for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+            if ($date->isSunday()) {
+                continue;
+            }
+            
+            $isHoliday = $holidays->contains(function ($holiday) use ($date) {
+                return $date->between($holiday->start_date, $holiday->end_date);
+            });
+            
+            if ($isHoliday) {
+                continue;
+            }
+            
+            $totalDays++;
+        }
+
+        // Nếu tất cả các ngày đều là ngày nghỉ/lễ thì báo lỗi
+        if ($totalDays === 0) {
+            return back()->withErrors(['start_date' => 'Khoảng thời gian bạn chọn toàn bộ là ngày nghỉ/ngày Lễ. Vui lòng chọn lại.'])->withInput();
+        }
 
         $leaveRequest = LeaveRequest::create([
             'employee_id' => $employee->id,

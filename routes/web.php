@@ -62,6 +62,7 @@ Route::get('/dashboard', [DashboardController::class, 'redirect'])
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+    Route::resource('holidays', App\Http\Controllers\Admin\HolidayController::class)->except(['show']);
     Route::get('/notifications/create', [NotificationController::class, 'create'])->name('notifications.create');
     Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
     Route::get('/accounts', [AccountController::class, 'index'])->name('accounts');
@@ -101,10 +102,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::delete('/positions/{id}/force-delete', [PositionController::class, 'forceDelete'])->name('positions.forceDelete');
 
     // Kỳ lương
-    Route::get('/payroll-periods/trash', [PayrollPeriodController::class, 'trash'])->name('payroll-periods.trash');
-    Route::post('/payroll-periods/{id}/restore', [PayrollPeriodController::class, 'restore'])->name('payroll-periods.restore');
-    Route::delete('/payroll-periods/{id}/force-delete', [PayrollPeriodController::class, 'forceDelete'])->name('payroll-periods.forceDelete');
-    Route::resource('payroll-periods', PayrollPeriodController::class);
+    Route::patch('/payroll-periods/{payrollPeriod}/toggle-active', [PayrollPeriodController::class, 'toggleActive'])->name('payroll-periods.toggle-active');
+    Route::post('/payroll-periods/{payrollPeriod}/payrolls/{payroll}/adjust', [PayrollPeriodController::class, 'adjustPayroll'])->name('payroll-periods.adjust-payroll');
+    Route::resource('payroll-periods', PayrollPeriodController::class)->except(['destroy']);
 
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
     Route::get('/employees/trash', [EmployeeController::class, 'trash'])->name('employees.trash');
