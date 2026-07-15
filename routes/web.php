@@ -315,6 +315,8 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
     Route::post('/advances/period/{payrollPeriod}/apply-all', [AccountantAdvanceController::class, 'applyAll'])->name('advances.apply-all');
     Route::get('/advances/{advance}', [AccountantAdvanceController::class, 'show'])->name('advances.show');
     Route::get('/contracts', [AccountantContractController::class, 'index'])->name('contracts.index');
+    Route::get('/contracts/salary-overview', [AccountantContractController::class, 'salaryOverview'])->name('contracts.salary-overview');
+    Route::get('/contracts/expiring', [AccountantContractController::class, 'expiring'])->name('contracts.expiring');
     Route::get('/contracts/detail/{contract}', [AccountantContractController::class, 'show'])->name('contracts.show');
     Route::get('/attendance', [AccountantAttendanceController::class, 'index'])->name('attendance.index');
     Route::get('/reports', [AccountantReportController::class, 'index'])->name('reports.index');

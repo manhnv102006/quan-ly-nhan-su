@@ -40,13 +40,102 @@ class ContractController extends Controller
                         ->whereIn('employee_id', $employeeIds)
                         ->where('status', Contract::STATUS_ACTIVE)
                         ->count();
+                $department->expiring_count = $employeeIds->isEmpty()
+                    ? 0
+                    : $this->expiringQuery(30)
+                        ->whereIn('employee_id', $employeeIds)
+                        ->count();
 
                 return $department;
             });
 
+        $expiringSoon = $this->expiringQuery(30)
+            ->with(['employee.department', 'contractType'])
+            ->orderBy('end_date')
+            ->limit(8)
+            ->get();
+
         return view('accountant.contracts.index', [
             'departments' => $departments,
+            'expiringSoon' => $expiringSoon,
+            'expiringCount' => $this->expiringQuery(30)->count(),
         ]);
+    }
+
+    public function salaryOverview(Request $request): View
+    {
+        $query = Contract::query()
+            ->with(['employee.department', 'employee.position', 'contractType'])
+            ->where('status', Contract::STATUS_ACTIVE);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('contract_code', 'like', "%{$search}%")
+                    ->orWhereHas('employee', fn ($e) => $e
+                        ->where('full_name', 'like', "%{$search}%")
+                        ->orWhere('employee_code', 'like', "%{$search}%"));
+            });
+        }
+
+        if ($request->filled('department_id')) {
+            $query->whereHas('employee', fn ($e) => $e->where('department_id', $request->department_id));
+        }
+
+        $contracts = $query->orderByDesc('salary')->paginate(20)->withQueryString();
+
+        $contracts->getCollection()->transform(function (Contract $contract) {
+            $allowance = $this->allowanceService->totalAllowance($contract);
+            $contract->computed_allowance = $allowance;
+            $contract->computed_total_income = (float) $contract->salary + $allowance;
+
+            return $contract;
+        });
+
+        $departments = Department::where('status', 'active')->orderBy('department_name')->get();
+
+        return view('accountant.contracts.salary-overview', [
+            'contracts' => $contracts,
+            'departments' => $departments,
+        ]);
+    }
+
+    public function expiring(Request $request): View
+    {
+        $days = max(7, min(90, (int) $request->input('days', 30)));
+
+        $contracts = $this->expiringQuery($days)
+            ->with(['employee.department', 'employee.position', 'contractType'])
+            ->orderBy('end_date')
+            ->get()
+            ->map(function (Contract $contract) {
+                $allowance = $this->allowanceService->totalAllowance($contract);
+
+                return [
+                    'contract' => $contract,
+                    'days_left' => (int) now()->startOfDay()->diffInDays($contract->end_date, false),
+                    'total_income' => (float) $contract->salary + $allowance,
+                    'allowance' => $allowance,
+                ];
+            });
+
+        $stats = [
+            'within_7' => $this->expiringQuery(7)->count(),
+            'within_15' => $this->expiringQuery(15)->count(),
+            'within_30' => $this->expiringQuery(30)->count(),
+            'within_60' => $this->expiringQuery(60)->count(),
+        ];
+
+        return view('accountant.contracts.expiring', compact('contracts', 'days', 'stats'));
+    }
+
+    protected function expiringQuery(int $withinDays): \Illuminate\Database\Eloquent\Builder
+    {
+        return Contract::query()
+            ->where('status', Contract::STATUS_ACTIVE)
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '>', now())
+            ->whereDate('end_date', '<=', now()->addDays($withinDays));
     }
 
     protected function departmentEmployees(Department $department, Request $request): View
@@ -74,6 +163,13 @@ class ContractController extends Controller
             ->orderByDesc('start_date')
             ->paginate(10)
             ->withQueryString();
+
+        $contracts->getCollection()->transform(function (Contract $contract) {
+            $contract->computed_allowance = $this->allowanceService->totalAllowance($contract);
+            $contract->computed_total_income = (float) $contract->salary + $contract->computed_allowance;
+
+            return $contract;
+        });
 
         return view('accountant.contracts.employee-contracts', [
             'employee' => $employee,
