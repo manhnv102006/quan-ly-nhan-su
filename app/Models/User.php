@@ -69,6 +69,11 @@ class User extends Authenticatable
         return $this->hasRole(Role::EMPLOYEE);
     }
 
+    public function isAccountant(): bool
+    {
+        return $this->hasRole(Role::ACCOUNTANT);
+    }
+
     public function kpiAssignments()
     {
         return $this->hasMany(KPIAssignment::class, 'manager_id');

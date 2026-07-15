@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\ManagesPayrollPeriods;
@@ -11,11 +11,11 @@ class PayrollPeriodController extends Controller
 
     protected function payrollPeriodRoutePrefix(): string
     {
-        return 'admin';
+        return 'accountant';
     }
 
     protected function payrollPeriodViewNamespace(): string
     {
-        return 'admin';
+        return 'accountant';
     }
 }

@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
         $adminRoleId = Role::query()->where('name', Role::ADMIN)->value('id');
         $managerRoleId = Role::query()->where('name', Role::MANAGER)->value('id');
         $employeeRoleId = Role::query()->where('name', Role::EMPLOYEE)->value('id');
+        $accountantRoleId = Role::query()->where('name', Role::ACCOUNTANT)->value('id');
 
         User::factory()->create([
             'username' => 'admin',
@@ -45,6 +46,14 @@ class DatabaseSeeder extends Seeder
             'email' => 'employee@example.com',
             'status' => 'active',
             'role_id' => $employeeRoleId,
+        ]);
+
+        User::factory()->create([
+            'username' => 'accountant',
+            'name' => 'Lê Thị Kế Toán',
+            'email' => 'accountant@example.com',
+            'status' => 'active',
+            'role_id' => $accountantRoleId,
         ]);
 
         $this->call([

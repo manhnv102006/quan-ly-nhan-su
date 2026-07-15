@@ -72,6 +72,26 @@ class Employee extends Model
         return $this->hasMany(ContractHistory::class)->orderByDesc('created_at');
     }
 
+    public function insurance(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(EmployeeInsurance::class);
+    }
+
+    public function taxProfile(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(EmployeeTaxProfile::class);
+    }
+
+    public function taxDependents(): HasMany
+    {
+        return $this->hasMany(TaxDependent::class);
+    }
+
+    public function salaryAdvances(): HasMany
+    {
+        return $this->hasMany(SalaryAdvance::class);
+    }
+
     public function overtimeRequests(): HasMany
     {
         return $this->hasMany(OvertimeRequest::class);
