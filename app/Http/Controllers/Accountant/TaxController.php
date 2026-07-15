@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\EmployeeTaxProfile;
 use App\Models\PayrollPeriod;
 use App\Models\TaxDependent;
+use App\Services\ModuleChangeLogService;
 use App\Services\TaxService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class TaxController extends Controller
 {
     public function __construct(
         private readonly TaxService $tax,
+        private readonly ModuleChangeLogService $changeLogs,
     ) {}
 
     public function index(Request $request): View
@@ -67,8 +69,9 @@ class TaxController extends Controller
         $validated['employee_id'] = $employee->id;
         $validated['is_active'] = $request->boolean('is_active', true);
 
-        TaxDependent::create($validated);
+        $dependent = TaxDependent::create($validated);
         $this->ensureTaxProfile($employee);
+        $this->changeLogs->logTaxDependentCreate($dependent);
 
         return redirect()
             ->route('accountant.tax.dependents', ['employee_id' => $employee->id])
@@ -80,9 +83,11 @@ class TaxController extends Controller
         abort_unless($dependent->employee_id === $employee->id, 404);
 
         $validated = $this->validateDependent($request);
+        $original = $dependent->only(array_keys(ModuleChangeLogService::TAX_DEPENDENT_FIELDS));
         $validated['is_active'] = $request->boolean('is_active');
 
         $dependent->update($validated);
+        $this->changeLogs->logTaxDependentUpdate($dependent, $original);
 
         return redirect()
             ->route('accountant.tax.dependents', ['employee_id' => $employee->id])
@@ -92,6 +97,7 @@ class TaxController extends Controller
     public function destroyDependent(Employee $employee, TaxDependent $dependent): RedirectResponse
     {
         abort_unless($dependent->employee_id === $employee->id, 404);
+        $this->changeLogs->logTaxDependentDelete($dependent);
         $dependent->delete();
 
         return redirect()
@@ -107,10 +113,16 @@ class TaxController extends Controller
             'note' => 'nullable|string|max:2000',
         ]);
 
-        EmployeeTaxProfile::updateOrCreate(
-            ['employee_id' => $employee->id],
-            $validated
-        );
+        $profile = EmployeeTaxProfile::query()->firstOrNew(['employee_id' => $employee->id]);
+        $original = $profile->exists
+            ? $profile->only(array_keys(ModuleChangeLogService::TAX_PROFILE_FIELDS))
+            : [];
+
+        $profile->fill($validated);
+        $profile->employee_id = $employee->id;
+        $profile->save();
+
+        $this->changeLogs->logTaxProfileUpdate($profile, $original, $employee->id);
 
         return redirect()
             ->route('accountant.tax.dependents', ['employee_id' => $employee->id])

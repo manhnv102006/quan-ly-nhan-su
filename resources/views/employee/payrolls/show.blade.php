@@ -3,9 +3,8 @@
     $roleName = $user->role?->name;
     $isManager = $roleName === 'manager';
 
-    $navigation = $isManager
-        ? \App\Support\ManagerNavigation::items()
-        : \App\Support\EmployeeNavigation::items();
+    $navigation = \App\Support\SelfServiceLayout::navigation();
+    $layout = \App\Support\SelfServiceLayout::component($roleName);
 
     $period = $payroll->payrollPeriod;
     $totalAllowance = (float) $payroll->allowance
@@ -14,7 +13,8 @@
         + (float) ($payroll->allowance_fuel ?? 0)
         + (float) ($payroll->allowance_position ?? 0);
     $income = (float) $payroll->basic_salary + $totalAllowance + (float) $payroll->bonus + (float) ($payroll->overtime_pay ?? 0);
-    $layout = $isManager ? 'manager-layout' : 'employee-layout';
+    $payslip = $payroll->payslipBreakdown();
+
     $layoutParams = [
         'title' => 'Chi tiết phiếu lương',
         'subtitle' => 'Xem đầy đủ các khoản lương của kỳ đã chọn.',
@@ -78,7 +78,7 @@
                 <div>
                     <p class="text-xs font-bold uppercase tracking-[0.22em] text-sky-200">Thực lĩnh kỳ này</p>
                     <p class="mt-3 text-5xl font-black tracking-tight text-white leading-none">
-                        {{ number_format((float) $payroll->total_salary, 0, ',', '.') }}<span class="text-2xl font-bold text-sky-200 ml-1">đ</span>
+                        {{ number_format($payslip['net_salary'], 0, ',', '.') }}<span class="text-2xl font-bold text-sky-200 ml-1">đ</span>
                     </p>
                     <div class="mt-4 flex items-center gap-3">
                         <span class="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur-sm">
@@ -101,7 +101,7 @@
                     </div>
                     <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-sky-200">Khấu trừ</p>
-                        <p class="mt-2 text-base font-bold text-white">{{ number_format((float) $payroll->deduction, 0, ',', '.') }}đ</p>
+                        <p class="mt-2 text-base font-bold text-white">{{ number_format($payslip['total_deductions'], 0, ',', '.') }}đ</p>
                     </div>
                     <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-sky-200">Ngày chi trả</p>
@@ -223,19 +223,35 @@
                 @endif
 
                 {{-- Khấu trừ --}}
-                <div class="flex items-center justify-between rounded-2xl bg-rose-50 px-5 py-4 hover:bg-rose-100 transition">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0">
-                            <svg class="text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:18px;height:18px">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
-                            </svg>
+                <div class="rounded-2xl bg-rose-50 px-5 py-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0">
+                                <svg class="text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:18px;height:18px">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-rose-700">Tổng khấu trừ</p>
+                                <p class="text-xs text-rose-400">Phạt · Bảo hiểm · Thuế TNCN</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-sm font-semibold text-rose-700">Khấu trừ</p>
-                            <p class="text-xs text-rose-400">Đi trễ / vắng mặt</p>
+                        <span class="text-sm font-bold text-rose-600">-{{ number_format($payslip['total_deductions'], 0, ',', '.') }}đ</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 border-t border-dashed border-rose-200 pt-3 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="text-rose-500">Phạt đi trễ / nghỉ không phép</span>
+                            <span class="font-semibold text-rose-600">-{{ number_format($payslip['penalty'], 0, ',', '.') }}đ</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-rose-500">Bảo hiểm (BHXH+BHYT+BHTN)</span>
+                            <span class="font-semibold text-rose-600">-{{ number_format($payslip['insurance'], 0, ',', '.') }}đ</span>
+                        </div>
+                        <div class="flex items-center justify-between sm:col-span-2">
+                            <span class="text-rose-500">Thuế thu nhập cá nhân</span>
+                            <span class="font-semibold text-rose-600">-{{ number_format($payslip['pit'], 0, ',', '.') }}đ</span>
                         </div>
                     </div>
-                    <span class="text-sm font-bold text-rose-600">-{{ number_format((float) $payroll->deduction, 0, ',', '.') }}đ</span>
                 </div>
 
                 {{-- Divider --}}
@@ -255,7 +271,7 @@
                         </div>
                         <p class="text-base font-bold text-white">Thực lĩnh</p>
                     </div>
-                    <span class="text-2xl font-black text-white">{{ number_format((float) $payroll->total_salary, 0, ',', '.') }}đ</span>
+                    <span class="text-2xl font-black text-white">{{ number_format($payslip['net_salary'], 0, ',', '.') }}đ</span>
                 </div>
 
             </div>

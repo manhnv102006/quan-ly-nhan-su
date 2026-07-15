@@ -1,7 +1,5 @@
 @php
-    $user = Auth::user();
-    $isManager = $user->role->name === 'manager';
-    $layout = $isManager ? 'manager-layout' : 'employee-layout';
+    $layout = \App\Support\SelfServiceLayout::component();
     $layoutParams = ['title' => 'Tạo đơn tăng ca', 'subtitle' => 'Gửi yêu cầu tăng ca cho quản lý phê duyệt.'];
 @endphp
 

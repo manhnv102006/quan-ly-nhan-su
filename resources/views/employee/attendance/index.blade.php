@@ -1,7 +1,5 @@
 @php
-    $user = Auth::user();
-    $isManager = $user->role->name === 'manager';
-    $layout = $isManager ? 'manager-layout' : 'employee-layout';
+    $layout = \App\Support\SelfServiceLayout::component();
     $layoutParams = [
         'title' => 'Chấm công hôm nay',
         'subtitle' => 'Check-in và check-out ca làm việc hôm nay.',

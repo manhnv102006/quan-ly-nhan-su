@@ -1,6 +1,5 @@
 @php
-    $user = Auth::user();
-    $layout = $user->role->name === 'manager' ? 'manager-layout' : 'employee-layout';
+    $layout = \App\Support\SelfServiceLayout::component();
 @endphp
 
 <x-dynamic-component :component="$layout" :attributes="new \Illuminate\View\ComponentAttributeBag(['title' => 'Chi tiết hợp đồng'])">

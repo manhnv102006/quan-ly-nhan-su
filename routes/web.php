@@ -32,6 +32,7 @@ use App\Http\Controllers\Admin\ShiftController;
 
 use App\Http\Controllers\Accountant\AdvanceController as AccountantAdvanceController;
 use App\Http\Controllers\Accountant\AttendanceController as AccountantAttendanceController;
+use App\Http\Controllers\Accountant\ChangeLogController as AccountantChangeLogController;
 use App\Http\Controllers\Accountant\ContractController as AccountantContractController;
 use App\Http\Controllers\Accountant\DashboardController as AccountantDashboardController;
 use App\Http\Controllers\Accountant\InsuranceController as AccountantInsuranceController;
@@ -290,6 +291,7 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
     Route::post('/payroll-periods/{payrollPeriod}/approve', [AccountantPayrollPeriodController::class, 'approve'])->name('payroll-periods.approve');
     Route::post('/payroll-periods/{payrollPeriod}/pay', [AccountantPayrollPeriodController::class, 'pay'])->name('payroll-periods.pay');
     Route::post('/payroll-periods/{payrollPeriod}/close', [AccountantPayrollPeriodController::class, 'close'])->name('payroll-periods.close');
+    Route::get('/change-logs', [AccountantChangeLogController::class, 'index'])->name('change-logs.index');
     Route::get('/insurance', [AccountantInsuranceController::class, 'index'])->name('insurance.index');
     Route::get('/insurance/create', [AccountantInsuranceController::class, 'create'])->name('insurance.create');
     Route::post('/insurance', [AccountantInsuranceController::class, 'store'])->name('insurance.store');
@@ -347,7 +349,7 @@ Route::middleware(['auth', 'verified', 'role:leader'])->prefix('leader')->name('
     Route::get('/reports/export', [LeaderReportController::class, 'export'])->name('reports.export');
 });
 
-Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:employee,accountant'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
 
     Route::prefix('employee/kpis')->name('employee.kpis.')->group(function () {
@@ -362,7 +364,7 @@ Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::patch('/employee/notifications/{notification}/read', [EmployeeNotificationController::class, 'markAsRead'])->name('employee.notifications.read');
 });
 
-Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:employee,manager,admin,accountant'])->group(function () {
     Route::get('/employee/leave-requests', [EmployeeLeaveController::class, 'index'])->name('employee.leave-requests');
     Route::get('/employee/leave-requests/create', [EmployeeLeaveController::class, 'create'])->name('employee.leave-requests.create');
     Route::get('/employee/leave-requests/{leaveRequest}', [EmployeeLeaveController::class, 'show'])->name('employee.leave-requests.show');

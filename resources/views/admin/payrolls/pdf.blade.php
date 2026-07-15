@@ -280,9 +280,24 @@
                     <td>Khấu trừ (Đi trễ, vắng mặt không phép)</td>
                     <td class="text-right">-{{ number_format($payroll->deduction, 0, ',', '.') }} ₫</td>
                 </tr>
+                @php $payslip = $payroll->payslipBreakdown(); @endphp
+                <tr class="text-red">
+                    <td>Bảo hiểm NLĐ (BHXH + BHYT + BHTN)</td>
+                    <td class="text-right">-{{ number_format($payslip['insurance'], 0, ',', '.') }} ₫</td>
+                </tr>
+                @if($payslip['bhxh_employee'] > 0 || $payslip['bhyt_employee'] > 0 || $payslip['bhtn_employee'] > 0)
+                <tr class="text-red" style="font-size: 11px; color: #888;">
+                    <td style="padding-left: 20px;">BHXH: {{ number_format($payslip['bhxh_employee'], 0, ',', '.') }} · BHYT: {{ number_format($payslip['bhyt_employee'], 0, ',', '.') }} · BHTN: {{ number_format($payslip['bhtn_employee'], 0, ',', '.') }}</td>
+                    <td></td>
+                </tr>
+                @endif
+                <tr class="text-red">
+                    <td>Thuế thu nhập cá nhân (TNCN)</td>
+                    <td class="text-right">-{{ number_format($payslip['pit'], 0, ',', '.') }} ₫</td>
+                </tr>
                 <tr class="total-row">
                     <td>Thực lĩnh (Net Salary)</td>
-                    <td class="text-right">{{ number_format($payroll->total_salary, 0, ',', '.') }} ₫</td>
+                    <td class="text-right">{{ number_format($payslip['net_salary'], 0, ',', '.') }} ₫</td>
                 </tr>
             </tbody>
         </table>

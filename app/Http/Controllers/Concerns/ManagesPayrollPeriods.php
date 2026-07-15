@@ -6,6 +6,7 @@ use App\Models\Department;
 use App\Models\Payroll;
 use App\Models\PayrollPeriod;
 use App\Services\AutoNotificationService;
+use App\Services\ModuleChangeLogService;
 use App\Services\PayrollService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -213,7 +214,7 @@ trait ManagesPayrollPeriods
     {
         $payrolls = $payrollPeriod->payrolls()
             ->whereHas('employee', fn ($q) => $q->where('department_id', $department->id))
-            ->with(['employee'])
+            ->with(['employee.department', 'employee.position', 'employee.insurance', 'employee.taxProfile', 'payrollPeriod'])
             ->latest()
             ->paginate(10);
 
@@ -462,6 +463,17 @@ trait ManagesPayrollPeriods
 
         $employeeName = $payroll->employee?->full_name ?? 'Nhân viên';
         $reason = $validated['reason'];
+
+        app(ModuleChangeLogService::class)->logPayrollAdjust(
+            $payroll,
+            $payroll->employee_id,
+            (float) $oldBonus,
+            (float) $oldDeduction,
+            (float) $payroll->bonus,
+            (float) $payroll->deduction,
+            $reason,
+            auth()->id(),
+        );
 
         activity()
             ->performedOn($payrollPeriod)
