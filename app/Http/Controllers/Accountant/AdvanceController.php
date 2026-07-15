@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Payroll;
 use App\Models\PayrollPeriod;
@@ -20,27 +21,124 @@ class AdvanceController extends Controller
 
     public function index(Request $request): View
     {
-        $query = SalaryAdvance::query()->with(['employee.department', 'approver', 'rejecter']);
+        if ($request->filled('employee_id')) {
+            return $this->employeeAdvances($request->integer('employee_id'), $request);
+        }
+
+        if ($request->filled('department_id')) {
+            return $this->departmentEmployees(Department::findOrFail($request->department_id), $request);
+        }
+
+        $departments = Department::query()
+            ->where('status', 'active')
+            ->withCount('employees')
+            ->orderBy('department_name')
+            ->get()
+            ->map(function (Department $department) {
+                $employeeIds = $department->employees()->pluck('id');
+
+                $advances = $employeeIds->isEmpty()
+                    ? collect()
+                    : SalaryAdvance::query()->whereIn('employee_id', $employeeIds)->get();
+
+                $department->advances_count = $advances->count();
+                $department->pending_count = $advances->where('status', SalaryAdvance::STATUS_PENDING)->count();
+                $department->outstanding_amount = (float) $advances
+                    ->filter(fn (SalaryAdvance $a) => $a->canBeDeducted())
+                    ->sum(fn (SalaryAdvance $a) => $a->remainingBalance());
+
+                return $department;
+            });
+
+        return view('accountant.advances.index', [
+            'departments' => $departments,
+            'stats' => $this->advances->stats(),
+        ]);
+    }
+
+    protected function departmentEmployees(Department $department, Request $request): View
+    {
+        $employeeIds = $department->employees()->pluck('id');
+
+        $allAdvances = $employeeIds->isEmpty()
+            ? collect()
+            : SalaryAdvance::query()->whereIn('employee_id', $employeeIds)->get();
+
+        $departmentStats = [
+            'employees_with_advances' => $allAdvances->pluck('employee_id')->unique()->count(),
+            'pending' => $allAdvances->where('status', SalaryAdvance::STATUS_PENDING)->count(),
+            'outstanding' => (float) $allAdvances
+                ->filter(fn (SalaryAdvance $a) => $a->canBeDeducted())
+                ->sum(fn (SalaryAdvance $a) => $a->remainingBalance()),
+        ];
+
+        $query = $department->employees()
+            ->with(['position', 'salaryAdvances'])
+            ->whereHas('salaryAdvances')
+            ->orderBy('full_name');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('employee_code', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $status = $request->status;
+            $query->whereHas('salaryAdvances', fn ($q) => $q->where('status', $status));
+        }
+
+        $employees = $query->get()->map(function (Employee $employee) {
+            $advances = $employee->salaryAdvances->sortByDesc('request_date');
+            $employee->advances_count = $advances->count();
+            $employee->pending_count = $advances->where('status', SalaryAdvance::STATUS_PENDING)->count();
+            $employee->outstanding_amount = (float) $advances
+                ->filter(fn (SalaryAdvance $a) => $a->canBeDeducted())
+                ->sum(fn (SalaryAdvance $a) => $a->remainingBalance());
+            $employee->latest_advance = $advances->first();
+
+            return $employee;
+        });
+
+        return view('accountant.advances.department-employees', [
+            'department' => $department,
+            'employees' => $employees,
+            'departmentStats' => $departmentStats,
+            'filters' => $request->only(['search', 'status']),
+        ]);
+    }
+
+    protected function employeeAdvances(int $employeeId, Request $request): View
+    {
+        $employee = Employee::with(['department', 'position'])->findOrFail($employeeId);
+
+        $query = SalaryAdvance::query()
+            ->where('employee_id', $employee->id)
+            ->with(['approver', 'rejecter']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('advance_code', 'like', "%{$search}%")
-                    ->orWhereHas('employee', fn ($e) => $e
-                        ->where('full_name', 'like', "%{$search}%")
-                        ->orWhere('employee_code', 'like', "%{$search}%"));
-            });
-        }
+        $advances = $query->orderByDesc('request_date')->orderByDesc('id')->paginate(10)->withQueryString();
 
-        $advances = $query->orderByDesc('request_date')->orderByDesc('id')->paginate(15)->withQueryString();
+        $summary = [
+            'total' => SalaryAdvance::where('employee_id', $employee->id)->count(),
+            'pending' => SalaryAdvance::where('employee_id', $employee->id)->where('status', SalaryAdvance::STATUS_PENDING)->count(),
+            'outstanding' => (float) SalaryAdvance::where('employee_id', $employee->id)
+                ->get()
+                ->filter(fn (SalaryAdvance $a) => $a->canBeDeducted())
+                ->sum(fn (SalaryAdvance $a) => $a->remainingBalance()),
+        ];
 
-        return view('accountant.advances.index', [
+        return view('accountant.advances.employee-advances', [
+            'employee' => $employee,
+            'department' => $employee->department,
             'advances' => $advances,
-            'stats' => $this->advances->stats(),
+            'summary' => $summary,
+            'filters' => $request->only(['status']),
         ]);
     }
 
@@ -74,7 +172,7 @@ class AdvanceController extends Controller
         ]);
 
         return redirect()
-            ->route('accountant.advances.index')
+            ->route('accountant.advances.index', ['employee_id' => $validated['employee_id']])
             ->with('success', 'Đã tạo yêu cầu tạm ứng lương.');
     }
 
