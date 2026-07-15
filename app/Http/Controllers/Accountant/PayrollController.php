@@ -22,12 +22,54 @@ class PayrollController extends Controller
 
     public function slips(Request $request): View
     {
-        $query = Payroll::query()->with(['employee.department', 'payrollPeriod']);
+        $periods = PayrollPeriod::orderByDesc('year')->orderByDesc('month')->get();
+
+        if ($request->filled('department_id')) {
+            return $this->slipsByDepartment($request, $periods);
+        }
+
+        $periodId = $request->input('period_id');
+
+        $departments = \App\Models\Department::query()
+            ->where('status', 'active')
+            ->withCount('employees')
+            ->orderBy('department_name')
+            ->get()
+            ->map(function (\App\Models\Department $department) use ($periodId) {
+                $query = Payroll::query()
+                    ->whereHas('employee', fn ($q) => $q->where('department_id', $department->id));
+
+                if ($periodId) {
+                    $query->where('payroll_period_id', $periodId);
+                }
+
+                $department->payrolls_count = (clone $query)->count();
+                $department->total_salary = (float) (clone $query)->sum('total_salary');
+
+                return $department;
+            });
+
+        $totals = [
+            'payrolls' => $departments->sum('payrolls_count'),
+            'salary' => $departments->sum('total_salary'),
+        ];
+
+        return view('accountant.payrolls.slips', compact('departments', 'periods', 'totals'));
+    }
+
+    protected function slipsByDepartment(Request $request, $periods): View
+    {
+        $department = \App\Models\Department::findOrFail($request->integer('department_id'));
+
+        $query = Payroll::query()
+            ->with(['employee', 'payrollPeriod'])
+            ->whereHas('employee', fn ($q) => $q->where('department_id', $department->id));
 
         if ($request->filled('search')) {
-            $query->whereHas('employee', function ($q) use ($request) {
-                $q->where('full_name', 'like', '%'.$request->search.'%')
-                    ->orWhere('employee_code', 'like', '%'.$request->search.'%');
+            $search = $request->search;
+            $query->whereHas('employee', function ($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('employee_code', 'like', "%{$search}%");
             });
         }
 
@@ -35,10 +77,23 @@ class PayrollController extends Controller
             $query->where('payroll_period_id', $request->period_id);
         }
 
-        $payrolls = $query->latest()->paginate(15)->withQueryString();
-        $periods = PayrollPeriod::orderByDesc('year')->orderBy('month')->get();
+        $statsQuery = clone $query;
 
-        return view('accountant.payrolls.slips', compact('payrolls', 'periods'));
+        $payrolls = $query->orderByDesc('created_at')->paginate(15)->withQueryString();
+
+        $stats = [
+            'count' => (clone $statsQuery)->count(),
+            'total_salary' => (float) (clone $statsQuery)->sum('total_salary'),
+            'basic_salary' => (float) (clone $statsQuery)->sum('basic_salary'),
+            'deduction' => (float) (clone $statsQuery)->sum('deduction'),
+        ];
+
+        return view('accountant.payrolls.slips-department', compact(
+            'department',
+            'payrolls',
+            'periods',
+            'stats',
+        ));
     }
 
     public function salaryHistory(Request $request): View
