@@ -19,6 +19,22 @@ class EmployeeInsurance extends Model
         self::STATUS_STOPPED => 'Đã ngừng',
     ];
 
+    /**
+     * Giới hạn tỷ lệ đóng BH tối đa (%) — chặn nhập nhầm ảnh hưởng lương/BH.
+     *
+     * @return array<string, array{max: float, label: string}>
+     */
+    public static function rateLimitsPercent(): array
+    {
+        return [
+            'bhxh_employee_rate' => ['max' => 20, 'label' => 'BHXH NLĐ'],
+            'bhxh_employer_rate' => ['max' => 30, 'label' => 'BHXH DN'],
+            'bhyt_employee_rate' => ['max' => 10, 'label' => 'BHYT NLĐ'],
+            'bhyt_employer_rate' => ['max' => 15, 'label' => 'BHYT DN'],
+            'bhtn_rate' => ['max' => 10, 'label' => 'BHTN'],
+        ];
+    }
+
     protected $fillable = [
         'employee_id',
         'social_insurance_number',
