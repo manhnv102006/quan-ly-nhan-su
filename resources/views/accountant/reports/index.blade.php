@@ -1,9 +1,11 @@
 <x-accountant-layout title="Báo cáo" subtitle="Trung tâm báo cáo tài chính & nhân sự">
+    @include('accountant.reports.partials.sub-nav', ['active' => 'hub'])
+
     <div class="accountant-page">
         <section class="accountant-hero !mb-4">
             <div class="relative max-w-2xl">
                 <h2 class="text-2xl font-bold sm:text-3xl">Trung tâm báo cáo</h2>
-                <p class="mt-2 text-sm text-amber-100/90">Xuất và xem các báo cáo lương, bảo hiểm, thuế, chấm công, hợp đồng.</p>
+                <p class="mt-2 text-sm text-amber-100/90">Chi phí lương, ngân sách, xuất báo cáo tài chính nhân sự.</p>
             </div>
         </section>
 

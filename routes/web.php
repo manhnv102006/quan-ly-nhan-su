@@ -322,6 +322,12 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
     Route::get('/attendance/timesheet', [AccountantAttendanceController::class, 'timesheet'])->name('attendance.timesheet');
     Route::get('/attendance/records/{attendance}', [AccountantAttendanceController::class, 'show'])->name('attendance.show');
     Route::get('/reports', [AccountantReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/salary-by-department', [AccountantReportController::class, 'salaryByDepartment'])->name('reports.salary-by-department');
+    Route::get('/reports/salary-by-department/export', [AccountantReportController::class, 'exportSalaryByDepartment'])->name('reports.salary-by-department.export');
+    Route::get('/reports/budget-comparison', [AccountantReportController::class, 'budgetComparison'])->name('reports.budget-comparison');
+    Route::get('/reports/budget-comparison/export', [AccountantReportController::class, 'exportBudgetComparison'])->name('reports.budget-comparison.export');
+    Route::get('/reports/financial', [AccountantReportController::class, 'financial'])->name('reports.financial');
+    Route::get('/reports/financial/export', [AccountantReportController::class, 'exportFinancial'])->name('reports.financial.export');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
