@@ -25,8 +25,8 @@ class ShiftController extends Controller
     {
         $data = $request->validate([
             'shift_name' => ['required', 'string'],
-            'start_time' => ['required'],
-            'end_time' => ['required'],
+            'start_time' => ['required', 'date_format:H:i'],
+            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
         ]);
 
         Shift::create($data);
@@ -45,8 +45,8 @@ class ShiftController extends Controller
     {
         $data = $request->validate([
             'shift_name' => ['required', 'string'],
-            'start_time' => ['required'],
-            'end_time' => ['required'],
+            'start_time' => ['required', 'date_format:H:i'],
+            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
         ]);
 
         $shift->update($data);

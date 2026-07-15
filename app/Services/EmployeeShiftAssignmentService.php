@@ -3,12 +3,68 @@
 namespace App\Services;
 
 use App\Models\EmployeeShift;
+use App\Models\Shift;
+use App\Support\ShiftTimeRange;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use InvalidArgumentException;
 
 class EmployeeShiftAssignmentService
 {
+    /**
+     * @param  list<int>  $employeeIds
+     * @return list<string>
+     */
+    public function findOverlappingConflicts(array $validated, array $employeeIds): array
+    {
+        if ($employeeIds === []) {
+            return [];
+        }
+
+        $shift = Shift::query()->findOrFail((int) $validated['shift_id']);
+        $dates = $this->resolveDates($validated);
+        $newStart = Carbon::parse($shift->start_time)->format('H:i:s');
+        $newEnd = Carbon::parse($shift->end_time)->format('H:i:s');
+        $conflicts = [];
+
+        foreach ($employeeIds as $employeeId) {
+            foreach ($dates as $date) {
+                $existingAssignments = EmployeeShift::query()
+                    ->where('employee_id', $employeeId)
+                    ->whereDate('work_date', $date)
+                    ->where('shift_id', '!=', $shift->id)
+                    ->with(['employee', 'shift'])
+                    ->get();
+
+                foreach ($existingAssignments as $existing) {
+                    if (! $existing->employee || ! $existing->shift) {
+                        continue;
+                    }
+
+                    $existingStart = Carbon::parse($existing->shift->start_time)->format('H:i:s');
+                    $existingEnd = Carbon::parse($existing->shift->end_time)->format('H:i:s');
+
+                    if (! ShiftTimeRange::overlaps($newStart, $newEnd, $existingStart, $existingEnd)) {
+                        continue;
+                    }
+
+                    $conflicts[] = sprintf(
+                        '%s (%s) đã có ca "%s" (%s - %s) trùng giờ với ca "%s" ngày %s.',
+                        $existing->employee->full_name,
+                        $existing->employee->employee_code,
+                        $existing->shift->shift_name,
+                        Carbon::parse($existing->shift->start_time)->format('H:i'),
+                        Carbon::parse($existing->shift->end_time)->format('H:i'),
+                        $shift->shift_name,
+                        Carbon::parse($date)->format('d/m/Y'),
+                    );
+                }
+            }
+        }
+
+        return $conflicts;
+    }
+
     /**
      * @param  list<int>  $employeeIds
      */
@@ -35,15 +91,29 @@ class EmployeeShiftAssignmentService
             }
         }
 
+        $assignedCount = 0;
+
         foreach (array_chunk($rows, 500) as $chunk) {
-            EmployeeShift::upsert(
-                $chunk,
-                ['employee_id', 'work_date'],
-                ['shift_id', 'updated_at'],
-            );
+            foreach ($chunk as $row) {
+                $created = EmployeeShift::query()->firstOrCreate(
+                    [
+                        'employee_id' => $row['employee_id'],
+                        'work_date' => $row['work_date'],
+                        'shift_id' => $row['shift_id'],
+                    ],
+                    [
+                        'created_at' => $row['created_at'],
+                        'updated_at' => $row['updated_at'],
+                    ],
+                );
+
+                if ($created->wasRecentlyCreated) {
+                    $assignedCount++;
+                }
+            }
         }
 
-        return count($rows);
+        return $assignedCount;
     }
 
     /**
