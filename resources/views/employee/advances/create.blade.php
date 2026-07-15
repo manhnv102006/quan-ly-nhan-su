@@ -2,6 +2,8 @@
     $user = Auth::user();
     $role = $user->role->name ?? 'employee';
     $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫';
+    $minAdvanceAmount = $minAdvanceAmount ?? \App\Models\SalaryAdvance::MIN_AMOUNT;
+    $oldAmount = old('amount') ? number_format((float) old('amount'), 0, ',', '.') : '';
 
     $layout = match ($role) {
         'manager' => 'manager-layout',
@@ -46,11 +48,13 @@
 
                 <div>
                     <label class="mb-2 block text-xs font-bold uppercase text-slate-500">Số tiền ứng <span class="text-rose-500">*</span></label>
-                    <input type="number" name="amount" min="100000" max="{{ $maxAdvanceAmount }}" step="100000" required
-                           value="{{ old('amount') }}"
-                           class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
-                           placeholder="VD: 2000000">
-                    <p class="mt-1 text-xs text-slate-400">Tối thiểu 100.000₫</p>
+                    <input type="text" name="amount" inputmode="numeric" required
+                           value="{{ $oldAmount }}"
+                           class="money-input w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                           placeholder="VD: 5.000.000"
+                           data-min="{{ $minAdvanceAmount }}"
+                           data-max="{{ $maxAdvanceAmount }}">
+                    <p class="mt-1 text-xs text-slate-400">Tối thiểu {{ $formatMoney($minAdvanceAmount) }}</p>
                 </div>
 
                 <div>
@@ -85,4 +89,6 @@
             </form>
         </div>
     </div>
+
+    @include('partials.money-input-script')
 </x-dynamic-component>

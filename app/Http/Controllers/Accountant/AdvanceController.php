@@ -58,12 +58,12 @@ class AdvanceController extends Controller
     {
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id',
-            'amount' => 'required|numeric|min:100000',
+            'amount' => 'required|numeric|min:'.SalaryAdvance::MIN_AMOUNT,
             'request_date' => 'required|date',
             'reason' => 'required|string|max:1000',
             'note' => 'nullable|string|max:2000',
         ], [
-            'amount.min' => 'Số tiền tạm ứng tối thiểu 100.000₫',
+            'amount.min' => 'Số tiền tạm ứng tối thiểu '.number_format(SalaryAdvance::MIN_AMOUNT, 0, ',', '.').'₫',
         ]);
 
         SalaryAdvance::create([
