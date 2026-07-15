@@ -223,6 +223,22 @@ class Employee extends Model
     }
 
     /**
+     * Nhân viên báo cáo trực tiếp cho leader (trưởng nhóm).
+     */
+    public function isDirectReportOf(self $leader): bool
+    {
+        return (int) $this->manager_id === (int) $leader->id;
+    }
+
+    /**
+     * @param  Builder<Employee>  $query
+     */
+    public function scopeManagedByLeader(Builder $query, self $leader): Builder
+    {
+        return $query->where('manager_id', $leader->id);
+    }
+
+    /**
      * Nhân viên thuộc phòng ban do quản lý này phụ trách.
      */
     public function isManagedBy(self $manager): bool
