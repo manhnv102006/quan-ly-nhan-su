@@ -6,13 +6,26 @@
     <div class="accountant-page">
         <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
             <div>
-                <a href="{{ route('accountant.insurance.index') }}" class="text-sm font-semibold text-sky-700 hover:underline">← Danh sách hồ sơ</a>
-                <h2 class="mt-2 text-2xl font-bold text-slate-900">Cập nhật hồ sơ bảo hiểm</h2>
+                <nav class="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
+                    <a href="{{ route('accountant.insurance.index') }}" class="text-sky-700 hover:underline">Phòng ban</a>
+                    @if($insurance->employee?->department)
+                        <span>/</span>
+                        <a href="{{ route('accountant.insurance.index', ['department_id' => $insurance->employee->department->id]) }}" class="text-sky-700 hover:underline">{{ $insurance->employee->department->department_name }}</a>
+                    @endif
+                    <span>/</span>
+                    <a href="{{ route('accountant.insurance.index', ['employee_id' => $insurance->employee_id]) }}" class="text-sky-700 hover:underline">{{ $insurance->employee?->full_name }}</a>
+                    <span>/</span>
+                    <span class="text-slate-700">Sửa hồ sơ</span>
+                </nav>
+                <h2 class="text-2xl font-bold text-slate-900">Cập nhật hồ sơ bảo hiểm</h2>
                 <p class="text-sm text-slate-500">{{ $insurance->employee?->full_name }} · {{ $insurance->employee?->employee_code }}</p>
             </div>
-            @if($insurance->status === 'active')
-                <button type="button" onclick="document.getElementById('stopModal').classList.remove('hidden')" class="accountant-btn-secondary text-rose-700">Ngừng đóng BH</button>
-            @endif
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('accountant.insurance.index', ['employee_id' => $insurance->employee_id]) }}" class="accountant-btn-secondary">← Hồ sơ BH</a>
+                @if($insurance->status === 'active')
+                    <button type="button" onclick="document.getElementById('stopModal').classList.remove('hidden')" class="accountant-btn-secondary text-rose-700">Ngừng đóng BH</button>
+                @endif
+            </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-4 mb-4">
@@ -34,7 +47,7 @@
             @include('accountant.insurance.partials.form', ['insurance' => $insurance])
             <div class="flex gap-3 pt-2">
                 <button type="submit" class="accountant-btn-primary">Cập nhật</button>
-                <a href="{{ route('accountant.insurance.index') }}" class="accountant-btn-secondary">Hủy</a>
+                <a href="{{ route('accountant.insurance.index', ['employee_id' => $insurance->employee_id]) }}" class="accountant-btn-secondary">Hủy</a>
             </div>
         </form>
 

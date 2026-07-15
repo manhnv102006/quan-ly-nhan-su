@@ -1030,6 +1030,88 @@
     .accountant-badge {
         @apply inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide;
     }
+
+    /* Pagination — Laravel dùng markup Bootstrap nhưng layout kế toán không load Bootstrap */
+    .accountant-body .d-flex {
+        display: flex;
+    }
+
+    .accountant-body .d-none {
+        display: none;
+    }
+
+    .accountant-body .flex-fill {
+        flex: 1 1 auto;
+    }
+
+    .accountant-body .justify-content-between {
+        justify-content: space-between;
+    }
+
+    .accountant-body .justify-items-center {
+        justify-items: center;
+    }
+
+    @media (min-width: 640px) {
+        .accountant-body .d-sm-none {
+            display: none !important;
+        }
+
+        .accountant-body .d-sm-flex {
+            display: flex !important;
+        }
+
+        .accountant-body .flex-sm-fill {
+            flex: 1 1 auto;
+        }
+
+        .accountant-body .align-items-sm-center {
+            align-items: center;
+        }
+
+        .accountant-body .justify-content-sm-between {
+            justify-content: space-between;
+        }
+    }
+
+    .accountant-body main nav:has(.pagination) {
+        @apply flex w-full flex-col gap-3;
+    }
+
+    @media (min-width: 640px) {
+        .accountant-body main nav:has(.pagination) {
+            @apply flex-row items-center justify-between;
+        }
+    }
+
+    .accountant-body main .pagination {
+        @apply m-0 flex list-none flex-wrap items-center gap-1 p-0;
+    }
+
+    .accountant-body main .page-item {
+        @apply list-none;
+    }
+
+    .accountant-body main .page-link {
+        @apply inline-flex min-w-[2.25rem] items-center justify-center rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 no-underline shadow-sm transition hover:bg-amber-50 hover:text-amber-800;
+    }
+
+    .accountant-body main .page-item.active > .page-link,
+    .accountant-body main .active > .page-link {
+        @apply border-amber-600 bg-amber-600 text-white hover:bg-amber-600 hover:text-white;
+    }
+
+    .accountant-body main .page-item.disabled > .page-link {
+        @apply pointer-events-none cursor-default opacity-50;
+    }
+
+    .accountant-body main nav .small.text-muted {
+        @apply text-sm text-slate-500;
+    }
+
+    .accountant-body main nav .fw-semibold {
+        @apply font-semibold text-slate-700;
+    }
 }
 
 /* ── Leader portal (violet / fuchsia team theme) ── */
@@ -1101,5 +1183,87 @@
 
     .leader-badge {
         @apply inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide;
+    }
+
+    /* Pagination — Laravel dùng markup Bootstrap nhưng layout leader không load Bootstrap */
+    .leader-body .d-flex {
+        display: flex;
+    }
+
+    .leader-body .d-none {
+        display: none;
+    }
+
+    .leader-body .flex-fill {
+        flex: 1 1 auto;
+    }
+
+    .leader-body .justify-content-between {
+        justify-content: space-between;
+    }
+
+    .leader-body .justify-items-center {
+        justify-items: center;
+    }
+
+    @media (min-width: 640px) {
+        .leader-body .d-sm-none {
+            display: none !important;
+        }
+
+        .leader-body .d-sm-flex {
+            display: flex !important;
+        }
+
+        .leader-body .flex-sm-fill {
+            flex: 1 1 auto;
+        }
+
+        .leader-body .align-items-sm-center {
+            align-items: center;
+        }
+
+        .leader-body .justify-content-sm-between {
+            justify-content: space-between;
+        }
+    }
+
+    .leader-body main nav:has(.pagination) {
+        @apply flex w-full flex-col gap-3;
+    }
+
+    @media (min-width: 640px) {
+        .leader-body main nav:has(.pagination) {
+            @apply flex-row items-center justify-between;
+        }
+    }
+
+    .leader-body main .pagination {
+        @apply m-0 flex list-none flex-wrap items-center gap-1 p-0;
+    }
+
+    .leader-body main .page-item {
+        @apply list-none;
+    }
+
+    .leader-body main .page-link {
+        @apply inline-flex min-w-[2.25rem] items-center justify-center rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 no-underline shadow-sm transition hover:bg-violet-50 hover:text-violet-800;
+    }
+
+    .leader-body main .page-item.active > .page-link,
+    .leader-body main .active > .page-link {
+        @apply border-violet-600 bg-violet-600 text-white hover:bg-violet-600 hover:text-white;
+    }
+
+    .leader-body main .page-item.disabled > .page-link {
+        @apply pointer-events-none cursor-default opacity-50;
+    }
+
+    .leader-body main nav .small.text-muted {
+        @apply text-sm text-slate-500;
+    }
+
+    .leader-body main nav .fw-semibold {
+        @apply font-semibold text-slate-700;
     }
 }
