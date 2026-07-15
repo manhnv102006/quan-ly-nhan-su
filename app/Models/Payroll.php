@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Services\InsuranceService;
+use App\Services\TaxService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -92,5 +95,128 @@ class Payroll extends Model
             'calculated', 'pending' => 'bg-amber-50 text-amber-700 border-amber-100',
             default => 'bg-slate-100 text-slate-600 border-slate-200',
         };
+    }
+
+    /**
+     * @return array{
+     *     gross_income: float,
+     *     penalty: float,
+     *     insurance: float,
+     *     bhxh_employee: float,
+     *     bhyt_employee: float,
+     *     bhtn_employee: float,
+     *     pit: float,
+     *     total_deductions: float,
+     *     net_salary: float,
+     * }
+     */
+    public function payslipBreakdown(?Carbon $onDate = null): array
+    {
+        $penalty = (float) $this->deduction;
+        $gross = (float) $this->total_salary;
+        $grossIncome = $gross + $penalty;
+        $employee = $this->employee;
+
+        if (! $employee) {
+            return [
+                'gross_income' => $grossIncome,
+                'penalty' => $penalty,
+                'insurance' => 0,
+                'bhxh_employee' => 0,
+                'bhyt_employee' => 0,
+                'bhtn_employee' => 0,
+                'pit' => 0,
+                'total_deductions' => $penalty,
+                'net_salary' => $gross,
+            ];
+        }
+
+        $period = $this->payrollPeriod;
+        $periodDate = $onDate ?? ($period
+            ? Carbon::create((int) $period->year, (int) $period->month, 15)
+            : now());
+
+        $tax = app(TaxService::class)->calculateEmployeeMonthly($employee, $gross, $periodDate);
+
+        $bhxh = $bhyt = $bhtn = 0.0;
+        $profile = $employee->insurance;
+        if ($profile?->isContributing()) {
+            $contributions = app(InsuranceService::class)->calculateContributions($profile);
+            $bhxh = (float) $contributions['bhxh_employee'];
+            $bhyt = (float) $contributions['bhyt_employee'];
+            $bhtn = (float) $contributions['bhtn_employee'];
+        }
+
+        $insurance = (float) $tax['insurance'];
+        $pit = (float) $tax['pit'];
+        $totalDeductions = $penalty + $insurance + $pit;
+
+        return [
+            'gross_income' => $grossIncome,
+            'penalty' => $penalty,
+            'insurance' => $insurance,
+            'bhxh_employee' => $bhxh,
+            'bhyt_employee' => $bhyt,
+            'bhtn_employee' => $bhtn,
+            'pit' => $pit,
+            'total_deductions' => $totalDeductions,
+            'net_salary' => (float) $tax['net_income'],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toModalPayload(int $lateDays, string $pdfUrl): array
+    {
+        $breakdown = $this->payslipBreakdown();
+        $fmt = fn (float $n) => number_format($n, 0, ',', '.');
+        $netSalary = $breakdown['net_salary'];
+        $isPaid = in_array($this->status, ['paid', 'closed']);
+
+        return [
+            'id' => $this->id,
+            'employee_code' => $this->employee?->employee_code ?: '—',
+            'full_name' => $this->employee?->full_name ?: '—',
+            'department_name' => $this->employee?->department?->department_name ?: '—',
+            'position_name' => $this->employee?->position?->position_name ?: '—',
+            'period_name' => $this->payrollPeriod?->name ?: '—',
+            'period_range' => ($this->payrollPeriod?->start_date?->format('d/m/Y') ?: '').' - '.($this->payrollPeriod?->end_date?->format('d/m/Y') ?: ''),
+            'basic_salary' => $fmt((float) $this->basic_salary),
+            'allowance' => $fmt((float) $this->allowance),
+            'allowance_meal' => $fmt((float) $this->allowance_meal),
+            'allowance_phone' => $fmt((float) $this->allowance_phone),
+            'allowance_fuel' => $fmt((float) $this->allowance_fuel),
+            'allowance_position' => $fmt((float) $this->allowance_position),
+            'bonus' => $fmt((float) $this->bonus),
+            'overtime_hours' => (float) $this->overtime_hours,
+            'overtime_pay' => $fmt((float) $this->overtime_pay),
+            'deduction' => $fmt((float) $this->deduction),
+            'late_days' => $lateDays,
+            'late_fine' => $fmt($lateDays * 50000),
+            'unpaid_leave_fine' => $fmt($this->unpaid_leave_days * 300000),
+            'standard_working_days' => $this->standard_working_days,
+            'actual_working_days' => $this->actual_working_days,
+            'gross_income' => $fmt($breakdown['gross_income']),
+            'insurance_total' => $fmt($breakdown['insurance']),
+            'bhxh_employee' => $fmt($breakdown['bhxh_employee']),
+            'bhyt_employee' => $fmt($breakdown['bhyt_employee']),
+            'bhtn_employee' => $fmt($breakdown['bhtn_employee']),
+            'pit' => $fmt($breakdown['pit']),
+            'total_deductions' => $fmt($breakdown['total_deductions']),
+            'net_salary' => $fmt($netSalary),
+            'paid_salary' => $isPaid ? $fmt($netSalary) : '0',
+            'remaining_salary' => $isPaid ? '0' : $fmt($netSalary),
+            'status_label' => match ($this->status) {
+                'calculated' => 'Đã tính lương',
+                'approved' => 'Đã duyệt',
+                'paid' => 'Đã chi trả',
+                'closed' => 'Đã đóng',
+                default => 'Chưa tính lương',
+            },
+            'paid_leave_days' => $this->paid_leave_days,
+            'unpaid_leave_days' => $this->unpaid_leave_days,
+            'pdf_url' => $pdfUrl,
+        ];
     }
 }

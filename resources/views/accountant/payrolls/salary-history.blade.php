@@ -90,17 +90,29 @@
                     </div>
 
                     <div class="accountant-card overflow-hidden">
-                        <div class="border-b border-amber-100/80 px-5 py-4">
-                            <h3 class="text-sm font-bold text-slate-800">Điều chỉnh thưởng/khấu trừ</h3>
+                        <div class="border-b border-amber-100/80 px-5 py-4 flex items-center justify-between">
+                            <h3 class="text-sm font-bold text-slate-800">Nhật ký thay đổi</h3>
+                            <a href="{{ route('accountant.change-logs.index', ['employee_id' => $selectedEmployee->id]) }}" class="text-xs font-semibold text-amber-700 hover:underline">Xem tất cả →</a>
                         </div>
-                        <div class="max-h-[200px] space-y-2 overflow-y-auto p-5 text-sm">
-                            @forelse($adjustmentLogs as $log)
-                                <div class="rounded-lg border border-orange-100 bg-orange-50/50 px-3 py-2">
-                                    <p class="font-medium text-slate-800">{{ $log->description }}</p>
-                                    <p class="text-xs text-slate-500">{{ $log->created_at?->format('d/m/Y H:i') }} · {{ $log->causer?->name ?? '—' }}</p>
+                        <div class="max-h-[280px] space-y-2 overflow-y-auto p-5 text-sm">
+                            @forelse($changeLogs as $log)
+                                <div class="rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2.5">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <span class="accountant-badge {{ $log->actionBadgeClass() }}">{{ $log->moduleLabel() }}</span>
+                                        <span class="text-[10px] text-slate-500">{{ $log->created_at?->format('d/m/Y H:i') }}</span>
+                                    </div>
+                                    <p class="mt-1.5 font-medium text-slate-800">{{ $log->field_label }}</p>
+                                    <p class="mt-0.5 text-xs text-slate-600">
+                                        @if($log->old_value)
+                                            <span class="text-slate-400 line-through">{{ $log->old_value }}</span>
+                                            <span class="mx-1">→</span>
+                                        @endif
+                                        <strong>{{ $log->new_value ?? '—' }}</strong>
+                                    </p>
+                                    <p class="mt-1 text-[10px] text-slate-500">{{ $log->user_name }} · {{ $log->user_role ?? '—' }}</p>
                                 </div>
                             @empty
-                                <p class="text-center text-slate-500 py-4">Chưa có điều chỉnh nào.</p>
+                                <p class="text-center text-slate-500 py-4">Chưa có thay đổi nào được ghi nhận.</p>
                             @endforelse
                         </div>
                     </div>

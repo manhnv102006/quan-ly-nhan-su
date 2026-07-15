@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmployeeInsurance;
 use App\Services\InsuranceService;
+use App\Services\ModuleChangeLogService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class InsuranceController extends Controller
 {
     public function __construct(
         private readonly InsuranceService $insurance,
+        private readonly ModuleChangeLogService $changeLogs,
     ) {}
 
     public function index(Request $request): View
@@ -164,10 +166,12 @@ class InsuranceController extends Controller
             return back()->with('error', 'Nhân viên đã có hồ sơ bảo hiểm.');
         }
 
-        EmployeeInsurance::create(array_merge($validated, [
+        $profile = EmployeeInsurance::create(array_merge($validated, [
             'managed_by' => auth()->id(),
             'status' => EmployeeInsurance::STATUS_ACTIVE,
         ]));
+
+        $this->changeLogs->logInsuranceCreate($profile);
 
         return redirect()
             ->route('accountant.insurance.index', ['employee_id' => $employee->id])
@@ -189,9 +193,13 @@ class InsuranceController extends Controller
 
         unset($validated['employee_id']);
 
+        $original = $insurance->only(array_keys(ModuleChangeLogService::INSURANCE_FIELDS));
+
         $insurance->update(array_merge($validated, [
             'managed_by' => auth()->id(),
         ]));
+
+        $this->changeLogs->logInsuranceUpdate($insurance, $original);
 
         return redirect()
             ->route('accountant.insurance.index', ['employee_id' => $insurance->employee_id])
@@ -205,12 +213,16 @@ class InsuranceController extends Controller
             'stop_reason' => 'required|string|max:500',
         ]);
 
+        $original = $insurance->only(['status', 'end_date', 'stop_reason']);
+
         $insurance->update([
             'status' => EmployeeInsurance::STATUS_STOPPED,
             'end_date' => $validated['end_date'],
             'stop_reason' => $validated['stop_reason'],
             'managed_by' => auth()->id(),
         ]);
+
+        $this->changeLogs->logInsuranceStop($insurance, $original);
 
         return redirect()
             ->route('accountant.insurance.index', ['employee_id' => $insurance->employee_id])
@@ -225,7 +237,11 @@ class InsuranceController extends Controller
             return back()->with('error', 'Không có hồ sơ BH đang đóng để ngừng.');
         }
 
+        $original = $profile->only(['status', 'end_date', 'stop_reason']);
+
         $this->insurance->stopForResignation($profile, 'Nhân viên nghỉ việc - ngừng đóng BH');
+
+        $this->changeLogs->logInsuranceStop($profile->fresh(), $original, auth()->id());
 
         return back()->with('success', "Đã ngừng đóng BH cho {$employee->full_name}.");
     }

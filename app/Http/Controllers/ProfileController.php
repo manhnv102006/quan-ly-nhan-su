@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Support\AccountantNavigation;
 use App\Support\EmployeeNavigation;
 use App\Support\ManagerNavigation;
 use Illuminate\Http\RedirectResponse;
@@ -23,6 +24,7 @@ class ProfileController extends Controller
         $layout = match (true) {
             $user->isAdmin() => 'admin',
             $user->isManager() => 'manager',
+            $user->isAccountant() => 'accountant',
             default => 'employee',
         };
 
@@ -34,6 +36,7 @@ class ProfileController extends Controller
             'heroTheme' => match ($layout) {
                 'admin' => 'from-violet-600 via-indigo-600 to-cyan-500',
                 'manager' => 'from-emerald-500 via-teal-500 to-cyan-600',
+                'accountant' => 'from-amber-500 via-orange-500 to-amber-600',
                 default => 'from-sky-500 via-blue-500 to-indigo-600',
             },
             'dashboardRoute' => $user->dashboardRouteName(),
@@ -47,6 +50,10 @@ class ProfileController extends Controller
     {
         if ($layout === 'manager') {
             return ManagerNavigation::items();
+        }
+
+        if ($layout === 'accountant') {
+            return AccountantNavigation::items();
         }
 
         if ($layout === 'employee') {

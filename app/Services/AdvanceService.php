@@ -8,6 +8,7 @@ use App\Models\Payroll;
 use App\Models\PayrollPeriod;
 use App\Models\SalaryAdvance;
 use App\Models\SalaryAdvanceDeduction;
+use App\Services\ModuleChangeLogService;
 use Illuminate\Support\Collection;
 
 class AdvanceService
@@ -162,6 +163,12 @@ class AdvanceService
             }
 
             $deduction = $this->applyDeduction($advance, $payroll, $before, 'Trừ tự động kỳ '.$period->name);
+            app(ModuleChangeLogService::class)->logAdvanceDeduction(
+                $advance->fresh(),
+                (float) $deduction->amount,
+                $before,
+                'Trừ tự động kỳ '.$period->name,
+            );
             $applied++;
             $totalAmount += (float) $deduction->amount;
         }
@@ -231,7 +238,7 @@ class AdvanceService
         abort_if($amount < SalaryAdvance::MIN_AMOUNT, 422, 'Số tiền ứng tối thiểu '.number_format(SalaryAdvance::MIN_AMOUNT, 0, ',', '.').'₫.');
         abort_if($amount > $maxAmount, 422, 'Số tiền ứng không được vượt quá '.number_format($maxAmount, 0, ',', '.').'₫ (50% lương).');
 
-        return SalaryAdvance::create([
+        $advance = SalaryAdvance::create([
             'employee_id' => $employee->id,
             'advance_code' => SalaryAdvance::generateCode(),
             'amount' => $amount,
@@ -241,6 +248,10 @@ class AdvanceService
             'status' => SalaryAdvance::STATUS_PENDING,
             'requested_by' => $requestedBy,
         ]);
+
+        app(ModuleChangeLogService::class)->logAdvanceCreate($advance, $requestedBy);
+
+        return $advance;
     }
 
     /**
