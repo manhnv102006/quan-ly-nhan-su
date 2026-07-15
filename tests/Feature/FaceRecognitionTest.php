@@ -5,6 +5,7 @@ use App\Models\EmployeeFaceDescriptor;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
     Config::set('services.face.kiosk_token', 'test-kiosk-token-secret');
@@ -75,7 +76,8 @@ test('admin can view face enrollment management page', function () {
 
     $response->assertOk()
         ->assertSee('Chấm công bằng khuôn mặt')
-        ->assertSee('NV-FACE-001');
+        ->assertSee('NV-FACE-001')
+        ->assertSee('Đăng ký khuôn mặt');
 });
 
 test('admin can delete employee face descriptors', function () {
@@ -90,4 +92,30 @@ test('admin can delete employee face descriptors', function () {
 
     $response->assertRedirect(route('admin.face-enrollments.index'));
     expect(EmployeeFaceDescriptor::query()->where('employee_id', $this->employee->id)->count())->toBe(0);
+});
+
+test('admin can enroll employee face from website samples', function () {
+    Config::set('services.face.api_url', 'http://127.0.0.1:5555');
+
+    Http::fake([
+        '127.0.0.1:5555/enroll/extract-batch' => Http::response([
+            'success' => true,
+            'embedding' => array_fill(0, 512, 0.04),
+            'sample_count' => 5,
+            'image_base64' => 'data:image/jpeg;base64,/9j/4AAQ',
+            'message' => 'Đã trích xuất 5 mẫu khuôn mặt.',
+        ], 200),
+    ]);
+
+    $samples = array_fill(0, 5, 'data:image/jpeg;base64,abc');
+
+    $response = $this->actingAs($this->admin)
+        ->postJson(route('admin.face-enrollments.store', $this->employee), [
+            'samples' => $samples,
+        ]);
+
+    $response->assertOk()
+        ->assertJsonPath('success', true);
+
+    expect(EmployeeFaceDescriptor::query()->where('employee_id', $this->employee->id)->count())->toBe(1);
 });
