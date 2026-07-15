@@ -33,6 +33,11 @@
                 {{ session('success') }}
             </div>
         @endif
+        @if(session('error'))
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-800">
+                {{ session('error') }}
+            </div>
+        @endif
 
         <div class="rounded-2xl border border-cyan-100 bg-cyan-50/60 px-5 py-4 text-sm text-cyan-900">
             Yêu cầu ứng lương gửi tới <strong>kế toán</strong> duyệt. Sau khi duyệt, số tiền sẽ được <strong>trừ trực tiếp vào lương thực lĩnh</strong> ở kỳ lương kế tiếp.
