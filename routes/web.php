@@ -52,6 +52,7 @@ use App\Http\Controllers\Manager\KPIController as ManagerKPIController;
 use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
+use App\Http\Controllers\Employee\EmployeeAdvanceController;
 use App\Http\Controllers\Employee\EmployeePayrollController;
 use App\Http\Controllers\Employee\EmployeeContractController;
 
@@ -381,6 +382,13 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(fu
     Route::get('/employee/overtime-requests', [EmployeeOvertimeController::class, 'index'])->name('employee.overtime-requests');
     Route::get('/employee/overtime-requests/create', [EmployeeOvertimeController::class, 'create'])->name('employee.overtime-requests.create');
     Route::post('/employee/overtime-requests', [EmployeeOvertimeController::class, 'store'])->name('employee.overtime-requests.store');
+});
+
+Route::middleware(['auth', 'verified', 'role:employee,manager,leader,accountant'])->group(function () {
+    Route::get('/employee/advances', [EmployeeAdvanceController::class, 'index'])->name('employee.advances.index');
+    Route::get('/employee/advances/create', [EmployeeAdvanceController::class, 'create'])->name('employee.advances.create');
+    Route::post('/employee/advances', [EmployeeAdvanceController::class, 'store'])->name('employee.advances.store');
+    Route::get('/employee/advances/{advance}', [EmployeeAdvanceController::class, 'show'])->name('employee.advances.show');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Contract;
+use App\Models\Employee;
 use App\Models\Payroll;
 use App\Models\PayrollPeriod;
 use App\Models\SalaryAdvance;
@@ -178,6 +180,91 @@ class AdvanceService
                 ->whereIn('status', [SalaryAdvance::STATUS_APPROVED, SalaryAdvance::STATUS_PARTIAL])
                 ->get()
                 ->sum(fn (SalaryAdvance $a) => $a->remainingBalance()),
+        ];
+    }
+
+    public function referenceSalary(Employee $employee): float
+    {
+        $contract = Contract::query()
+            ->where('employee_id', $employee->id)
+            ->where('status', Contract::STATUS_ACTIVE)
+            ->orderByDesc('start_date')
+            ->first();
+
+        if ($contract) {
+            return (float) $contract->salary;
+        }
+
+        $payroll = $employee->payrolls()->orderByDesc('created_at')->first();
+
+        return $payroll ? (float) $payroll->basic_salary : 0;
+    }
+
+    public function maxAdvanceAmount(Employee $employee): float
+    {
+        $salary = $this->referenceSalary($employee);
+
+        if ($salary <= 0) {
+            return 5_000_000;
+        }
+
+        return max(100_000, round($salary * 0.5, 0));
+    }
+
+    /**
+     * @param  array{amount: float|string, request_date: string, reason: string, note?: string|null}  $data
+     */
+    public function submitRequest(Employee $employee, array $data, int $requestedBy): SalaryAdvance
+    {
+        abort_unless($employee->status === 'active', 422, 'Chỉ nhân viên đang làm việc mới được ứng lương.');
+
+        $hasPending = SalaryAdvance::query()
+            ->where('employee_id', $employee->id)
+            ->where('status', SalaryAdvance::STATUS_PENDING)
+            ->exists();
+
+        abort_if($hasPending, 422, 'Bạn đã có yêu cầu ứng lương đang chờ kế toán duyệt.');
+
+        $amount = (float) $data['amount'];
+        $maxAmount = $this->maxAdvanceAmount($employee);
+
+        abort_if($amount > $maxAmount, 422, 'Số tiền ứng không được vượt quá '.number_format($maxAmount, 0, ',', '.').'₫ (50% lương).');
+
+        return SalaryAdvance::create([
+            'employee_id' => $employee->id,
+            'advance_code' => SalaryAdvance::generateCode(),
+            'amount' => $amount,
+            'request_date' => $data['request_date'],
+            'reason' => $data['reason'],
+            'note' => $data['note'] ?? null,
+            'status' => SalaryAdvance::STATUS_PENDING,
+            'requested_by' => $requestedBy,
+        ]);
+    }
+
+    /**
+     * @return array{pending: int, approved: int, outstanding: float, total_advanced: float}
+     */
+    public function employeeSummary(Employee $employee): array
+    {
+        $advances = SalaryAdvance::query()->where('employee_id', $employee->id)->get();
+
+        return [
+            'pending' => $advances->where('status', SalaryAdvance::STATUS_PENDING)->count(),
+            'approved' => $advances->whereIn('status', [
+                SalaryAdvance::STATUS_APPROVED,
+                SalaryAdvance::STATUS_PARTIAL,
+            ])->count(),
+            'outstanding' => (float) $advances
+                ->filter(fn (SalaryAdvance $a) => $a->canBeDeducted())
+                ->sum(fn (SalaryAdvance $a) => $a->remainingBalance()),
+            'total_advanced' => (float) $advances
+                ->whereIn('status', [
+                    SalaryAdvance::STATUS_APPROVED,
+                    SalaryAdvance::STATUS_PARTIAL,
+                    SalaryAdvance::STATUS_SETTLED,
+                ])
+                ->sum('amount'),
         ];
     }
 }
