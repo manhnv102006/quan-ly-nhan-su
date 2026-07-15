@@ -958,3 +958,76 @@
         transform: rotate(360deg);
     }
 }
+
+/* ── Accountant portal (amber / indigo finance theme) ── */
+@layer components {
+    body.accountant-body {
+        @apply text-slate-800 antialiased;
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+
+    .accountant-shell {
+        @apply relative min-h-screen overflow-x-hidden;
+        background:
+            radial-gradient(ellipse 80% 50% at 12% -8%, rgba(245, 158, 11, 0.16), transparent),
+            radial-gradient(ellipse 55% 40% at 95% 5%, rgba(99, 102, 241, 0.14), transparent),
+            radial-gradient(ellipse 45% 30% at 50% 100%, rgba(251, 191, 36, 0.1), transparent),
+            linear-gradient(180deg, #fffbeb 0%, #f8fafc 55%, #eef2ff 100%);
+    }
+
+    .accountant-sidebar {
+        @apply border-r border-amber-100/80 bg-white/85 shadow-[8px_0_32px_-20px_rgba(120,53,15,0.18)] backdrop-blur-2xl;
+    }
+
+    .accountant-header {
+        @apply border-b border-amber-100/80 bg-white/80 shadow-sm shadow-amber-100/40 backdrop-blur-2xl;
+    }
+
+    .accountant-card {
+        @apply rounded-[1.5rem] border border-white/90 bg-white/85 shadow-sm shadow-amber-100/50 backdrop-blur-sm;
+    }
+
+    .accountant-menu-item {
+        @apply flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-all duration-200;
+    }
+
+    .accountant-menu-item-active {
+        @apply bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-lg shadow-amber-500/30;
+    }
+
+    .accountant-menu-item-inactive {
+        @apply text-slate-600 hover:bg-amber-50 hover:text-amber-800 hover:shadow-sm hover:shadow-amber-100/60;
+    }
+
+    .accountant-stat-card {
+        @apply accountant-card p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-200/40;
+    }
+
+    .accountant-page {
+        @apply space-y-6;
+    }
+
+    .accountant-hero {
+        @apply relative mb-2 overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 via-amber-900 to-indigo-900 p-6 text-white shadow-2xl shadow-amber-900/25 sm:p-8;
+    }
+
+    .accountant-btn-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-amber-500/25 transition hover:from-amber-600 hover:to-orange-600;
+    }
+
+    .accountant-btn-secondary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-amber-50;
+    }
+
+    .accountant-field {
+        @apply w-full rounded-xl border border-amber-100 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20;
+    }
+
+    .accountant-label {
+        @apply mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500;
+    }
+
+    .accountant-badge {
+        @apply inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide;
+    }
+}

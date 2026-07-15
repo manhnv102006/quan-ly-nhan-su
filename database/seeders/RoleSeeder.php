@@ -22,6 +22,10 @@ class RoleSeeder extends Seeder
                 'name' => Role::EMPLOYEE,
                 'description' => 'Nhân viên - truy cập thông tin cá nhân',
             ],
+            [
+                'name' => Role::ACCOUNTANT,
+                'description' => 'Kế toán - quản lý lương, bảo hiểm, thuế và báo cáo',
+            ],
         ];
 
         foreach ($roles as $role) {
