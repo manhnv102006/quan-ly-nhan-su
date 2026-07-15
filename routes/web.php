@@ -319,6 +319,8 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
     Route::get('/contracts/expiring', [AccountantContractController::class, 'expiring'])->name('contracts.expiring');
     Route::get('/contracts/detail/{contract}', [AccountantContractController::class, 'show'])->name('contracts.show');
     Route::get('/attendance', [AccountantAttendanceController::class, 'index'])->name('attendance.index');
+    Route::get('/attendance/timesheet', [AccountantAttendanceController::class, 'timesheet'])->name('attendance.timesheet');
+    Route::get('/attendance/records/{attendance}', [AccountantAttendanceController::class, 'show'])->name('attendance.show');
     Route::get('/reports', [AccountantReportController::class, 'index'])->name('reports.index');
 });
 

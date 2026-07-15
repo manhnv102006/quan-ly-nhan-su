@@ -1,10 +1,19 @@
-<x-accountant-layout title="Chấm công" subtitle="Theo dõi chấm công theo phòng ban">
+<x-accountant-layout title="Chấm công" subtitle="Xem bảng công phục vụ tính lương">
+    @include('accountant.attendance.partials.sub-nav', ['active' => 'departments'])
+
     <div class="accountant-page">
+        <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
+            Chế độ chỉ xem — dữ liệu chấm công dùng đối chiếu khi tính lương, không chỉnh sửa tại đây.
+        </div>
+
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-900">Chấm công</h2>
                 <p class="text-sm text-slate-500">Hôm nay: {{ $today }}</p>
             </div>
+            <a href="{{ route('accountant.attendance.timesheet', ['month' => $currentMonth]) }}" class="accountant-btn-primary">
+                Bảng công tháng {{ \Carbon\Carbon::parse($currentMonth.'-01')->format('m/Y') }}
+            </a>
         </div>
 
         @php
@@ -21,7 +30,7 @@
         <div class="accountant-card overflow-hidden">
             <div class="border-b border-emerald-100/80 px-5 py-4">
                 <h3 class="text-sm font-bold text-slate-800">Chọn phòng ban</h3>
-                <p class="text-xs text-slate-500">Xem ngày công theo tháng</p>
+                <p class="text-xs text-slate-500">Xem ngày công, giờ làm và trạng thái theo tháng</p>
             </div>
 
             <div class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 xl:grid-cols-3">
