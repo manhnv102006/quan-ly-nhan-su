@@ -39,6 +39,11 @@ use App\Http\Controllers\Accountant\PayrollController as AccountantPayrollContro
 use App\Http\Controllers\Accountant\PayrollPeriodController as AccountantPayrollPeriodController;
 use App\Http\Controllers\Accountant\ReportController as AccountantReportController;
 use App\Http\Controllers\Accountant\TaxController as AccountantTaxController;
+use App\Http\Controllers\Leader\DashboardController as LeaderDashboardController;
+use App\Http\Controllers\Leader\EmployeeController as LeaderEmployeeController;
+use App\Http\Controllers\Leader\KPIController as LeaderKPIController;
+use App\Http\Controllers\Leader\ReportController as LeaderReportController;
+use App\Http\Controllers\Leader\TaskController as LeaderTaskController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Employee\NotificationController as EmployeeNotificationController;
 use App\Http\Controllers\Manager\EmployeeController as ManagerEmployeeController;
@@ -328,6 +333,17 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
     Route::get('/reports/budget-comparison/export', [AccountantReportController::class, 'exportBudgetComparison'])->name('reports.budget-comparison.export');
     Route::get('/reports/financial', [AccountantReportController::class, 'financial'])->name('reports.financial');
     Route::get('/reports/financial/export', [AccountantReportController::class, 'exportFinancial'])->name('reports.financial.export');
+});
+
+Route::middleware(['auth', 'verified', 'role:leader'])->prefix('leader')->name('leader.')->group(function () {
+    Route::get('/dashboard', [LeaderDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/employees', [LeaderEmployeeController::class, 'index'])->name('employees.index');
+    Route::get('/employees/{employee}', [LeaderEmployeeController::class, 'show'])->name('employees.show');
+    Route::get('/kpis', [LeaderKPIController::class, 'index'])->name('kpis.index');
+    Route::get('/kpis/{employeeKpi}', [LeaderKPIController::class, 'show'])->name('kpis.show');
+    Route::get('/tasks', [LeaderTaskController::class, 'index'])->name('tasks.index');
+    Route::get('/reports', [LeaderReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export', [LeaderReportController::class, 'export'])->name('reports.export');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {

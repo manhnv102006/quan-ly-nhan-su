@@ -74,6 +74,27 @@ class User extends Authenticatable
         return $this->hasRole(Role::ACCOUNTANT);
     }
 
+    public function isLeader(): bool
+    {
+        return $this->hasRole(Role::LEADER);
+    }
+
+    public function leaderEmployeeProfile(): ?Employee
+    {
+        return app(\App\Services\LeaderEmployeeResolver::class)->resolve($this);
+    }
+
+    public function teamMembersQuery(): ?\Illuminate\Database\Eloquent\Builder
+    {
+        $leader = $this->leaderEmployeeProfile();
+
+        if (! $leader) {
+            return null;
+        }
+
+        return app(\App\Services\LeaderScopeService::class)->teamMembersQuery($leader);
+    }
+
     public function kpiAssignments()
     {
         return $this->hasMany(KPIAssignment::class, 'manager_id');
