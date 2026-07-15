@@ -18,7 +18,10 @@
             </div>
             <div>
                 <label class="accountant-label">Số tiền ứng *</label>
-                <input type="number" name="amount" min="100000" step="100000" required value="{{ old('amount') }}" class="accountant-field">
+                <input type="text" name="amount" inputmode="numeric" required
+                       value="{{ old('amount') ? number_format((float) old('amount'), 0, ',', '.') : '' }}"
+                       class="accountant-field money-input" placeholder="VD: 5.000.000">
+                <p class="mt-1 text-xs text-slate-400">Tối thiểu {{ number_format(\App\Models\SalaryAdvance::MIN_AMOUNT, 0, ',', '.') }}₫</p>
             </div>
             <div>
                 <label class="accountant-label">Ngày yêu cầu *</label>
@@ -35,4 +38,6 @@
             <button type="submit" class="accountant-btn-primary">Gửi yêu cầu</button>
         </form>
     </div>
+
+    @include('partials.money-input-script')
 </x-accountant-layout>

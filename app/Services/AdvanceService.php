@@ -205,10 +205,10 @@ class AdvanceService
         $salary = $this->referenceSalary($employee);
 
         if ($salary <= 0) {
-            return 5_000_000;
+            return 10_000_000;
         }
 
-        return max(100_000, round($salary * 0.5, 0));
+        return round($salary * 0.5, 0);
     }
 
     /**
@@ -228,6 +228,7 @@ class AdvanceService
         $amount = (float) $data['amount'];
         $maxAmount = $this->maxAdvanceAmount($employee);
 
+        abort_if($amount < SalaryAdvance::MIN_AMOUNT, 422, 'Số tiền ứng tối thiểu '.number_format(SalaryAdvance::MIN_AMOUNT, 0, ',', '.').'₫.');
         abort_if($amount > $maxAmount, 422, 'Số tiền ứng không được vượt quá '.number_format($maxAmount, 0, ',', '.').'₫ (50% lương).');
 
         return SalaryAdvance::create([

@@ -37,13 +37,21 @@ class EmployeeAdvanceController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(): View|RedirectResponse
     {
         $employee = $this->linkedEmployee();
+        $maxAmount = $this->advances->maxAdvanceAmount($employee);
+
+        if ($maxAmount < SalaryAdvance::MIN_AMOUNT) {
+            return redirect()
+                ->route('employee.advances.index')
+                ->with('error', 'Hạn mức ứng lương của bạn ('.number_format($maxAmount, 0, ',', '.').'₫) thấp hơn mức tối thiểu '.number_format(SalaryAdvance::MIN_AMOUNT, 0, ',', '.').'₫.');
+        }
 
         return view('employee.advances.create', [
-            'maxAdvanceAmount' => $this->advances->maxAdvanceAmount($employee),
+            'maxAdvanceAmount' => $maxAmount,
             'referenceSalary' => $this->advances->referenceSalary($employee),
+            'minAdvanceAmount' => SalaryAdvance::MIN_AMOUNT,
         ]);
     }
 
@@ -51,14 +59,15 @@ class EmployeeAdvanceController extends Controller
     {
         $employee = $this->linkedEmployee();
         $maxAmount = $this->advances->maxAdvanceAmount($employee);
+        $minAmount = SalaryAdvance::MIN_AMOUNT;
 
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:100000|max:'.$maxAmount,
+            'amount' => 'required|numeric|min:'.$minAmount.'|max:'.$maxAmount,
             'request_date' => 'required|date',
             'reason' => 'required|string|max:1000',
             'note' => 'nullable|string|max:2000',
         ], [
-            'amount.min' => 'Số tiền ứng tối thiểu 100.000₫.',
+            'amount.min' => 'Số tiền ứng tối thiểu '.number_format($minAmount, 0, ',', '.').'₫.',
             'amount.max' => 'Số tiền ứng không được vượt quá '.number_format($maxAmount, 0, ',', '.').'₫.',
             'reason.required' => 'Vui lòng nhập lý do ứng lương.',
         ]);
