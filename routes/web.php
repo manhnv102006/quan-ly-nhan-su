@@ -161,6 +161,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/attendance-reports/departments/{department}/pdf', [AttendanceReportController::class, 'exportPdf'])->name('attendance-reports.department.pdf');
 
     Route::get('/face-enrollments', [FaceEnrollmentController::class, 'index'])->name('face-enrollments.index');
+    Route::post('/face-enrollments/{employee}', [FaceEnrollmentController::class, 'store'])->name('face-enrollments.store');
     Route::delete('/face-enrollments/{employee}', [FaceEnrollmentController::class, 'destroy'])->name('face-enrollments.destroy');
 
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
