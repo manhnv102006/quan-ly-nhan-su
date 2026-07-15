@@ -51,12 +51,14 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[800px] text-sm">
+                <table class="w-full min-w-[1000px] text-sm">
                     <thead>
                         <tr class="bg-amber-50/80 text-left text-xs font-bold uppercase text-slate-500">
                             <th class="px-5 py-3">Mã HĐ</th>
                             <th class="px-5 py-3">Loại HĐ</th>
                             <th class="px-5 py-3 text-right">Lương</th>
+                            <th class="px-5 py-3 text-right">Phụ cấp</th>
+                            <th class="px-5 py-3 text-right">Tổng TN</th>
                             <th class="px-5 py-3">Thời hạn</th>
                             <th class="px-5 py-3 text-center">Trạng thái</th>
                             <th class="px-5 py-3"></th>
@@ -73,6 +75,8 @@
                                 </td>
                                 <td class="px-5 py-4">{{ $contract->contractType?->contract_name ?? '—' }}</td>
                                 <td class="px-5 py-4 text-right font-bold text-slate-800">{{ $formatMoney($contract->salary) }}</td>
+                                <td class="px-5 py-4 text-right text-amber-700">{{ $formatMoney($contract->computed_allowance ?? 0) }}</td>
+                                <td class="px-5 py-4 text-right font-bold text-slate-900">{{ $formatMoney($contract->computed_total_income ?? $contract->salary) }}</td>
                                 <td class="px-5 py-4 text-xs">
                                     {{ optional($contract->start_date)->format('d/m/Y') ?? '—' }}
                                     →
@@ -90,7 +94,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-5 py-14 text-center text-slate-500">Nhân viên chưa có hợp đồng.</td>
+                                <td colspan="8" class="px-5 py-14 text-center text-slate-500">Nhân viên chưa có hợp đồng.</td>
                             </tr>
                         @endforelse
                     </tbody>
