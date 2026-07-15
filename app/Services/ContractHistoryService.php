@@ -9,6 +9,7 @@ use App\Models\ContractType;
 use App\Models\Department;
 use App\Models\Position;
 use App\Models\User;
+use App\Services\ModuleChangeLogService;
 use Carbon\Carbon;
 
 class ContractHistoryService
@@ -259,7 +260,9 @@ class ContractHistoryService
             'changes' => $extra['changes'] ?? null,
             'note' => $extra['note'] ?? null,
             'performed_by' => $performedBy,
-        ]);
+        ])->tap(function (ContractHistory $history) {
+            app(ModuleChangeLogService::class)->syncFromContractHistory($history);
+        });
     }
 
     protected function performerName(?int $userId): string

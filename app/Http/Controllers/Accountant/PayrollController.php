@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Accountant;
 use App\Http\Controllers\Controller;
 use App\Models\ContractHistory;
 use App\Models\Employee;
+use App\Models\ModuleChangeLog;
 use App\Models\Payroll;
 use App\Models\PayrollPeriod;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
-use Spatie\Activitylog\Models\Activity;
 
 class PayrollController extends Controller
 {
@@ -106,7 +106,7 @@ class PayrollController extends Controller
         $selectedEmployee = null;
         $contractHistories = collect();
         $payrollRecords = collect();
-        $adjustmentLogs = collect();
+        $changeLogs = collect();
 
         if ($request->filled('employee_id')) {
             $selectedEmployee = Employee::with(['department', 'position'])->find($request->employee_id);
@@ -132,13 +132,18 @@ class PayrollController extends Controller
                     ->limit(24)
                     ->get();
 
-                $adjustmentLogs = Activity::query()
-                    ->where('subject_type', PayrollPeriod::class)
-                    ->where('description', 'like', '%'.$selectedEmployee->full_name.'%')
-                    ->where('event', 'updated')
-                    ->with('causer')
+                $changeLogs = ModuleChangeLog::query()
+                    ->where('employee_id', $selectedEmployee->id)
+                    ->whereIn('module', [
+                        ModuleChangeLog::MODULE_PAYROLL,
+                        ModuleChangeLog::MODULE_CONTRACT,
+                        ModuleChangeLog::MODULE_INSURANCE,
+                        ModuleChangeLog::MODULE_TAX,
+                        ModuleChangeLog::MODULE_ADVANCE,
+                    ])
+                    ->with('user')
                     ->orderByDesc('created_at')
-                    ->limit(30)
+                    ->limit(50)
                     ->get();
             }
         }
@@ -148,7 +153,7 @@ class PayrollController extends Controller
             'selectedEmployee',
             'contractHistories',
             'payrollRecords',
-            'adjustmentLogs',
+            'changeLogs',
         ));
     }
 
@@ -157,6 +162,8 @@ class PayrollController extends Controller
         $payroll->load([
             'employee.department',
             'employee.position',
+            'employee.insurance',
+            'employee.taxProfile',
             'payrollPeriod.approver',
             'payrollPeriod.payer',
         ]);

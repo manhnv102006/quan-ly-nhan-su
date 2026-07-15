@@ -72,6 +72,11 @@ class Employee extends Model
         return $this->hasMany(ContractHistory::class)->orderByDesc('created_at');
     }
 
+    public function moduleChangeLogs(): HasMany
+    {
+        return $this->hasMany(ModuleChangeLog::class)->orderByDesc('created_at');
+    }
+
     public function insurance(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(EmployeeInsurance::class);

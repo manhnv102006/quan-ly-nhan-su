@@ -1,16 +1,10 @@
 @php
-    $user = Auth::user();
-    $role = $user->role->name ?? 'employee';
+    $role = Auth::user()->role->name ?? 'employee';
     $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫';
     $minAdvanceAmount = $minAdvanceAmount ?? \App\Models\SalaryAdvance::MIN_AMOUNT;
     $oldAmount = old('amount') ? number_format((float) old('amount'), 0, ',', '.') : '';
 
-    $layout = match ($role) {
-        'manager' => 'manager-layout',
-        'leader' => 'leader-layout',
-        'accountant' => 'accountant-layout',
-        default => 'employee-layout',
-    };
+    $layout = \App\Support\SelfServiceLayout::component($role);
 
     $layoutParams = [
         'title' => 'Gửi yêu cầu ứng lương',
