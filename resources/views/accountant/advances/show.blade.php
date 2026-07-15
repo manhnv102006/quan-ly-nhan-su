@@ -4,7 +4,19 @@
 
 <x-accountant-layout title="Chi tiết tạm ứng" subtitle="{{ $advance->advance_code }}">
     <div class="accountant-page">
-        <a href="{{ route('accountant.advances.index') }}" class="text-sm font-semibold text-cyan-700 hover:underline">← Danh sách</a>
+        <nav class="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
+            <a href="{{ route('accountant.advances.index') }}" class="text-cyan-700 hover:underline">Phòng ban</a>
+            @if($advance->employee?->department)
+                <span>/</span>
+                <a href="{{ route('accountant.advances.index', ['department_id' => $advance->employee->department->id]) }}" class="text-cyan-700 hover:underline">{{ $advance->employee->department->department_name }}</a>
+            @endif
+            @if($advance->employee)
+                <span>/</span>
+                <a href="{{ route('accountant.advances.index', ['employee_id' => $advance->employee_id]) }}" class="text-cyan-700 hover:underline">{{ $advance->employee->full_name }}</a>
+            @endif
+            <span>/</span>
+            <span class="text-slate-700">{{ $advance->advance_code }}</span>
+        </nav>
 
         <div class="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div class="accountant-card p-5 lg:col-span-2">
