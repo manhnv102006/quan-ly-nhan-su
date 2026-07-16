@@ -74,7 +74,7 @@ class ModuleChangeLogService
         string $action,
         Model $entity,
         ?int $employeeId,
-        string $fieldName,
+        ?string $fieldName,
         string $fieldLabel,
         mixed $oldValue,
         mixed $newValue,
