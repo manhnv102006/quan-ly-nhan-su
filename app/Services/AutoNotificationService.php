@@ -120,6 +120,34 @@ class AutoNotificationService
         });
     }
 
+    public function employeeInsufficientWorkDaysWarning(Employee $employee, PayrollPeriod $period, int $actualDays, int $unpaidLeaves): void
+    {
+        $this->afterCommit(function () use ($employee, $period, $actualDays, $unpaidLeaves) {
+            // Gửi báo cáo cho Manager và Admin
+            if (! $employee->department_id) {
+                return;
+            }
+
+            $recipients = $this->resolveRecipients(
+                $this->adminUserIds(),
+                [$this->departmentManagerUserId($employee->department_id)],
+            );
+
+            // Bỏ qua nếu chính nhân viên đó là admin/manager để họ không nhận tin nhắn "Mách lẻo" về chính mình nữa
+            $recipients = $this->excludeUserIds($recipients, [$employee->user_id]);
+
+            if (! empty($recipients)) {
+                $this->send('system', 'Báo cáo: Nhân viên nghỉ không phép quá nhiều', sprintf(
+                    'Nhân viên %s chỉ đạt %d công trong kỳ %s (có %d ngày nghỉ không phép). Vui lòng nhắc nhở nhân viên vì không đáp ứng đủ quy định 23 công/tháng.',
+                    $employee->full_name,
+                    $actualDays,
+                    $period->name,
+                    $unpaidLeaves,
+                ), $recipients, $employee->department_id);
+            }
+        });
+    }
+
     public function kpiAssigned(KPIAssignment $assignment): void
     {
         $this->afterCommit(function () use ($assignment) {
