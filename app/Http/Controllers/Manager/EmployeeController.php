@@ -89,11 +89,6 @@ class EmployeeController extends Controller
             ->limit(6)
             ->get();
 
-        $contracts = $employee->contracts()
-            ->latest('start_date')
-            ->limit(3)
-            ->get();
-
         return view('manager.employees.show', compact(
             'managerProfile',
             'department',
@@ -101,7 +96,6 @@ class EmployeeController extends Controller
             'attendances',
             'leaveRequests',
             'kpis',
-            'contracts',
         ));
     }
 
