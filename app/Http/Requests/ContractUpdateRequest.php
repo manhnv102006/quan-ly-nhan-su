@@ -51,9 +51,9 @@ class ContractUpdateRequest extends FormRequest
             'salary' => ['required', 'numeric', 'min:1'],
             'allowances' => ['nullable', 'array'],
             'allowances.*' => ['nullable', 'numeric', 'min:0'],
-            'signed_date' => ['nullable', 'date', 'before_or_equal:start_date'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'note' => ['nullable', 'string', 'max:1000'],
+            'signed_date' => ['required', 'date', 'before_or_equal:start_date'],
+            'description' => ['required', 'string', 'max:1000'],
+            'note' => ['required', 'string', 'max:1000'],
             'contract_file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
         ];
     }

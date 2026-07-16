@@ -94,7 +94,7 @@ class EmployeeAttendanceService
     public function checkOut(Employee $employee, Attendance $attendance, bool $isFullDay, Carbon $now): Attendance
     {
         if ($isFullDay) {
-            $this->performFullDayCheckOut($attendance, $now);
+            $this->performFullDayCheckOut($employee, $attendance, $now);
         } else {
             if (! $attendance->check_in) {
                 throw ValidationException::withMessages([
@@ -109,7 +109,7 @@ class EmployeeAttendanceService
             }
 
             $sessionEnd = Carbon::parse($attendance->shift->end_time)->setDateFrom($attendance->attendance_date);
-            $this->assertCanCheckOut($now, $sessionEnd);
+            $this->assertCanCheckOut($employee, $attendance, $now, $sessionEnd);
 
             $attendance->check_out = $now;
         }
@@ -203,17 +203,17 @@ class EmployeeAttendanceService
         $attendance->late_minutes = (int) $attendance->morning_late_minutes + (int) $attendance->afternoon_late_minutes;
     }
 
-    private function performFullDayCheckOut(Attendance $attendance, Carbon $now): void
+    private function performFullDayCheckOut(Employee $employee, Attendance $attendance, Carbon $now): void
     {
         $date = $attendance->attendance_date;
 
         if ($attendance->morning_check_in && ! $attendance->morning_check_out) {
             $sessionEnd = Carbon::parse($date)->setTime(12, 0);
-            $this->assertCanCheckOut($now, $sessionEnd);
+            $this->assertCanCheckOut($employee, $attendance, $now, $sessionEnd);
             $attendance->morning_check_out = $now;
         } elseif ($attendance->afternoon_check_in && ! $attendance->afternoon_check_out) {
             $sessionEnd = Carbon::parse($date)->setTime(17, 0);
-            $this->assertCanCheckOut($now, $sessionEnd);
+            $this->assertCanCheckOut($employee, $attendance, $now, $sessionEnd);
             $attendance->afternoon_check_out = $now;
         } else {
             throw ValidationException::withMessages([
@@ -237,12 +237,21 @@ class EmployeeAttendanceService
         }
     }
 
-    private function assertCanCheckOut(Carbon $now, Carbon $sessionEnd): void
+    private function assertCanCheckOut(Employee $employee, Attendance $attendance, Carbon $now, Carbon $sessionEnd): void
     {
         if ($now->lt($sessionEnd)) {
-            throw ValidationException::withMessages([
-                'attendance' => 'Chưa đến giờ check-out. Ca làm kết thúc lúc '.$sessionEnd->format('H:i').'.',
-            ]);
+            $earlyLeave = \App\Models\EarlyLeaveRequest::where('employee_id', $employee->id)
+                ->whereDate('request_date', $attendance->attendance_date)
+                ->where('status', \App\Models\EarlyLeaveRequest::STATUS_APPROVED)
+                ->first();
+
+            if ($earlyLeave) {
+                // Được duyệt về sớm -> Không bị phạt
+                return;
+            }
+
+            // Về sớm không phép -> Phạt 0.5 công
+            $attendance->work_ratio = 0.5;
         }
     }
 

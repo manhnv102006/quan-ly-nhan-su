@@ -120,16 +120,16 @@
     </div>
 
     <div>
-        <label for="signed_date" class="admin-label">Ngày ký</label>
+        <label for="signed_date" class="admin-label">Ngày ký *</label>
         <input type="date" id="signed_date" name="signed_date" class="admin-field"
-               value="{{ old('signed_date', $isEdit ? $contract->signed_date?->format('Y-m-d') : '') }}">
+               value="{{ old('signed_date', $isEdit ? $contract->signed_date?->format('Y-m-d') : '') }}" required>
         @error('signed_date')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
     </div>
 
     <div>
-        <label for="contract_file" class="admin-label">File hợp đồng</label>
+        <label for="contract_file" class="admin-label">File hợp đồng @if(!$isEdit)*@endif</label>
         <input type="file" id="contract_file" name="contract_file" class="admin-field"
-               accept=".pdf,.doc,.docx">
+               accept=".pdf,.doc,.docx" @if(!$isEdit) required @endif>
         <p class="mt-1 text-[11px] text-slate-400">PDF, DOC, DOCX · tối đa 10MB</p>
         @if($isEdit && $contract->file_path)
             <p class="mt-1 text-xs text-slate-500">
@@ -145,13 +145,13 @@
 
 <div class="mt-4 grid grid-cols-1 gap-4">
     <div>
-        <label for="description" class="admin-label">Mô tả</label>
-        <textarea id="description" name="description" rows="2" class="admin-field" placeholder="Mô tả ngắn">{{ old('description', $isEdit ? $contract->description : '') }}</textarea>
+        <label for="description" class="admin-label">Mô tả *</label>
+        <textarea id="description" name="description" rows="2" class="admin-field" required placeholder="Mô tả ngắn">{{ old('description', $isEdit ? $contract->description : '') }}</textarea>
         @error('description')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
     </div>
     <div>
-        <label for="note" class="admin-label">Ghi chú nội bộ</label>
-        <textarea id="note" name="note" rows="2" class="admin-field" placeholder="Ghi chú nội bộ">{{ old('note', $isEdit ? $contract->note : '') }}</textarea>
+        <label for="note" class="admin-label">Ghi chú nội bộ *</label>
+        <textarea id="note" name="note" rows="2" class="admin-field" required placeholder="Ghi chú nội bộ">{{ old('note', $isEdit ? $contract->note : '') }}</textarea>
         @error('note')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
     </div>
 </div>
