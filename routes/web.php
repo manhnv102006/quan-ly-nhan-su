@@ -250,8 +250,7 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::get('/employees', [ManagerEmployeeController::class, 'index'])->name('employees.index');
     Route::get('/employees/{employee}', [ManagerEmployeeController::class, 'show'])->name('employees.show');
 
-    Route::get('/contracts', [ManagerContractController::class, 'index'])->name('contracts.index');
-    Route::get('/contracts/{contract}', [ManagerContractController::class, 'show'])->name('contracts.show');
+
 
     Route::get('/notifications', [ManagerNotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/create', [ManagerNotificationController::class, 'create'])->name('notifications.create');
