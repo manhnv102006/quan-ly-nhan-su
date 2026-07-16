@@ -19,14 +19,14 @@ class TeamMembershipRequest extends Model
     public const STATUS_REJECTED = 'rejected';
 
     public const ACTION_LABELS = [
-        self::ACTION_ADD => 'ThĂªm vĂ o nhĂ³m',
-        self::ACTION_REMOVE => 'ÄÆ°a ra khá»i nhĂ³m',
+        self::ACTION_ADD => 'Thêm vào nhóm',
+        self::ACTION_REMOVE => 'Đưa ra khỏi nhóm',
     ];
 
     public const STATUS_LABELS = [
-        self::STATUS_PENDING => 'Chá» duyá»‡t',
-        self::STATUS_APPROVED => 'ÄĂ£ duyá»‡t',
-        self::STATUS_REJECTED => 'Tá»« chá»‘i',
+        self::STATUS_PENDING => 'Chờ duyệt',
+        self::STATUS_APPROVED => 'Đã duyệt',
+        self::STATUS_REJECTED => 'Từ chối',
     ];
 
     public const STATUS_BADGES = [

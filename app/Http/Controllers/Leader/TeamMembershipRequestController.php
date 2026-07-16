@@ -31,11 +31,16 @@ class TeamMembershipRequestController extends Controller
             ->latest()
             ->paginate(10);
 
-        // á»¨ng viĂªn cĂ³ thá»ƒ Ä‘á» xuáº¥t thĂªm: cĂ¹ng phĂ²ng ban, chÆ°a thuá»™c nhĂ³m nĂ o.
+        $pendingCount = TeamMembershipRequest::query()
+            ->where('leader_id', $leader->id)
+            ->where('status', TeamMembershipRequest::STATUS_PENDING)
+            ->count();
+
         $addCandidates = Employee::query()
             ->where('department_id', $leader->department_id)
             ->where('id', '!=', $leader->id)
             ->where('status', 'active')
+            ->whereNull('manager_id')
             ->whereDoesntHave('user', function ($q) {
                 $q->whereHas('role', function ($role) {
                     $role->where('name', 'manager');
@@ -43,12 +48,18 @@ class TeamMembershipRequestController extends Controller
             })
             ->orderBy('full_name')
             ->get(['id', 'full_name', 'employee_code']);
-        // ThĂ nh viĂªn hiá»‡n táº¡i cĂ³ thá»ƒ Ä‘á» xuáº¥t Ä‘Æ°a ra khá»i nhĂ³m.
+
         $removeCandidates = $this->scope->teamMembersQuery($leader)
             ->orderBy('full_name')
             ->get(['id', 'full_name', 'employee_code']);
 
-        return view('leader.team-requests.index', compact('leader', 'requests', 'addCandidates', 'removeCandidates'));
+        return view('leader.team-requests.index', compact(
+            'leader',
+            'requests',
+            'addCandidates',
+            'removeCandidates',
+            'pendingCount',
+        ));
     }
 
     public function store(Request $request): RedirectResponse
@@ -60,9 +71,9 @@ class TeamMembershipRequestController extends Controller
             'employee_id' => 'required|integer|exists:employees,id',
             'reason' => 'nullable|string|max:1000',
         ], [
-            'action.required' => 'Vui lĂ²ng chá»n loáº¡i Ä‘á» xuáº¥t.',
-            'employee_id.required' => 'Vui lĂ²ng chá»n nhĂ¢n viĂªn.',
-            'employee_id.exists' => 'NhĂ¢n viĂªn khĂ´ng há»£p lá»‡.',
+            'action.required' => 'Vui lòng chọn loại đề xuất.',
+            'employee_id.required' => 'Vui lòng chọn nhân viên.',
+            'employee_id.exists' => 'Nhân viên không hợp lệ.',
         ]);
 
         try {
@@ -73,6 +84,6 @@ class TeamMembershipRequestController extends Controller
 
         return redirect()
             ->route('leader.team-requests.index')
-            ->with('success', 'ÄĂ£ gá»­i Ä‘á» xuáº¥t, vui lĂ²ng chá» Quáº£n lĂ½ phĂª duyá»‡t.');
+            ->with('success', 'Đã gửi đề xuất, vui lòng chờ Quản lý phê duyệt.');
     }
 }
