@@ -61,7 +61,11 @@ class EmployeeTaxDependentController extends Controller
 
         $validated['monthly_deduction'] = TaxDependent::DEFAULT_MONTHLY_DEDUCTION;
 
-        $this->registrations->submitRequest($employee, $validated, (int) auth()->id());
+        try {
+            $this->registrations->submitRequest($employee, $validated, (int) auth()->id());
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            return back()->withErrors(['full_name' => $e->getMessage()])->withInput();
+        }
 
         return redirect()
             ->route('employee.tax-dependents.index')
