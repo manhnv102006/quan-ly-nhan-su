@@ -15,7 +15,7 @@ class ContractPolicy
 
     public function viewAny(User $user): Response
     {
-        if ($user->isAdmin() || $user->isManager() || $user->isEmployee()) {
+        if ($user->isAdmin() || $user->isManager() || $user->isEmployee() || $user->isLeader()) {
             return Response::allow();
         }
 
@@ -30,7 +30,7 @@ class ContractPolicy
 
         $contract->loadMissing('employee');
 
-        if ($user->isEmployee()) {
+        if ($user->isEmployee() || $user->isLeader()) {
             if ($contract->employee?->user_id === $user->id) {
                 return Response::allow();
             }
