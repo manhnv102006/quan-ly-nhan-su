@@ -152,7 +152,7 @@ class LeaderStatsService
     /**
      * @return array<string, mixed>
      */
-    public function teamReport(User $user): array
+    public function teamReport(User $user, ?int $month = null, ?int $year = null): array
     {
         $leader = $this->scope->resolveLeaderEmployeeOrFail($user);
         $teamIds = $this->scope->teamMemberIds($leader);
@@ -162,8 +162,8 @@ class LeaderStatsService
             ->orderBy('full_name')
             ->get();
 
-        $month = now()->month;
-        $year = now()->year;
+        $month ??= now()->month;
+        $year ??= now()->year;
 
         $rows = $members->map(function ($employee) use ($month, $year) {
             $kpis = EmployeeKPI::query()
@@ -193,8 +193,11 @@ class LeaderStatsService
             'year' => $year,
             'totals' => [
                 'members' => $members->count(),
+                'kpi_total' => $rows->sum('kpi_total'),
                 'kpi_completed' => $rows->sum('kpi_completed'),
+                'kpi_avg_progress' => $rows->isNotEmpty() ? round((float) $rows->avg('kpi_avg_progress'), 1) : 0,
                 'work_days' => $rows->sum('work_days'),
+                'late_days' => $rows->sum('late_days'),
             ],
         ];
     }

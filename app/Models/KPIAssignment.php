@@ -13,6 +13,8 @@ class KPIAssignment extends Model
     protected $fillable = [
         'kpi_id',
         'manager_id',
+        'leader_employee_id',
+        'leader_assigned_at',
         'target',
         'start_date',
         'end_date',
@@ -25,6 +27,7 @@ class KPIAssignment extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'target' => 'decimal:2',
+        'leader_assigned_at' => 'datetime',
     ];
 
     public function kpi(): BelongsTo
@@ -45,6 +48,21 @@ class KPIAssignment extends Model
     public function employeeKpis(): HasMany
     {
         return $this->hasMany(EmployeeKPI::class, 'assignment_id');
+    }
+
+    public function leaderEmployee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'leader_employee_id');
+    }
+
+    public function teamReport(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(KpiTeamReport::class, 'assignment_id');
+    }
+
+    public function isDelegatedToLeader(): bool
+    {
+        return $this->leader_employee_id !== null;
     }
 
     public function getManagerNameAttribute(): string

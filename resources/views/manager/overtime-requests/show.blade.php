@@ -42,7 +42,7 @@
                     ← Quay lại
                 </a>
                 @can('approve', $overtimeRequest)
-                    @if($overtimeRequest->isPending())
+                    @if($overtimeRequest->isAwaitingManagerApproval())
                         <form method="POST" action="{{ route('manager.overtime-requests.approve', $overtimeRequest) }}">
                             @csrf
                             @method('PATCH')
@@ -54,7 +54,7 @@
                     @endif
                 @endcan
                 @can('reject', $overtimeRequest)
-                    @if($overtimeRequest->isPending())
+                    @if($overtimeRequest->isAwaitingManagerApproval())
                         <button type="button"
                                 x-data
                                 x-on:click="$dispatch('open-modal', 'reject-overtime')"
@@ -132,7 +132,7 @@
     </div>
 
     @can('reject', $overtimeRequest)
-        @if($overtimeRequest->isPending())
+        @if($overtimeRequest->isAwaitingManagerApproval())
             <x-modal name="reject-overtime" :show="$errors->has('reject_reason')">
                 <form method="POST" action="{{ route('manager.overtime-requests.reject', $overtimeRequest) }}" class="p-6">
                     @csrf
