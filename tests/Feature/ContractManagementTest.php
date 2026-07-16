@@ -49,7 +49,7 @@ test('admin can create update soft delete restore and force delete contract', fu
         'note' => 'Hợp đồng thử nghiệm',
     ]);
 
-    $createResponse->assertRedirect(route('admin.contracts.index'));
+    $createResponse->assertRedirect(route('admin.contracts.by-employee', $this->employee));
 
     $contract = Contract::query()->where('contract_code', 'HD-TEST-001')->first();
     expect($contract)->not->toBeNull();
@@ -70,13 +70,13 @@ test('admin can create update soft delete restore and force delete contract', fu
             'status' => 'active',
             'note' => 'Đã cập nhật lương',
         ])
-        ->assertRedirect(route('admin.contracts.index'));
+        ->assertRedirect(route('admin.contracts.by-employee', $this->employee));
 
     expect($contract->fresh()->salary)->toBe('18000000.00');
 
     $this->actingAs($this->admin)
         ->delete(route('admin.contracts.destroy', $contract))
-        ->assertRedirect(route('admin.contracts.index'));
+        ->assertRedirect(route('admin.contracts.by-employee', $this->employee));
 
     expect(Contract::query()->whereKey($contract->id)->exists())->toBeFalse();
     expect(Contract::onlyTrashed()->whereKey($contract->id)->exists())->toBeTrue();
@@ -89,7 +89,7 @@ test('admin can create update soft delete restore and force delete contract', fu
 
     $this->actingAs($this->admin)
         ->delete(route('admin.contracts.destroy', $contract))
-        ->assertRedirect(route('admin.contracts.index'));
+        ->assertRedirect(route('admin.contracts.by-employee', $this->employee));
 
     $this->actingAs($this->admin)
         ->delete(route('admin.contracts.forceDelete', $contract->id))

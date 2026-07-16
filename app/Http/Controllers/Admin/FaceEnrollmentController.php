@@ -4,13 +4,20 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Services\FaceEnrollmentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use RuntimeException;
 
 class FaceEnrollmentController extends Controller
 {
+    public function __construct(
+        private readonly FaceEnrollmentService $enrollmentService,
+    ) {
+    }
     public function index(Request $request): View
     {
         $search = trim((string) $request->input('search', ''));
@@ -37,6 +44,41 @@ class FaceEnrollmentController extends Controller
         $stats['missing'] = $stats['total'] - $stats['enrolled'];
 
         return view('admin.face-enrollments.index', compact('employees', 'search', 'status', 'stats'));
+    }
+
+    public function store(Request $request, Employee $employee): JsonResponse
+    {
+        if ($employee->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nhân viên không còn hoạt động.',
+            ], 422);
+        }
+
+        $data = $request->validate([
+            'samples' => ['required', 'array', 'min:3', 'max:8'],
+            'samples.*' => ['required', 'string'],
+        ], [
+            'samples.required' => 'Chưa có mẫu khuôn mặt.',
+            'samples.min' => 'Cần chụp ít nhất 3 mẫu khuôn mặt.',
+            'samples.max' => 'Tối đa 8 mẫu khuôn mặt mỗi lần đăng ký.',
+        ]);
+
+        try {
+            $result = $this->enrollmentService->enroll($employee, $data['samples']);
+        } catch (RuntimeException $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Đã đăng ký khuôn mặt cho {$employee->full_name}.",
+            'descriptor_id' => $result['descriptor_id'],
+            'sample_count' => $result['sample_count'],
+        ]);
     }
 
     public function destroy(Employee $employee): RedirectResponse

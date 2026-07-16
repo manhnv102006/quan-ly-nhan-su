@@ -489,6 +489,19 @@
             </div>
         </div>
 
+        <div id="lich-su-hop-dong" class="bg-white rounded-3xl shadow-sm border border-slate-100">
+            <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-slate-800">Lịch sử thao tác hợp đồng</h3>
+                <a href="{{ route('admin.contracts.history', ['employee_id' => $employee->id]) }}"
+                   class="text-sm font-semibold text-violet-600 hover:underline">
+                    Xem tất cả
+                </a>
+            </div>
+            <div class="p-6">
+                @include('admin.contracts.partials.history-timeline', ['histories' => $contractHistories])
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             <div class="bg-white rounded-3xl shadow-sm border border-slate-100">

@@ -2,18 +2,16 @@
     $user = Auth::user();
     $roleName = $user->role?->name;
     $isAdmin = $roleName === 'admin';
-    $isManager = $roleName === 'manager';
+    $isAccountant = $roleName === 'accountant';
 
-    $navigation = $isManager
-        ? \App\Support\ManagerNavigation::items()
-        : \App\Support\EmployeeNavigation::items();
-
-    $layout = match (true) {
-        $isAdmin => 'admin-layout',
-        $isManager => 'manager-layout',
-        default => 'employee-layout',
+    $navigation = \App\Support\SelfServiceLayout::navigation();
+    $layout = \App\Support\SelfServiceLayout::component($roleName);
+    $backRoute = match ($roleName) {
+        'admin' => route('admin.dashboard'),
+        'manager' => route('manager.dashboard'),
+        'accountant' => route('accountant.dashboard'),
+        default => route('employee.dashboard'),
     };
-    $backRoute = $isAdmin ? route('admin.dashboard') : ($isManager ? route('manager.dashboard') : route('employee.dashboard'));
     $layoutParams = $isAdmin
         ? ['title' => 'Phiếu lương của tôi']
         : [

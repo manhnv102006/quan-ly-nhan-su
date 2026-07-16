@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Contract;
 use App\Models\ContractType;
 use App\Models\Employee;
 use App\Rules\NoContractOverlap;
+use App\Services\ContractTypeValidationService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -43,27 +45,58 @@ class ContractStoreRequest extends FormRequest
             'start_date' => ['required', 'date'],
             'end_date' => ['nullable', 'date', 'after:start_date'],
             'salary' => ['required', 'numeric', 'min:1'],
-            'status' => ['nullable', Rule::in(['draft', 'active'])],
             'allowances' => ['nullable', 'array'],
             'allowances.*' => ['nullable', 'numeric', 'min:0'],
             'signed_date' => ['nullable', 'date', 'before_or_equal:start_date'],
             'description' => ['nullable', 'string', 'max:1000'],
             'note' => ['nullable', 'string', 'max:1000'],
             'contract_file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
-            'created_by' => ['nullable', 'exists:users,id'],
         ];
     }
 
     public function withValidator($validator): void
     {
         $validator->after(function ($v) {
-            if (! $this->employee_id || ! $this->start_date || ! $this->end_date) {
+            if (! $this->employee_id || ! $this->start_date || ! $this->contract_type_id) {
                 return;
             }
 
             $employee = Employee::find($this->employee_id);
             if (! $employee || $employee->status !== 'active') {
-                $v->errors()->add('employee_id', 'Không được tạo hợp đồng cho nhân viên đã nghỉ việc.');
+                $v->errors()->add('employee_id', 'Chỉ được tạo hợp đồng cho nhân viên đang hoạt động.');
+                return;
+            }
+
+            $hasActiveContract = Contract::query()
+                ->forEmployee($employee->id)
+                ->where('status', Contract::STATUS_ACTIVE)
+                ->exists();
+
+            if ($hasActiveContract) {
+                $v->errors()->add(
+                    'employee_id',
+                    'Nhân viên đã có hợp đồng hiệu lực, vui lòng gia hạn/chuyển loại thay vì tạo mới'
+                );
+                return;
+            }
+
+            $type = ContractType::find($this->contract_type_id);
+            if (! $type) {
+                return;
+            }
+
+            try {
+                app(ContractTypeValidationService::class)->validateAndNormalize(
+                    $type,
+                    $this->start_date,
+                    $this->end_date
+                );
+            } catch (\Illuminate\Validation\ValidationException $exception) {
+                foreach ($exception->errors() as $field => $messages) {
+                    foreach ($messages as $message) {
+                        $v->errors()->add($field, $message);
+                    }
+                }
                 return;
             }
 
@@ -71,13 +104,6 @@ class ContractStoreRequest extends FormRequest
             $rule->validate('start_date', null, function (string $message) use ($v) {
                 $v->errors()->add('start_date', $message);
             });
-
-            if ($this->contract_type_id) {
-                $type = ContractType::find($this->contract_type_id);
-                if ($type?->requiresEndDate() && empty($this->end_date)) {
-                    $v->errors()->add('end_date', 'Loại hợp đồng này yêu cầu ngày kết thúc.');
-                }
-            }
         });
     }
 }
