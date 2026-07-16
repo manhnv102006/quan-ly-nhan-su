@@ -51,11 +51,10 @@
             <aside class="space-y-6">
                 <section class="manager-card p-6">
                     <h3 class="text-lg font-bold text-slate-800">Tóm tắt</h3>
-                    <div class="mt-5 grid grid-cols-2 gap-3">
+                    <div class="mt-5 grid grid-cols-3 gap-3">
                         <div class="rounded-2xl bg-teal-50 p-4 text-center"><p class="text-2xl font-extrabold text-teal-700">{{ $attendances->count() }}</p><p class="mt-1 text-xs font-semibold text-teal-700">Chấm công gần đây</p></div>
                         <div class="rounded-2xl bg-sky-50 p-4 text-center"><p class="text-2xl font-extrabold text-sky-700">{{ $kpis->count() }}</p><p class="mt-1 text-xs font-semibold text-sky-700">KPI</p></div>
                         <div class="rounded-2xl bg-amber-50 p-4 text-center"><p class="text-2xl font-extrabold text-amber-700">{{ $leaveRequests->count() }}</p><p class="mt-1 text-xs font-semibold text-amber-700">Đơn nghỉ</p></div>
-                        <div class="rounded-2xl bg-slate-50 p-4 text-center"><p class="text-2xl font-extrabold text-slate-700">{{ $contracts->count() }}</p><p class="mt-1 text-xs font-semibold text-slate-600">Hợp đồng</p></div>
                     </div>
                 </section>
             </aside>
