@@ -15,7 +15,7 @@ class LeaveRequestPolicy
 
     public function viewAny(User $user): Response
     {
-        if ($user->isAdmin() || $user->isManager() || $user->isEmployee()) {
+        if ($user->isAdmin() || $user->isManager() || $user->isEmployee() || $user->isLeader()) {
             return Response::allow();
         }
 
@@ -37,7 +37,7 @@ class LeaveRequestPolicy
             return Response::allow();
         }
 
-        if ($user->isEmployee()) {
+        if ($user->isEmployee() || $user->isLeader()) {
             $leaveRequest->loadMissing('employee');
 
             if ($leaveRequest->employee?->user_id === $user->id) {
@@ -65,7 +65,7 @@ class LeaveRequestPolicy
 
     public function create(User $user): Response
     {
-        if ($user->isAdmin() || $user->isManager() || $user->isEmployee()) {
+        if ($user->isAdmin() || $user->isManager() || $user->isEmployee() || $user->isLeader()) {
             return Response::allow();
         }
 

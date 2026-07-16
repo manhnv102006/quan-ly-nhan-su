@@ -11,7 +11,7 @@ class StoreEmployeeOvertimeRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user?->isEmployee() || $user?->isManager() || false;
+        return $user?->isEmployee() || $user?->isManager() || $user?->isLeader() || false;
     }
 
     public function rules(): array

@@ -74,7 +74,7 @@ class ModuleChangeLogService
         string $action,
         Model $entity,
         ?int $employeeId,
-        string $fieldName,
+        ?string $fieldName,
         string $fieldLabel,
         mixed $oldValue,
         mixed $newValue,
@@ -116,7 +116,7 @@ class ModuleChangeLogService
             $action,
             $entity,
             $employeeId,
-            null,
+            'action',
             $fieldLabel,
             $oldValue,
             $newValue,
@@ -144,7 +144,7 @@ class ModuleChangeLogService
         $entity->refresh();
 
         foreach ($fieldLabels as $field => $label) {
-            if ($onlyFields !== null && ! in_array($field, $onlyFields, true)) {
+            if ($onlyFields !== null && !in_array($field, $onlyFields, true)) {
                 continue;
             }
 
@@ -200,7 +200,7 @@ class ModuleChangeLogService
             null,
             null,
             $userId,
-            fn ($field, $value) => $this->normalizeInsurance($field, $value),
+            fn($field, $value) => $this->normalizeInsurance($field, $value),
         );
     }
 
@@ -216,7 +216,7 @@ class ModuleChangeLogService
             ['status', 'end_date', 'stop_reason'],
             $profile->stop_reason,
             $userId,
-            fn ($field, $value) => $this->normalizeInsurance($field, $value),
+            fn($field, $value) => $this->normalizeInsurance($field, $value),
         );
     }
 
@@ -232,7 +232,7 @@ class ModuleChangeLogService
             null,
             null,
             $userId,
-            fn ($field, $value) => $this->normalizeTax($field, $value),
+            fn($field, $value) => $this->normalizeTax($field, $value),
         );
     }
 
@@ -263,7 +263,7 @@ class ModuleChangeLogService
             null,
             null,
             $userId,
-            fn ($field, $value) => $this->normalizeTax($field, $value),
+            fn($field, $value) => $this->normalizeTax($field, $value),
         );
     }
 
@@ -332,7 +332,7 @@ class ModuleChangeLogService
             $advance->employee_id,
             'Yêu cầu tạm ứng',
             null,
-            $advance->advance_code.' · '.$this->formatMoney($advance->amount),
+            $advance->advance_code . ' · ' . $this->formatMoney($advance->amount),
             $advance->reason,
             $userId,
         );
@@ -376,7 +376,7 @@ class ModuleChangeLogService
             'Trừ tạm ứng vào lương',
             $this->formatMoney($remainingBefore),
             $this->formatMoney($advance->remainingBalance()),
-            'Trừ '.$this->formatMoney($deductedAmount).($note ? ' · '.$note : ''),
+            'Trừ ' . $this->formatMoney($deductedAmount) . ($note ? ' · ' . $note : ''),
             $userId,
         );
     }
@@ -384,7 +384,7 @@ class ModuleChangeLogService
     public function syncFromContractHistory(ContractHistory $history): void
     {
         $contract = $history->contract;
-        if (! $contract) {
+        if (!$contract) {
             return;
         }
 
@@ -432,7 +432,7 @@ class ModuleChangeLogService
             ? User::with('role')->find($userId)
             : auth()->user()?->loadMissing('role');
 
-        if (! $user) {
+        if (!$user) {
             return ['Hệ thống', null];
         }
 
@@ -476,7 +476,7 @@ class ModuleChangeLogService
         }
 
         if (str_contains($field, '_rate')) {
-            return round((float) $value * 100, 2).'%';
+            return round((float) $value * 100, 2) . '%';
         }
 
         if ($field === 'status') {
@@ -526,6 +526,6 @@ class ModuleChangeLogService
 
     protected function formatMoney(mixed $value): string
     {
-        return number_format((float) $value, 0, ',', '.').'₫';
+        return number_format((float) $value, 0, ',', '.') . '₫';
     }
 }
