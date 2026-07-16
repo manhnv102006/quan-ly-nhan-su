@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\EmployeeTaxProfile;
 use App\Models\TaxDependent;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class TaxDependentRegistrationService
 {
@@ -20,25 +21,45 @@ class TaxDependentRegistrationService
     {
         abort_unless($employee->status === 'active', 422, 'Chỉ nhân viên đang làm việc mới được đăng ký NPT.');
 
-        $dependent = TaxDependent::create([
-            'employee_id' => $employee->id,
-            'full_name' => $data['full_name'],
-            'relationship' => $data['relationship'],
-            'date_of_birth' => $data['date_of_birth'] ?? null,
-            'id_number' => $data['id_number'] ?? null,
-            'monthly_deduction' => $data['monthly_deduction'] ?? TaxDependent::DEFAULT_MONTHLY_DEDUCTION,
-            'start_date' => $data['start_date'],
-            'end_date' => $data['end_date'] ?? null,
-            'note' => $data['note'] ?? null,
-            'status' => TaxDependent::STATUS_PENDING,
-            'is_active' => false,
-            'requested_by' => $requestedBy,
-        ]);
+        $fullName = trim((string) $data['full_name']);
+        $idNumber = isset($data['id_number']) ? trim((string) $data['id_number']) : null;
 
-        $this->ensureTaxProfile($employee);
-        $this->changeLogs->logTaxDependentCreate($dependent, $requestedBy);
+        $duplicateQuery = TaxDependent::query()
+            ->where('employee_id', $employee->id)
+            ->where('status', TaxDependent::STATUS_PENDING)
+            ->where('full_name', $fullName);
 
-        return $dependent;
+        if ($idNumber !== null && $idNumber !== '') {
+            $duplicateQuery->where('id_number', $idNumber);
+        }
+
+        abort_if(
+            $duplicateQuery->exists(),
+            422,
+            'Bạn đã có đăng ký NPT chờ duyệt cho người này. Vui lòng chờ kế toán xử lý.'
+        );
+
+        return DB::transaction(function () use ($employee, $data, $requestedBy, $fullName, $idNumber) {
+            $dependent = TaxDependent::create([
+                'employee_id' => $employee->id,
+                'full_name' => $fullName,
+                'relationship' => $data['relationship'],
+                'date_of_birth' => $data['date_of_birth'] ?? null,
+                'id_number' => $idNumber ?: null,
+                'monthly_deduction' => $data['monthly_deduction'] ?? TaxDependent::DEFAULT_MONTHLY_DEDUCTION,
+                'start_date' => $data['start_date'],
+                'end_date' => $data['end_date'] ?? null,
+                'note' => $data['note'] ?? null,
+                'status' => TaxDependent::STATUS_PENDING,
+                'is_active' => false,
+                'requested_by' => $requestedBy,
+            ]);
+
+            $this->ensureTaxProfile($employee);
+            $this->changeLogs->logTaxDependentCreate($dependent, $requestedBy);
+
+            return $dependent;
+        });
     }
 
     public function approve(TaxDependent $dependent, ?int $userId = null): void
