@@ -3,9 +3,8 @@
     $hasFilters = collect($filters ?? [])->filter(fn ($v) => filled($v))->isNotEmpty();
 @endphp
 
-@include('accountant.insurance.partials.sub-nav', ['active' => 'profiles'])
-
 <x-accountant-layout title="Nhân viên - {{ $department->department_name }}" subtitle="Chọn nhân viên để xem hồ sơ BH">
+    @include('accountant.insurance.partials.sub-nav', ['active' => 'profiles'])
     <div class="accountant-page">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>

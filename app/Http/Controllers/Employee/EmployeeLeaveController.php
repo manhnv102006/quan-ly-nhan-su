@@ -26,18 +26,24 @@ class EmployeeLeaveController extends Controller
     }
 
     public function index()
-    {
-        $this->authorize('viewAny', LeaveRequest::class);
+{
+    $this->authorize('viewAny', LeaveRequest::class);
 
-        $employee = $this->getEmployee();
+    $employee = $this->getEmployee();
 
-        $leaveRequests = LeaveRequest::where('employee_id', $employee->id)
-            ->with(['approver', 'rejecter'])
-            ->latest()
-            ->paginate(10);
+    $leaveRequests = LeaveRequest::where('employee_id', $employee->id)
+        ->with(['approver', 'rejecter'])
+        ->latest()
+        ->paginate(10);
 
-        return view('employee.leave-requests.index', compact('leaveRequests'));
-    }
+    $isManager = Auth::user()->role?->name === 'manager';
+    // hoặc dùng hasRole('manager') nếu project của bạn có hàm này
+
+    return view(
+        'employee.leave-requests.index',
+        compact('leaveRequests', 'isManager')
+    );
+}
 
     public function show(LeaveRequest $leaveRequest)
     {

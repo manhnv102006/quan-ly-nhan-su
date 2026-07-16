@@ -251,23 +251,25 @@ class ContractHistoryService
         ?int $performedBy,
         array $extra = [],
     ): ContractHistory {
-        return ContractHistory::create([
-            'employee_id' => $contract->employee_id,
-            'contract_id' => $contract->id,
-            'related_contract_id' => $extra['related_contract_id'] ?? null,
-            'action' => $action,
-            'summary' => $summary,
-            'changes' => $extra['changes'] ?? null,
-            'note' => $extra['note'] ?? null,
-            'performed_by' => $performedBy,
-        ])->tap(function (ContractHistory $history) {
-            app(ModuleChangeLogService::class)->syncFromContractHistory($history);
-        });
+        $history = ContractHistory::create([
+    'contract_id' => $contract->id,
+    'employee_id' => $contract->employee_id,
+
+    'action' => $action,
+    'summary' => $summary,
+    'changes' => $extra['changes'] ?? null,
+    'note' => $extra['note'] ?? null,
+    'performed_by' => $performedBy,
+]);
+        app(ModuleChangeLogService::class)
+            ->syncFromContractHistory($history);
+
+        return $history;
     }
 
     protected function performerName(?int $userId): string
     {
-        if (! $userId) {
+        if (!$userId) {
             return 'Hệ thống';
         }
 

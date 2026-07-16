@@ -31,7 +31,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('employee.tax-dependents.store') }}" class="space-y-5">
+            <form method="POST" action="{{ route('employee.tax-dependents.store') }}" class="space-y-5" id="npt-registration-form">
                 @csrf
 
                 <div>
@@ -82,7 +82,7 @@
                 </div>
 
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" class="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-violet-700">
+                    <button type="submit" id="npt-submit-btn" class="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-violet-700">
                         Gửi tới kế toán
                     </button>
                     <a href="{{ route('employee.tax-dependents.index') }}" class="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Hủy</a>
@@ -90,4 +90,14 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.getElementById('npt-registration-form')?.addEventListener('submit', function () {
+            const btn = document.getElementById('npt-submit-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Đang gửi...';
+            }
+        });
+    </script>
 </x-dynamic-component>

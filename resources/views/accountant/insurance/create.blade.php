@@ -1,6 +1,5 @@
-@include('accountant.insurance.partials.sub-nav', ['active' => 'profiles'])
-
 <x-accountant-layout title="Thêm hồ sơ BH" subtitle="Đăng ký tham gia bảo hiểm cho nhân viên">
+    @include('accountant.insurance.partials.sub-nav', ['active' => 'profiles'])
     <div class="accountant-page max-w-3xl">
         <div class="mb-4">
             <nav class="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
