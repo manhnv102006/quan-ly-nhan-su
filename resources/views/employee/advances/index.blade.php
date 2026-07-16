@@ -52,9 +52,15 @@
             </div>
             <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                 <p class="text-[10px] font-bold uppercase text-slate-400">Hạn mức ứng/lần</p>
-                <p class="mt-1 text-lg font-bold text-slate-800">{{ $formatMoney($maxAdvanceAmount) }}</p>
+                <p class="mt-1 text-sm font-bold text-slate-800">
+                    {{ $formatMoney(\App\Models\SalaryAdvance::MIN_AMOUNT) }}
+                    <span class="font-normal text-slate-400">–</span>
+                    {{ $formatMoney($maxAdvanceAmount) }}
+                </p>
                 @if($referenceSalary > 0)
-                    <p class="text-[10px] text-slate-400">≈ 50% lương {{ $formatMoney($referenceSalary) }}</p>
+                    <p class="text-[10px] text-slate-400">Tối đa ≈ 50% lương {{ $formatMoney($referenceSalary) }}</p>
+                @else
+                    <p class="text-[10px] text-slate-400">Tối thiểu {{ number_format(\App\Models\SalaryAdvance::MIN_AMOUNT / 1_000_000, 0) }} triệu/lần</p>
                 @endif
             </div>
         </div>
