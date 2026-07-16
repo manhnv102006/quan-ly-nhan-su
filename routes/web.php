@@ -45,6 +45,9 @@ use App\Http\Controllers\Leader\EmployeeController as LeaderEmployeeController;
 use App\Http\Controllers\Leader\KPIController as LeaderKPIController;
 use App\Http\Controllers\Leader\ReportController as LeaderReportController;
 use App\Http\Controllers\Leader\TaskController as LeaderTaskController;
+use App\Http\Controllers\Leader\TeamMembershipRequestController as LeaderTeamMembershipRequestController;
+use App\Http\Controllers\Leader\TeamScheduleController as LeaderTeamScheduleController;
+use App\Http\Controllers\Manager\TeamMembershipRequestController as ManagerTeamMembershipRequestController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Employee\NotificationController as EmployeeNotificationController;
 use App\Http\Controllers\Manager\EmployeeController as ManagerEmployeeController;
@@ -263,6 +266,10 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::get('/overtime-requests/{overtimeRequest}', [OvertimeApprovalController::class, 'show'])->name('overtime-requests.show');
     Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeApprovalController::class, 'approve'])->name('overtime-requests.approve');
     Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeApprovalController::class, 'reject'])->name('overtime-requests.reject');
+
+    Route::get('/team-requests', [ManagerTeamMembershipRequestController::class, 'index'])->name('team-requests.index');
+    Route::patch('/team-requests/{teamMembershipRequest}/approve', [ManagerTeamMembershipRequestController::class, 'approve'])->name('team-requests.approve');
+    Route::patch('/team-requests/{teamMembershipRequest}/reject', [ManagerTeamMembershipRequestController::class, 'reject'])->name('team-requests.reject');
 });
 
 Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager'])
@@ -351,6 +358,11 @@ Route::middleware(['auth', 'verified', 'role:leader'])->prefix('leader')->name('
     Route::get('/tasks', [LeaderTaskController::class, 'index'])->name('tasks.index');
     Route::get('/reports', [LeaderReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [LeaderReportController::class, 'export'])->name('reports.export');
+
+    Route::get('/team-requests', [LeaderTeamMembershipRequestController::class, 'index'])->name('team-requests.index');
+    Route::post('/team-requests', [LeaderTeamMembershipRequestController::class, 'store'])->name('team-requests.store');
+
+    Route::get('/team-schedule', [LeaderTeamScheduleController::class, 'index'])->name('team-schedule.index');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,accountant'])->group(function () {
@@ -368,7 +380,7 @@ Route::middleware(['auth', 'verified', 'role:employee,accountant'])->group(funct
     Route::patch('/employee/notifications/{notification}/read', [EmployeeNotificationController::class, 'markAsRead'])->name('employee.notifications.read');
 });
 
-Route::middleware(['auth', 'verified', 'role:employee,manager,admin,accountant'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:employee,manager,leader,admin,accountant'])->group(function () {
     Route::get('/employee/leave-requests', [EmployeeLeaveController::class, 'index'])->name('employee.leave-requests');
     Route::get('/employee/leave-requests/create', [EmployeeLeaveController::class, 'create'])->name('employee.leave-requests.create');
     Route::get('/employee/leave-requests/{leaveRequest}', [EmployeeLeaveController::class, 'show'])->name('employee.leave-requests.show');
