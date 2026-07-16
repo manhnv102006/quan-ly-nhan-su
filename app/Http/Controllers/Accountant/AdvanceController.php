@@ -263,8 +263,16 @@ class AdvanceController extends Controller
     {
         $result = $this->advances->applyAllToPeriod($payrollPeriod);
 
+        $message = "Đã trừ {$result['applied']} tạm ứng, tổng ".number_format($result['total_amount'], 0, ',', '.').'₫.';
+        if ($result['skipped'] > 0) {
+            $message .= " Bỏ qua {$result['skipped']} (chưa có bảng lương calculated hoặc lương thực lĩnh không đủ).";
+        }
+        if ($result['applied'] === 0) {
+            $message = 'Không trừ được tạm ứng nào. Kiểm tra bảng lương kỳ đã tính (calculated) và lương thực lĩnh > 0.';
+        }
+
         return redirect()
             ->route('accountant.advances.deduct', ['period_id' => $payrollPeriod->id])
-            ->with('success', "Đã trừ {$result['applied']} tạm ứng, tổng ".number_format($result['total_amount'], 0, ',', '.').'₫. Bỏ qua: '.$result['skipped'].'.');
+            ->with($result['applied'] > 0 ? 'success' : 'error', $message);
     }
 }
