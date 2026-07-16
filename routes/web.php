@@ -51,6 +51,7 @@ use App\Http\Controllers\Manager\TeamMembershipRequestController as ManagerTeamM
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Employee\NotificationController as EmployeeNotificationController;
 use App\Http\Controllers\Manager\EmployeeController as ManagerEmployeeController;
+use App\Http\Controllers\Manager\FaceEnrollmentController as ManagerFaceEnrollmentController;
 use App\Http\Controllers\Manager\ManagerContractController;
 use App\Http\Controllers\Manager\KPIController as ManagerKPIController;
 use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
@@ -244,6 +245,10 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
 
     Route::get('/employees', [ManagerEmployeeController::class, 'index'])->name('employees.index');
     Route::get('/employees/{employee}', [ManagerEmployeeController::class, 'show'])->name('employees.show');
+
+    Route::get('/face-enrollments', [ManagerFaceEnrollmentController::class, 'index'])->name('face-enrollments.index');
+    Route::post('/face-enrollments/{employee}', [ManagerFaceEnrollmentController::class, 'store'])->name('face-enrollments.store');
+    Route::delete('/face-enrollments/{employee}', [ManagerFaceEnrollmentController::class, 'destroy'])->name('face-enrollments.destroy');
 
     Route::get('/contracts', [ManagerContractController::class, 'index'])->name('contracts.index');
     Route::get('/contracts/{contract}', [ManagerContractController::class, 'show'])->name('contracts.show');

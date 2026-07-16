@@ -1,8 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
-@include('accountant.advances.partials.sub-nav', ['active' => 'requests'])
-
 <x-accountant-layout title="Chi tiết tạm ứng" subtitle="{{ $advance->advance_code }}">
+    @include('accountant.advances.partials.sub-nav', ['active' => 'requests'])
     <div class="accountant-page">
         <nav class="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
             <a href="{{ route('accountant.advances.index') }}" class="text-cyan-700 hover:underline">Phòng ban</a>

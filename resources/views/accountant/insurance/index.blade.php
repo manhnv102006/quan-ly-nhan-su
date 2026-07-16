@@ -5,9 +5,8 @@
     $totalProfiles = $departments->sum('insurance_profiles_count');
 @endphp
 
-@include('accountant.insurance.partials.sub-nav', ['active' => 'profiles'])
-
 <x-accountant-layout title="Bảo hiểm" subtitle="Phòng ban → Nhân viên → Hồ sơ BH">
+    @include('accountant.insurance.partials.sub-nav', ['active' => 'profiles'])
     <div class="accountant-page">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
