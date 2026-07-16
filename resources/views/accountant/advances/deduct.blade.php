@@ -16,6 +16,13 @@
             @endif
         </div>
 
+        @if(session('success'))
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">{{ session('error') }}</div>
+        @endif
+
         <form method="GET" class="accountant-card flex flex-wrap items-end gap-4 p-5">
             <div class="min-w-[220px] flex-1">
                 <label class="accountant-label">Kỳ lương</label>
@@ -58,11 +65,16 @@
                                     <td class="px-4 py-3 text-right">{{ $pay ? $formatMoney($pay->total_salary) : '—' }}</td>
                                     <td class="px-4 py-3 text-right">
                                         @if($pay && $pay->status === 'calculated')
-                                            <form method="POST" action="{{ route('accountant.advances.apply', $adv) }}" class="inline">
-                                                @csrf
-                                                <input type="hidden" name="payroll_id" value="{{ $pay->id }}">
-                                                <button type="submit" class="accountant-btn-secondary !py-1 !text-xs">Trừ {{ $formatMoney(min($row['remaining'], (float)$pay->total_salary)) }}</button>
-                                            </form>
+                                            @php $deductCap = min($row['remaining'], max(0, (float) $pay->total_salary)); @endphp
+                                            @if($deductCap > 0)
+                                                <form method="POST" action="{{ route('accountant.advances.apply', $adv) }}" class="inline">
+                                                    @csrf
+                                                    <input type="hidden" name="payroll_id" value="{{ $pay->id }}">
+                                                    <button type="submit" class="accountant-btn-secondary !py-1 !text-xs">Trừ {{ $formatMoney($deductCap) }}</button>
+                                                </form>
+                                            @else
+                                                <span class="text-xs text-amber-600">Lương thực lĩnh = 0</span>
+                                            @endif
                                         @endif
                                     </td>
                                 </tr>
