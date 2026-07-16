@@ -13,7 +13,6 @@ use App\Http\Controllers\Admin\InterviewController;
 use App\Http\Controllers\Admin\JobPostController;
 use App\Http\Controllers\Admin\LeaveRequestController;
 use App\Http\Controllers\Admin\OvertimeRequestController;
-use App\Http\Controllers\Admin\EarlyLeaveController;
 use App\Http\Controllers\Admin\PayrollController;
 
 use App\Http\Controllers\Admin\KPIAssignmentController;
@@ -41,19 +40,26 @@ use App\Http\Controllers\Accountant\PayrollController as AccountantPayrollContro
 use App\Http\Controllers\Accountant\PayrollPeriodController as AccountantPayrollPeriodController;
 use App\Http\Controllers\Accountant\ReportController as AccountantReportController;
 use App\Http\Controllers\Accountant\TaxController as AccountantTaxController;
+use App\Http\Controllers\TeamChatController;
+use App\Http\Controllers\Leader\AttendanceController as LeaderAttendanceController;
 use App\Http\Controllers\Leader\DashboardController as LeaderDashboardController;
 use App\Http\Controllers\Leader\EmployeeController as LeaderEmployeeController;
 use App\Http\Controllers\Leader\KPIController as LeaderKPIController;
+use App\Http\Controllers\Leader\TeamKpiController as LeaderTeamKpiController;
+use App\Http\Controllers\Leader\LeaveApprovalController as LeaderLeaveApprovalController;
+use App\Http\Controllers\Leader\OvertimeApprovalController as LeaderOvertimeApprovalController;
 use App\Http\Controllers\Leader\ReportController as LeaderReportController;
 use App\Http\Controllers\Leader\TaskController as LeaderTaskController;
 use App\Http\Controllers\Leader\TeamMembershipRequestController as LeaderTeamMembershipRequestController;
 use App\Http\Controllers\Leader\TeamScheduleController as LeaderTeamScheduleController;
+use App\Http\Controllers\Manager\TeamController as ManagerTeamController;
 use App\Http\Controllers\Manager\TeamMembershipRequestController as ManagerTeamMembershipRequestController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Employee\NotificationController as EmployeeNotificationController;
 use App\Http\Controllers\Manager\EmployeeController as ManagerEmployeeController;
-use App\Http\Controllers\Manager\FaceEnrollmentController as ManagerFaceEnrollmentController;
 use App\Http\Controllers\Manager\ManagerContractController;
+use App\Http\Controllers\Manager\LeaderTeamReportController as ManagerLeaderTeamReportController;
+use App\Http\Controllers\Manager\KpiTeamReportController as ManagerKpiTeamReportController;
 use App\Http\Controllers\Manager\KPIController as ManagerKPIController;
 use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
 use App\Http\Controllers\ProfileController;
@@ -71,8 +77,6 @@ use App\Http\Controllers\Manager\OvertimeApprovalController;
 
 use App\Http\Controllers\Employee\AttendanceController as EmployeeAttendanceController;
 use App\Http\Controllers\Employee\OvertimeController as EmployeeOvertimeController;
-use App\Http\Controllers\Employee\EarlyLeaveController as EmployeeEarlyLeaveController;
-use App\Http\Controllers\Manager\EarlyLeaveApprovalController;
 
 
 
@@ -180,11 +184,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::patch('/overtime-requests/{overtime_request}/approve', [OvertimeRequestController::class, 'approve'])->name('overtime-requests.approve');
     Route::patch('/overtime-requests/{overtime_request}/reject', [OvertimeRequestController::class, 'reject'])->name('overtime-requests.reject');
     Route::patch('/overtime-requests/{overtime_request}/status', [OvertimeRequestController::class, 'updateStatus'])->name('overtime-requests.status');
-
-    Route::get('/early-leave', [EarlyLeaveController::class, 'index'])->name('early-leave.index');
-    Route::patch('/early-leave/{earlyLeaveRequest}/approve', [EarlyLeaveController::class, 'approve'])->name('early-leave.approve');
-    Route::patch('/early-leave/{earlyLeaveRequest}/reject', [EarlyLeaveController::class, 'reject'])->name('early-leave.reject');
-
     Route::get('/attendance-reports', [AttendanceReportController::class, 'index'])->name('attendance-reports.index');
     Route::get('/attendance-reports/departments/{department}', [AttendanceReportController::class, 'department'])->name('attendance-reports.department');
     Route::get('/attendance-reports/departments/{department}/pdf', [AttendanceReportController::class, 'exportPdf'])->name('attendance-reports.department.pdf');
@@ -254,9 +253,18 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::get('/employees', [ManagerEmployeeController::class, 'index'])->name('employees.index');
     Route::get('/employees/{employee}', [ManagerEmployeeController::class, 'show'])->name('employees.show');
 
-    Route::get('/face-enrollments', [ManagerFaceEnrollmentController::class, 'index'])->name('face-enrollments.index');
-    Route::post('/face-enrollments/{employee}', [ManagerFaceEnrollmentController::class, 'store'])->name('face-enrollments.store');
-    Route::delete('/face-enrollments/{employee}', [ManagerFaceEnrollmentController::class, 'destroy'])->name('face-enrollments.destroy');
+    Route::get('/teams', [ManagerTeamController::class, 'index'])->name('teams.index');
+    Route::get('/teams/create', [ManagerTeamController::class, 'create'])->name('teams.create');
+    Route::post('/teams', [ManagerTeamController::class, 'store'])->name('teams.store');
+    Route::get('/teams/{team}', [ManagerTeamController::class, 'show'])->name('teams.show');
+    Route::get('/teams/{team}/edit', [ManagerTeamController::class, 'edit'])->name('teams.edit');
+    Route::put('/teams/{team}', [ManagerTeamController::class, 'update'])->name('teams.update');
+    Route::delete('/teams/{team}', [ManagerTeamController::class, 'destroy'])->name('teams.destroy');
+    Route::post('/teams/{team}/members', [ManagerTeamController::class, 'assignMembers'])->name('teams.assign-members');
+    Route::delete('/teams/{team}/members/{employee}', [ManagerTeamController::class, 'removeMember'])->name('teams.remove-member');
+
+    Route::get('/contracts', [ManagerContractController::class, 'index'])->name('contracts.index');
+    Route::get('/contracts/{contract}', [ManagerContractController::class, 'show'])->name('contracts.show');
 
     Route::get('/notifications', [ManagerNotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/create', [ManagerNotificationController::class, 'create'])->name('notifications.create');
@@ -271,16 +279,21 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::get('/kpis/{assignment}', [ManagerKPIController::class, 'show'])->name('kpis.show');
     Route::get('/kpis/{assignment}/assign', [ManagerKPIController::class, 'assign'])->name('kpis.assign');
     Route::post('/kpis/{assignment}/assign', [ManagerKPIController::class, 'storeAssign'])->name('kpis.store_assign');
+    Route::get('/kpis/{assignment}/assign-leader', [ManagerKPIController::class, 'assignLeader'])->name('kpis.assign_leader');
+    Route::post('/kpis/{assignment}/assign-leader', [ManagerKPIController::class, 'storeAssignLeader'])->name('kpis.store_assign_leader');
+
+    Route::get('/kpi-reports', [ManagerKpiTeamReportController::class, 'index'])->name('kpi-reports.index');
+    Route::get('/kpi-reports/{report}', [ManagerKpiTeamReportController::class, 'show'])->name('kpi-reports.show');
+    Route::patch('/kpi-reports/{report}/review', [ManagerKpiTeamReportController::class, 'review'])->name('kpi-reports.review');
+
+    Route::get('/team-reports', [ManagerLeaderTeamReportController::class, 'index'])->name('team-reports.index');
+    Route::get('/team-reports/{report}', [ManagerLeaderTeamReportController::class, 'show'])->name('team-reports.show');
+    Route::patch('/team-reports/{report}/review', [ManagerLeaderTeamReportController::class, 'review'])->name('team-reports.review');
 
     Route::get('/overtime-requests', [OvertimeApprovalController::class, 'index'])->name('overtime-requests.index');
     Route::get('/overtime-requests/{overtimeRequest}', [OvertimeApprovalController::class, 'show'])->name('overtime-requests.show');
     Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeApprovalController::class, 'approve'])->name('overtime-requests.approve');
     Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeApprovalController::class, 'reject'])->name('overtime-requests.reject');
-
-    Route::get('/early-leave', [EarlyLeaveApprovalController::class, 'index'])->name('early-leave.index');
-    Route::get('/early-leave/{earlyLeaveRequest}', [EarlyLeaveApprovalController::class, 'show'])->name('early-leave.show');
-    Route::patch('/early-leave/{earlyLeaveRequest}/approve', [EarlyLeaveApprovalController::class, 'approve'])->name('early-leave.approve');
-    Route::patch('/early-leave/{earlyLeaveRequest}/reject', [EarlyLeaveApprovalController::class, 'reject'])->name('early-leave.reject');
 
     Route::get('/team-requests', [ManagerTeamMembershipRequestController::class, 'index'])->name('team-requests.index');
     Route::patch('/team-requests/{teamMembershipRequest}/approve', [ManagerTeamMembershipRequestController::class, 'approve'])->name('team-requests.approve');
@@ -339,8 +352,6 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
     Route::get('/tax/settlement', [AccountantTaxController::class, 'settlement'])->name('tax.settlement');
     Route::get('/tax/settlement/export', [AccountantTaxController::class, 'exportSettlement'])->name('tax.settlement.export');
     Route::get('/advances', [AccountantAdvanceController::class, 'index'])->name('advances.index');
-    Route::get('/advances/create', [AccountantAdvanceController::class, 'create'])->name('advances.create');
-    Route::post('/advances', [AccountantAdvanceController::class, 'store'])->name('advances.store');
     Route::get('/advances/balances', [AccountantAdvanceController::class, 'balances'])->name('advances.balances');
     Route::get('/advances/deduct', [AccountantAdvanceController::class, 'deduct'])->name('advances.deduct');
     Route::post('/advances/{advance}/approve', [AccountantAdvanceController::class, 'approve'])->name('advances.approve');
@@ -369,15 +380,43 @@ Route::middleware(['auth', 'verified', 'role:leader'])->prefix('leader')->name('
     Route::get('/employees', [LeaderEmployeeController::class, 'index'])->name('employees.index');
     Route::get('/employees/{employee}', [LeaderEmployeeController::class, 'show'])->name('employees.show');
     Route::get('/kpis', [LeaderKPIController::class, 'index'])->name('kpis.index');
+    Route::get('/kpis/{employeeKpi}/score', [LeaderKPIController::class, 'editScore'])->name('kpis.score.edit');
+    Route::put('/kpis/{employeeKpi}/score', [LeaderKPIController::class, 'updateScore'])->name('kpis.score.update');
     Route::get('/kpis/{employeeKpi}', [LeaderKPIController::class, 'show'])->name('kpis.show');
+
+    Route::get('/team-kpis', [LeaderTeamKpiController::class, 'index'])->name('team-kpis.index');
+    Route::get('/team-kpis/{assignment}', [LeaderTeamKpiController::class, 'show'])->name('team-kpis.show');
+    Route::get('/team-kpis/{assignment}/allocate', [LeaderTeamKpiController::class, 'allocate'])->name('team-kpis.allocate');
+    Route::post('/team-kpis/{assignment}/allocate', [LeaderTeamKpiController::class, 'storeAllocate'])->name('team-kpis.store_allocate');
+    Route::get('/team-kpis/{assignment}/employee-kpis/{employeeKpi}/edit', [LeaderTeamKpiController::class, 'editAllocation'])->name('team-kpis.edit_allocation');
+    Route::put('/team-kpis/{assignment}/employee-kpis/{employeeKpi}', [LeaderTeamKpiController::class, 'updateAllocation'])->name('team-kpis.update_allocation');
+    Route::post('/team-kpis/{assignment}/report', [LeaderTeamKpiController::class, 'submitReport'])->name('team-kpis.submit_report');
     Route::get('/tasks', [LeaderTaskController::class, 'index'])->name('tasks.index');
     Route::get('/reports', [LeaderReportController::class, 'index'])->name('reports.index');
+    Route::post('/reports/submit', [LeaderReportController::class, 'submit'])->name('reports.submit');
     Route::get('/reports/export', [LeaderReportController::class, 'export'])->name('reports.export');
+    Route::get('/reports/{leaderTeamReport}', [LeaderReportController::class, 'show'])->name('reports.show');
 
     Route::get('/team-requests', [LeaderTeamMembershipRequestController::class, 'index'])->name('team-requests.index');
     Route::post('/team-requests', [LeaderTeamMembershipRequestController::class, 'store'])->name('team-requests.store');
 
     Route::get('/team-schedule', [LeaderTeamScheduleController::class, 'index'])->name('team-schedule.index');
+
+    Route::get('/attendance', [LeaderAttendanceController::class, 'index'])->name('attendance.index');
+    Route::get('/leave-requests', [LeaderLeaveApprovalController::class, 'index'])->name('leave-requests.index');
+    Route::get('/leave-requests/{leaveRequest}', [LeaderLeaveApprovalController::class, 'show'])->name('leave-requests.show');
+    Route::patch('/leave-requests/{leaveRequest}/approve', [LeaderLeaveApprovalController::class, 'approve'])->name('leave-requests.approve');
+    Route::patch('/leave-requests/{leaveRequest}/reject', [LeaderLeaveApprovalController::class, 'reject'])->name('leave-requests.reject');
+    Route::get('/overtime-requests', [LeaderOvertimeApprovalController::class, 'index'])->name('overtime-requests.index');
+    Route::get('/overtime-requests/{overtimeRequest}', [LeaderOvertimeApprovalController::class, 'show'])->name('overtime-requests.show');
+    Route::patch('/overtime-requests/{overtimeRequest}/approve', [LeaderOvertimeApprovalController::class, 'approve'])->name('overtime-requests.approve');
+    Route::patch('/overtime-requests/{overtimeRequest}/reject', [LeaderOvertimeApprovalController::class, 'reject'])->name('overtime-requests.reject');
+
+    Route::get('/team-chat', [TeamChatController::class, 'index'])->name('team-chat.index');
+    Route::get('/team-chat/messages', [TeamChatController::class, 'messages'])->name('team-chat.messages');
+    Route::post('/team-chat', [TeamChatController::class, 'store'])->name('team-chat.store');
+    Route::post('/team-chat/announce', [TeamChatController::class, 'announce'])->name('team-chat.announce');
+
     Route::get('/contracts', [ManagerContractController::class, 'index']) ->name('contracts.index');
 
     Route::get('/contracts/{contract}', [ManagerContractController::class, 'show'])->name('contracts.show');
@@ -396,6 +435,10 @@ Route::middleware(['auth', 'verified', 'role:employee,accountant'])->group(funct
     Route::get('/employee/notifications/{notification}', [EmployeeNotificationController::class, 'show'])->name('employee.notifications.show');
     Route::patch('/employee/notifications/read-all', [EmployeeNotificationController::class, 'markAllAsRead'])->name('employee.notifications.read-all');
     Route::patch('/employee/notifications/{notification}/read', [EmployeeNotificationController::class, 'markAsRead'])->name('employee.notifications.read');
+
+    Route::get('/employee/team-chat', [TeamChatController::class, 'index'])->name('employee.team-chat.index');
+    Route::get('/employee/team-chat/messages', [TeamChatController::class, 'messages'])->name('employee.team-chat.messages');
+    Route::post('/employee/team-chat', [TeamChatController::class, 'store'])->name('employee.team-chat.store');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,manager,leader,admin,accountant'])->group(function () {
@@ -418,10 +461,6 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,leader,admin,accou
     Route::get('/employee/overtime-requests', [EmployeeOvertimeController::class, 'index'])->name('employee.overtime-requests');
     Route::get('/employee/overtime-requests/create', [EmployeeOvertimeController::class, 'create'])->name('employee.overtime-requests.create');
     Route::post('/employee/overtime-requests', [EmployeeOvertimeController::class, 'store'])->name('employee.overtime-requests.store');
-
-    Route::get('/employee/early-leave', [EmployeeEarlyLeaveController::class, 'index'])->name('employee.early-leave.index');
-    Route::get('/employee/early-leave/create', [EmployeeEarlyLeaveController::class, 'create'])->name('employee.early-leave.create');
-    Route::post('/employee/early-leave', [EmployeeEarlyLeaveController::class, 'store'])->name('employee.early-leave.store');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,manager,leader,accountant'])->group(function () {
