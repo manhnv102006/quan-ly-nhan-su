@@ -49,7 +49,7 @@ class OvertimeApprovalController extends Controller
         $scopedQuery = OvertimeRequest::query()->forManagerApproval($manager);
 
         $stats = [
-            'pending' => (clone $scopedQuery)->where('status', OvertimeRequest::STATUS_PENDING)->count(),
+            'pending' => (clone $scopedQuery)->awaitingManagerApproval()->count(),
             'approved' => (clone $scopedQuery)->where('status', OvertimeRequest::STATUS_APPROVED)->count(),
             'rejected' => (clone $scopedQuery)->where('status', OvertimeRequest::STATUS_REJECTED)->count(),
         ];

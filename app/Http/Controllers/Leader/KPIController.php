@@ -3,32 +3,34 @@
 namespace App\Http\Controllers\Leader;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Leader\UpdateLeaderEmployeeKpiScoreRequest;
 use App\Models\EmployeeKPI;
+use App\Services\LeaderKpiService;
 use App\Services\LeaderScopeService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class KPIController extends Controller
 {
-    public function __construct(private readonly LeaderScopeService $scope) {}
+    public function __construct(
+        private readonly LeaderScopeService $scope,
+        private readonly LeaderKpiService $kpi,
+    ) {
+    }
 
     public function index(Request $request): View
     {
         EmployeeKPI::markOverdueAsNotCompleted();
 
         $leader = $this->scope->resolveLeaderEmployeeOrFail($request->user());
-        $teamIds = $this->scope->teamMemberIds($leader);
         $status = $request->query('status');
 
-        $employeeKpis = EmployeeKPI::query()
-            ->with(['employee.department', 'kpi'])
-            ->when($teamIds !== [], fn ($q) => $q->whereIn('employee_id', $teamIds), fn ($q) => $q->whereRaw('0 = 1'))
-            ->when(in_array($status, ['pending', 'in_progress', 'completed', 'not_completed'], true), fn ($q) => $q->where('status', $status))
-            ->orderByDesc('updated_at')
+        $employeeKpis = $this->kpi->teamMemberKpisQuery($leader, is_string($status) ? $status : null)
             ->paginate(15)
             ->withQueryString();
 
-        $base = EmployeeKPI::query()->when($teamIds !== [], fn ($q) => $q->whereIn('employee_id', $teamIds), fn ($q) => $q->whereRaw('0 = 1'));
+        $base = $this->kpi->teamMemberKpisQuery($leader);
 
         $stats = [
             'total' => (clone $base)->count(),
@@ -43,12 +45,31 @@ class KPIController extends Controller
     public function show(Request $request, EmployeeKPI $employeeKpi): View
     {
         $leader = $this->scope->resolveLeaderEmployeeOrFail($request->user());
-        $employeeKpi->load(['employee.department', 'kpi.tasks']);
+        $this->kpi->assertManagesEmployeeKpi($leader, $employeeKpi);
 
-        if (! $employeeKpi->employee || ! $this->scope->managesEmployee($leader, $employeeKpi->employee)) {
-            abort(403, 'Bạn không có quyền xem KPI này.');
-        }
+        $employeeKpi->load(['employee.department', 'kpi.tasks', 'kpiAssignment.kpi']);
 
         return view('leader.kpis.show', compact('leader', 'employeeKpi'));
+    }
+
+    public function editScore(Request $request, EmployeeKPI $employeeKpi): View
+    {
+        $leader = $this->scope->resolveLeaderEmployeeOrFail($request->user());
+        $this->kpi->assertManagesEmployeeKpi($leader, $employeeKpi);
+
+        $employeeKpi->load(['employee', 'kpi', 'kpiAssignment']);
+
+        return view('leader.kpis.score', compact('leader', 'employeeKpi'));
+    }
+
+    public function updateScore(UpdateLeaderEmployeeKpiScoreRequest $request, EmployeeKPI $employeeKpi): RedirectResponse
+    {
+        $leader = $this->scope->resolveLeaderEmployeeOrFail($request->user());
+
+        $this->kpi->scoreMember($leader, $employeeKpi, $request->validated());
+
+        return redirect()
+            ->route('leader.kpis.show', $employeeKpi)
+            ->with('success', 'Đã chấm điểm KPI cá nhân.');
     }
 }

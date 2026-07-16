@@ -4,6 +4,15 @@
 
     if ($user) {
         $navigation = app(\App\Services\EmployeePendingActionService::class)->applyBadgesToNavigation($navigation, $user);
+
+        $canAccessTeamChat = app(\App\Services\TeamChatService::class)->canAccess($user);
+        $navigation = array_values(array_filter($navigation, function (array $item) use ($canAccessTeamChat) {
+            if (! empty($item['requires_team_chat']) && ! $canAccessTeamChat) {
+                return false;
+            }
+
+            return true;
+        }));
     }
 @endphp
 

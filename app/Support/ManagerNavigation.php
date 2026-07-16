@@ -44,6 +44,14 @@ class ManagerNavigation
                 'note' => 'Tạo nhóm · gán thành viên',
             ],
             [
+                'label' => 'Đăng ký khuôn mặt',
+                'href' => route('manager.face-enrollments.index'),
+                'route' => 'manager.face-enrollments.*',
+                'group' => self::GROUP_OPERATIONS,
+                'icon' => 'M15.75 6a3 3 0 11-6 0 3 3 0 016 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z',
+                'note' => 'NV phòng ban · Chấm công',
+            ],
+            [
                 'label' => 'Hợp đồng',
                 'href' => route('manager.contracts.index'),
                 'route' => 'manager.contracts.*',

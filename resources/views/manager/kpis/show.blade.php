@@ -20,10 +20,20 @@
                    class="manager-btn-secondary">
                     ← Quay lại
                 </a>
-                <a href="{{ route('manager.kpis.assign', $assignment) }}"
-                   class="manager-btn-primary">
-                    + Giao mục tiêu mới
-                </a>
+                @if($assignment->isDelegatedToLeader())
+                    <a href="{{ route('manager.kpi-reports.index') }}" class="manager-btn-secondary">
+                        Báo cáo nhóm
+                    </a>
+                @else
+                    <a href="{{ route('manager.kpis.assign_leader', $assignment) }}"
+                       class="manager-btn-primary">
+                        Giao Trưởng nhóm
+                    </a>
+                    <a href="{{ route('manager.kpis.assign', $assignment) }}"
+                       class="manager-btn-secondary">
+                        + Giao NV trực tiếp
+                    </a>
+                @endif
             </div>
         </div>
 
@@ -44,6 +54,12 @@
                     <span class="text-slate-500">Người giao</span>
                     <span class="font-semibold text-slate-800">{{ $assignment->assignedBy->name ?? 'N/A' }}</span>
                 </div>
+                @if($assignment->isDelegatedToLeader())
+                <div class="flex justify-between border-b border-slate-50 pb-2">
+                    <span class="text-slate-500">Trưởng nhóm phụ trách</span>
+                    <span class="font-semibold text-teal-700">{{ $assignment->leaderEmployee?->full_name ?? '—' }}</span>
+                </div>
+                @endif
                 <div class="flex justify-between border-b border-slate-50 pb-2">
                     <span class="text-slate-500">Mục tiêu của bạn</span>
                     <span class="font-semibold text-slate-800">{{ number_format($assignment->target) }}</span>
@@ -99,8 +115,15 @@
         <div class="manager-panel">
             <div class="px-6 py-5 border-b border-slate-100">
                 <h3 class="font-semibold text-slate-800">
-                    Các mục tiêu đã giao cho nhân viên ({{ $assignment->employeeKpis->count() }})
+                    @if($assignment->isDelegatedToLeader())
+                        KPI cá nhân do Trưởng nhóm phân bổ ({{ $assignment->employeeKpis->count() }})
+                    @else
+                        Các mục tiêu đã giao cho nhân viên ({{ $assignment->employeeKpis->count() }})
+                    @endif
                 </h3>
+                @if($assignment->teamReport?->isSubmitted())
+                    <p class="mt-1 text-xs text-teal-600">Báo cáo nhóm: {{ $assignment->teamReport->status_label }}</p>
+                @endif
             </div>
 
             <div class="overflow-x-auto">
@@ -131,7 +154,7 @@
                                     @endif
                                 </td>
                                 <td class="px-5 py-4 text-center font-semibold text-slate-800">
-                                    {{ $goal->score !== null ? $goal->score : '—' }}
+                                    {{ $goal->score !== null ? $goal->score : ($goal->leader_score !== null ? $goal->leader_score.' (L)' : '—') }}
                                 </td>
                                 <td class="px-5 py-4 text-center text-slate-600">
                                     {{ $goal->deadline ? $goal->deadline->format('d/m/Y') : '—' }}

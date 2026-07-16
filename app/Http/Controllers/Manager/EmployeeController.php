@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Team;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -47,6 +48,10 @@ class EmployeeController extends Controller
             'resigned' => $department ? Employee::where('department_id', $department->id)->where('status', 'resigned')->count() : 0,
         ];
 
+        $teamByLeaderId = $department
+            ? Team::query()->where('department_id', $department->id)->whereNotNull('leader_employee_id')->pluck('name', 'leader_employee_id')
+            : collect();
+
         return view('manager.employees.index', compact(
             'managerProfile',
             'department',
@@ -54,6 +59,7 @@ class EmployeeController extends Controller
             'stats',
             'search',
             'status',
+            'teamByLeaderId',
         ));
     }
 

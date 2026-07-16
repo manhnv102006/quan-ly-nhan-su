@@ -47,6 +47,8 @@ class OvertimeRequest extends Model
         'rate_multiplier',
         'reason',
         'status',
+        'leader_approved_by',
+        'leader_approved_at',
         'approved_by',
         'approved_at',
         'reject_reason',
@@ -59,6 +61,7 @@ class OvertimeRequest extends Model
         return [
             'work_date' => 'date',
             'approved_at' => 'datetime',
+            'leader_approved_at' => 'datetime',
             'actual_check_in' => 'datetime',
             'actual_check_out' => 'datetime',
             'total_hours' => 'decimal:2',
@@ -91,6 +94,11 @@ class OvertimeRequest extends Model
         return $this->belongsTo(Employee::class);
     }
 
+    public function leaderApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'leader_approved_by');
+    }
+
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
@@ -106,6 +114,40 @@ class OvertimeRequest extends Model
         return $this->status === self::STATUS_PENDING;
     }
 
+    public function needsLeaderApproval(): bool
+    {
+        $this->loadMissing('employee');
+
+        return $this->employee?->manager_id !== null;
+    }
+
+    public function isAwaitingLeaderApproval(): bool
+    {
+        return $this->isPending()
+            && $this->needsLeaderApproval()
+            && $this->leader_approved_at === null;
+    }
+
+    public function isAwaitingManagerApproval(): bool
+    {
+        return $this->isPending() && (
+            ! $this->needsLeaderApproval() || $this->leader_approved_at !== null
+        );
+    }
+
+    public function workflowStatusLabel(): string
+    {
+        if ($this->isAwaitingLeaderApproval()) {
+            return 'Chờ Trưởng nhóm duyệt';
+        }
+
+        if ($this->isPending() && $this->leader_approved_at !== null) {
+            return 'Chờ Quản lý duyệt';
+        }
+
+        return $this->statusLabel();
+    }
+
     public function scopeOverlappingTime($query, int $employeeId, string $workDate, string $startTime, string $endTime, ?int $ignoreId = null)
     {
         return $query
@@ -114,6 +156,30 @@ class OvertimeRequest extends Model
             ->where('start_time', '<', $endTime)
             ->where('end_time', '>', $startTime)
             ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId));
+    }
+
+    public function scopeForLeader(Builder $query, Employee $leader): Builder
+    {
+        return $query->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->managedByLeader($leader));
+    }
+
+    public function scopeAwaitingLeaderApproval(Builder $query, Employee $leader): Builder
+    {
+        return $query
+            ->forLeader($leader)
+            ->where('status', self::STATUS_PENDING)
+            ->whereNull('leader_approved_at')
+            ->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->whereNotNull('manager_id'));
+    }
+
+    public function scopeAwaitingManagerApproval(Builder $query): Builder
+    {
+        return $query
+            ->where('status', self::STATUS_PENDING)
+            ->where(function (Builder $q) {
+                $q->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->whereNull('manager_id'))
+                    ->orWhereNotNull('leader_approved_at');
+            });
     }
 
     /**

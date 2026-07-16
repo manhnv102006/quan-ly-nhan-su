@@ -48,7 +48,7 @@ class LeaveApprovalController extends Controller
             });
 
         $stats = [
-            'pending' => (clone $scopedQuery)->where('status', LeaveRequest::STATUS_PENDING)->count(),
+            'pending' => (clone $scopedQuery)->awaitingManagerApproval()->count(),
             'approved' => (clone $scopedQuery)->where('status', LeaveRequest::STATUS_APPROVED)->count(),
             'rejected' => (clone $scopedQuery)->where('status', LeaveRequest::STATUS_REJECTED)->count(),
         ];
