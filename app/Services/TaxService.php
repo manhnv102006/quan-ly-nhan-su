@@ -24,6 +24,7 @@ class TaxService
 
         return TaxDependent::query()
             ->where('employee_id', $employee->id)
+            ->where('status', TaxDependent::STATUS_APPROVED)
             ->where('is_active', true)
             ->where('start_date', '<=', $date)
             ->where(function ($q) use ($date) {
@@ -38,6 +39,7 @@ class TaxService
 
         return (float) TaxDependent::query()
             ->where('employee_id', $employee->id)
+            ->where('status', TaxDependent::STATUS_APPROVED)
             ->where('is_active', true)
             ->where('start_date', '<=', $date)
             ->where(function ($q) use ($date) {
