@@ -23,17 +23,25 @@ class ManagerContractController extends Controller
     public function index(Request $request): View
     {
         $manager = $this->managerScope->resolveManagerEmployeeOrFail(Auth::user());
-        $managedIds = $this->managerScope->managedEmployeesQuery($manager)->pluck('id');
+        if (Auth::user()->isLeader()) {
+            $managedIds = Employee::query()
+                ->managedByLeader($manager)
+                ->pluck('id');
+        } else {
+            $managedIds = $this->managerScope
+                ->managedEmployeesQuery($manager)
+                ->pluck('id');
+        }
 
         $contracts = Contract::query()
             ->with(['employee', 'contractType', 'department', 'position'])
             ->whereIn('employee_id', $managedIds)
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
             ->when($request->filled('search'), function ($q) use ($request) {
                 $term = $request->string('search')->trim();
                 $q->where(function ($sub) use ($term) {
                     $sub->where('contract_code', 'like', "%{$term}%")
-                        ->orWhereHas('employee', fn ($e) => $e->where('full_name', 'like', "%{$term}%"));
+                        ->orWhereHas('employee', fn($e) => $e->where('full_name', 'like', "%{$term}%"));
                 });
             })
             ->when($request->boolean('expiring'), function ($q) {
@@ -52,7 +60,11 @@ class ManagerContractController extends Controller
             ->whereDate('end_date', '<=', now()->addDays(30))
             ->count();
 
-        return view('manager.contracts.index', [
+        $view = Auth::user()->isLeader()
+            ? 'leader.contracts.index'
+            : 'manager.contracts.index';
+
+        return view($view, [
             'contracts' => $contracts,
             'expiringCount' => $expiringCount,
             'filters' => $request->only(['search', 'status', 'expiring']),
@@ -71,7 +83,11 @@ class ManagerContractController extends Controller
             ->orderByDesc('start_date')
             ->get();
 
-        return view('manager.contracts.show', [
+        $view = Auth::user()->isLeader()
+            ? 'leader.contracts.show'
+            : 'manager.contracts.show';
+
+        return view($view, [
             'contract' => $contract,
             'history' => $history,
             'allowanceBreakdown' => $this->allowanceService->breakdown($contract),

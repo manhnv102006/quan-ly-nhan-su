@@ -35,11 +35,14 @@ class TeamMembershipRequestController extends Controller
         $addCandidates = Employee::query()
             ->where('department_id', $leader->department_id)
             ->where('id', '!=', $leader->id)
-            ->whereNull('manager_id')
             ->where('status', 'active')
+            ->whereDoesntHave('user', function ($q) {
+                $q->whereHas('role', function ($role) {
+                    $role->where('name', 'manager');
+                });
+            })
             ->orderBy('full_name')
             ->get(['id', 'full_name', 'employee_code']);
-
         // Thành viên hiện tại có thể đề xuất đưa ra khỏi nhóm.
         $removeCandidates = $this->scope->teamMembersQuery($leader)
             ->orderBy('full_name')

@@ -363,6 +363,9 @@ Route::middleware(['auth', 'verified', 'role:leader'])->prefix('leader')->name('
     Route::post('/team-requests', [LeaderTeamMembershipRequestController::class, 'store'])->name('team-requests.store');
 
     Route::get('/team-schedule', [LeaderTeamScheduleController::class, 'index'])->name('team-schedule.index');
+    Route::get('/contracts', [ManagerContractController::class, 'index']) ->name('contracts.index');
+
+    Route::get('/contracts/{contract}', [ManagerContractController::class, 'show'])->name('contracts.show');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,accountant'])->group(function () {

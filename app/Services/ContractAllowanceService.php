@@ -73,12 +73,12 @@ class ContractAllowanceService
 
         foreach ($allowanceInput as $typeId => $amount) {
             $type = $types->get((int) $typeId);
-            if (! $type) {
+            if (!$type) {
                 continue;
             }
 
             $column = self::COLUMN_MAP[$type->code] ?? null;
-            if (! $column) {
+            if (!$column) {
                 continue;
             }
 
@@ -144,7 +144,7 @@ class ContractAllowanceService
                 $amount = $column ? (float) ($contract->{$column} ?? 0) : 0;
 
                 return [
-                    'name' => $type->name,
+                    'label' => $type->name,
                     'code' => $type->code,
                     'amount' => $amount,
                     'note' => $type->calculation_note,
@@ -153,9 +153,9 @@ class ContractAllowanceService
         }
 
         return $contract->contractAllowances
-            ->sortBy(fn (ContractAllowance $item) => $item->allowanceType?->sort_order ?? 99)
-            ->map(fn (ContractAllowance $item) => [
-                'name' => $item->allowanceType?->name ?? 'Phụ cấp',
+            ->sortBy(fn(ContractAllowance $item) => $item->allowanceType?->sort_order ?? 99)
+            ->map(fn(ContractAllowance $item) => [
+                'label' => $item->allowanceType?->name ?? 'Phụ cấp',
                 'code' => $item->allowanceType?->code,
                 'amount' => (float) $item->amount,
                 'note' => $item->allowanceType?->calculation_note,
