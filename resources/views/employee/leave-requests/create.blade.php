@@ -1,17 +1,10 @@
 @php
     $user = Auth::user();
-    $isAdmin = $user->role->name === 'admin';
-    $isManager = $user->role->name === 'manager';
+    $roleName = $user->role?->name;
+    $isAdmin = $roleName === 'admin';
 
-    $navigation = $isManager
-        ? \App\Support\ManagerNavigation::items()
-        : \App\Support\EmployeeNavigation::items();
-
-    $layout = match (true) {
-        $isAdmin => 'admin-layout',
-        $isManager => 'manager-layout',
-        default => 'employee-layout',
-    };
+    $navigation = \App\Support\SelfServiceLayout::navigation();
+    $layout = \App\Support\SelfServiceLayout::component($roleName);
     $layoutParams = $isAdmin
         ? ['title' => 'Tạo đơn nghỉ phép']
         : [

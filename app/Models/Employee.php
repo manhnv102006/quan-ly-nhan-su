@@ -67,6 +67,36 @@ class Employee extends Model
         return $this->hasMany(Contract::class);
     }
 
+    public function contractHistories(): HasMany
+    {
+        return $this->hasMany(ContractHistory::class)->orderByDesc('created_at');
+    }
+
+    public function moduleChangeLogs(): HasMany
+    {
+        return $this->hasMany(ModuleChangeLog::class)->orderByDesc('created_at');
+    }
+
+    public function insurance(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(EmployeeInsurance::class);
+    }
+
+    public function taxProfile(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(EmployeeTaxProfile::class);
+    }
+
+    public function taxDependents(): HasMany
+    {
+        return $this->hasMany(TaxDependent::class);
+    }
+
+    public function salaryAdvances(): HasMany
+    {
+        return $this->hasMany(SalaryAdvance::class);
+    }
+
     public function overtimeRequests(): HasMany
     {
         return $this->hasMany(OvertimeRequest::class);
@@ -198,6 +228,22 @@ class Employee extends Model
     }
 
     /**
+     * Nhân viên báo cáo trực tiếp cho leader (trưởng nhóm).
+     */
+    public function isDirectReportOf(self $leader): bool
+    {
+        return (int) $this->manager_id === (int) $leader->id;
+    }
+
+    /**
+     * @param  Builder<Employee>  $query
+     */
+    public function scopeManagedByLeader(Builder $query, self $leader): Builder
+    {
+        return $query->where('manager_id', $leader->id);
+    }
+
+    /**
      * Nhân viên thuộc phòng ban do quản lý này phụ trách.
      */
     public function isManagedBy(self $manager): bool
@@ -266,11 +312,36 @@ class Employee extends Model
         });
     }
 
-    public function todayShift()
+    public function todayShifts()
     {
         return $this->employeeShifts()
             ->whereDate('work_date', today())
             ->with('shift')
-            ->first();
+            ->get()
+            ->sortBy(fn (EmployeeShift $employeeShift) => $employeeShift->shift?->start_time)
+            ->values();
+    }
+
+    public function todayShift()
+    {
+        $today = today();
+        $now = now();
+
+        foreach ($this->todayShifts() as $employeeShift) {
+            $shift = $employeeShift->shift;
+
+            if (! $shift) {
+                continue;
+            }
+
+            $start = \Carbon\Carbon::parse($shift->start_time)->setDateFrom($today);
+            $end = \Carbon\Carbon::parse($shift->end_time)->setDateFrom($today);
+
+            if ($now->between($start, $end) || $now->lt($start)) {
+                return $employeeShift;
+            }
+        }
+
+        return $this->todayShifts()->last();
     }
 }

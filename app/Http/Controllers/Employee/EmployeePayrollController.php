@@ -95,6 +95,8 @@ class EmployeePayrollController extends Controller
         $payroll->load([
             'employee.department',
             'employee.position',
+            'employee.insurance',
+            'employee.taxProfile',
             'payrollPeriod.approver',
             'payrollPeriod.payer',
             'approver',
@@ -165,6 +167,8 @@ class EmployeePayrollController extends Controller
         $payroll->load([
             'employee.department',
             'employee.position',
+            'employee.insurance',
+            'employee.taxProfile',
             'payrollPeriod.approver',
             'payrollPeriod.payer',
             'approver',

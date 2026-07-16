@@ -81,6 +81,14 @@ class EmployeeShiftController extends Controller
                 ->withErrors(['assignment_scope' => 'Không tìm thấy nhân viên phù hợp để gán ca.']);
         }
 
+        $conflicts = $this->assignmentService->findOverlappingConflicts($validated, $employeeIds);
+
+        if ($conflicts !== []) {
+            return back()
+                ->withInput()
+                ->withErrors(['shift_id' => $conflicts]);
+        }
+
         $assignedCount = $this->assignmentService->assign($validated, $employeeIds);
         $dayCount = $this->assignmentService->countDates($validated);
         $employeeCount = count($employeeIds);

@@ -122,6 +122,7 @@
                                     ])
                                     ->where('status', 'late')
                                     ->count() ?? 0;
+                                $payslip = $payroll->payslipBreakdown();
                             @endphp
                             <tr class="border-t border-slate-100 hover:bg-slate-50 transition">
                                 <td class="px-6 py-4 font-medium text-slate-700">
@@ -151,51 +152,15 @@
                                     <span class="font-semibold text-slate-700" title="Nghỉ phép không lương / vắng mặt">{{ $payroll->unpaid_leave_days }}KP</span>
                                 </td>
                                 <td class="px-6 py-4 text-slate-700">
-                                    -{{ number_format($payroll->deduction, 0, ',', '.') }} ₫
+                                    -{{ number_format($payslip['total_deductions'], 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4 font-bold text-slate-950">
-                                    {{ number_format($payroll->total_salary, 0, ',', '.') }} ₫
+                                    {{ number_format($payslip['net_salary'], 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex justify-center items-center gap-2">
                                         <button type="button"
-                                                onclick="openPayrollModal({{ json_encode([
-                                                    'id' => $payroll->id,
-                                                    'employee_code' => $payroll->employee?->employee_code ?: '—',
-                                                    'full_name' => $payroll->employee?->full_name ?: '—',
-                                                    'department_name' => $payroll->employee?->department?->department_name ?: '—',
-                                                    'position_name' => $payroll->employee?->position?->position_name ?: '—',
-                                                    'period_name' => $payroll->payrollPeriod?->name ?: '—',
-                                                    'period_range' => ($payroll->payrollPeriod?->start_date?->format('d/m/Y') ?: '') . ' - ' . ($payroll->payrollPeriod?->end_date?->format('d/m/Y') ?: ''),
-                                                    'basic_salary' => number_format($payroll->basic_salary, 0, ',', '.'),
-                                                    'allowance' => number_format($payroll->allowance, 0, ',', '.'),
-                                                    'allowance_meal' => number_format($payroll->allowance_meal, 0, ',', '.'),
-                                                    'allowance_phone' => number_format($payroll->allowance_phone, 0, ',', '.'),
-                                                    'allowance_fuel' => number_format($payroll->allowance_fuel, 0, ',', '.'),
-                                                    'allowance_position' => number_format($payroll->allowance_position, 0, ',', '.'),
-                                                    'bonus' => number_format($payroll->bonus, 0, ',', '.'),
-                                                    'overtime_hours' => $payroll->overtime_hours,
-                                                    'overtime_pay' => number_format($payroll->overtime_pay, 0, ',', '.'),
-                                                    'deduction' => number_format($payroll->deduction, 0, ',', '.'),
-                                                    'late_days' => $lateDays,
-                                                    'late_fine' => number_format($lateDays * 50000, 0, ',', '.'),
-                                                    'unpaid_leave_fine' => number_format($payroll->unpaid_leave_days * 300000, 0, ',', '.'),
-                                                    'standard_working_days' => $payroll->standard_working_days,
-                                                    'actual_working_days' => $payroll->actual_working_days,
-                                                    'total_salary' => number_format($payroll->total_salary, 0, ',', '.'),
-                                                    'paid_salary' => in_array($payroll->status, ['paid', 'closed']) ? number_format($payroll->total_salary, 0, ',', '.') : '0',
-                                                    'remaining_salary' => !in_array($payroll->status, ['paid', 'closed']) ? number_format($payroll->total_salary, 0, ',', '.') : '0',
-                                                    'status_label' => match ($payroll->status) {
-                                                        'calculated' => 'Đã tính lương',
-                                                        'approved' => 'Đã duyệt',
-                                                        'paid' => 'Đã chi trả',
-                                                        'closed' => 'Đã đóng',
-                                                        default => 'Chưa tính lương'
-                                                    },
-                                                    'paid_leave_days' => $payroll->paid_leave_days,
-                                                    'unpaid_leave_days' => $payroll->unpaid_leave_days,
-                                                    'pdf_url' => route('admin.payrolls.pdf', $payroll),
-                                                ]) }})"
+                                                onclick="openPayrollModal({{ json_encode($payroll->toModalPayload($lateDays, route('admin.payrolls.pdf', $payroll))) }})"
                                                 class="px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-semibold transition flex items-center gap-1"
                                                 title="Xem chi tiết">
                                             👁️ Xem chi tiết
@@ -356,6 +321,28 @@
                             <span class="font-medium" id="modalLeaveLabel">Phạt nghỉ quá phép/không phép (0 ngày):</span>
                             <span class="font-bold" id="modalLeaveFine">-0 ₫</span>
                         </div>
+                        <div class="flex justify-between items-center text-rose-500">
+                            <span class="font-medium">Bảo hiểm (BHXH + BHYT + BHTN):</span>
+                            <span class="font-bold" id="modalInsurance">-0 ₫</span>
+                        </div>
+                        <div class="pl-4 space-y-1 text-xs text-slate-500 border-l border-slate-200">
+                            <div class="flex justify-between items-center">
+                                <span>+ BHXH NLĐ:</span>
+                                <span id="modalBhxh">0 ₫</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>+ BHYT NLĐ:</span>
+                                <span id="modalBhyt">0 ₫</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>+ BHTN NLĐ:</span>
+                                <span id="modalBhtn">0 ₫</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center text-rose-500">
+                            <span class="font-medium">Thuế TNCN:</span>
+                            <span class="font-bold" id="modalPit">-0 ₫</span>
+                        </div>
                         <div class="flex justify-between items-center font-bold text-rose-600 border-t border-slate-200/60 pt-2">
                             <span>Tổng giảm trừ:</span>
                             <span id="modalDeduction">-0 ₫</span>
@@ -482,23 +469,20 @@
             
             // Tính tổng thu nhập
             const num = (v) => parseFloat(String(v).replace(/\./g, '')) || 0;
-            let basic = num(data.basic_salary);
-            let allowance = num(data.allowance)
-                + num(data.allowance_meal)
-                + num(data.allowance_phone)
-                + num(data.allowance_fuel)
-                + num(data.allowance_position);
-            let bonus = num(data.bonus);
-            let overtime = num(data.overtime_pay);
-            let totalIncome = basic + allowance + bonus + overtime;
+            let totalIncome = num(data.gross_income);
             
             document.getElementById('modalTotalIncome').innerText = totalIncome.toLocaleString('vi-VN') + ' ₫';
             document.getElementById('modalLateLabel').innerText = 'Phạt đi muộn (' + data.late_days + ' lần):';
             document.getElementById('modalLateFine').innerText = '-' + data.late_fine + ' ₫';
             document.getElementById('modalLeaveLabel').innerText = 'Phạt nghỉ quá phép (' + data.unpaid_leave_days + ' ngày):';
             document.getElementById('modalLeaveFine').innerText = '-' + data.unpaid_leave_fine + ' ₫';
-            document.getElementById('modalDeduction').innerText = '-' + data.deduction + ' ₫';
-            document.getElementById('modalTotalSalary').innerText = data.total_salary + ' ₫';
+            document.getElementById('modalInsurance').innerText = '-' + data.insurance_total + ' ₫';
+            document.getElementById('modalBhxh').innerText = data.bhxh_employee + ' ₫';
+            document.getElementById('modalBhyt').innerText = data.bhyt_employee + ' ₫';
+            document.getElementById('modalBhtn').innerText = data.bhtn_employee + ' ₫';
+            document.getElementById('modalPit').innerText = '-' + data.pit + ' ₫';
+            document.getElementById('modalDeduction').innerText = '-' + data.total_deductions + ' ₫';
+            document.getElementById('modalTotalSalary').innerText = data.net_salary + ' ₫';
             document.getElementById('modalPaidSalary').innerText = data.paid_salary + ' ₫';
             document.getElementById('modalRemainingSalary').innerText = data.remaining_salary + ' ₫';
  

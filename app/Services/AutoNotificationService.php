@@ -280,6 +280,97 @@ class AutoNotificationService
         return $sent;
     }
 
+    public function notifyContractRenewed(Contract $oldContract, Contract $newContract, ?int $performerId = null): bool
+    {
+        $employee = $oldContract->employee;
+        if (! $employee) {
+            return false;
+        }
+
+        $performerName = $performerId
+            ? (User::query()->whereKey($performerId)->value('name') ?? 'Quản trị viên')
+            : 'Quản trị viên';
+
+        $recipients = $this->resolveRecipients(
+            array_filter([
+                $employee->user_id,
+                $this->departmentManagerUserId($employee->department_id),
+            ]),
+        );
+
+        return $this->send(
+            'system',
+            'Hợp đồng đã được gia hạn',
+            sprintf(
+                'Hợp đồng %s của %s đã được gia hạn thành %s (hiệu lực từ %s). Người thực hiện: %s.',
+                $oldContract->contract_code,
+                $employee->full_name,
+                $newContract->contract_code,
+                $newContract->start_date?->format('d/m/Y') ?? '—',
+                $performerName,
+            ),
+            $recipients,
+            $employee->department_id,
+        );
+    }
+
+    public function clearContractExpiringNotifications(Contract $contract): int
+    {
+        $notifications = Notification::query()
+            ->where('type', 'system')
+            ->where('title', 'Hợp đồng sắp hết hạn')
+            ->where('content', 'like', '%'.$contract->contract_code.'%')
+            ->get();
+
+        $removed = 0;
+
+        foreach ($notifications as $notification) {
+            $notification->users()->detach();
+            $notification->delete();
+            $removed++;
+        }
+
+        return $removed;
+    }
+
+    public function notifyContractConverted(Contract $oldContract, Contract $newContract, ?int $performerId = null): bool
+    {
+        $employee = $oldContract->employee;
+        if (! $employee) {
+            return false;
+        }
+
+        $oldContract->loadMissing('contractType');
+        $newContract->loadMissing('contractType');
+
+        $performerName = $performerId
+            ? (User::query()->whereKey($performerId)->value('name') ?? 'Quản trị viên')
+            : 'Quản trị viên';
+
+        $recipients = $this->resolveRecipients(
+            array_filter([
+                $employee->user_id,
+                $this->departmentManagerUserId($employee->department_id),
+            ]),
+        );
+
+        return $this->send(
+            'system',
+            'Hợp đồng đã chuyển loại',
+            sprintf(
+                'Hợp đồng %s của %s đã chuyển từ "%s" sang "%s" (HĐ mới: %s). Người thực hiện: %s.',
+                $oldContract->contract_code,
+                $employee->full_name,
+                $oldContract->contractType?->contract_name ?? '—',
+                $newContract->contractType?->contract_name ?? '—',
+                $newContract->contract_code,
+                $performerName,
+            ),
+            $recipients,
+            $employee->department_id,
+        );
+    }
+
     private function send(string $type, string $title, string $content, array $userIds, ?int $departmentId = null): bool
     {
         $userIds = $this->resolveRecipients($userIds);

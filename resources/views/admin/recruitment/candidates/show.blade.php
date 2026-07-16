@@ -309,12 +309,12 @@
                             </div>
                             <div>
                                 <label class="mb-2 block text-sm font-bold text-slate-700">Phòng ban</label>
-                                <select name="department_id" class="{{ $fieldClass }}">
-                                    <option value="">Chưa gắn</option>
-                                    @foreach ($departments as $department)
-                                        <option value="{{ $department->id }}" @selected(old('department_id') == $department->id)>{{ $department->department_name }}</option>
-                                    @endforeach
-                                </select>
+                                @include('admin.partials.department-select', [
+                                    'departments' => $departments,
+                                    'selected' => old('department_id'),
+                                    'required' => false,
+                                    'placeholder' => 'Chưa gắn',
+                                ])
                             </div>
                             <div>
                                 <label class="mb-2 block text-sm font-bold text-slate-700">Chức vụ</label>

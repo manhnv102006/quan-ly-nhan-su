@@ -16,9 +16,50 @@ class DepartmentController extends Controller
         private readonly ManagerDepartmentSyncService $managerDepartmentSync,
     ) {}
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function departmentValidationRules(?Department $department = null): array
+    {
+        $minMax = Department::MIN_MAX_EMPLOYEES;
+        $maxMax = Department::MAX_MAX_EMPLOYEES;
+
+        return [
+            'department_code' => 'required|string|max:20|unique:departments,department_code'.($department ? ','.$department->id : ''),
+            'department_name' => 'required|string|max:100',
+            'description' => 'nullable|string',
+            'max_employees' => "required|integer|min:{$minMax}|max:{$maxMax}",
+            'manager_id' => 'nullable|exists:employees,id',
+            'status' => 'required|in:active,inactive',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function departmentValidationMessages(): array
+    {
+        return [
+            'department_code.required' => 'Mã phòng ban là bắt buộc',
+            'department_code.unique' => 'Mã phòng ban đã tồn tại',
+            'department_code.max' => 'Mã phòng ban không được vượt quá 20 ký tự',
+            'department_name.required' => 'Tên phòng ban là bắt buộc',
+            'department_name.max' => 'Tên phòng ban không được vượt quá 100 ký tự',
+            'max_employees.required' => 'Giới hạn nhân viên là bắt buộc',
+            'max_employees.integer' => 'Giới hạn nhân viên phải là số nguyên',
+            'max_employees.min' => 'Giới hạn nhân viên tối thiểu là '.Department::MIN_MAX_EMPLOYEES,
+            'max_employees.max' => 'Giới hạn nhân viên tối đa là '.Department::MAX_MAX_EMPLOYEES,
+            'manager_id.exists' => 'Quản lý được chọn không hợp lệ',
+            'status.required' => 'Trạng thái là bắt buộc',
+            'status.in' => 'Trạng thái không hợp lệ',
+        ];
+    }
+
     public function index(): View
     {
         $departments = Department::query()
+            ->with('manager')
+            ->withCount('employees')
             ->orderBy('department_name')
             ->get();
 
@@ -40,25 +81,14 @@ class DepartmentController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'department_code' => 'required|string|max:20|unique:departments,department_code',
-            'department_name' => 'required|string|max:100',
-            'description' => 'nullable|string',
-            'manager_id' => 'nullable|exists:employees,id',
-            'status' => 'required|in:active,inactive',
-        ], [
-            'department_code.required' => 'Mã phòng ban là bắt buộc',
-            'department_code.unique' => 'Mã phòng ban đã tồn tại',
-            'department_code.max' => 'Mã phòng ban không được vượt quá 20 ký tự',
-            'department_name.required' => 'Tên phòng ban là bắt buộc',
-            'department_name.max' => 'Tên phòng ban không được vượt quá 100 ký tự',
-            'manager_id.exists' => 'Quản lý được chọn không hợp lệ',
-            'status.required' => 'Trạng thái là bắt buộc',
-            'status.in' => 'Trạng thái không hợp lệ',
-        ]);
+        $validated = $request->validate(
+            $this->departmentValidationRules(),
+            $this->departmentValidationMessages(),
+        );
 
         $validated['department_code'] = strtoupper($validated['department_code']);
         $validated['manager_id'] = $validated['manager_id'] ?: null;
+        $validated['max_employees'] = (int) $validated['max_employees'];
 
         Department::create($validated);
 
@@ -75,7 +105,7 @@ class DepartmentController extends Controller
 
     public function edit(int $id): View
     {
-        $department = Department::findOrFail($id);
+        $department = Department::withCount('employees')->findOrFail($id);
 
         $employees = Employee::query()
             ->where('status', 'active')
@@ -87,27 +117,26 @@ class DepartmentController extends Controller
 
     public function update(Request $request, int $id): RedirectResponse
     {
-        $department = Department::findOrFail($id);
+        $department = Department::withCount('employees')->findOrFail($id);
 
-        $validated = $request->validate([
-            'department_code' => 'required|string|max:20|unique:departments,department_code,'.$department->id,
-            'department_name' => 'required|string|max:100',
-            'description' => 'nullable|string',
-            'manager_id' => 'nullable|exists:employees,id',
-            'status' => 'required|in:active,inactive',
-        ], [
-            'department_code.required' => 'Mã phòng ban là bắt buộc',
-            'department_code.unique' => 'Mã phòng ban đã tồn tại',
-            'department_code.max' => 'Mã phòng ban không được vượt quá 20 ký tự',
-            'department_name.required' => 'Tên phòng ban là bắt buộc',
-            'department_name.max' => 'Tên phòng ban không được vượt quá 100 ký tự',
-            'manager_id.exists' => 'Quản lý được chọn không hợp lệ',
-            'status.required' => 'Trạng thái là bắt buộc',
-            'status.in' => 'Trạng thái không hợp lệ',
-        ]);
+        $validated = $request->validate(
+            $this->departmentValidationRules($department),
+            $this->departmentValidationMessages(),
+        );
+
+        $currentCount = (int) $department->employees_count;
+
+        if ((int) $validated['max_employees'] < $currentCount) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'max_employees' => "Giới hạn không được nhỏ hơn số nhân viên hiện tại ({$currentCount}).",
+                ]);
+        }
 
         $validated['department_code'] = strtoupper($validated['department_code']);
         $validated['manager_id'] = $validated['manager_id'] ?: null;
+        $validated['max_employees'] = (int) $validated['max_employees'];
 
         $department->update($validated);
 
@@ -120,7 +149,8 @@ class DepartmentController extends Controller
 
     public function show(int $id): View
     {
-        $department = Department::with([
+        $department = Department::withCount('employees')->with([
+            'manager',
             'employees',
             'employees.position'
         ])->findOrFail($id);

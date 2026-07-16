@@ -30,6 +30,21 @@ use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\RecruitmentController;
 use App\Http\Controllers\Admin\ShiftController;
 
+use App\Http\Controllers\Accountant\AdvanceController as AccountantAdvanceController;
+use App\Http\Controllers\Accountant\AttendanceController as AccountantAttendanceController;
+use App\Http\Controllers\Accountant\ChangeLogController as AccountantChangeLogController;
+use App\Http\Controllers\Accountant\ContractController as AccountantContractController;
+use App\Http\Controllers\Accountant\DashboardController as AccountantDashboardController;
+use App\Http\Controllers\Accountant\InsuranceController as AccountantInsuranceController;
+use App\Http\Controllers\Accountant\PayrollController as AccountantPayrollController;
+use App\Http\Controllers\Accountant\PayrollPeriodController as AccountantPayrollPeriodController;
+use App\Http\Controllers\Accountant\ReportController as AccountantReportController;
+use App\Http\Controllers\Accountant\TaxController as AccountantTaxController;
+use App\Http\Controllers\Leader\DashboardController as LeaderDashboardController;
+use App\Http\Controllers\Leader\EmployeeController as LeaderEmployeeController;
+use App\Http\Controllers\Leader\KPIController as LeaderKPIController;
+use App\Http\Controllers\Leader\ReportController as LeaderReportController;
+use App\Http\Controllers\Leader\TaskController as LeaderTaskController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Employee\NotificationController as EmployeeNotificationController;
 use App\Http\Controllers\Manager\EmployeeController as ManagerEmployeeController;
@@ -38,6 +53,7 @@ use App\Http\Controllers\Manager\KPIController as ManagerKPIController;
 use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
+use App\Http\Controllers\Employee\EmployeeAdvanceController;
 use App\Http\Controllers\Employee\EmployeePayrollController;
 use App\Http\Controllers\Employee\EmployeeContractController;
 
@@ -161,6 +177,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/attendance-reports/departments/{department}/pdf', [AttendanceReportController::class, 'exportPdf'])->name('attendance-reports.department.pdf');
 
     Route::get('/face-enrollments', [FaceEnrollmentController::class, 'index'])->name('face-enrollments.index');
+    Route::post('/face-enrollments/{employee}', [FaceEnrollmentController::class, 'store'])->name('face-enrollments.store');
     Route::delete('/face-enrollments/{employee}', [FaceEnrollmentController::class, 'destroy'])->name('face-enrollments.destroy');
 
     Route::get('/payrolls', [PayrollController::class, 'index'])->name('payrolls');
@@ -180,6 +197,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
     Route::resource('allowance-types', AllowanceTypeController::class)->except(['show']);
 
+    Route::get('/contracts/history', [ContractController::class, 'history'])->name('contracts.history');
+    Route::get('/contracts/departments/{department}', [ContractController::class, 'departmentEmployees'])->name('contracts.by-department');
+    Route::get('/contracts/employees/{employee}', [ContractController::class, 'employeeContracts'])->name('contracts.by-employee');
     Route::get('/contracts/trash', [ContractController::class, 'trash'])->name('contracts.trashed');
     Route::post('/contracts/{contract}/restore', [ContractController::class, 'restore'])->name('contracts.restore');
     Route::delete('/contracts/{contract}/force-delete', [ContractController::class, 'forceDelete'])->name('contracts.forceDelete');
@@ -254,7 +274,82 @@ Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager']
         Route::get('/{leaveRequest}', [LeaveApprovalController::class, 'show'])->name('show');
     });
 
-Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')->name('accountant.')->group(function () {
+    Route::get('/dashboard', [AccountantDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/payrolls', [AccountantPayrollController::class, 'index'])->name('payrolls.index');
+    Route::get('/payrolls/slips/list', [AccountantPayrollController::class, 'slips'])->name('payrolls.slips');
+    Route::get('/payrolls/salary-history', [AccountantPayrollController::class, 'salaryHistory'])->name('payrolls.salary-history');
+    Route::get('/payrolls/{payroll}/pdf', [AccountantPayrollController::class, 'exportPdf'])->name('payrolls.pdf');
+    Route::get('/payrolls/{payroll}/excel', [AccountantPayrollController::class, 'exportExcel'])->name('payrolls.excel');
+    Route::get('/payroll-periods/{payrollPeriod}/export-excel', [AccountantPayrollController::class, 'exportPeriodExcel'])->name('payroll-periods.export-excel');
+    Route::patch('/payroll-periods/{payrollPeriod}/toggle-active', [AccountantPayrollPeriodController::class, 'toggleActive'])->name('payroll-periods.toggle-active');
+    Route::post('/payroll-periods/{payrollPeriod}/payrolls/{payroll}/adjust', [AccountantPayrollPeriodController::class, 'adjustPayroll'])->name('payroll-periods.adjust-payroll');
+    Route::resource('payroll-periods', AccountantPayrollPeriodController::class)->except(['destroy']);
+    Route::get('/payroll-periods/{payrollPeriod}/departments/{department}', [AccountantPayrollPeriodController::class, 'department'])->name('payroll-periods.department');
+    Route::post('/payroll-periods/{payrollPeriod}/calculate', [AccountantPayrollPeriodController::class, 'calculate'])->name('payroll-periods.calculate');
+    Route::post('/payroll-periods/{payrollPeriod}/recalculate', [AccountantPayrollPeriodController::class, 'recalculate'])->name('payroll-periods.recalculate');
+    Route::post('/payroll-periods/{payrollPeriod}/approve', [AccountantPayrollPeriodController::class, 'approve'])->name('payroll-periods.approve');
+    Route::post('/payroll-periods/{payrollPeriod}/pay', [AccountantPayrollPeriodController::class, 'pay'])->name('payroll-periods.pay');
+    Route::post('/payroll-periods/{payrollPeriod}/close', [AccountantPayrollPeriodController::class, 'close'])->name('payroll-periods.close');
+    Route::get('/change-logs', [AccountantChangeLogController::class, 'index'])->name('change-logs.index');
+    Route::get('/insurance', [AccountantInsuranceController::class, 'index'])->name('insurance.index');
+    Route::get('/insurance/create', [AccountantInsuranceController::class, 'create'])->name('insurance.create');
+    Route::post('/insurance', [AccountantInsuranceController::class, 'store'])->name('insurance.store');
+    Route::get('/insurance/reports', [AccountantInsuranceController::class, 'reports'])->name('insurance.reports');
+    Route::get('/insurance/reports/export', [AccountantInsuranceController::class, 'exportReport'])->name('insurance.reports.export');
+    Route::get('/insurance/suggest-salary/{employee}', [AccountantInsuranceController::class, 'suggestSalary'])->name('insurance.suggest-salary');
+    Route::get('/insurance/{insurance}/edit', [AccountantInsuranceController::class, 'edit'])->name('insurance.edit');
+    Route::put('/insurance/{insurance}', [AccountantInsuranceController::class, 'update'])->name('insurance.update');
+    Route::post('/insurance/{insurance}/stop', [AccountantInsuranceController::class, 'stop'])->name('insurance.stop');
+    Route::post('/insurance/resigned/{employee}/stop', [AccountantInsuranceController::class, 'stopResigned'])->name('insurance.stop-resigned');
+    Route::get('/tax', [AccountantTaxController::class, 'index'])->name('tax.index');
+    Route::get('/tax/dependents', [AccountantTaxController::class, 'dependents'])->name('tax.dependents');
+    Route::post('/tax/dependents/{employee}', [AccountantTaxController::class, 'storeDependent'])->name('tax.dependents.store');
+    Route::put('/tax/dependents/{employee}/{dependent}', [AccountantTaxController::class, 'updateDependent'])->name('tax.dependents.update');
+    Route::delete('/tax/dependents/{employee}/{dependent}', [AccountantTaxController::class, 'destroyDependent'])->name('tax.dependents.destroy');
+    Route::put('/tax/profile/{employee}', [AccountantTaxController::class, 'updateProfile'])->name('tax.profile.update');
+    Route::get('/tax/declaration', [AccountantTaxController::class, 'declaration'])->name('tax.declaration');
+    Route::get('/tax/declaration/export', [AccountantTaxController::class, 'exportDeclaration'])->name('tax.declaration.export');
+    Route::get('/tax/settlement', [AccountantTaxController::class, 'settlement'])->name('tax.settlement');
+    Route::get('/tax/settlement/export', [AccountantTaxController::class, 'exportSettlement'])->name('tax.settlement.export');
+    Route::get('/advances', [AccountantAdvanceController::class, 'index'])->name('advances.index');
+    Route::get('/advances/create', [AccountantAdvanceController::class, 'create'])->name('advances.create');
+    Route::post('/advances', [AccountantAdvanceController::class, 'store'])->name('advances.store');
+    Route::get('/advances/balances', [AccountantAdvanceController::class, 'balances'])->name('advances.balances');
+    Route::get('/advances/deduct', [AccountantAdvanceController::class, 'deduct'])->name('advances.deduct');
+    Route::post('/advances/{advance}/approve', [AccountantAdvanceController::class, 'approve'])->name('advances.approve');
+    Route::post('/advances/{advance}/reject', [AccountantAdvanceController::class, 'reject'])->name('advances.reject');
+    Route::post('/advances/{advance}/apply', [AccountantAdvanceController::class, 'applyDeduction'])->name('advances.apply');
+    Route::post('/advances/period/{payrollPeriod}/apply-all', [AccountantAdvanceController::class, 'applyAll'])->name('advances.apply-all');
+    Route::get('/advances/{advance}', [AccountantAdvanceController::class, 'show'])->name('advances.show');
+    Route::get('/contracts', [AccountantContractController::class, 'index'])->name('contracts.index');
+    Route::get('/contracts/salary-overview', [AccountantContractController::class, 'salaryOverview'])->name('contracts.salary-overview');
+    Route::get('/contracts/expiring', [AccountantContractController::class, 'expiring'])->name('contracts.expiring');
+    Route::get('/contracts/detail/{contract}', [AccountantContractController::class, 'show'])->name('contracts.show');
+    Route::get('/attendance', [AccountantAttendanceController::class, 'index'])->name('attendance.index');
+    Route::get('/attendance/timesheet', [AccountantAttendanceController::class, 'timesheet'])->name('attendance.timesheet');
+    Route::get('/attendance/records/{attendance}', [AccountantAttendanceController::class, 'show'])->name('attendance.show');
+    Route::get('/reports', [AccountantReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/salary-by-department', [AccountantReportController::class, 'salaryByDepartment'])->name('reports.salary-by-department');
+    Route::get('/reports/salary-by-department/export', [AccountantReportController::class, 'exportSalaryByDepartment'])->name('reports.salary-by-department.export');
+    Route::get('/reports/budget-comparison', [AccountantReportController::class, 'budgetComparison'])->name('reports.budget-comparison');
+    Route::get('/reports/budget-comparison/export', [AccountantReportController::class, 'exportBudgetComparison'])->name('reports.budget-comparison.export');
+    Route::get('/reports/financial', [AccountantReportController::class, 'financial'])->name('reports.financial');
+    Route::get('/reports/financial/export', [AccountantReportController::class, 'exportFinancial'])->name('reports.financial.export');
+});
+
+Route::middleware(['auth', 'verified', 'role:leader'])->prefix('leader')->name('leader.')->group(function () {
+    Route::get('/dashboard', [LeaderDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/employees', [LeaderEmployeeController::class, 'index'])->name('employees.index');
+    Route::get('/employees/{employee}', [LeaderEmployeeController::class, 'show'])->name('employees.show');
+    Route::get('/kpis', [LeaderKPIController::class, 'index'])->name('kpis.index');
+    Route::get('/kpis/{employeeKpi}', [LeaderKPIController::class, 'show'])->name('kpis.show');
+    Route::get('/tasks', [LeaderTaskController::class, 'index'])->name('tasks.index');
+    Route::get('/reports', [LeaderReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export', [LeaderReportController::class, 'export'])->name('reports.export');
+});
+
+Route::middleware(['auth', 'verified', 'role:employee,accountant'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
 
     Route::prefix('employee/kpis')->name('employee.kpis.')->group(function () {
@@ -269,7 +364,7 @@ Route::middleware(['auth', 'verified', 'role:employee'])->group(function () {
     Route::patch('/employee/notifications/{notification}/read', [EmployeeNotificationController::class, 'markAsRead'])->name('employee.notifications.read');
 });
 
-Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:employee,manager,admin,accountant'])->group(function () {
     Route::get('/employee/leave-requests', [EmployeeLeaveController::class, 'index'])->name('employee.leave-requests');
     Route::get('/employee/leave-requests/create', [EmployeeLeaveController::class, 'create'])->name('employee.leave-requests.create');
     Route::get('/employee/leave-requests/{leaveRequest}', [EmployeeLeaveController::class, 'show'])->name('employee.leave-requests.show');
@@ -289,6 +384,13 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,admin'])->group(fu
     Route::get('/employee/overtime-requests', [EmployeeOvertimeController::class, 'index'])->name('employee.overtime-requests');
     Route::get('/employee/overtime-requests/create', [EmployeeOvertimeController::class, 'create'])->name('employee.overtime-requests.create');
     Route::post('/employee/overtime-requests', [EmployeeOvertimeController::class, 'store'])->name('employee.overtime-requests.store');
+});
+
+Route::middleware(['auth', 'verified', 'role:employee,manager,leader,accountant'])->group(function () {
+    Route::get('/employee/advances', [EmployeeAdvanceController::class, 'index'])->name('employee.advances.index');
+    Route::get('/employee/advances/create', [EmployeeAdvanceController::class, 'create'])->name('employee.advances.create');
+    Route::post('/employee/advances', [EmployeeAdvanceController::class, 'store'])->name('employee.advances.store');
+    Route::get('/employee/advances/{advance}', [EmployeeAdvanceController::class, 'show'])->name('employee.advances.show');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

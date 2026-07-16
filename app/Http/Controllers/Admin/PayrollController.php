@@ -49,6 +49,8 @@ class PayrollController extends Controller
         $payroll->load([
             'employee.department',
             'employee.position',
+            'employee.insurance',
+            'employee.taxProfile',
             'payrollPeriod.approver',
             'payrollPeriod.payer'
         ]);
