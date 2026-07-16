@@ -94,9 +94,10 @@ class LeaveRequest extends Model
     ];
 
     public const LEAVE_TYPE_LABELS = [
-        'annual' => 'Nghỉ phép năm',
+        'annual' => 'Nghỉ phép',
         'sick' => 'Nghỉ ốm',
         'unpaid' => 'Nghỉ không lương',
+        'other' => 'Lý do khác',
     ];
 
     public function isPending(): bool

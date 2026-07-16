@@ -9,9 +9,13 @@ use App\Models\PayrollPeriod;
 use App\Models\Holiday;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Services\AutoNotificationService;
 
 class PayrollService
 {
+    public function __construct(
+        private AutoNotificationService $notifications
+    ) {}
 
     // Cấu hình số buổi nghỉ phép hưởng lương tối đa trong 1 tháng
     private const MAX_PAID_LEAVES_PER_MONTH = 1;
@@ -110,10 +114,10 @@ class PayrollService
             }
 
             // C. Chấm công: Đếm ngày đi làm thực tế (present + late)
-            $presentDays = $employee->attendances()
+            $presentDays = (float) $employee->attendances()
                 ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->whereIn('status', ['present', 'late'])
-                ->count();
+                ->sum('work_ratio');
 
             $lateDays = $employee->attendances()
                 ->whereBetween('attendance_date', [$startDate, $endDate])
@@ -273,6 +277,11 @@ class PayrollService
 
             // J. Thực lĩnh = Lương cơ bản (pro-rata) + Tổng phụ cấp + Thưởng KPI + Lương tăng ca - Khấu trừ
             $totalSalary = $basicSalary + $totalAllowance + $bonus + $overtimePay - $deduction;
+
+            // Kiểm tra cảnh báo (nếu nhân viên nghỉ không phép dẫn đến không đủ 23 công HOẶC lương bị âm)
+            if (($actualWorkingDays < 23 && $unpaidLeaveDays > 0) || $totalSalary < 0) {
+                $this->notifications->employeeInsufficientWorkDaysWarning($employee, $period, $actualWorkingDays, $unpaidLeaveDays);
+            }
 
             if ($totalSalary < 0) {
                 $totalSalary = 0; // Không thể âm thực lĩnh

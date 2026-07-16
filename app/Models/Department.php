@@ -10,7 +10,7 @@ class Department extends Model
 {
     use SoftDeletes;
 
-    public const DEFAULT_MAX_EMPLOYEES = 10;
+    public const DEFAULT_MAX_EMPLOYEES = 20;
 
     public const MIN_MAX_EMPLOYEES = 1;
 
