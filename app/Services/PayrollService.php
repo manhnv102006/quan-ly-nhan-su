@@ -114,10 +114,10 @@ class PayrollService
             }
 
             // C. Chấm công: Đếm ngày đi làm thực tế (present + late)
-            $presentDays = $employee->attendances()
+            $presentDays = (float) $employee->attendances()
                 ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->whereIn('status', ['present', 'late'])
-                ->count();
+                ->sum('work_ratio');
 
             $lateDays = $employee->attendances()
                 ->whereBetween('attendance_date', [$startDate, $endDate])
