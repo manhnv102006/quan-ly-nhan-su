@@ -1,8 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
-@include('accountant.tax.partials.sub-nav', ['active' => 'pending'])
-
 <x-accountant-layout title="Duyệt đăng ký NPT" subtitle="Yêu cầu từ nhân viên · Duyệt xong áp dụng GT phụ thuộc ngay">
+    @include('accountant.tax.partials.sub-nav', ['active' => 'pending'])
     <div class="accountant-page">
         @if(session('success'))
             <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">

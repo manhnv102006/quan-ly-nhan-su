@@ -1,6 +1,5 @@
-@include('accountant.payrolls.partials.sub-nav', ['active' => 'hub'])
-
 <x-accountant-layout title="Quản lý lương" subtitle="Tính lương · Duyệt · Chi trả · Xuất báo cáo">
+    @include('accountant.payrolls.partials.sub-nav', ['active' => 'hub'])
     <div class="accountant-page">
         <section class="accountant-hero !mb-4">
             <div class="relative max-w-2xl">

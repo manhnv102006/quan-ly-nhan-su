@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Models;
 
@@ -19,14 +19,14 @@ class TeamMembershipRequest extends Model
     public const STATUS_REJECTED = 'rejected';
 
     public const ACTION_LABELS = [
-        self::ACTION_ADD => 'Thêm vào nhóm',
-        self::ACTION_REMOVE => 'Đưa ra khỏi nhóm',
+        self::ACTION_ADD => 'ThĂªm vĂ o nhĂ³m',
+        self::ACTION_REMOVE => 'ÄÆ°a ra khá»i nhĂ³m',
     ];
 
     public const STATUS_LABELS = [
-        self::STATUS_PENDING => 'Chờ duyệt',
-        self::STATUS_APPROVED => 'Đã duyệt',
-        self::STATUS_REJECTED => 'Từ chối',
+        self::STATUS_PENDING => 'Chá» duyá»‡t',
+        self::STATUS_APPROVED => 'ÄĂ£ duyá»‡t',
+        self::STATUS_REJECTED => 'Tá»« chá»‘i',
     ];
 
     public const STATUS_BADGES = [
@@ -95,7 +95,7 @@ class TeamMembershipRequest extends Model
     }
 
     /**
-     * Các đề xuất thuộc phòng ban do quản lý này phụ trách (dựa trên phòng ban của leader).
+     * CĂ¡c Ä‘á» xuáº¥t thuá»™c phĂ²ng ban do quáº£n lĂ½ nĂ y phá»¥ trĂ¡ch (dá»±a trĂªn phĂ²ng ban cá»§a leader).
      *
      * @param  Builder<TeamMembershipRequest>  $query
      */
