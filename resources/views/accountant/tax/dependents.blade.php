@@ -102,9 +102,13 @@
                                         <td class="px-4 py-3 text-right">{{ $formatMoney($dep->monthly_deduction) }}</td>
                                         <td class="px-4 py-3 text-xs">{{ $dep->start_date?->format('d/m/Y') }} @if($dep->end_date)→ {{ $dep->end_date->format('d/m/Y') }}@endif</td>
                                         <td class="px-4 py-3">
-                                            <span class="accountant-badge {{ $dep->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600' }}">
-                                                {{ $dep->is_active ? 'Hiệu lực' : 'Ngừng' }}
-                                            </span>
+                                            @if($dep->status === \App\Models\TaxDependent::STATUS_PENDING)
+                                                <span class="accountant-badge bg-amber-100 text-amber-800">Chờ duyệt</span>
+                                            @else
+                                                <span class="accountant-badge {{ $dep->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600' }}">
+                                                    {{ $dep->is_active ? 'Hiệu lực' : 'Ngừng' }}
+                                                </span>
+                                            @endif
                                         </td>
                                         <td class="px-4 py-3 text-right">
                                             <form method="POST" action="{{ route('accountant.tax.dependents.destroy', [$selectedEmployee, $dep]) }}" onsubmit="return confirm('Xóa NPT này?')">

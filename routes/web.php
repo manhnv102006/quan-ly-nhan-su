@@ -55,6 +55,7 @@ use App\Http\Controllers\Manager\NotificationController as ManagerNotificationCo
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
 use App\Http\Controllers\Employee\EmployeeAdvanceController;
+use App\Http\Controllers\Employee\EmployeeTaxDependentController;
 use App\Http\Controllers\Employee\EmployeePayrollController;
 use App\Http\Controllers\Employee\EmployeeContractController;
 
@@ -317,6 +318,9 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
     Route::post('/insurance/resigned/{employee}/stop', [AccountantInsuranceController::class, 'stopResigned'])->name('insurance.stop-resigned');
     Route::get('/tax', [AccountantTaxController::class, 'index'])->name('tax.index');
     Route::get('/tax/dependents', [AccountantTaxController::class, 'dependents'])->name('tax.dependents');
+    Route::get('/tax/dependent-registrations', [AccountantTaxController::class, 'pendingRegistrations'])->name('tax.pending-registrations');
+    Route::post('/tax/dependent-registrations/{dependent}/approve', [AccountantTaxController::class, 'approveRegistration'])->name('tax.registrations.approve');
+    Route::post('/tax/dependent-registrations/{dependent}/reject', [AccountantTaxController::class, 'rejectRegistration'])->name('tax.registrations.reject');
     Route::post('/tax/dependents/{employee}', [AccountantTaxController::class, 'storeDependent'])->name('tax.dependents.store');
     Route::put('/tax/dependents/{employee}/{dependent}', [AccountantTaxController::class, 'updateDependent'])->name('tax.dependents.update');
     Route::delete('/tax/dependents/{employee}/{dependent}', [AccountantTaxController::class, 'destroyDependent'])->name('tax.dependents.destroy');
@@ -408,6 +412,11 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,leader,accountant'
     Route::get('/employee/advances/create', [EmployeeAdvanceController::class, 'create'])->name('employee.advances.create');
     Route::post('/employee/advances', [EmployeeAdvanceController::class, 'store'])->name('employee.advances.store');
     Route::get('/employee/advances/{advance}', [EmployeeAdvanceController::class, 'show'])->name('employee.advances.show');
+
+    Route::get('/employee/tax-dependents', [EmployeeTaxDependentController::class, 'index'])->name('employee.tax-dependents.index');
+    Route::get('/employee/tax-dependents/create', [EmployeeTaxDependentController::class, 'create'])->name('employee.tax-dependents.create');
+    Route::post('/employee/tax-dependents', [EmployeeTaxDependentController::class, 'store'])->name('employee.tax-dependents.store');
+    Route::get('/employee/tax-dependents/{taxDependent}', [EmployeeTaxDependentController::class, 'show'])->name('employee.tax-dependents.show');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

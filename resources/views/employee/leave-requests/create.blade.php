@@ -32,9 +32,8 @@
                     <select id="leave_type" name="leave_type" required
                             class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition text-sm">
                         <option value="">-- Chọn loại nghỉ phép --</option>
-                        <option value="annual" @selected(old('leave_type') == 'annual')>Nghỉ phép năm</option>
-                        <option value="sick" @selected(old('leave_type') == 'sick')>Nghỉ ốm</option>
-                        <option value="unpaid" @selected(old('leave_type') == 'unpaid')>Nghỉ không lương</option>
+                        <option value="annual" @selected(old('leave_type') == 'annual')>Nghỉ phép</option>
+                        <option value="other" @selected(old('leave_type') == 'other')>Lý do khác</option>
                     </select>
                     @error('leave_type')
                         <p class="text-rose-500 text-xs mt-1.5 font-medium">{{ $message }}</p>
