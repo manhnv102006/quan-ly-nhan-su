@@ -72,7 +72,22 @@
                                 </label>
 
                                 <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
-                                    {{ $department->manager_id ?? 'Chưa chỉ định' }}
+                                    @if($department->manager)
+                                        {{ $department->manager->full_name }}
+                                        <span class="text-slate-500">({{ $department->manager->employee_code }})</span>
+                                    @else
+                                        Chưa chỉ định
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">
+                                    Giới hạn nhân viên
+                                </label>
+
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    {{ $department->maxEmployeesLimit() }} người
                                 </div>
                             </div>
 
@@ -153,7 +168,7 @@
                 </h3>
 
                 <span class="text-sm text-slate-500">
-                    0 nhân viên
+                    {{ $department->employees_count ?? $department->employees->count() }}/{{ $department->maxEmployeesLimit() }} nhân viên
                 </span>
 
             </div>

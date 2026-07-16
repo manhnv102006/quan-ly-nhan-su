@@ -13,6 +13,10 @@ class Role extends Model
 
     public const EMPLOYEE = 'employee';
 
+    public const ACCOUNTANT = 'accountant';
+
+    public const LEADER = 'leader';
+
     protected $fillable = [
         'name',
         'description',
@@ -29,6 +33,8 @@ class Role extends Model
             self::ADMIN => 'Quản trị viên',
             self::MANAGER => 'Quản lý',
             self::EMPLOYEE => 'Nhân viên',
+            self::ACCOUNTANT => 'Kế toán',
+            self::LEADER => 'Trưởng nhóm',
             default => $this->name,
         };
     }
@@ -39,6 +45,8 @@ class Role extends Model
             self::ADMIN => 'admin.dashboard',
             self::MANAGER => 'manager.dashboard',
             self::EMPLOYEE => 'employee.dashboard',
+            self::ACCOUNTANT => 'accountant.dashboard',
+            self::LEADER => 'leader.dashboard',
             default => 'dashboard',
         };
     }

@@ -4,7 +4,7 @@ import laravel from 'laravel-vite-plugin';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/face-attendance.js'],
+            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/face-attendance.js', 'resources/js/face-enrollment.js'],
             refresh: true,
         }),
     ],

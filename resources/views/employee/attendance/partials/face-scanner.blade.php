@@ -43,9 +43,9 @@
             <div class="relative mx-auto max-w-md">
                 <div
                     data-face-ring
-                    class="absolute -inset-1 rounded-[1.35rem] bg-gradient-to-r from-sky-400 via-indigo-400 to-violet-400 opacity-40 blur-sm transition-opacity duration-300"
+                    class="absolute -inset-1 rounded-[1.35rem] opacity-40 blur-sm transition-all duration-300 face-ring-neutral"
                 ></div>
-                <div class="relative overflow-hidden rounded-2xl border-2 border-slate-200 bg-slate-900 aspect-[4/3]">
+                <div class="relative overflow-hidden rounded-2xl border-2 border-slate-200 bg-slate-900 aspect-[4/3] transition-colors duration-300" data-face-frame>
                     <video
                         class="h-full w-full object-cover mirror"
                         playsinline
@@ -55,7 +55,10 @@
                     <canvas class="hidden"></canvas>
 
                     <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <div class="h-40 w-40 rounded-full border-2 border-white/70 border-dashed"></div>
+                        <div
+                            data-face-circle
+                            class="h-40 w-40 rounded-full border-[3px] border-dashed transition-all duration-300 face-circle-neutral"
+                        ></div>
                     </div>
 
                     <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 py-3">
@@ -72,10 +75,59 @@
                 #face-attendance-scanner .mirror {
                     transform: scaleX(-1);
                 }
+
+                #face-attendance-scanner .face-ring-neutral {
+                    background: linear-gradient(to right, #38bdf8, #6366f1, #8b5cf6);
+                }
+
+                #face-attendance-scanner .face-ring-success {
+                    background: linear-gradient(to right, #34d399, #10b981, #059669);
+                    opacity: 0.9 !important;
+                }
+
+                #face-attendance-scanner .face-ring-fail {
+                    background: linear-gradient(to right, #f87171, #ef4444, #dc2626);
+                    opacity: 0.9 !important;
+                }
+
+                #face-attendance-scanner .face-circle-neutral {
+                    border-color: rgba(255, 255, 255, 0.75);
+                    box-shadow: none;
+                }
+
+                #face-attendance-scanner .face-circle-success {
+                    border-color: #34d399;
+                    border-style: solid;
+                    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.25), 0 0 24px rgba(16, 185, 129, 0.45);
+                }
+
+                #face-attendance-scanner .face-circle-fail {
+                    border-color: #f87171;
+                    border-style: solid;
+                    box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.25), 0 0 24px rgba(239, 68, 68, 0.45);
+                }
+
+                #face-attendance-scanner [data-face-frame].face-frame-success {
+                    border-color: #34d399;
+                }
+
+                #face-attendance-scanner [data-face-frame].face-frame-fail {
+                    border-color: #f87171;
+                }
+
+                #face-attendance-scanner [data-face-status].face-status-success {
+                    color: #6ee7b7;
+                }
+
+                #face-attendance-scanner [data-face-status].face-status-fail {
+                    color: #fca5a5;
+                }
+
                 #face-attendance-scanner [data-face-ring].scanning {
                     opacity: 0.85;
                     animation: face-pulse 1.2s ease-in-out infinite;
                 }
+
                 @keyframes face-pulse {
                     0%, 100% { opacity: 0.45; }
                     50% { opacity: 0.9; }

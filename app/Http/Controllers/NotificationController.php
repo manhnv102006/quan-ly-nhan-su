@@ -27,6 +27,10 @@ class NotificationController extends BaseController
             return redirect()->route('employee.notifications.index', $request->query());
         }
 
+        if ($user->isAccountant()) {
+            return redirect()->route('employee.notifications.index', $request->query());
+        }
+
         $managedDepartment = $user->isManager()
             ? ManagerDepartmentResolver::managedDepartment($user)
             : null;
@@ -56,6 +60,10 @@ class NotificationController extends BaseController
         }
 
         if ($user->isEmployee() && ! $user->isAdmin()) {
+            return redirect()->route('employee.notifications.show', $notification);
+        }
+
+        if ($user->isAccountant()) {
             return redirect()->route('employee.notifications.show', $notification);
         }
 

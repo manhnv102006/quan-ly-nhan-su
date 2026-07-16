@@ -6,6 +6,7 @@ use App\Models\Contract;
 use App\Models\ContractType;
 use App\Models\Employee;
 use App\Rules\NoContractOverlap;
+use App\Services\ContractTypeValidationService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -62,14 +63,32 @@ class ContractUpdateRequest extends FormRequest
         $contract = $this->route('contract');
 
         $validator->after(function ($v) use ($contract) {
-            if (! $this->employee_id || ! $this->start_date || ! $this->end_date) {
+            if (! $this->employee_id || ! $this->start_date || ! $this->contract_type_id) {
                 return;
             }
 
             $employee = Employee::find($this->employee_id);
             if (! $employee || $employee->status !== 'active') {
-                $v->errors()->add('employee_id', 'Không được tạo hợp đồng cho nhân viên đã nghỉ việc.');
+                $v->errors()->add('employee_id', 'Không được cập nhật hợp đồng cho nhân viên đã nghỉ việc.');
                 return;
+            }
+
+            $type = ContractType::find($this->contract_type_id);
+            if ($type) {
+                try {
+                    app(ContractTypeValidationService::class)->validateAndNormalize(
+                        $type,
+                        $this->start_date,
+                        $this->end_date
+                    );
+                } catch (\Illuminate\Validation\ValidationException $exception) {
+                    foreach ($exception->errors() as $field => $messages) {
+                        foreach ($messages as $message) {
+                            $v->errors()->add($field, $message);
+                        }
+                    }
+                    return;
+                }
             }
 
             $ignoreId = $contract?->id;
@@ -77,13 +96,6 @@ class ContractUpdateRequest extends FormRequest
             $rule->validate('start_date', null, function (string $message) use ($v) {
                 $v->errors()->add('start_date', $message);
             });
-
-            if ($this->contract_type_id) {
-                $type = ContractType::find($this->contract_type_id);
-                if ($type?->requiresEndDate() && empty($this->end_date)) {
-                    $v->errors()->add('end_date', 'Loại hợp đồng này yêu cầu ngày kết thúc.');
-                }
-            }
         });
     }
 }

@@ -2,12 +2,15 @@
     $typeMeta = \App\Support\NotificationTypeMeta::all();
     $meta = $typeMeta[$notification->type] ?? $typeMeta['system'];
     $isRead = (bool) $notification->is_read;
+
+    $layout = \App\Support\SelfServiceLayout::component();
+    $layoutParams = [
+        'title' => 'Chi tiết thông báo',
+        'subtitle' => $notification->title,
+    ];
 @endphp
 
-<x-employee-layout
-    title="Chi tiết thông báo"
-    subtitle="{{ $notification->title }}"
->
+<x-dynamic-component :component="$layout" :attributes="new \Illuminate\View\ComponentAttributeBag($layoutParams)">
     <div class="employee-page">
         <div class="flex flex-wrap items-center justify-between gap-4">
             <a href="{{ route('employee.notifications.index') }}"
@@ -78,4 +81,4 @@
             </div>
         </article>
     </div>
-</x-employee-layout>
+</x-dynamic-component>

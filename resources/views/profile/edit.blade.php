@@ -9,6 +9,13 @@
     >
         @include('profile.partials.content')
     </x-manager-layout>
+@elseif ($layout === 'accountant')
+    <x-accountant-layout
+        title="Hồ sơ cá nhân"
+        subtitle="Cập nhật thông tin tài khoản và mật khẩu của bạn."
+    >
+        @include('profile.partials.content')
+    </x-accountant-layout>
 @else
     <x-employee-layout
         title="Hồ sơ cá nhân"
