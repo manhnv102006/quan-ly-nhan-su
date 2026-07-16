@@ -114,12 +114,13 @@
                                     </td>
                                     <td class="px-6 py-4 text-sm text-slate-600">{{ $employee->position?->position_name ?? 'Chưa có chức vụ' }}</td>
                                     <td class="px-6 py-4 text-sm">
-                                        @if($employee->manager_id && ($teamByLeaderId[$employee->manager_id] ?? null))
-                                            <span class="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700">{{ $teamByLeaderId[$employee->manager_id] }}</span>
+                                        @php $employeeTeam = $teamService->teamForEmployee($employee); @endphp
+                                        @if($employeeTeam)
+                                            <span class="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700">{{ $employeeTeam->name }}</span>
                                         @elseif($employee->user?->isLeader() && ($teamByLeaderId[$employee->id] ?? null))
                                             <span class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">{{ $teamByLeaderId[$employee->id] }} · Trưởng nhóm</span>
                                         @else
-                                            <span class="text-slate-400">—</span>
+                                            <span class="text-slate-400">Chưa gán nhóm</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4">

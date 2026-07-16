@@ -131,8 +131,8 @@ class ManagerTeamService
                 continue;
             }
 
-            if ($employee->manager_id && (int) $employee->manager_id !== (int) $team->leader_employee_id) {
-                $otherTeam = Team::query()->where('leader_employee_id', $employee->manager_id)->first();
+            if ($this->isInAnyTeam($employee)) {
+                $otherTeam = $this->teamForEmployee($employee);
                 $teamName = $otherTeam?->name ?? 'nhóm khác';
 
                 throw ValidationException::withMessages([
@@ -184,16 +184,67 @@ class ManagerTeamService
     public function candidatesToAdd(Employee $manager, Team $team): Collection
     {
         $memberIds = $this->members($team)->pluck('id');
+        $otherTeamLeaderIds = $this->otherTeamLeaderIds($team);
 
         return $this->scope->managedEmployeesQuery($manager)
             ->with(['position', 'user.role'])
             ->where('status', 'active')
             ->where('id', '!=', $manager->id)
             ->when($team->leader_employee_id, fn ($q) => $q->where('id', '!=', $team->leader_employee_id))
-            ->whereNull('manager_id')
             ->whereNotIn('id', $memberIds)
+            ->where(function ($q) use ($otherTeamLeaderIds) {
+                $q->whereNull('manager_id');
+
+                if ($otherTeamLeaderIds !== []) {
+                    // Cho phép NV có manager_id cũ (vd. trỏ tới trưởng phòng) chưa thuộc nhóm thật
+                    $q->orWhereNotIn('manager_id', $otherTeamLeaderIds);
+                } else {
+                    $q->orWhereNotNull('manager_id');
+                }
+            })
             ->orderBy('full_name')
             ->get();
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function otherTeamLeaderIds(Team $team): array
+    {
+        return Team::query()
+            ->where('department_id', $team->department_id)
+            ->whereNotNull('leader_employee_id')
+            ->when($team->leader_employee_id, fn ($q) => $q->where('leader_employee_id', '!=', $team->leader_employee_id))
+            ->pluck('leader_employee_id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+    }
+
+    public function isInAnyTeam(Employee $employee, ?int $exceptTeamId = null): bool
+    {
+        if (! $employee->manager_id) {
+            return false;
+        }
+
+        $query = Team::query()->where('leader_employee_id', $employee->manager_id);
+
+        if ($exceptTeamId) {
+            $query->where('id', '!=', $exceptTeamId);
+        }
+
+        return $query->exists();
+    }
+
+    public function teamForEmployee(Employee $employee): ?Team
+    {
+        if (! $employee->manager_id) {
+            return null;
+        }
+
+        return Team::query()
+            ->where('leader_employee_id', $employee->manager_id)
+            ->first();
     }
 
     /**
