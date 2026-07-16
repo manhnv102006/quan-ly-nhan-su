@@ -1,8 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
-@include('accountant.payrolls.partials.sub-nav', ['active' => 'history'])
-
 <x-accountant-layout title="Lịch sử thay đổi lương" subtitle="Hợp đồng · Bảng lương · Điều chỉnh">
+    @include('accountant.payrolls.partials.sub-nav', ['active' => 'history'])
     <div class="accountant-page">
         <div>
             <h2 class="text-2xl font-bold text-slate-900">Lịch sử thay đổi lương</h2>

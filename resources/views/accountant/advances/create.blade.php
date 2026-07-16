@@ -1,6 +1,5 @@
-@include('accountant.advances.partials.sub-nav', ['active' => 'requests'])
-
 <x-accountant-layout title="Tạo tạm ứng" subtitle="Lập yêu cầu ứng lương cho nhân viên">
+    @include('accountant.advances.partials.sub-nav', ['active' => 'requests'])
     <div class="accountant-page max-w-xl">
         <a href="{{ route('accountant.advances.index') }}" class="text-sm font-semibold text-cyan-700 hover:underline">← Danh sách</a>
         <h2 class="mt-2 text-2xl font-bold text-slate-900">Tạo yêu cầu tạm ứng</h2>
