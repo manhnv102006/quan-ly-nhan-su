@@ -9,6 +9,24 @@ class TaxDependent extends Model
 {
     public const DEFAULT_MONTHLY_DEDUCTION = 4_400_000;
 
+    public const STATUS_PENDING = 'pending';
+
+    public const STATUS_APPROVED = 'approved';
+
+    public const STATUS_REJECTED = 'rejected';
+
+    public const STATUS_LABELS = [
+        self::STATUS_PENDING => 'Chờ duyệt',
+        self::STATUS_APPROVED => 'Đã duyệt',
+        self::STATUS_REJECTED => 'Từ chối',
+    ];
+
+    public const STATUS_BADGES = [
+        self::STATUS_PENDING => 'bg-amber-100 text-amber-800',
+        self::STATUS_APPROVED => 'bg-emerald-100 text-emerald-800',
+        self::STATUS_REJECTED => 'bg-rose-100 text-rose-800',
+    ];
+
     public const RELATIONSHIP_LABELS = [
         'child' => 'Con',
         'spouse' => 'Vợ/Chồng',
@@ -18,6 +36,7 @@ class TaxDependent extends Model
 
     protected $fillable = [
         'employee_id',
+        'status',
         'full_name',
         'relationship',
         'date_of_birth',
@@ -27,6 +46,12 @@ class TaxDependent extends Model
         'end_date',
         'is_active',
         'note',
+        'requested_by',
+        'approved_by',
+        'approved_at',
+        'rejected_by',
+        'rejected_at',
+        'rejection_reason',
     ];
 
     protected function casts(): array
@@ -37,6 +62,8 @@ class TaxDependent extends Model
             'end_date' => 'date',
             'monthly_deduction' => 'decimal:2',
             'is_active' => 'boolean',
+            'approved_at' => 'datetime',
+            'rejected_at' => 'datetime',
         ];
     }
 
@@ -45,9 +72,53 @@ class TaxDependent extends Model
         return $this->belongsTo(Employee::class);
     }
 
+    public function requester(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'requested_by');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function rejecter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
+    }
+
     public function relationshipLabel(): string
     {
         return self::RELATIONSHIP_LABELS[$this->relationship] ?? $this->relationship;
+    }
+
+    public function statusLabel(): string
+    {
+        return self::STATUS_LABELS[$this->status] ?? $this->status;
+    }
+
+    public function statusBadgeClass(): string
+    {
+        return self::STATUS_BADGES[$this->status] ?? 'bg-slate-100 text-slate-600';
+    }
+
+    public function canBeApproved(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function canBeRejected(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function countsForTaxDeduction(?\Carbon\Carbon $date = null): bool
+    {
+        if ($this->status !== self::STATUS_APPROVED) {
+            return false;
+        }
+
+        return $this->isEffectiveOn($date ?? now());
     }
 
     public function isEffectiveOn(\Carbon\Carbon $date): bool

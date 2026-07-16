@@ -63,7 +63,7 @@ class EmployeeLeaveController extends Controller
         $employee = $this->getEmployee();
 
         $request->validate([
-            'leave_type' => 'required|in:annual,sick,unpaid',
+            'leave_type' => 'required|in:annual,other',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'required|string|max:1000',
