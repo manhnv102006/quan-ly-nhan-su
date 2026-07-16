@@ -68,7 +68,7 @@ class EmployeeAdvanceController extends Controller
             'note' => 'nullable|string|max:2000',
         ], [
             'amount.min' => 'Số tiền ứng tối thiểu '.number_format($minAmount, 0, ',', '.').'₫.',
-            'amount.max' => 'Số tiền ứng không được vượt quá '.number_format($maxAmount, 0, ',', '.').'₫.',
+            'amount.max' => 'Số tiền ứng không được vượt quá '.number_format($maxAmount, 0, ',', '.').'₫ (tối đa mỗi lần).',
             'reason.required' => 'Vui lòng nhập lý do ứng lương.',
         ]);
 
