@@ -215,7 +215,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-semibold text-amber-700">Lương tăng ca</p>
-                            <p class="text-xs text-amber-600">{{ number_format((float) ($payroll->overtime_hours ?? 0), 1) }} giờ OT (x1.5)</p>
+                            <p class="text-xs text-amber-600">{{ number_format((float) ($payroll->overtime_hours ?? 0), 1) }} giờ OT</p>
                         </div>
                     </div>
                     <span class="text-sm font-bold text-amber-700">+{{ number_format((float) $payroll->overtime_pay, 0, ',', '.') }}đ</span>
