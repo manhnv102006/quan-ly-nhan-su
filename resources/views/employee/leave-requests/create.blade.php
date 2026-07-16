@@ -2,6 +2,7 @@
     $user = Auth::user();
     $roleName = $user->role?->name;
     $isAdmin = $roleName === 'admin';
+    $isManager = $roleName === 'manager';
 
     $navigation = \App\Support\SelfServiceLayout::navigation();
     $layout = \App\Support\SelfServiceLayout::component($roleName);
