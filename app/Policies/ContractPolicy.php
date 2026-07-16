@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Contract;
+use App\Models\Employee;
 use App\Models\User;
 use App\Services\ManagerScopeService;
 use Illuminate\Auth\Access\Response;
@@ -15,7 +16,7 @@ class ContractPolicy
 
     public function viewAny(User $user): Response
     {
-        if ($user->isAdmin() || $user->isManager() || $user->isEmployee()) {
+        if ($user->isAdmin() || $user->isManager() || $user->isEmployee() || $user->isLeader()) {
             return Response::allow();
         }
 
@@ -37,6 +38,10 @@ class ContractPolicy
 
             return Response::deny('Bạn chỉ được xem hợp đồng của chính mình.', 403);
         }
+
+       if ($user->isLeader()) {
+    return $this->leaderCanViewResponse($user, $contract);
+}
 
         if ($user->isManager()) {
             return $this->managerCanViewResponse($user, $contract);
@@ -75,7 +80,7 @@ class ContractPolicy
     {
         $employee = $contract->employee;
 
-        if (! $employee) {
+        if (!$employee) {
             return Response::deny('Hợp đồng không gắn nhân viên.', 403);
         }
 
@@ -87,4 +92,35 @@ class ContractPolicy
 
         return Response::deny('Bạn chỉ được xem hợp đồng nhân viên phòng mình.', 403);
     }
+    private function leaderCanViewResponse(User $user, Contract $contract): Response
+{
+    $employee = $contract->employee;
+
+    if (! $employee) {
+        return Response::deny('Hợp đồng không gắn nhân viên.', 403);
+    }
+
+    $leader = Employee::query()
+        ->where('user_id', $user->id)
+        ->first();
+
+    if (! $leader) {
+        return Response::deny('Không tìm thấy thông tin Leader.', 403);
+    }
+
+    // Leader xem được hợp đồng của chính mình
+    if ($employee->user_id === $user->id) {
+        return Response::allow();
+    }
+
+    // Leader xem được nhân viên trực tiếp trong nhóm
+    if ($employee->isDirectReportOf($leader)) {
+        return Response::allow();
+    }
+
+    return Response::deny(
+        'Bạn chỉ được xem hợp đồng thành viên trong nhóm.',
+        403
+    );
+}
 }
