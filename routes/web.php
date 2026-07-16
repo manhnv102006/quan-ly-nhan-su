@@ -357,8 +357,6 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
     Route::get('/tax/settlement', [AccountantTaxController::class, 'settlement'])->name('tax.settlement');
     Route::get('/tax/settlement/export', [AccountantTaxController::class, 'exportSettlement'])->name('tax.settlement.export');
     Route::get('/advances', [AccountantAdvanceController::class, 'index'])->name('advances.index');
-    Route::get('/advances/create', [AccountantAdvanceController::class, 'create'])->name('advances.create');
-    Route::post('/advances', [AccountantAdvanceController::class, 'store'])->name('advances.store');
     Route::get('/advances/balances', [AccountantAdvanceController::class, 'balances'])->name('advances.balances');
     Route::get('/advances/deduct', [AccountantAdvanceController::class, 'deduct'])->name('advances.deduct');
     Route::post('/advances/{advance}/approve', [AccountantAdvanceController::class, 'approve'])->name('advances.approve');
