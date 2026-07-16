@@ -52,6 +52,8 @@ class EmployeeController extends Controller
             ? Team::query()->where('department_id', $department->id)->whereNotNull('leader_employee_id')->pluck('name', 'leader_employee_id')
             : collect();
 
+        $teamService = app(\App\Services\ManagerTeamService::class);
+
         return view('manager.employees.index', compact(
             'managerProfile',
             'department',
@@ -60,6 +62,7 @@ class EmployeeController extends Controller
             'search',
             'status',
             'teamByLeaderId',
+            'teamService',
         ));
     }
 
