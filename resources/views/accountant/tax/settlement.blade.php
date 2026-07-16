@@ -1,8 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
-@include('accountant.tax.partials.sub-nav', ['active' => 'settlement'])
-
 <x-accountant-layout title="Quyết toán thuế TNCN" subtitle="Quyết toán cuối năm theo nhân viên">
+    @include('accountant.tax.partials.sub-nav', ['active' => 'settlement'])
     <div class="accountant-page">
         <div class="flex flex-wrap items-end justify-between gap-4">
             <div>

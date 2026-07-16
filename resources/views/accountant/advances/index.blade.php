@@ -4,9 +4,8 @@
     $totalPending = $departments->sum('pending_count');
 @endphp
 
-@include('accountant.advances.partials.sub-nav', ['active' => 'requests'])
-
 <x-accountant-layout title="Tạm ứng lương" subtitle="Phòng ban → Nhân viên → Yêu cầu ứng lương">
+    @include('accountant.advances.partials.sub-nav', ['active' => 'requests'])
     <div class="accountant-page">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>

@@ -1,8 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
-@include('accountant.advances.partials.sub-nav', ['active' => 'balances'])
-
 <x-accountant-layout title="Số dư tạm ứng" subtitle="Theo dõi dư nợ tạm ứng theo nhân viên">
+    @include('accountant.advances.partials.sub-nav', ['active' => 'balances'])
     <div class="accountant-page">
         <div>
             <h2 class="text-2xl font-bold text-slate-900">Số dư tạm ứng</h2>
