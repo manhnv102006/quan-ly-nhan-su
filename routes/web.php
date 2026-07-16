@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\FaceEnrollmentController;
 use App\Http\Controllers\Admin\InterviewController;
 use App\Http\Controllers\Admin\JobPostController;
 use App\Http\Controllers\Admin\LeaveRequestController;
+use App\Http\Controllers\Admin\EarlyLeaveController as AdminEarlyLeaveController;
 use App\Http\Controllers\Admin\OvertimeRequestController;
 use App\Http\Controllers\Admin\PayrollController;
 
@@ -63,6 +64,7 @@ use App\Http\Controllers\Manager\KpiTeamReportController as ManagerKpiTeamReport
 use App\Http\Controllers\Manager\KPIController as ManagerKPIController;
 use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Employee\EarlyLeaveController as EmployeeEarlyLeaveController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
 use App\Http\Controllers\Employee\EmployeeAdvanceController;
 use App\Http\Controllers\Employee\EmployeeTaxDependentController;
@@ -72,6 +74,7 @@ use App\Http\Controllers\Employee\EmployeeContractController;
 use App\Http\Controllers\Employee\EmployeeKPIController;
 
 
+use App\Http\Controllers\Manager\EarlyLeaveApprovalController;
 use App\Http\Controllers\Manager\LeaveApprovalController;
 use App\Http\Controllers\Manager\OvertimeApprovalController;
 
@@ -184,6 +187,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::patch('/overtime-requests/{overtime_request}/approve', [OvertimeRequestController::class, 'approve'])->name('overtime-requests.approve');
     Route::patch('/overtime-requests/{overtime_request}/reject', [OvertimeRequestController::class, 'reject'])->name('overtime-requests.reject');
     Route::patch('/overtime-requests/{overtime_request}/status', [OvertimeRequestController::class, 'updateStatus'])->name('overtime-requests.status');
+    Route::get('/early-leave', [AdminEarlyLeaveController::class, 'index'])->name('early-leave.index');
+    Route::patch('/early-leave/{earlyLeaveRequest}/approve', [AdminEarlyLeaveController::class, 'approve'])->name('early-leave.approve');
+    Route::patch('/early-leave/{earlyLeaveRequest}/reject', [AdminEarlyLeaveController::class, 'reject'])->name('early-leave.reject');
     Route::get('/attendance-reports', [AttendanceReportController::class, 'index'])->name('attendance-reports.index');
     Route::get('/attendance-reports/departments/{department}', [AttendanceReportController::class, 'department'])->name('attendance-reports.department');
     Route::get('/attendance-reports/departments/{department}/pdf', [AttendanceReportController::class, 'exportPdf'])->name('attendance-reports.department.pdf');
@@ -294,6 +300,11 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::get('/overtime-requests/{overtimeRequest}', [OvertimeApprovalController::class, 'show'])->name('overtime-requests.show');
     Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeApprovalController::class, 'approve'])->name('overtime-requests.approve');
     Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeApprovalController::class, 'reject'])->name('overtime-requests.reject');
+
+    Route::get('/early-leave', [EarlyLeaveApprovalController::class, 'index'])->name('early-leave.index');
+    Route::get('/early-leave/{earlyLeaveRequest}', [EarlyLeaveApprovalController::class, 'show'])->name('early-leave.show');
+    Route::patch('/early-leave/{earlyLeaveRequest}/approve', [EarlyLeaveApprovalController::class, 'approve'])->name('early-leave.approve');
+    Route::patch('/early-leave/{earlyLeaveRequest}/reject', [EarlyLeaveApprovalController::class, 'reject'])->name('early-leave.reject');
 
     Route::get('/team-requests', [ManagerTeamMembershipRequestController::class, 'index'])->name('team-requests.index');
     Route::patch('/team-requests/{teamMembershipRequest}/approve', [ManagerTeamMembershipRequestController::class, 'approve'])->name('team-requests.approve');
@@ -461,6 +472,9 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,leader,admin,accou
     Route::get('/employee/overtime-requests', [EmployeeOvertimeController::class, 'index'])->name('employee.overtime-requests');
     Route::get('/employee/overtime-requests/create', [EmployeeOvertimeController::class, 'create'])->name('employee.overtime-requests.create');
     Route::post('/employee/overtime-requests', [EmployeeOvertimeController::class, 'store'])->name('employee.overtime-requests.store');
+    Route::get('/employee/early-leave', [EmployeeEarlyLeaveController::class, 'index'])->name('employee.early-leave.index');
+    Route::get('/employee/early-leave/create', [EmployeeEarlyLeaveController::class, 'create'])->name('employee.early-leave.create');
+    Route::post('/employee/early-leave', [EmployeeEarlyLeaveController::class, 'store'])->name('employee.early-leave.store');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,manager,leader,accountant'])->group(function () {
