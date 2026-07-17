@@ -50,7 +50,7 @@
                     ← Quay lại
                 </a>
                 @can('approve', $leaveRequest)
-                    @if($leaveRequest->isPending())
+                    @if($leaveRequest->isAwaitingManagerApproval())
                         <form method="POST" action="{{ route('manager.leave-requests.approve', $leaveRequest) }}">
                             @csrf
                             @method('PATCH')
@@ -62,7 +62,7 @@
                     @endif
                 @endcan
                 @can('reject', $leaveRequest)
-                    @if($leaveRequest->isPending())
+                    @if($leaveRequest->isAwaitingManagerApproval())
                         <button type="button"
                                 x-data
                                 x-on:click="$dispatch('open-modal', 'reject-leave')"
@@ -129,7 +129,7 @@
     </div>
 
     @can('reject', $leaveRequest)
-        @if($leaveRequest->isPending())
+        @if($leaveRequest->isAwaitingManagerApproval())
             <x-modal name="reject-leave" :show="$errors->has('reject_reason')">
                 <form method="POST" action="{{ route('manager.leave-requests.reject', $leaveRequest) }}" class="p-6">
                     @csrf

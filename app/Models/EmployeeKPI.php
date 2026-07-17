@@ -23,8 +23,11 @@ class EmployeeKPI extends Model
         'progress',
         'status',
         'score',
+        'leader_score',
+        'leader_review',
         'comment',
         'review',
+        'assigned_by',
     ];
 
     protected $casts = [
@@ -94,6 +97,16 @@ class EmployeeKPI extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'employee_id');
+    }
+
+    public function assignedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_by')->withTrashed();
+    }
+
+    public function hasLeaderScore(): bool
+    {
+        return $this->leader_score !== null;
     }
 }
 

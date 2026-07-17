@@ -25,18 +25,38 @@ class TeamScheduleController extends Controller
 
         $weekEnd = (clone $weekStart)->addDays(6)->endOfDay();
 
-        $teamMemberIds = $this->scope->teamMemberIds($leader);
+        $members = $this->scope->teamMembersQuery($leader)
+            ->with(['department', 'position'])
+            ->orderBy('full_name')
+            ->get();
 
-        $shifts = EmployeeShift::query()
-            ->whereIn('employee_id', $teamMemberIds)
-            ->whereBetween('work_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
-            ->with(['employee', 'shift'])
-            ->orderBy('work_date')
-            ->get()
-            ->groupBy(fn (EmployeeShift $shift) => $shift->work_date->toDateString());
+        $teamMemberIds = $members->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        $shiftsByEmployee = collect();
+
+        if ($teamMemberIds !== []) {
+            $shiftsByEmployee = EmployeeShift::query()
+                ->whereIn('employee_id', $teamMemberIds)
+                ->whereBetween('work_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+                ->with(['employee', 'shift'])
+                ->orderBy('work_date')
+                ->get()
+                ->groupBy('employee_id')
+                ->map(fn ($items) => $items->groupBy(fn (EmployeeShift $shift) => $shift->work_date->toDateString()));
+        }
 
         $days = collect(range(0, 6))->map(fn ($i) => (clone $weekStart)->addDays($i));
 
-        return view('leader.team-schedule.index', compact('leader', 'shifts', 'days', 'weekStart'));
+        $totalShifts = $shiftsByEmployee->flatten(1)->count();
+
+        return view('leader.team-schedule.index', compact(
+            'leader',
+            'members',
+            'shiftsByEmployee',
+            'days',
+            'weekStart',
+            'weekEnd',
+            'totalShifts',
+        ));
     }
 }

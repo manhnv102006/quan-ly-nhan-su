@@ -31,11 +31,17 @@ class TeamMembershipRequestController extends Controller
             ->latest()
             ->paginate(10);
 
+        $pendingCount = TeamMembershipRequest::query()
+            ->where('leader_id', $leader->id)
+            ->where('status', TeamMembershipRequest::STATUS_PENDING)
+            ->count();
+
         // Ứng viên có thể đề xuất thêm: cùng phòng ban, chưa thuộc nhóm nào.
         $addCandidates = Employee::query()
             ->where('department_id', $leader->department_id)
             ->where('id', '!=', $leader->id)
             ->where('status', 'active')
+            ->whereNull('manager_id')
             ->whereDoesntHave('user', function ($q) {
                 $q->whereHas('role', function ($role) {
                     $role->where('name', 'manager');
@@ -43,12 +49,19 @@ class TeamMembershipRequestController extends Controller
             })
             ->orderBy('full_name')
             ->get(['id', 'full_name', 'employee_code']);
+
         // Thành viên hiện tại có thể đề xuất đưa ra khỏi nhóm.
         $removeCandidates = $this->scope->teamMembersQuery($leader)
             ->orderBy('full_name')
             ->get(['id', 'full_name', 'employee_code']);
 
-        return view('leader.team-requests.index', compact('leader', 'requests', 'addCandidates', 'removeCandidates'));
+        return view('leader.team-requests.index', compact(
+            'leader',
+            'requests',
+            'addCandidates',
+            'removeCandidates',
+            'pendingCount',
+        ));
     }
 
     public function store(Request $request): RedirectResponse
