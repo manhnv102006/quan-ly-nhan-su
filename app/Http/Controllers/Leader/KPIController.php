@@ -57,7 +57,7 @@ class KPIController extends Controller
         $leader = $this->scope->resolveLeaderEmployeeOrFail($request->user());
         $this->kpi->assertManagesEmployeeKpi($leader, $employeeKpi);
 
-        $employeeKpi->load(['employee', 'kpi', 'kpiAssignment']);
+        $employeeKpi->load(['employee', 'kpi', 'kpiAssignment']);   
 
         return view('leader.kpis.score', compact('leader', 'employeeKpi'));
     }
