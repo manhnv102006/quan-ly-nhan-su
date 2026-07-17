@@ -23,6 +23,10 @@ class TeamMembershipRequestService
                 throw ValidationException::withMessages(['employee_id' => 'Nhân viên này đã thuộc nhóm của bạn.']);
             }
 
+            if ($employee->manager_id !== null) {
+                throw ValidationException::withMessages(['employee_id' => 'Nhân viên này đã thuộc nhóm khác.']);
+            }
+
             if ((int) $employee->department_id !== (int) $leader->department_id) {
                 throw ValidationException::withMessages(['employee_id' => 'Chỉ có thể đề xuất nhân viên cùng phòng ban với bạn.']);
             }

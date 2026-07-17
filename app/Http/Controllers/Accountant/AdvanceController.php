@@ -144,42 +144,6 @@ class AdvanceController extends Controller
         ]);
     }
 
-    public function create(): View
-    {
-        $employees = Employee::query()
-            ->where('status', 'active')
-            ->orderBy('full_name')
-            ->get();
-
-        return view('accountant.advances.create', compact('employees'));
-    }
-
-    public function store(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'amount' => 'required|numeric|min:'.SalaryAdvance::MIN_AMOUNT,
-            'request_date' => 'required|date',
-            'reason' => 'required|string|max:1000',
-            'note' => 'nullable|string|max:2000',
-        ], [
-            'amount.min' => 'Số tiền tạm ứng tối thiểu '.number_format(SalaryAdvance::MIN_AMOUNT, 0, ',', '.').'₫',
-        ]);
-
-        $advance = SalaryAdvance::create([
-            ...$validated,
-            'advance_code' => SalaryAdvance::generateCode(),
-            'status' => SalaryAdvance::STATUS_PENDING,
-            'requested_by' => auth()->id(),
-        ]);
-
-        $this->changeLogs->logAdvanceCreate($advance);
-
-        return redirect()
-            ->route('accountant.advances.index', ['employee_id' => $validated['employee_id']])
-            ->with('success', 'Đã tạo yêu cầu tạm ứng lương.');
-    }
-
     public function show(SalaryAdvance $advance): View
     {
         $advance->load(['employee.department', 'approver', 'rejecter', 'requester', 'deductions.payrollPeriod', 'deductions.deductor']);
@@ -299,8 +263,16 @@ class AdvanceController extends Controller
     {
         $result = $this->advances->applyAllToPeriod($payrollPeriod);
 
+        $message = "Đã trừ {$result['applied']} tạm ứng, tổng ".number_format($result['total_amount'], 0, ',', '.').'₫.';
+        if ($result['skipped'] > 0) {
+            $message .= " Bỏ qua {$result['skipped']} (chưa có bảng lương calculated hoặc lương thực lĩnh không đủ).";
+        }
+        if ($result['applied'] === 0) {
+            $message = 'Không trừ được tạm ứng nào. Kiểm tra bảng lương kỳ đã tính (calculated) và lương thực lĩnh > 0.';
+        }
+
         return redirect()
             ->route('accountant.advances.deduct', ['period_id' => $payrollPeriod->id])
-            ->with('success', "Đã trừ {$result['applied']} tạm ứng, tổng ".number_format($result['total_amount'], 0, ',', '.').'₫. Bỏ qua: '.$result['skipped'].'.');
+            ->with($result['applied'] > 0 ? 'success' : 'error', $message);
     }
 }

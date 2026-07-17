@@ -57,14 +57,33 @@ class EmployeeController extends Controller
         $kpis = $employee->employeeKpis()
             ->with('kpi')
             ->orderByDesc('updated_at')
-            ->limit(5)
+            ->limit(8)
             ->get();
 
         $attendances = $employee->attendances()
+            ->with('shift')
             ->latest('attendance_date')
-            ->limit(6)
+            ->limit(8)
             ->get();
 
-        return view('leader.employees.show', compact('leader', 'employee', 'kpis', 'attendances'));
+        $leaveRequests = $employee->leaveRequests()
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $kpiStats = [
+            'total' => $employee->employeeKpis()->count(),
+            'completed' => $employee->employeeKpis()->where('status', 'completed')->count(),
+            'avg_progress' => round((float) $employee->employeeKpis()->avg('progress'), 1),
+        ];
+
+        return view('leader.employees.show', compact(
+            'leader',
+            'employee',
+            'kpis',
+            'attendances',
+            'leaveRequests',
+            'kpiStats',
+        ));
     }
 }

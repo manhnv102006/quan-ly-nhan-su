@@ -78,6 +78,11 @@ class AdvanceService
             ->values();
     }
 
+    public function maxDeductibleFromPayroll(Payroll $payroll): float
+    {
+        return max(0, (float) $payroll->total_salary);
+    }
+
     public function applyDeduction(
         SalaryAdvance $advance,
         Payroll $payroll,
@@ -91,9 +96,9 @@ class AdvanceService
         $remaining = $advance->remainingBalance();
         $deductAmount = $amount ?? $remaining;
         $deductAmount = min($deductAmount, $remaining);
-        $deductAmount = min($deductAmount, (float) $payroll->total_salary);
+        $deductAmount = min($deductAmount, $this->maxDeductibleFromPayroll($payroll));
 
-        abort_if($deductAmount <= 0, 422, 'Số tiền khấu trừ không hợp lệ.');
+        abort_if($deductAmount <= 0, 422, 'Số tiền khấu trừ không hợp lệ. Lương thực lĩnh kỳ này không đủ hoặc đã trừ hết.');
 
         $deduction = SalaryAdvanceDeduction::create([
             'salary_advance_id' => $advance->id,
@@ -155,18 +160,30 @@ class AdvanceService
                 continue;
             }
 
-            $before = $advance->remainingBalance();
-            if ($before <= 0) {
+            $remaining = $advance->remainingBalance();
+            if ($remaining <= 0) {
                 $skipped++;
 
                 continue;
             }
 
-            $deduction = $this->applyDeduction($advance, $payroll, $before, 'Trừ tự động kỳ '.$period->name);
+            $cap = $this->maxDeductibleFromPayroll($payroll);
+            if ($cap <= 0) {
+                $skipped++;
+
+                continue;
+            }
+
+            $deduction = $this->applyDeduction(
+                $advance,
+                $payroll,
+                min($remaining, $cap),
+                'Trừ tự động kỳ '.$period->name,
+            );
             app(ModuleChangeLogService::class)->logAdvanceDeduction(
                 $advance->fresh(),
                 (float) $deduction->amount,
-                $before,
+                $remaining,
                 'Trừ tự động kỳ '.$period->name,
             );
             $applied++;

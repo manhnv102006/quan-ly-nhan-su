@@ -21,9 +21,12 @@
         <div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
             <h2 class="mb-2 text-lg font-bold text-slate-800">Yêu cầu ứng lương mới</h2>
             <p class="mb-6 text-sm text-slate-500">
-                Hạn mức tối đa: <strong class="text-cyan-700">{{ $formatMoney($maxAdvanceAmount) }}</strong>
+                Hạn mức mỗi lần ứng:
+                <strong class="text-cyan-700">tối thiểu {{ $formatMoney($minAdvanceAmount) }}</strong>
+                –
+                <strong class="text-cyan-700">tối đa {{ $formatMoney($maxAdvanceAmount) }}</strong>
                 @if($referenceSalary > 0)
-                    (50% lương tham chiếu {{ $formatMoney($referenceSalary) }})
+                    <span class="text-slate-400">(tối đa = 50% lương tham chiếu {{ $formatMoney($referenceSalary) }})</span>
                 @endif
             </p>
 
@@ -45,10 +48,12 @@
                     <input type="text" name="amount" inputmode="numeric" required
                            value="{{ $oldAmount }}"
                            class="money-input w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
-                           placeholder="VD: 5.000.000"
+                           placeholder="VD: {{ number_format($minAdvanceAmount, 0, ',', '.') }}"
                            data-min="{{ $minAdvanceAmount }}"
                            data-max="{{ $maxAdvanceAmount }}">
-                    <p class="mt-1 text-xs text-slate-400">Tối thiểu {{ $formatMoney($minAdvanceAmount) }}</p>
+                    <p class="mt-1 text-xs text-slate-400">
+                        Nhập từ {{ $formatMoney($minAdvanceAmount) }} đến {{ $formatMoney($maxAdvanceAmount) }}
+                    </p>
                 </div>
 
                 <div>

@@ -44,7 +44,7 @@
             </div>
 
             <div class="mb-2 mt-5 px-4">
-                <p class="px-3 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Điều hành nhóm</p>
+                <p class="px-3 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Menu chính</p>
             </div>
 
             <nav class="flex-1 space-y-1 overflow-y-auto px-3 pb-2">
