@@ -5,18 +5,13 @@ namespace App\Policies;
 use App\Models\Contract;
 use App\Models\Employee;
 use App\Models\User;
-use App\Services\ManagerScopeService;
 use Illuminate\Auth\Access\Response;
 
 class ContractPolicy
 {
-    public function __construct(private readonly ManagerScopeService $managerScope)
-    {
-    }
-
     public function viewAny(User $user): Response
     {
-        if ($user->isAdmin() || $user->isManager() || $user->isEmployee() || $user->isLeader()) {
+        if ($user->isAdmin() || $user->isEmployee() || $user->isLeader() || $user->isAccountant()) {
             return Response::allow();
         }
 
@@ -44,7 +39,7 @@ class ContractPolicy
 }
 
         if ($user->isManager()) {
-            return $this->managerCanViewResponse($user, $contract);
+            return Response::deny('Quản lý không được xem hợp đồng và lương của nhân viên.', 403);
         }
 
         return Response::deny('Bạn không có quyền xem hợp đồng này.', 403);
@@ -76,22 +71,6 @@ class ContractPolicy
         return $this->view($user, $contract);
     }
 
-    private function managerCanViewResponse(User $user, Contract $contract): Response
-    {
-        $employee = $contract->employee;
-
-        if (!$employee) {
-            return Response::deny('Hợp đồng không gắn nhân viên.', 403);
-        }
-
-        $manager = $this->managerScope->resolveManagerEmployee($user);
-
-        if ($manager && $this->managerScope->managesEmployee($manager, $employee)) {
-            return Response::allow();
-        }
-
-        return Response::deny('Bạn chỉ được xem hợp đồng nhân viên phòng mình.', 403);
-    }
     private function leaderCanViewResponse(User $user, Contract $contract): Response
 {
     $employee = $contract->employee;
