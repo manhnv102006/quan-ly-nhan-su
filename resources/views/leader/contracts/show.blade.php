@@ -95,7 +95,7 @@
                         </dt>
 
                         <dd>
-                            {{ number_format($contract->basic_salary) }} VNĐ
+                            {{ number_format($contract->salary) }} VNĐ
                         </dd>
                     </div>
 
