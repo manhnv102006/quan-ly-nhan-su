@@ -69,7 +69,7 @@ class TeamMembershipRequestController extends Controller
 
         return redirect()
             ->route('manager.team-requests.index')
-            ->with('success', 'ÄĂ£ duyá»‡t Ä‘á» xuáº¥t thĂ nh viĂªn nhĂ³m.');
+            ->with('success', 'Đã duyệt đề xuất thành viên nhóm.');
     }
 
     public function reject(Request $request, TeamMembershipRequest $teamMembershipRequest): RedirectResponse
@@ -79,7 +79,7 @@ class TeamMembershipRequestController extends Controller
         $validated = $request->validate([
             'decision_note' => 'required|string|max:1000',
         ], [
-            'decision_note.required' => 'Vui lĂ²ng nháº­p lĂ½ do tá»« chá»‘i.',
+            'decision_note.required' => 'Vui lòng nhập lý do từ chối.',
         ]);
 
         try {
@@ -90,7 +90,7 @@ class TeamMembershipRequestController extends Controller
 
         return redirect()
             ->route('manager.team-requests.index')
-            ->with('success', 'ÄĂ£ tá»« chá»‘i Ä‘á» xuáº¥t thĂ nh viĂªn nhĂ³m.');
+            ->with('success', 'Đã từ chối đề xuất thành viên nhóm.');
     }
 
     private function authorizeManagerAccess(TeamMembershipRequest $teamMembershipRequest): \App\Models\Employee
@@ -105,7 +105,7 @@ class TeamMembershipRequestController extends Controller
             ->exists();
 
         if (! $belongs) {
-            abort(403, 'Báº¡n khĂ´ng cĂ³ quyá»n xá»­ lĂ½ Ä‘á» xuáº¥t nĂ y.');
+            abort(403, 'Bạn không có quyền xử lý đề xuất này.');
         }
 
         return $manager;
