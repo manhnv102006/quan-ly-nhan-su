@@ -25,7 +25,6 @@ class KPIController extends Controller
         $assignments = KPIAssignment::with([
                 'kpi',
                 'assignedBy',
-                'leaderEmployee',
             ])
             ->withCount('employeeKpis')
             ->where('manager_id', Auth::id())
@@ -48,8 +47,6 @@ class KPIController extends Controller
         $assignment->load([
             'kpi.tasks',
             'assignedBy',
-            'leaderEmployee',
-            'teamReport',
             'employeeKpis.employee',
         ]);
 
