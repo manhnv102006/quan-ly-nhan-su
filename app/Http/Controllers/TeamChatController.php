@@ -23,18 +23,17 @@ class TeamChatController extends Controller
         $leader = $membership['leader'];
         $messages = $this->chat->messagesForTeam($leader);
         $participants = $this->chat->participants($leader);
+        $canAnnounce = $this->chat->isTeamLeader($request->user());
 
-        $routePrefix = $request->user()->isLeader() ? 'leader' : 'employee';
-        $view = $request->user()->isLeader() ? 'leader.team-chat.index' : 'employee.team-chat.index';
-
-        return view($view, [
+        return view('employee.team-chat.index', [
             'leader' => $leader,
             'membership' => $membership,
             'messages' => $messages,
             'participants' => $participants,
-            'messagesRoute' => route("{$routePrefix}.team-chat.messages"),
-            'storeRoute' => route("{$routePrefix}.team-chat.store"),
-            'announceRoute' => $request->user()->isLeader() ? route('leader.team-chat.announce') : null,
+            'canAnnounce' => $canAnnounce,
+            'messagesRoute' => route('employee.team-chat.messages'),
+            'storeRoute' => route('employee.team-chat.store'),
+            'announceRoute' => $canAnnounce ? route('employee.team-chat.announce') : null,
         ]);
     }
 

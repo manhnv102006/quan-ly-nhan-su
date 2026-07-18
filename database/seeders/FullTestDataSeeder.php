@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Dữ liệu demo đầy đủ để test TẤT CẢ chức năng (Admin · Manager · Leader · Employee · Accountant).
+ * Dữ liệu demo đầy đủ để test TẤT CẢ chức năng (Admin · Manager · Employee · Accountant).
  *
  * Chạy: php artisan migrate --force && php artisan db:seed --class=FullTestDataSeeder
  *
@@ -73,14 +73,12 @@ class FullTestDataSeeder extends Seeder
 
     private function seedExtraRolesAndUsers(): void
     {
-        foreach ([Role::LEADER => 'Trưởng nhóm', Role::ACCOUNTANT => 'Kế toán'] as $name => $desc) {
-            DB::table('roles')->updateOrInsert(
-                ['name' => $name],
-                ['description' => $desc, 'created_at' => now(), 'updated_at' => now()]
-            );
-        }
+        DB::table('roles')->updateOrInsert(
+            ['name' => Role::ACCOUNTANT],
+            ['description' => 'Kế toán', 'created_at' => now(), 'updated_at' => now()]
+        );
 
-        $leaderRoleId = Role::query()->where('name', Role::LEADER)->value('id');
+        $employeeRoleId = Role::query()->where('name', Role::EMPLOYEE)->value('id');
         $accountantRoleId = Role::query()->where('name', Role::ACCOUNTANT)->value('id');
 
         User::query()->updateOrCreate(
@@ -90,7 +88,7 @@ class FullTestDataSeeder extends Seeder
                 'email' => 'leader@example.com',
                 'email_verified_at' => now(),
                 'password' => Hash::make('password'),
-                'role_id' => $leaderRoleId,
+                'role_id' => $employeeRoleId,
                 'status' => 'active',
             ]
         );
@@ -522,9 +520,9 @@ class FullTestDataSeeder extends Seeder
             ['Vai trò', 'Username', 'Password', 'URL / Ghi chú'],
             [
                 ['Admin', 'admin', 'password', '/admin/dashboard'],
-                ['Manager IT', 'manager', 'password', '/manager/dashboard · duyệt nghỉ/OT bậc 2'],
+                ['Manager IT', 'manager', 'password', '/manager/dashboard · duyệt nghỉ/OT'],
                 ['Manager KD', 'manager_sale', 'password', '/manager/dashboard · phòng Kinh doanh'],
-                ['Leader', 'leader', 'password', '/leader/dashboard · nhóm Dev IT (EMP003)'],
+                ['Trưởng nhóm IT', 'leader', 'password', '/employee/dashboard · nhóm Dev IT (EMP003)'],
                 ['Employee', 'employee', 'password', '/employee/dashboard · Phạm Thị Dung EMP004'],
                 ['Employee', 'emp_it02', 'password', '/employee/dashboard · Nguyễn Minh Khoa EMP005'],
                 ['Employee', 'emp_sale01', 'password', '/employee/dashboard · phòng KD'],
@@ -534,8 +532,8 @@ class FullTestDataSeeder extends Seeder
 
         $this->command?->newLine();
         $this->command?->line('  Chức năng có sẵn dữ liệu test:');
-        $this->command?->line('  • Leader: duyệt nghỉ/tăng ca bậc 1, KPI nhóm, hợp đồng nhóm, chat, báo cáo');
-        $this->command?->line('  • Manager: duyệt nghỉ/tăng ca bậc 2, KPI, nhóm, đề xuất thành viên, về sớm');
+        $this->command?->line('  • Trưởng nhóm (NV): chat nhóm, gửi thông báo nội bộ qua /employee/team-chat');
+        $this->command?->line('  • Manager: duyệt nghỉ/tăng ca, KPI, nhóm, đề xuất thành viên, về sớm');
         $this->command?->line('  • Employee: chấm công, nghỉ phép, tăng ca, về sớm, ứng lương, NPT');
         $this->command?->line('  • Accountant: lương, BHXH, thuế, ứng lương, hợp đồng');
         $this->command?->newLine();

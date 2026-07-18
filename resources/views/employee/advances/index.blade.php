@@ -5,7 +5,7 @@
     $layout = \App\Support\SelfServiceLayout::component($role);
 
     $layoutParams = match ($role) {
-        'accountant', 'leader' => [
+        'accountant' => [
             'title' => 'Ứng lương',
             'subtitle' => 'Gửi yêu cầu tới kế toán · Trừ vào lương thực lĩnh khi được duyệt',
         ],
