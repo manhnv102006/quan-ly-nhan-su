@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\EarlyLeaveRequest;
 use App\Models\Employee;
-use App\Models\KpiTeamReport;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\Role;
@@ -31,7 +30,6 @@ class FullTestDataSeeder extends Seeder
         $this->clearExtendedTables();
         $this->seedExtraRolesAndUsers();
         $this->seedTwoTierApprovals();
-        $this->seedTwoTierKpi();
         $this->seedEarlyLeave();
         $this->seedAccountantData();
 
@@ -41,7 +39,6 @@ class FullTestDataSeeder extends Seeder
     private function clearExtendedTables(): void
     {
         $tables = [
-            'kpi_team_reports',
             'early_leave_requests',
             'salary_advance_deductions',
             'salary_advances',
@@ -183,80 +180,6 @@ class FullTestDataSeeder extends Seeder
             'leader_approved_at' => now()->subDays(6),
             'approved_by' => $managerUserId,
             'approved_at' => now()->subDays(5),
-        ]);
-    }
-
-    private function seedTwoTierKpi(): void
-    {
-        $leaderId = Employee::query()->where('employee_code', 'EMP003')->value('id');
-        $emp004Id = Employee::query()->where('employee_code', 'EMP004')->value('id');
-        $emp005Id = Employee::query()->where('employee_code', 'EMP005')->value('id');
-        $kpi3Id = DB::table('kpis')->where('code', 'KPI0003')->value('id');
-
-        DB::table('kpi_assignments')
-            ->whereIn('kpi_id', function ($q) {
-                $q->select('id')->from('kpis')->whereIn('code', ['KPI0002', 'KPI0003']);
-            })
-            ->update([
-                'leader_employee_id' => $leaderId,
-                'leader_assigned_at' => now()->subDays(3),
-                'status' => 'active',
-            ]);
-
-        $assignmentId = DB::table('kpi_assignments')
-            ->where('kpi_id', $kpi3Id)
-            ->value('id');
-
-        if (! $assignmentId) {
-            return;
-        }
-
-        foreach ([
-            [$emp004Id, 70, 'in_progress', 75, 'Tiến độ ổn, cần hoàn thiện test'],
-            [$emp005Id, 40, 'pending', null, null],
-        ] as [$empId, $progress, $status, $leaderScore, $leaderReview]) {
-            $exists = DB::table('employee_kpis')
-                ->where('assignment_id', $assignmentId)
-                ->where('employee_id', $empId)
-                ->exists();
-
-            if ($exists) {
-                DB::table('employee_kpis')
-                    ->where('assignment_id', $assignmentId)
-                    ->where('employee_id', $empId)
-                    ->update([
-                        'progress' => $progress,
-                        'status' => $status,
-                        'leader_score' => $leaderScore,
-                        'leader_review' => $leaderReview,
-                    ]);
-            } else {
-                DB::table('employee_kpis')->insert([
-                    'assignment_id' => $assignmentId,
-                    'employee_id' => $empId,
-                    'kpi_id' => $kpi3Id,
-                    'target' => '15 task/sprint',
-                    'progress' => $progress,
-                    'status' => $status,
-                    'leader_score' => $leaderScore,
-                    'leader_review' => $leaderReview,
-                    'deadline' => '2026-09-30',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
-
-        KpiTeamReport::query()->create([
-            'assignment_id' => $assignmentId,
-            'leader_employee_id' => $leaderId,
-            'summary' => 'Nhóm hoàn thành 70% task sprint Q3, cần tăng tốc tuần cuối.',
-            'total_members' => 2,
-            'completed_count' => 0,
-            'avg_progress' => 55,
-            'avg_leader_score' => 75,
-            'status' => KpiTeamReport::STATUS_SUBMITTED,
-            'submitted_at' => now()->subHours(6),
         ]);
     }
 

@@ -44,7 +44,6 @@ use App\Http\Controllers\Accountant\TaxController as AccountantTaxController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Employee\NotificationController as EmployeeNotificationController;
 use App\Http\Controllers\Manager\EmployeeController as ManagerEmployeeController;
-use App\Http\Controllers\Manager\KpiTeamReportController as ManagerKpiTeamReportController;
 use App\Http\Controllers\Manager\KPIController as ManagerKPIController;
 use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
 use App\Http\Controllers\ProfileController;
@@ -256,10 +255,6 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::get('/kpis/{assignment}', [ManagerKPIController::class, 'show'])->name('kpis.show');
     Route::get('/kpis/{assignment}/assign', [ManagerKPIController::class, 'assign'])->name('kpis.assign');
     Route::post('/kpis/{assignment}/assign', [ManagerKPIController::class, 'storeAssign'])->name('kpis.store_assign');
-
-    Route::get('/kpi-reports', [ManagerKpiTeamReportController::class, 'index'])->name('kpi-reports.index');
-    Route::get('/kpi-reports/{report}', [ManagerKpiTeamReportController::class, 'show'])->name('kpi-reports.show');
-    Route::patch('/kpi-reports/{report}/review', [ManagerKpiTeamReportController::class, 'review'])->name('kpi-reports.review');
 
     Route::get('/overtime-requests', [OvertimeApprovalController::class, 'index'])->name('overtime-requests.index');
     Route::get('/overtime-requests/{overtimeRequest}', [OvertimeApprovalController::class, 'show'])->name('overtime-requests.show');
