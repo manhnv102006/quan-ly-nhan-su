@@ -32,12 +32,6 @@ class StoreTeamRequest extends FormRequest
 
                     if (! $manager || ! $leader || ! app(ManagerScopeService::class)->managesEmployee($manager, $leader)) {
                         $fail('Trưởng nhóm không thuộc phòng ban của bạn.');
-
-                        return;
-                    }
-
-                    if (! $leader->user?->isLeader()) {
-                        $fail('Nhân viên được chọn phải có vai trò Trưởng nhóm trong phòng ban.');
                     }
                 },
             ],

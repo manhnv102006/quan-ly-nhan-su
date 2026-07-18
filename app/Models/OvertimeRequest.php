@@ -116,9 +116,7 @@ class OvertimeRequest extends Model
 
     public function needsLeaderApproval(): bool
     {
-        $this->loadMissing('employee');
-
-        return $this->employee?->manager_id !== null;
+        return false;
     }
 
     public function isAwaitingLeaderApproval(): bool

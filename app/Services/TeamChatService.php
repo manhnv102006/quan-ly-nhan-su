@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Employee;
+use App\Models\Team;
 use App\Models\TeamChatMessage;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -11,7 +12,6 @@ use Illuminate\Validation\ValidationException;
 class TeamChatService
 {
     public function __construct(
-        private readonly LeaderEmployeeResolver $leaderResolver,
         private readonly NotificationService $notifications,
     ) {
     }
@@ -21,24 +21,37 @@ class TeamChatService
         return $this->resolveMembership($user) !== null;
     }
 
+    public function isTeamLeader(User $user): bool
+    {
+        $employee = Employee::query()->where('user_id', $user->id)->first();
+
+        if (! $employee) {
+            return false;
+        }
+
+        return Team::query()->where('leader_employee_id', $employee->id)->exists();
+    }
+
     /**
      * @return array{leader: Employee, member: Employee, role: string}|null
      */
     public function resolveMembership(User $user): ?array
     {
-        if ($user->isLeader()) {
-            $leader = $this->leaderResolver->resolve($user);
-
-            return $leader ? [
-                'leader' => $leader,
-                'member' => $leader,
-                'role' => 'leader',
-            ] : null;
-        }
-
         $employee = Employee::query()->where('user_id', $user->id)->first();
 
-        if (! $employee?->manager_id) {
+        if (! $employee) {
+            return null;
+        }
+
+        if (Team::query()->where('leader_employee_id', $employee->id)->exists()) {
+            return [
+                'leader' => $employee,
+                'member' => $employee,
+                'role' => 'leader',
+            ];
+        }
+
+        if (! $employee->manager_id) {
             return null;
         }
 
@@ -109,7 +122,7 @@ class TeamChatService
 
     public function sendAnnouncement(User $user, string $title, string $body): TeamChatMessage
     {
-        if (! $user->isLeader()) {
+        if (! $this->isTeamLeader($user)) {
             abort(403, 'Chỉ Trưởng nhóm mới được gửi thông báo nội bộ.');
         }
 

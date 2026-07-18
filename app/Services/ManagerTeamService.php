@@ -177,7 +177,6 @@ class ManagerTeamService
     {
         return $this->scope->managedEmployeesQuery($manager)
             ->where('status', 'active')
-            ->whereHas('user.role', fn ($q) => $q->where('name', 'leader'))
             ->orderBy('full_name')
             ->get();
     }
@@ -314,10 +313,6 @@ class ManagerTeamService
 
         if (! $leader || ! $this->scope->managesEmployee($manager, $leader)) {
             throw ValidationException::withMessages(['leader_employee_id' => 'Trưởng nhóm không hợp lệ.']);
-        }
-
-        if (! $leader->user?->isLeader()) {
-            throw ValidationException::withMessages(['leader_employee_id' => 'Nhân viên được chọn phải có vai trò Trưởng nhóm.']);
         }
     }
 

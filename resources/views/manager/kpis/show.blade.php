@@ -25,13 +25,9 @@
                         Báo cáo nhóm
                     </a>
                 @else
-                    <a href="{{ route('manager.kpis.assign_leader', $assignment) }}"
-                       class="manager-btn-primary">
-                        Giao Trưởng nhóm
-                    </a>
                     <a href="{{ route('manager.kpis.assign', $assignment) }}"
-                       class="manager-btn-secondary">
-                        + Giao NV trực tiếp
+                       class="manager-btn-primary">
+                        + Giao NV
                     </a>
                 @endif
             </div>

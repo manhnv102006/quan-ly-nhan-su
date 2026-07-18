@@ -117,7 +117,7 @@
                                         @php $employeeTeam = $teamService->teamForEmployee($employee); @endphp
                                         @if($employeeTeam)
                                             <span class="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700">{{ $employeeTeam->name }}</span>
-                                        @elseif($employee->user?->isLeader() && ($teamByLeaderId[$employee->id] ?? null))
+                                        @elseif($teamByLeaderId[$employee->id] ?? null)
                                             <span class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">{{ $teamByLeaderId[$employee->id] }} · Trưởng nhóm</span>
                                         @else
                                             <span class="text-slate-400">Chưa gán nhóm</span>

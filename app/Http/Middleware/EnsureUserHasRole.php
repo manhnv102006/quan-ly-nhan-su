@@ -35,10 +35,6 @@ class EnsureUserHasRole
             return $this->redirectAwayFromAccountant($user);
         }
 
-        if ($request->is('leader', 'leader/*')) {
-            return $this->redirectAwayFromLeader($user);
-        }
-
         abort(403, 'Bạn không có quyền truy cập trang này.');
     }
 
@@ -54,12 +50,6 @@ class EnsureUserHasRole
             return redirect()
                 ->route('accountant.dashboard')
                 ->with('error', 'Kế toán không có quyền truy cập khu vực Admin.');
-        }
-
-        if ($user->isLeader()) {
-            return redirect()
-                ->route('leader.dashboard')
-                ->with('error', 'Trưởng nhóm không có quyền truy cập khu vực Admin.');
         }
 
         if ($user->isEmployee()) {
@@ -91,12 +81,6 @@ class EnsureUserHasRole
                 ->with('error', 'Kế toán không có quyền truy cập khu vực Manager.');
         }
 
-        if ($user->isLeader()) {
-            return redirect()
-                ->route('leader.dashboard')
-                ->with('error', 'Trưởng nhóm không có quyền truy cập khu vực Manager.');
-        }
-
         abort(403, 'Bạn không có quyền truy cập trang này.');
     }
 
@@ -114,45 +98,10 @@ class EnsureUserHasRole
                 ->with('error', 'Quản lý không có quyền truy cập khu vực Kế toán.');
         }
 
-        if ($user->isLeader()) {
-            return redirect()
-                ->route('leader.dashboard')
-                ->with('error', 'Trưởng nhóm không có quyền truy cập khu vực Kế toán.');
-        }
-
         if ($user->isEmployee()) {
             return redirect()
                 ->route('employee.dashboard')
                 ->with('error', 'Nhân viên không có quyền truy cập khu vực Kế toán.');
-        }
-
-        abort(403, 'Bạn không có quyền truy cập trang này.');
-    }
-
-    private function redirectAwayFromLeader($user): Response
-    {
-        if ($user->isAdmin()) {
-            return redirect()
-                ->route('admin.dashboard')
-                ->with('error', 'Admin không truy cập trực tiếp khu vực Trưởng nhóm.');
-        }
-
-        if ($user->isManager()) {
-            return redirect()
-                ->route('manager.dashboard')
-                ->with('error', 'Quản lý không có quyền truy cập khu vực Trưởng nhóm.');
-        }
-
-        if ($user->isAccountant()) {
-            return redirect()
-                ->route('accountant.dashboard')
-                ->with('error', 'Kế toán không có quyền truy cập khu vực Trưởng nhóm.');
-        }
-
-        if ($user->isEmployee()) {
-            return redirect()
-                ->route('employee.dashboard')
-                ->with('error', 'Nhân viên không có quyền truy cập khu vực Trưởng nhóm.');
         }
 
         abort(403, 'Bạn không có quyền truy cập trang này.');
