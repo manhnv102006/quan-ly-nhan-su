@@ -35,13 +35,8 @@ class TeamController extends Controller
             ->orderBy('name')
             ->get();
 
-        $unassignedCount = $manager && $departmentId
-            ? Employee::query()
-                ->where('department_id', $departmentId)
-                ->where('status', 'active')
-                ->whereNull('manager_id')
-                ->where('id', '!=', $manager->id)
-                ->count()
+        $unassignedCount = $manager
+            ? $this->teams->unassignedEmployeeCount($manager)
             : 0;
 
         return view('manager.teams.index', compact('manager', 'teamList', 'unassignedCount', 'departmentId'));

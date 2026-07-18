@@ -131,7 +131,13 @@ class ManagerTeamService
                 continue;
             }
 
-            if ($this->isInAnyTeam($employee)) {
+            if ($this->isTeamLeader($employee, $team->id)) {
+                throw ValidationException::withMessages([
+                    'employee_ids' => $employee->full_name.' đang là Trưởng nhóm của nhóm khác.',
+                ]);
+            }
+
+            if ($this->isInAnyTeam($employee, $team->id)) {
                 $otherTeam = $this->teamForEmployee($employee);
                 $teamName = $otherTeam?->name ?? 'nhóm khác';
 
@@ -177,48 +183,77 @@ class ManagerTeamService
     }
 
     /**
-     * NV có thể thêm vào nhóm (chưa thuộc nhóm khác).
+     * NV có thể thêm vào nhóm (chưa thuộc nhóm khác, chưa là trưởng nhóm nhóm khác).
      *
      * @return Collection<int, Employee>
      */
     public function candidatesToAdd(Employee $manager, Team $team): Collection
     {
-        $memberIds = $this->members($team)->pluck('id');
-        $otherTeamLeaderIds = $this->otherTeamLeaderIds($team);
+        $excludeIds = $this->employeeIdsAssignedToTeams((int) $team->department_id);
 
         return $this->scope->managedEmployeesQuery($manager)
             ->with(['position', 'user.role'])
             ->where('status', 'active')
             ->where('id', '!=', $manager->id)
-            ->when($team->leader_employee_id, fn ($q) => $q->where('id', '!=', $team->leader_employee_id))
-            ->whereNotIn('id', $memberIds)
-            ->where(function ($q) use ($otherTeamLeaderIds) {
-                $q->whereNull('manager_id');
-
-                if ($otherTeamLeaderIds !== []) {
-                    // Cho phép NV có manager_id cũ (vd. trỏ tới trưởng phòng) chưa thuộc nhóm thật
-                    $q->orWhereNotIn('manager_id', $otherTeamLeaderIds);
-                } else {
-                    $q->orWhereNotNull('manager_id');
-                }
-            })
+            ->when($excludeIds !== [], fn ($q) => $q->whereNotIn('id', $excludeIds))
             ->orderBy('full_name')
             ->get();
     }
 
     /**
+     * Số nhân viên phòng ban chưa thuộc nhóm nào.
+     */
+    public function unassignedEmployeeCount(Employee $manager): int
+    {
+        $departmentId = $this->scope->managedDepartmentId($manager);
+
+        if (! $departmentId) {
+            return 0;
+        }
+
+        $excludeIds = $this->employeeIdsAssignedToTeams($departmentId);
+
+        return $this->scope->managedEmployeesQuery($manager)
+            ->where('status', 'active')
+            ->where('id', '!=', $manager->id)
+            ->when($excludeIds !== [], fn ($q) => $q->whereNotIn('id', $excludeIds))
+            ->count();
+    }
+
+    /**
+     * ID nhân viên đã gán vào nhóm (trưởng nhóm hoặc thành viên) trong phòng ban.
+     *
      * @return list<int>
      */
-    private function otherTeamLeaderIds(Team $team): array
+    private function employeeIdsAssignedToTeams(int $departmentId): array
     {
-        return Team::query()
-            ->where('department_id', $team->department_id)
+        $teamLeaderIds = Team::query()
+            ->where('department_id', $departmentId)
             ->whereNotNull('leader_employee_id')
-            ->when($team->leader_employee_id, fn ($q) => $q->where('leader_employee_id', '!=', $team->leader_employee_id))
-            ->pluck('leader_employee_id')
+            ->pluck('leader_employee_id');
+
+        $memberIds = Employee::query()
+            ->where('department_id', $departmentId)
+            ->whereIn('manager_id', $teamLeaderIds)
+            ->pluck('id');
+
+        return $teamLeaderIds
+            ->merge($memberIds)
             ->map(fn ($id) => (int) $id)
+            ->unique()
             ->values()
             ->all();
+    }
+
+    public function isTeamLeader(Employee $employee, ?int $exceptTeamId = null): bool
+    {
+        $query = Team::query()->where('leader_employee_id', $employee->id);
+
+        if ($exceptTeamId) {
+            $query->where('id', '!=', $exceptTeamId);
+        }
+
+        return $query->exists();
     }
 
     public function isInAnyTeam(Employee $employee, ?int $exceptTeamId = null): bool
