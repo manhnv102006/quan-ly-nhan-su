@@ -5,13 +5,10 @@ namespace Database\Seeders;
 use App\Models\EarlyLeaveRequest;
 use App\Models\Employee;
 use App\Models\KpiTeamReport;
-use App\Models\LeaderTeamReport;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\Role;
 use App\Models\SalaryAdvance;
-use App\Models\Team;
-use App\Models\TeamMembershipRequest;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -33,13 +30,9 @@ class FullTestDataSeeder extends Seeder
 
         $this->clearExtendedTables();
         $this->seedExtraRolesAndUsers();
-        $this->restructureItTeam();
-        $this->seedTeam();
         $this->seedTwoTierApprovals();
         $this->seedTwoTierKpi();
         $this->seedEarlyLeave();
-        $this->seedTeamMembershipRequests();
-        $this->seedLeaderTeamReports();
         $this->seedAccountantData();
 
         $this->printSummary();
@@ -48,8 +41,6 @@ class FullTestDataSeeder extends Seeder
     private function clearExtendedTables(): void
     {
         $tables = [
-            'team_membership_requests',
-            'leader_team_reports',
             'kpi_team_reports',
             'early_leave_requests',
             'salary_advance_deductions',
@@ -123,33 +114,6 @@ class FullTestDataSeeder extends Seeder
                 'email' => $empIt02->email,
             ]);
         }
-    }
-
-    private function restructureItTeam(): void
-    {
-        $leaderId = Employee::query()->where('employee_code', 'EMP003')->value('id');
-
-        Employee::query()
-            ->whereIn('employee_code', ['EMP004', 'EMP005'])
-            ->update(['manager_id' => $leaderId]);
-    }
-
-    private function seedTeam(): void
-    {
-        $itDeptId = DB::table('departments')->where('department_code', 'IT')->value('id');
-        $leaderId = Employee::query()->where('employee_code', 'EMP003')->value('id');
-        $adminId = User::query()->where('username', 'admin')->value('id');
-
-        Team::query()->updateOrCreate(
-            ['leader_employee_id' => $leaderId],
-            [
-                'department_id' => $itDeptId,
-                'name' => 'Nhóm Dev IT',
-                'description' => 'Nhóm phát triển phần mềm HRM',
-                'created_by' => $adminId,
-                'status' => Team::STATUS_ACTIVE,
-            ]
-        );
     }
 
     private function seedTwoTierApprovals(): void
@@ -321,58 +285,6 @@ class FullTestDataSeeder extends Seeder
         ]);
     }
 
-    private function seedTeamMembershipRequests(): void
-    {
-        $leaderId = Employee::query()->where('employee_code', 'EMP003')->value('id');
-        $leaderUserId = User::query()->where('username', 'leader')->value('id');
-        $emp010Id = Employee::query()->where('employee_code', 'EMP010')->value('id');
-
-        TeamMembershipRequest::query()->create([
-            'leader_id' => $leaderId,
-            'employee_id' => $emp010Id,
-            'action' => TeamMembershipRequest::ACTION_ADD,
-            'reason' => 'Hoàng Văn Em hỗ trợ content cho dự án HRM',
-            'status' => TeamMembershipRequest::STATUS_PENDING,
-            'requested_by' => $leaderUserId,
-        ]);
-    }
-
-    private function seedLeaderTeamReports(): void
-    {
-        $leaderId = Employee::query()->where('employee_code', 'EMP003')->value('id');
-        $managerUserId = User::query()->where('username', 'manager')->value('id');
-
-        LeaderTeamReport::query()->create([
-            'leader_employee_id' => $leaderId,
-            'manager_user_id' => $managerUserId,
-            'period_month' => 7,
-            'period_year' => 2026,
-            'title' => 'Báo cáo tiến độ nhóm Dev IT — Tháng 7/2026',
-            'work_progress' => 'Hoàn thành 80% module KPI 2 bậc và chat nội bộ.',
-            'team_results' => 'Không có sự cố production. 2 nhân viên đạt chấm công ≥95%.',
-            'member_count' => 2,
-            'kpi_total' => 2,
-            'kpi_completed' => 1,
-            'avg_kpi_progress' => 55,
-            'total_work_days' => 44,
-            'total_late_days' => 2,
-            'status' => LeaderTeamReport::STATUS_SUBMITTED,
-            'submitted_at' => now()->subHours(12),
-        ]);
-
-        LeaderTeamReport::query()->create([
-            'leader_employee_id' => $leaderId,
-            'manager_user_id' => $managerUserId,
-            'period_month' => 6,
-            'period_year' => 2026,
-            'title' => 'Báo cáo tháng 6/2026',
-            'work_progress' => 'Triển khai module chấm công khuôn mặt.',
-            'team_results' => 'Release v1.2 đúng hạn.',
-            'member_count' => 2,
-            'status' => LeaderTeamReport::STATUS_DRAFT,
-        ]);
-    }
-
     private function seedAccountantData(): void
     {
         $emp004Id = Employee::query()->where('employee_code', 'EMP004')->value('id');
@@ -504,7 +416,7 @@ class FullTestDataSeeder extends Seeder
 
         $this->command?->newLine();
         $this->command?->line('  Chức năng có sẵn dữ liệu test:');
-        $this->command?->line('  • Manager: duyệt nghỉ/tăng ca, KPI, nhóm, đề xuất thành viên, về sớm');
+        $this->command?->line('  • Manager: duyệt nghỉ/tăng ca, KPI, về sớm');
         $this->command?->line('  • Employee: chấm công, nghỉ phép, tăng ca, về sớm, ứng lương, NPT');
         $this->command?->line('  • Accountant: lương, BHXH, thuế, ứng lương, hợp đồng');
         $this->command?->newLine();

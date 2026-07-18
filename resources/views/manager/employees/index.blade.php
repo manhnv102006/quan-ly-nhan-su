@@ -26,9 +26,6 @@
                 <a href="{{ route('manager.dashboard') }}" class="manager-btn-primary bg-white text-teal-700 shadow-lg hover:bg-teal-50">
                     ← Dashboard
                 </a>
-                <a href="{{ route('manager.teams.index') }}" class="manager-btn-secondary bg-white/15 text-white border-white/25 hover:bg-white/20">
-                    Nhóm làm việc
-                </a>
             </div>
         </section>
 
@@ -90,7 +87,6 @@
                             <tr>
                                 <th>Nhân viên</th>
                                 <th>Chức vụ</th>
-                                <th>Nhóm</th>
                                 <th>Liên hệ</th>
                                 <th>Ngày vào làm</th>
                                 <th>Tài khoản</th>
@@ -113,16 +109,6 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-slate-600">{{ $employee->position?->position_name ?? 'Chưa có chức vụ' }}</td>
-                                    <td class="px-6 py-4 text-sm">
-                                        @php $employeeTeam = $teamService->teamForEmployee($employee); @endphp
-                                        @if($employeeTeam)
-                                            <span class="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700">{{ $employeeTeam->name }}</span>
-                                        @elseif($teamByLeaderId[$employee->id] ?? null)
-                                            <span class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">{{ $teamByLeaderId[$employee->id] }} · Trưởng nhóm</span>
-                                        @else
-                                            <span class="text-slate-400">Chưa gán nhóm</span>
-                                        @endif
-                                    </td>
                                     <td class="px-6 py-4">
                                         <p class="text-sm font-medium text-slate-700">{{ $employee->email }}</p>
                                         <p class="text-sm text-slate-500">{{ $employee->phone }}</p>
