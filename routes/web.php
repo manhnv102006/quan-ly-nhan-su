@@ -41,7 +41,6 @@ use App\Http\Controllers\Accountant\PayrollController as AccountantPayrollContro
 use App\Http\Controllers\Accountant\PayrollPeriodController as AccountantPayrollPeriodController;
 use App\Http\Controllers\Accountant\ReportController as AccountantReportController;
 use App\Http\Controllers\Accountant\TaxController as AccountantTaxController;
-use App\Http\Controllers\TeamChatController;
 use App\Http\Controllers\Manager\TeamController as ManagerTeamController;
 use App\Http\Controllers\Manager\TeamMembershipRequestController as ManagerTeamMembershipRequestController;
 use App\Http\Controllers\DashboardController;
@@ -382,11 +381,6 @@ Route::middleware(['auth', 'verified', 'role:employee,accountant'])->group(funct
     Route::get('/employee/notifications/{notification}', [EmployeeNotificationController::class, 'show'])->name('employee.notifications.show');
     Route::patch('/employee/notifications/read-all', [EmployeeNotificationController::class, 'markAllAsRead'])->name('employee.notifications.read-all');
     Route::patch('/employee/notifications/{notification}/read', [EmployeeNotificationController::class, 'markAsRead'])->name('employee.notifications.read');
-
-    Route::get('/employee/team-chat', [TeamChatController::class, 'index'])->name('employee.team-chat.index');
-    Route::get('/employee/team-chat/messages', [TeamChatController::class, 'messages'])->name('employee.team-chat.messages');
-    Route::post('/employee/team-chat', [TeamChatController::class, 'store'])->name('employee.team-chat.store');
-    Route::post('/employee/team-chat/announce', [TeamChatController::class, 'announce'])->name('employee.team-chat.announce');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,manager,admin,accountant'])->group(function () {

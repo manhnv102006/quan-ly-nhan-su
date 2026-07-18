@@ -11,7 +11,6 @@ use App\Models\OvertimeRequest;
 use App\Models\Role;
 use App\Models\SalaryAdvance;
 use App\Models\Team;
-use App\Models\TeamChatMessage;
 use App\Models\TeamMembershipRequest;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -39,7 +38,6 @@ class FullTestDataSeeder extends Seeder
         $this->seedTwoTierApprovals();
         $this->seedTwoTierKpi();
         $this->seedEarlyLeave();
-        $this->seedTeamChat();
         $this->seedTeamMembershipRequests();
         $this->seedLeaderTeamReports();
         $this->seedAccountantData();
@@ -50,7 +48,6 @@ class FullTestDataSeeder extends Seeder
     private function clearExtendedTables(): void
     {
         $tables = [
-            'team_chat_messages',
             'team_membership_requests',
             'leader_team_reports',
             'kpi_team_reports',
@@ -324,31 +321,6 @@ class FullTestDataSeeder extends Seeder
         ]);
     }
 
-    private function seedTeamChat(): void
-    {
-        $leaderId = Employee::query()->where('employee_code', 'EMP003')->value('id');
-        $emp004Id = Employee::query()->where('employee_code', 'EMP004')->value('id');
-        $leaderUserId = User::query()->where('username', 'leader')->value('id');
-        $empUserId = User::query()->where('username', 'employee')->value('id');
-
-        TeamChatMessage::query()->create([
-            'team_leader_id' => $leaderId,
-            'sender_employee_id' => $leaderId,
-            'sender_user_id' => $leaderUserId,
-            'type' => TeamChatMessage::TYPE_ANNOUNCEMENT,
-            'title' => 'Lịch họp sprint',
-            'body' => 'Team họp review sprint lúc 9h sáng thứ Hai.',
-        ]);
-
-        TeamChatMessage::query()->create([
-            'team_leader_id' => $leaderId,
-            'sender_employee_id' => $emp004Id,
-            'sender_user_id' => $empUserId,
-            'type' => TeamChatMessage::TYPE_MESSAGE,
-            'body' => 'Em đã push code module KPI lên branch develop.',
-        ]);
-    }
-
     private function seedTeamMembershipRequests(): void
     {
         $leaderId = Employee::query()->where('employee_code', 'EMP003')->value('id');
@@ -532,7 +504,6 @@ class FullTestDataSeeder extends Seeder
 
         $this->command?->newLine();
         $this->command?->line('  Chức năng có sẵn dữ liệu test:');
-        $this->command?->line('  • Trưởng nhóm (NV): chat nhóm, gửi thông báo nội bộ qua /employee/team-chat');
         $this->command?->line('  • Manager: duyệt nghỉ/tăng ca, KPI, nhóm, đề xuất thành viên, về sớm');
         $this->command?->line('  • Employee: chấm công, nghỉ phép, tăng ca, về sớm, ứng lương, NPT');
         $this->command?->line('  • Accountant: lương, BHXH, thuế, ứng lương, hợp đồng');
