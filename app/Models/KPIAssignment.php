@@ -50,21 +50,6 @@ class KPIAssignment extends Model
         return $this->hasMany(EmployeeKPI::class, 'assignment_id');
     }
 
-    public function leaderEmployee(): BelongsTo
-    {
-        return $this->belongsTo(Employee::class, 'leader_employee_id');
-    }
-
-    public function teamReport(): \Illuminate\Database\Eloquent\Relations\HasOne
-    {
-        return $this->hasOne(KpiTeamReport::class, 'assignment_id');
-    }
-
-    public function isDelegatedToLeader(): bool
-    {
-        return $this->leader_employee_id !== null;
-    }
-
     public function getManagerNameAttribute(): string
     {
         if (! $this->manager) {

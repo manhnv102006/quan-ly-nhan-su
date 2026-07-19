@@ -15,7 +15,7 @@ class OvertimeRequestPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin() || $user->isManager() || $user->isEmployee() || $user->isLeader();
+        return $user->isAdmin() || $user->isManager() || $user->isEmployee();
     }
 
     public function view(User $user, OvertimeRequest $overtimeRequest): bool
@@ -28,7 +28,7 @@ class OvertimeRequestPolicy
             return $this->managerCanManage($user, $overtimeRequest);
         }
 
-        if ($user->isEmployee() || $user->isLeader()) {
+        if ($user->isEmployee()) {
             return $overtimeRequest->employee?->user_id === $user->id;
         }
 
@@ -37,7 +37,7 @@ class OvertimeRequestPolicy
 
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isEmployee() || $user->isManager() || $user->isLeader();
+        return $user->isAdmin() || $user->isEmployee() || $user->isManager();
     }
 
     public function update(User $user, OvertimeRequest $overtimeRequest): bool
@@ -46,7 +46,7 @@ class OvertimeRequestPolicy
             return true;
         }
 
-        if ($user->isEmployee() || $user->isLeader()) {
+        if ($user->isEmployee()) {
             return $overtimeRequest->employee?->user_id === $user->id
                 && $overtimeRequest->status === OvertimeRequest::STATUS_PENDING;
         }
@@ -60,7 +60,7 @@ class OvertimeRequestPolicy
             return true;
         }
 
-        if ($user->isEmployee() || $user->isLeader()) {
+        if ($user->isEmployee()) {
             return $overtimeRequest->employee?->user_id === $user->id
                 && $overtimeRequest->status === OvertimeRequest::STATUS_PENDING;
         }

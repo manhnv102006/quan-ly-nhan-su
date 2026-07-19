@@ -11,7 +11,6 @@ class SelfServiceLayout
         return match ($role) {
             'admin' => 'admin-layout',
             'manager' => 'manager-layout',
-            'leader' => 'leader-layout',
             'accountant' => 'accountant-layout',
             default => 'employee-layout',
         };
@@ -27,7 +26,6 @@ class SelfServiceLayout
         return match ($role) {
             'manager' => ManagerNavigation::items(),
             'accountant' => AccountantNavigation::items(),
-            'leader' => LeaderNavigation::items(),
             default => EmployeeNavigation::items(),
         };
     }
