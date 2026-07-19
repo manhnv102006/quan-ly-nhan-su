@@ -24,9 +24,6 @@ class DatabaseSeeder extends Seeder
         $managerRoleId = Role::query()->where('name', Role::MANAGER)->value('id');
         $employeeRoleId = Role::query()->where('name', Role::EMPLOYEE)->value('id');
         $accountantRoleId = Role::query()->where('name', Role::ACCOUNTANT)->value('id');
-        $leaderRoleId = Role::query()->where('name', Role::LEADER)->value('id');
-
-        $leaderRoleId = Role::query()->where('name', Role::LEADER)->value('id');
 
         $this->seedDemoUser('admin', [
             'name' => 'Quản trị viên',
@@ -55,7 +52,7 @@ class DatabaseSeeder extends Seeder
         $this->seedDemoUser('leader', [
             'name' => 'Lê Văn Cường',
             'email' => 'leader@example.com',
-            'role_id' => $leaderRoleId,
+            'role_id' => $employeeRoleId,
         ]);
 
         if (DB::table('positions')->count() === 0) {

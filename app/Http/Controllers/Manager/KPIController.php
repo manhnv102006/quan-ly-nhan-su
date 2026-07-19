@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AssignEmployeeKPIRequest;
-use App\Http\Requests\Manager\AssignKpiToLeaderRequest;
 use App\Http\Requests\Manager\UpdateEmployeeKPIScoreRequest;
 use App\Models\Employee;
 use App\Models\EmployeeKPI;
@@ -26,7 +25,6 @@ class KPIController extends Controller
         $assignments = KPIAssignment::with([
                 'kpi',
                 'assignedBy',
-                'leaderEmployee',
             ])
             ->withCount('employeeKpis')
             ->where('manager_id', Auth::id())
@@ -49,8 +47,6 @@ class KPIController extends Controller
         $assignment->load([
             'kpi.tasks',
             'assignedBy',
-            'leaderEmployee',
-            'teamReport',
             'employeeKpis.employee',
         ]);
 
@@ -64,53 +60,10 @@ class KPIController extends Controller
     {
         abort_if($assignment->manager_id !== Auth::id(), 403);
 
-        if ($assignment->isDelegatedToLeader()) {
-            abort(403, 'KPI này đã giao cho Trưởng nhóm phân bổ. Manager không giao trực tiếp cho nhân viên.');
-        }
-
         $assignment->load('kpi');
         $employeesInDepartment = $this->getManagedEmployees();
 
         return view('manager.kpis.assign', compact('assignment', 'employeesInDepartment'));
-    }
-
-    public function assignLeader(KPIAssignment $assignment): View
-    {
-        abort_if($assignment->manager_id !== Auth::id(), 403);
-        abort_if($assignment->isDelegatedToLeader(), 403, 'KPI này đã được giao cho Trưởng nhóm.');
-
-        $assignment->load('kpi');
-        $leadersInDepartment = $this->getLeadersInDepartment();
-
-        return view('manager.kpis.assign-leader', compact('assignment', 'leadersInDepartment'));
-    }
-
-    public function storeAssignLeader(AssignKpiToLeaderRequest $request, KPIAssignment $assignment): RedirectResponse
-    {
-        abort_if($assignment->manager_id !== Auth::id(), 403);
-        abort_if($assignment->isDelegatedToLeader(), 403);
-
-        $validated = $request->validated();
-
-        $assignment->update([
-            'leader_employee_id' => $validated['leader_employee_id'],
-            'leader_assigned_at' => now(),
-            'note' => $validated['note'] ?? $assignment->note,
-        ]);
-
-        $leader = Employee::query()->find($validated['leader_employee_id']);
-        if ($leader?->user_id) {
-            app(\App\Services\NotificationService::class)->sendToUser(
-                (int) $leader->user_id,
-                'KPI nhóm mới: '.$assignment->kpi_title,
-                'Manager đã giao KPI nhóm cho bạn. Vui lòng phân bổ cho thành viên trong nhóm.',
-                Auth::id(),
-            );
-        }
-
-        return redirect()
-            ->route('manager.kpis.show', $assignment)
-            ->with('success', 'Đã giao KPI nhóm cho Trưởng nhóm.');
     }
 
     /**
@@ -119,7 +72,6 @@ class KPIController extends Controller
     public function storeAssign(AssignEmployeeKPIRequest $request, KPIAssignment $assignment): RedirectResponse
     {
         abort_if($assignment->manager_id !== Auth::id(), 403);
-        abort_if($assignment->isDelegatedToLeader(), 403, 'KPI này đã giao cho Trưởng nhóm.');
 
         $validated = $request->validated();
 
@@ -189,22 +141,6 @@ class KPIController extends Controller
                     $roleQ->where('name', '!=', 'manager');
                 });
             })
-            ->get();
-    }
-
-    private function getLeadersInDepartment()
-    {
-        $managerEmployee = Auth::user()->employee;
-
-        if (! $managerEmployee) {
-            return collect();
-        }
-
-        return Employee::query()
-            ->where('department_id', $managerEmployee->department_id)
-            ->where('status', 'active')
-            ->whereHas('user.role', fn ($q) => $q->where('name', 'leader'))
-            ->orderBy('full_name')
             ->get();
     }
 

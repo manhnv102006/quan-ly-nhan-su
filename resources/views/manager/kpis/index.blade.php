@@ -32,7 +32,6 @@
                             <th>Mã KPI</th>
                             <th>Tên KPI</th>
                             <th>Deadline</th>
-                            <th>Phân cấp</th>
                             <th class="text-center">Đã giao</th>
                             <th class="text-center">Trạng thái</th>
                             <th>Người giao</th>
@@ -48,13 +47,6 @@
                                     <p class="mt-1 text-xs text-slate-500">{{ Str::limit($assignment->kpi->description ?? '', 100) }}</p>
                                 </td>
                                 <td>{{ $assignment->end_date->format('d/m/Y') }}</td>
-                                <td>
-                                    @if($assignment->leader_employee_id)
-                                        <span class="text-xs font-semibold text-teal-700">→ {{ $assignment->leaderEmployee?->full_name ?? 'Leader' }}</span>
-                                    @else
-                                        <span class="text-xs text-slate-500">Trực tiếp</span>
-                                    @endif
-                                </td>
                                 <td class="text-center font-semibold">{{ $assignment->employee_kpis_count }}</td>
                                 <td class="text-center">
                                     <span class="manager-badge {{ $assignment->status_color }}">{{ $assignment->status_label }}</span>
@@ -76,7 +68,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8">
+                                <td colspan="7">
                                     <div class="manager-empty-state">
                                         <div class="manager-empty-icon">
                                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
