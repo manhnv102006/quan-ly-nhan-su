@@ -49,9 +49,19 @@ class EmployeePendingActionService
         $counts = $this->countsForUser($user);
 
         return array_map(function (array $item) use ($counts) {
-            $route = $item['route'] ?? null;
+            if (! empty($item['children'])) {
+                $item['children'] = array_map(function (array $child) use ($counts) {
+                    if (($child['route'] ?? null) === 'employee.kpis.*') {
+                        $child['badge'] = $counts['kpis'];
+                    }
 
-            if ($route === 'employee.kpis.*') {
+                    return $child;
+                }, $item['children']);
+
+                return $item;
+            }
+
+            if (($item['route'] ?? null) === 'employee.kpis.*') {
                 $item['badge'] = $counts['kpis'];
             }
 
