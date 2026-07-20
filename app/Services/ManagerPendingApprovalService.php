@@ -69,22 +69,43 @@ class ManagerPendingApprovalService
         $counts = $this->countsForUser($user);
 
         return array_map(function (array $item) use ($counts) {
-            $route = $item['route'] ?? null;
+            if (! empty($item['children'])) {
+                $item['children'] = array_map(
+                    fn (array $child) => $this->applyBadgeToItem($child, $counts),
+                    $item['children'],
+                );
 
-            if ($route === 'manager.leave-requests*') {
-                $item['badge'] = $counts['leave'];
-            } elseif ($route === 'manager.overtime-requests*') {
-                $item['badge'] = $counts['overtime'];
-            } elseif ($route === 'manager.kpis*') {
-                $item['badge'] = $counts['kpi'];
-            } elseif (str_contains((string) ($item['href'] ?? ''), 'manager/kpis') || str_contains((string) ($item['href'] ?? ''), '#kpi')) {
-                $item['badge'] = $counts['kpi'];
-            } elseif (str_contains((string) ($item['href'] ?? ''), '#approvals')) {
-                $item['badge'] = $counts['leave'] + $counts['overtime'];
+                $item['badge'] = collect($item['children'])->sum(fn (array $child) => (int) ($child['badge'] ?? 0));
+
+                return $item;
             }
 
-            return $item;
+            return $this->applyBadgeToItem($item, $counts);
         }, $navigation);
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @param  array{leave: int, overtime: int, kpi: int, total: int}  $counts
+     * @return array<string, mixed>
+     */
+    private function applyBadgeToItem(array $item, array $counts): array
+    {
+        $route = $item['route'] ?? null;
+
+        if ($route === 'manager.leave-requests*') {
+            $item['badge'] = $counts['leave'];
+        } elseif ($route === 'manager.overtime-requests*') {
+            $item['badge'] = $counts['overtime'];
+        } elseif ($route === 'manager.kpis*') {
+            $item['badge'] = $counts['kpi'];
+        } elseif (str_contains((string) ($item['href'] ?? ''), 'manager/kpis') || str_contains((string) ($item['href'] ?? ''), '#kpi')) {
+            $item['badge'] = $counts['kpi'];
+        } elseif (str_contains((string) ($item['href'] ?? ''), '#approvals')) {
+            $item['badge'] = $counts['leave'] + $counts['overtime'];
+        }
+
+        return $item;
     }
 
     private function excludeManagerEmployees($query): void

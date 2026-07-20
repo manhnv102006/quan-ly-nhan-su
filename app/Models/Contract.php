@@ -197,6 +197,11 @@ class Contract extends Model
         return (string) $this->salary;
     }
 
+    public function getBasicSalaryAttribute(): float
+    {
+        return (float) $this->salary;
+    }
+
     public function isDeletable(): bool
     {
         return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_EXPIRED, self::STATUS_CANCELLED], true);
