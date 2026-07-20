@@ -56,10 +56,13 @@ class MasterDemoSeeder extends Seeder
         $this->seedEmployees();
         $this->linkUsersToEmployees();
         $this->seedContracts();
+        $this->call(AllowanceTypeSeeder::class);
         $this->seedDocuments();
 
         // ── Chấm công ─────────────────────────────────────────────
+        $this->seedEmployeeShifts();
         $this->seedAttendances();
+        $this->seedTodayAttendance();
 
         // ── Nghỉ phép ─────────────────────────────────────────────
         $this->seedLeaveRequests();
@@ -82,6 +85,14 @@ class MasterDemoSeeder extends Seeder
         // ── Thông báo ─────────────────────────────────────────────
         $this->seedNotifications();
 
+        // ── Bổ sung module mới ────────────────────────────────────
+        $this->seedHolidays();
+        $this->seedSalaryAdvances();
+        $this->seedEarlyLeaveRequests();
+        $this->seedInsurances();
+        $this->seedTaxProfiles();
+        $this->seedFaceDescriptors();
+
         $this->printSummary();
     }
 
@@ -91,6 +102,17 @@ class MasterDemoSeeder extends Seeder
     private function truncateTables(): void
     {
         $tables = [
+            'salary_advance_deductions',
+            'salary_advances',
+            'early_leave_requests',
+            'employee_face_descriptors',
+            'employee_insurances',
+            'tax_dependents',
+            'employee_tax_profiles',
+            'holidays',
+            'contract_allowances',
+            'allowance_types',
+            'team_membership_requests',
             'notification_users',
             'notifications',
             'interviews',
@@ -135,11 +157,7 @@ class MasterDemoSeeder extends Seeder
     // ═══════════════════════════════════════════════════════════════
     private function seedRoles(): void
     {
-        DB::table('roles')->insert([
-            ['name' => 'admin',    'description' => 'Quản trị viên', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'manager',  'description' => 'Trưởng phòng',  'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'employee', 'description' => 'Nhân viên',      'created_at' => now(), 'updated_at' => now()],
-        ]);
+        $this->call(RoleSeeder::class);
     }
 
     private function seedUsers(): void
@@ -150,9 +168,11 @@ class MasterDemoSeeder extends Seeder
             ['admin',        'Nguyễn Quản Trị',       'admin@example.com',        $rid('admin')],
             ['manager',      'Lê Văn Thành',            'manager@example.com',      $rid('manager')],
             ['manager_sale', 'Phan Thanh Hoa',          'manager_sale@example.com', $rid('manager')],
+            ['accountant',   'Trần Thị Bình',           'accountant@example.com',   $rid('accountant')],
+            ['leader',       'Trương Quốc Bảo',         'leader@example.com',       $rid('leader')],
             ['employee',     'Phạm Thị Dung',           'employee@example.com',     $rid('employee')],
-            ['emp_it02',     'Trương Quốc Bảo',         'emp_it02@example.com',     $rid('employee')],
             ['emp_sale01',   'Nguyễn Thị Bích Ngọc',   'emp_sale01@example.com',   $rid('employee')],
+            ['hoangvanem',   'Hoàng Văn Em',            'em@example.com',           $rid('employee')],
         ];
 
         foreach ($users as [$username, $name, $email, $roleId]) {
@@ -221,6 +241,7 @@ class MasterDemoSeeder extends Seeder
             ['shift_name' => 'Ca hành chính', 'start_time' => '08:00:00', 'end_time' => '17:00:00', 'created_at' => now(), 'updated_at' => now()],
             ['shift_name' => 'Ca sáng',       'start_time' => '08:00:00', 'end_time' => '12:00:00', 'created_at' => now(), 'updated_at' => now()],
             ['shift_name' => 'Ca chiều',      'start_time' => '13:00:00', 'end_time' => '17:00:00', 'created_at' => now(), 'updated_at' => now()],
+            ['shift_name' => 'Ca test',       'start_time' => '21:15:00', 'end_time' => '21:17:00', 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 
@@ -303,9 +324,11 @@ class MasterDemoSeeder extends Seeder
             'admin'        => 'EMP001',
             'manager'      => 'EMP002',
             'manager_sale' => 'EMP006',
+            'accountant'   => 'EMP009',
+            'leader'       => 'EMP003',
             'employee'     => 'EMP004',
-            'emp_it02'     => 'EMP003',
             'emp_sale01'   => 'EMP007',
+            'hoangvanem'   => 'EMP010',
         ];
 
         foreach ($links as $username => $code) {
@@ -395,11 +418,15 @@ class MasterDemoSeeder extends Seeder
     {
         $employees = Employee::query()->where('status', 'active')->orderBy('id')->get();
 
-        $periods = [
-            ['2026-05-01', '2026-05-31'],
-            ['2026-06-01', '2026-06-30'],
-            ['2026-07-01', '2026-07-07'],   // tháng 7 đến hiện tại
-        ];
+        $today = Carbon::today();
+        $periods = [];
+        for ($i = 2; $i >= 0; $i--) {
+            $month = $today->copy()->subMonths($i);
+            $periods[] = [
+                $month->copy()->startOfMonth()->format('Y-m-d'),
+                $i === 0 ? $today->format('Y-m-d') : $month->copy()->endOfMonth()->format('Y-m-d'),
+            ];
+        }
 
         foreach ($employees as $idx => $emp) {
             $scenario = $idx % 5;
@@ -524,16 +551,18 @@ class MasterDemoSeeder extends Seeder
     private function seedLeaveRequests(): void
     {
         $emp = fn (string $code) => DB::table('employees')->where('employee_code', $code)->value('id');
+        $today = Carbon::today();
 
         // [empId, type, start, end, days, reason, status, approvedBy, rejectReason]
+        $today = Carbon::today();
         $leaves = [
-            [$emp('EMP003'), 'annual',  '2026-07-14', '2026-07-16', 3, 'Du lịch gia đình',           'pending',  null,               null],
-            [$emp('EMP004'), 'sick',    '2026-07-01', '2026-07-02', 2, 'Bị sốt cao',                 'approved', $this->adminUserId, null],
-            [$emp('EMP007'), 'annual',  '2026-07-10', '2026-07-10', 1, 'Việc cá nhân',               'approved', $this->adminUserId, null],
-            [$emp('EMP008'), 'unpaid',  '2026-07-20', '2026-07-25', 6, 'Việc gia đình đột xuất',     'rejected', null,               'Thiếu nhân sự'],
-            [$emp('EMP010'), 'annual',  '2026-07-07', '2026-07-08', 2, 'Nghỉ phép năm còn tồn',     'pending',  null,               null],
-            [$emp('EMP003'), 'sick',    '2026-06-05', '2026-06-06', 2, 'Ốm (tháng 6 đã duyệt)',      'approved', $this->adminUserId, null],
-            [$emp('EMP004'), 'annual',  '2026-08-18', '2026-08-20', 3, 'Xin nghỉ tháng tới',         'pending',  null,               null],
+            [$emp('EMP003'), 'annual',  $today->copy()->addDays(3)->toDateString(), $today->copy()->addDays(5)->toDateString(), 3, 'Du lịch gia đình',           'pending',  null,               null],
+            [$emp('EMP004'), 'sick',    $today->copy()->subDays(10)->toDateString(), $today->copy()->subDays(9)->toDateString(), 2, 'Bị sốt cao',                 'approved', $this->adminUserId, null],
+            [$emp('EMP007'), 'annual',  $today->copy()->subDays(5)->toDateString(), $today->copy()->subDays(5)->toDateString(), 1, 'Việc cá nhân',               'approved', $this->adminUserId, null],
+            [$emp('EMP008'), 'unpaid',  $today->copy()->addDays(10)->toDateString(), $today->copy()->addDays(15)->toDateString(), 6, 'Việc gia đình đột xuất',     'rejected', null,               'Thiếu nhân sự'],
+            [$emp('EMP010'), 'annual',  $today->copy()->addDays(2)->toDateString(), $today->copy()->addDays(3)->toDateString(), 2, 'Nghỉ phép năm còn tồn',     'pending',  null,               null],
+            [$emp('EMP003'), 'sick',    $today->copy()->subMonth()->addDays(4)->toDateString(), $today->copy()->subMonth()->addDays(5)->toDateString(), 2, 'Ốm (tháng trước đã duyệt)', 'approved', $this->adminUserId, null],
+            [$emp('EMP004'), 'annual',  $today->copy()->addMonth()->addDays(10)->toDateString(), $today->copy()->addMonth()->addDays(12)->toDateString(), 3, 'Xin nghỉ tháng tới', 'pending', null, null],
         ];
 
         foreach ($leaves as [$empId, $type, $start, $end, $days, $reason, $status, $approvedBy, $rejectReason]) {
@@ -566,15 +595,16 @@ class MasterDemoSeeder extends Seeder
     private function seedOvertimeRequests(): void
     {
         $emp = fn (string $code) => DB::table('employees')->where('employee_code', $code)->value('id');
+        $today = Carbon::today();
 
         // [empId, work_date, start, end, hours, reason, status]
         $rows = [
-            [$emp('EMP002'), '2026-07-05', '18:00', '21:00', 3.0,  'Triển khai hệ thống mới',   'completed'],
-            [$emp('EMP003'), '2026-07-08', '18:00', '20:00', 2.0,  'Fix bug production',        'approved'],
-            [$emp('EMP004'), '2026-07-12', '18:00', '19:30', 1.5,  'Hỗ trợ QA test release',   'pending'],
-            [$emp('EMP006'), '2026-07-03', '18:00', '21:00', 3.0,  'Chốt báo cáo doanh số Q2', 'completed'],
-            [$emp('EMP007'), '2026-07-15', '18:00', '20:30', 2.5,  'Ký hợp đồng khách hàng',   'approved'],
-            [$emp('EMP003'), '2026-06-20', '18:00', '21:30', 3.5,  'Tăng ca sprint tháng 6',    'completed'],
+            [$emp('EMP002'), $today->copy()->subDays(10)->toDateString(), '18:00', '21:00', 3.0,  'Triển khai hệ thống mới',   'completed'],
+            [$emp('EMP003'), $today->copy()->subDays(7)->toDateString(), '18:00', '20:00', 2.0,  'Fix bug production',        'approved'],
+            [$emp('EMP004'), $today->copy()->subDays(3)->toDateString(), '18:00', '19:30', 1.5,  'Hỗ trợ QA test release',   'pending'],
+            [$emp('EMP006'), $today->copy()->subDays(12)->toDateString(), '18:00', '21:00', 3.0,  'Chốt báo cáo doanh số', 'completed'],
+            [$emp('EMP007'), $today->copy()->addDays(2)->toDateString(), '18:00', '20:30', 2.5,  'Ký hợp đồng khách hàng',   'approved'],
+            [$emp('EMP003'), $today->copy()->subMonth()->addDays(15)->toDateString(), '18:00', '21:30', 3.5,  'Tăng ca sprint tháng trước', 'completed'],
         ];
 
         foreach ($rows as [$empId, $workDate, $start, $end, $hours, $reason, $status]) {
@@ -794,23 +824,27 @@ class MasterDemoSeeder extends Seeder
     // ═══════════════════════════════════════════════════════════════
     private function seedPayrollPeriods(): void
     {
-        // [month, year, start, end, status, approvedAt, paidAt]
+        $today = Carbon::today();
         $periods = [
-            [5, 2026, '2026-05-01', '2026-05-31', 'paid',       '2026-05-25', '2026-05-28'],
-            [6, 2026, '2026-06-01', '2026-06-30', 'paid',       '2026-06-25', '2026-06-28'],
-            [7, 2026, '2026-07-01', '2026-07-31', 'calculated', null,          null],
-            [8, 2026, '2026-08-01', '2026-08-31', 'open',       null,          null],
+            [$today->copy()->subMonths(2)->month, $today->copy()->subMonths(2)->year, 'paid'],
+            [$today->copy()->subMonth()->month, $today->copy()->subMonth()->year, 'paid'],
+            [$today->month, $today->year, 'calculated'],
+            [$today->copy()->addMonth()->month, $today->copy()->addMonth()->year, 'open'],
         ];
 
-        foreach ($periods as [$month, $year, $start, $end, $status, $approvedAt, $paidAt]) {
+        foreach ($periods as [$month, $year, $status]) {
+            $start = Carbon::create($year, $month, 1)->startOfMonth();
+            $end = $start->copy()->endOfMonth();
             $label = str_pad((string) $month, 2, '0', STR_PAD_LEFT);
+            $approvedAt = $status === 'paid' ? $end->copy()->subDays(5)->format('Y-m-d') : null;
+            $paidAt = $status === 'paid' ? $end->copy()->subDays(2)->format('Y-m-d') : null;
 
             DB::table('payroll_periods')->insert([
                 'name'        => "Kỳ lương tháng {$label}/{$year}",
                 'month'       => $month,
                 'year'        => $year,
-                'start_date'  => $start,
-                'end_date'    => $end,
+                'start_date'  => $start->format('Y-m-d'),
+                'end_date'    => $end->format('Y-m-d'),
                 'status'      => $status,
                 'approved_by' => $approvedAt ? $this->adminUserId : null,
                 'approved_at' => $approvedAt,
@@ -961,6 +995,302 @@ class MasterDemoSeeder extends Seeder
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // PHÂN CA LÀM VIỆC
+    // ═══════════════════════════════════════════════════════════════
+    private function seedEmployeeShifts(): void
+    {
+        $employees = Employee::query()->where('status', 'active')->orderBy('id')->get();
+        $adminShiftId = (int) DB::table('shifts')->where('shift_name', 'Ca hành chính')->value('id');
+        $morningShiftId = (int) DB::table('shifts')->where('shift_name', 'Ca sáng')->value('id');
+        $testShiftId = (int) DB::table('shifts')->where('shift_name', 'Ca test')->value('id');
+        $today = Carbon::today();
+        $start = $today->copy()->startOfMonth();
+        $end = $today->copy()->endOfMonth();
+
+        foreach ($employees as $employee) {
+            $cur = $start->copy();
+            while ($cur->lte($end)) {
+                if ($cur->isSunday()) {
+                    $cur->addDay();
+                    continue;
+                }
+
+                DB::table('employee_shifts')->insert([
+                    'employee_id' => $employee->id,
+                    'shift_id'    => $adminShiftId,
+                    'work_date'   => $cur->format('Y-m-d'),
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
+                ]);
+
+                if ($employee->employee_code === 'EMP010' && $cur->isSameDay($today)) {
+                    DB::table('employee_shifts')->insert([
+                        'employee_id' => $employee->id,
+                        'shift_id'    => $morningShiftId,
+                        'work_date'   => $cur->format('Y-m-d'),
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ]);
+                    DB::table('employee_shifts')->insert([
+                        'employee_id' => $employee->id,
+                        'shift_id'    => $testShiftId,
+                        'work_date'   => $cur->format('Y-m-d'),
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ]);
+                }
+
+                $cur->addDay();
+            }
+        }
+    }
+
+    private function seedTodayAttendance(): void
+    {
+        $today = Carbon::today()->format('Y-m-d');
+        $emp010Id = (int) DB::table('employees')->where('employee_code', 'EMP010')->value('id');
+        $shiftId = (int) DB::table('shifts')->where('shift_name', 'Ca sáng')->value('id');
+
+        if (! $emp010Id || ! $shiftId) {
+            return;
+        }
+
+        DB::table('attendances')->updateOrInsert(
+            ['employee_id' => $emp010Id, 'attendance_date' => $today],
+            [
+                'shift_id'           => $shiftId,
+                'check_in'           => "{$today} 08:41:45",
+                'check_out'          => null,
+                'work_hours'         => 0,
+                'late_minutes'       => 36,
+                'status'             => 'late',
+                'check_in_method'    => 'face',
+                'recognition_confidence' => 0.92,
+                'liveness_score'     => 0.88,
+                'created_at'         => now(),
+                'updated_at'         => now(),
+            ]
+        );
+
+        $samples = [
+            ['EMP002', '08:05:00', '17:02:00', 'present', 0, 'face'],
+            ['EMP003', '08:00:00', null, 'present', 0, 'face'],
+            ['EMP004', '08:18:00', null, 'late', 13, 'manual'],
+            ['EMP006', '07:55:00', '17:10:00', 'present', 0, 'face'],
+            ['EMP007', null, null, 'absent', 0, null],
+        ];
+
+        foreach ($samples as [$code, $checkIn, $checkOut, $status, $late, $method]) {
+            $empId = (int) DB::table('employees')->where('employee_code', $code)->value('id');
+            if (! $empId) {
+                continue;
+            }
+
+            $payload = [
+                'shift_id'         => $this->defaultShiftId,
+                'check_in'         => $checkIn ? "{$today} {$checkIn}" : null,
+                'check_out'        => $checkOut ? "{$today} {$checkOut}" : null,
+                'work_hours'       => $checkOut ? 8.0 : 0,
+                'late_minutes'     => $late,
+                'status'           => $status,
+                'created_at'       => now(),
+                'updated_at'       => now(),
+            ];
+
+            if ($method) {
+                $payload['check_in_method'] = $method;
+            }
+            if ($checkOut && $method) {
+                $payload['check_out_method'] = $method;
+            }
+
+            DB::table('attendances')->updateOrInsert(
+                ['employee_id' => $empId, 'attendance_date' => $today],
+                $payload
+            );
+        }
+    }
+
+    private function seedHolidays(): void
+    {
+        $year = now()->year;
+        $rows = [
+            ['Tết Dương lịch', "{$year}-01-01", "{$year}-01-01", 'public_holiday', 'Nghỉ Tết Dương lịch'],
+            ['Giỗ Tổ Hùng Vương', "{$year}-04-18", "{$year}-04-18", 'public_holiday', 'Nghỉ lễ 10/3'],
+            ['Quốc tế Lao động', "{$year}-05-01", "{$year}-05-01", 'public_holiday', 'Nghỉ 1/5'],
+            ['Quốc khánh', "{$year}-09-02", "{$year}-09-02", 'public_holiday', 'Nghỉ 2/9'],
+            ['Team building công ty', now()->addMonth()->startOfMonth()->format('Y-m-d'), now()->addMonth()->startOfMonth()->addDays(1)->format('Y-m-d'), 'company_trip', 'Du lịch team building'],
+        ];
+
+        foreach ($rows as [$name, $start, $end, $type, $desc]) {
+            DB::table('holidays')->insert([
+                'name'        => $name,
+                'start_date'  => $start,
+                'end_date'    => $end,
+                'type'        => $type,
+                'description' => $desc,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+        }
+    }
+
+    private function seedSalaryAdvances(): void
+    {
+        $emp = fn (string $code) => (int) DB::table('employees')->where('employee_code', $code)->value('id');
+        $rows = [
+            ['TU-' . now()->format('Ym') . '-001', 'EMP004', 5_000_000, 'pending',  'Ứng lương giữa tháng'],
+            ['TU-' . now()->format('Ym') . '-002', 'EMP007', 3_000_000, 'approved', 'Chi phí đi lại công tác'],
+            ['TU-' . now()->subMonth()->format('Ym') . '-001', 'EMP003', 8_000_000, 'partial', 'Ứng lương tháng trước'],
+            ['TU-' . now()->subMonth()->format('Ym') . '-002', 'EMP008', 2_000_000, 'rejected', 'Lý do không hợp lệ'],
+        ];
+
+        foreach ($rows as [$code, $empCode, $amount, $status, $reason]) {
+            $empId = $emp($empCode);
+            if (! $empId) {
+                continue;
+            }
+
+            DB::table('salary_advances')->insert([
+                'advance_code'    => $code,
+                'employee_id'     => $empId,
+                'amount'          => $amount,
+                'amount_settled'  => $status === 'partial' ? 4_000_000 : 0,
+                'request_date'    => now()->toDateString(),
+                'reason'          => $reason,
+                'status'          => $status,
+                'requested_by'    => $empId ? DB::table('employees')->where('id', $empId)->value('user_id') : null,
+                'approved_by'     => in_array($status, ['approved', 'partial']) ? $this->adminUserId : null,
+                'approved_at'     => in_array($status, ['approved', 'partial']) ? now() : null,
+                'rejected_by'     => $status === 'rejected' ? $this->adminUserId : null,
+                'rejected_at'     => $status === 'rejected' ? now() : null,
+                'rejection_reason'=> $status === 'rejected' ? 'Chưa đủ điều kiện ứng lương' : null,
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ]);
+        }
+    }
+
+    private function seedEarlyLeaveRequests(): void
+    {
+        $emp = fn (string $code) => (int) DB::table('employees')->where('employee_code', $code)->value('id');
+        $rows = [
+            ['EMP004', today()->toDateString(), '16:00:00', 'Đưa con đi khám bệnh', 'pending'],
+            ['EMP007', today()->subDays(2)->toDateString(), '15:30:00', 'Việc gia đình', 'approved'],
+            ['EMP010', today()->addDays(3)->toDateString(), '11:30:00', 'Họp trường cho con', 'pending'],
+            ['EMP008', today()->subDays(5)->toDateString(), '16:30:00', 'Không có lý do chính đáng', 'rejected'],
+        ];
+
+        foreach ($rows as [$empCode, $date, $time, $reason, $status]) {
+            $empId = $emp($empCode);
+            if (! $empId) {
+                continue;
+            }
+
+            DB::table('early_leave_requests')->insert([
+                'employee_id'   => $empId,
+                'request_date'  => $date,
+                'leave_time'    => $time,
+                'reason'        => $reason,
+                'status'        => $status,
+                'approved_by'   => $status === 'approved' ? $this->adminUserId : null,
+                'approved_at'   => $status === 'approved' ? now() : null,
+                'rejected_by'   => $status === 'rejected' ? $this->adminUserId : null,
+                'rejected_at'   => $status === 'rejected' ? now() : null,
+                'reject_reason' => $status === 'rejected' ? 'Không đủ nhân sự thay thế' : null,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ]);
+        }
+    }
+
+    private function seedInsurances(): void
+    {
+        $employees = Employee::query()->where('status', 'active')->whereIn('employee_code', ['EMP002', 'EMP003', 'EMP004', 'EMP006', 'EMP007', 'EMP009'])->get();
+
+        foreach ($employees as $employee) {
+            $salary = (float) (DB::table('contracts')->where('employee_id', $employee->id)->value('salary') ?? 10_000_000);
+
+            DB::table('employee_insurances')->insert([
+                'employee_id'          => $employee->id,
+                'social_insurance_number' => 'BH' . str_pad((string) $employee->id, 8, '0', STR_PAD_LEFT),
+                'health_insurance_code'   => 'YT' . str_pad((string) $employee->id, 8, '0', STR_PAD_LEFT),
+                'contribution_salary'  => min($salary, 36_000_000),
+                'start_date'           => $employee->hire_date,
+                'status'               => 'active',
+                'managed_by'           => $this->adminUserId,
+                'created_at'           => now(),
+                'updated_at'           => now(),
+            ]);
+        }
+    }
+
+    private function seedTaxProfiles(): void
+    {
+        $samples = [
+            ['EMP002', '8012345678', [['Vợ', 'Nguyễn Thị Lan', 'spouse']]],
+            ['EMP004', '8023456789', [['Con', 'Phạm Minh An', 'child']]],
+            ['EMP006', '8034567890', []],
+            ['EMP009', '8045678901', [['Con', 'Trần Bảo Ngọc', 'child'], ['Cha', 'Trần Văn Hùng', 'parent']]],
+        ];
+
+        foreach ($samples as [$empCode, $taxCode, $dependents]) {
+            $empId = (int) DB::table('employees')->where('employee_code', $empCode)->value('id');
+            if (! $empId) {
+                continue;
+            }
+
+            DB::table('employee_tax_profiles')->insert([
+                'employee_id'        => $empId,
+                'tax_code'           => $taxCode,
+                'personal_deduction' => 11_000_000,
+                'created_at'         => now(),
+                'updated_at'         => now(),
+            ]);
+
+            foreach ($dependents as [$relationship, $name, $relCode]) {
+                DB::table('tax_dependents')->insert([
+                    'employee_id'        => $empId,
+                    'full_name'          => $name,
+                    'relationship'       => $relCode,
+                    'date_of_birth'      => '2015-05-10',
+                    'monthly_deduction'  => 4_400_000,
+                    'start_date'         => '2024-01-01',
+                    'is_active'          => true,
+                    'created_at'         => now(),
+                    'updated_at'         => now(),
+                ]);
+            }
+        }
+    }
+
+    private function seedFaceDescriptors(): void
+    {
+        $codes = ['EMP002', 'EMP003', 'EMP004', 'EMP006', 'EMP007', 'EMP010'];
+
+        foreach ($codes as $code) {
+            $empId = (int) DB::table('employees')->where('employee_code', $code)->value('id');
+            if (! $empId) {
+                continue;
+            }
+
+            $embedding = [];
+            for ($i = 0; $i < 512; $i++) {
+                $embedding[] = round(sin($empId * 0.1 + $i * 0.01) * 0.5, 6);
+            }
+
+            DB::table('employee_face_descriptors')->insert([
+                'employee_id' => $empId,
+                'embedding'   => json_encode($embedding),
+                'quality'     => 0.85,
+                'model_name'  => 'buffalo_l',
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // SUMMARY TABLE
     // ═══════════════════════════════════════════════════════════════
     private function printSummary(): void
@@ -972,12 +1302,14 @@ class MasterDemoSeeder extends Seeder
         $this->command?->table(
             ['Vai trò', 'Username', 'Password', 'Ghi chú'],
             [
-                ['Admin',   'admin',        'password', 'Toàn quyền — /admin/*'],
-                ['Manager', 'manager',      'password', 'Phòng IT — /manager/*'],
-                ['Manager', 'manager_sale', 'password', 'Phòng Kinh doanh'],
-                ['NV',      'employee',     'password', 'Phạm Thị Dung — EMP004'],
-                ['NV',      'emp_it02',     'password', 'Trương Quốc Bảo — EMP003'],
-                ['NV',      'emp_sale01',   'password', 'Nguyễn Thị Bích Ngọc — EMP007'],
+                ['Admin',     'admin',        'password', 'Toàn quyền — /admin/*'],
+                ['Manager',   'manager',      'password', 'Phòng IT — /manager/*'],
+                ['Manager',   'manager_sale', 'password', 'Phòng Kinh doanh'],
+                ['Kế toán',   'accountant',   'password', 'Bảng lương, BH, thuế — /accountant/*'],
+                ['Trưởng nhóm','leader',      'password', 'Nhóm IT — /leader/*'],
+                ['NV',        'employee',     'password', 'Phạm Thị Dung — EMP004'],
+                ['NV',        'emp_sale01',   'password', 'Nguyễn Thị Bích Ngọc — EMP007'],
+                ['NV',        'hoangvanem',   'password', 'Hoàng Văn Em — EMP010 · test chấm công'],
             ]
         );
 
@@ -994,14 +1326,21 @@ class MasterDemoSeeder extends Seeder
         $this->command?->table(
             ['Chức năng', 'Dữ liệu có sẵn'],
             [
-                ['Nhân sự',    '10 nhân viên · 5 phòng ban · hợp đồng đầy đủ'],
-                ['Chấm công',  '5 kịch bản: đủ công / vắng / muộn / nghỉ phép / vắng nhiều'],
-                ['Nghỉ phép',  '7 đơn: pending / approved / rejected (đa loại)'],
-                ['Tăng ca',    '6 đơn: pending / approved / completed'],
-                ['KPI',        '4 KPI + nhiệm vụ + giao manager + giao nhân viên'],
-                ['Lương',      '4 kỳ đa trạng thái, tính tự động từ chấm công'],
-                ['Tuyển dụng', '4 tin tuyển · 6 ứng viên · 2 lịch phỏng vấn'],
-                ['Thông báo',  '5 thông báo gửi đến toàn bộ user'],
+                ['Nhân sự',      '10 nhân viên · 5 phòng ban · hợp đồng đầy đủ'],
+                ['Phân ca',      'Ca hành chính cả tháng · EMP010 có ca sáng + ca test hôm nay'],
+                ['Chấm công',    '3 tháng gần nhất + dữ liệu hôm nay (vào/ra/muộn/vắng)'],
+                ['Khuôn mặt',    '6 nhân viên đã đăng ký embedding (admin UI)'],
+                ['Nghỉ phép',    '7 đơn: pending / approved / rejected'],
+                ['Về sớm',       '4 đơn xin về sớm đa trạng thái'],
+                ['Tăng ca',      '6 đơn: pending / approved / completed'],
+                ['Ứng lương',    '4 đơn: pending / approved / partial / rejected'],
+                ['KPI',          '4 KPI + nhiệm vụ + giao manager + giao nhân viên'],
+                ['Lương',        '4 kỳ đa trạng thái, tính tự động từ chấm công'],
+                ['Bảo hiểm',     '6 nhân viên có hồ sơ BHXH/BHYT'],
+                ['Thuế',         '4 hồ sơ thuế + người phụ thuộc'],
+                ['Ngày lễ',      '5 ngày lễ / sự kiện công ty'],
+                ['Tuyển dụng',   '4 tin tuyển · 6 ứng viên · 2 lịch phỏng vấn'],
+                ['Thông báo',    '5 thông báo gửi đến toàn bộ user'],
             ]
         );
     }

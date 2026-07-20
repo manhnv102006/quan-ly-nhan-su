@@ -95,7 +95,7 @@ class TeamMembershipRequest extends Model
     }
 
     /**
-     * CĂ¡c Ä‘á» xuáº¥t thuá»™c phĂ²ng ban do quáº£n lĂ½ nĂ y phá»¥ trĂ¡ch (dá»±a trĂªn phĂ²ng ban cá»§a leader).
+     * Các đề xuất thuộc phòng ban do quản lý này phụ trách (dựa trên phòng ban của leader).
      *
      * @param  Builder<TeamMembershipRequest>  $query
      */
