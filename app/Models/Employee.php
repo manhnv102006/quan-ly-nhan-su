@@ -243,6 +243,73 @@ class Employee extends Model
         return $query->where('manager_id', $leader->id);
     }
 
+    public function isDepartmentHead(): bool
+    {
+        return $this->managedDepartments()->exists();
+    }
+
+    public function hasHeadOfDepartmentPosition(): bool
+    {
+        $this->loadMissing('position');
+
+        if (! $this->position?->position_name) {
+            return false;
+        }
+
+        return str_contains(mb_strtolower($this->position->position_name), 'trưởng phòng');
+    }
+
+    public function canBeAddedToLeaderTeam(self $leader): bool
+    {
+        if ((int) $this->department_id !== (int) $leader->department_id) {
+            return false;
+        }
+
+        if ((int) $this->id === (int) $leader->id) {
+            return false;
+        }
+
+        if ($this->status !== 'active') {
+            return false;
+        }
+
+        if ($this->manager_id !== null) {
+            return false;
+        }
+
+        if ($this->isDepartmentHead() || $this->hasHeadOfDepartmentPosition()) {
+            return false;
+        }
+
+        $this->loadMissing('user.role');
+
+        return ! ($this->user?->role && in_array($this->user->role->name, [Role::MANAGER, Role::LEADER, Role::ADMIN], true));
+    }
+
+    /**
+     * @param  Builder<Employee>  $query
+     */
+    public function scopeEligibleForLeaderTeamAdd(Builder $query, self $leader): Builder
+    {
+        return $query
+            ->where('department_id', $leader->department_id)
+            ->where('id', '!=', $leader->id)
+            ->where('status', 'active')
+            ->whereNull('manager_id')
+            ->whereDoesntHave('managedDepartments')
+            ->where(function (Builder $scope) {
+                $scope->whereNull('position_id')
+                    ->orWhereHas('position', fn (Builder $pos) => $pos->where('position_name', 'not like', '%Trưởng phòng%'));
+            })
+            ->where(function (Builder $scope) {
+                $scope->whereDoesntHave('user')
+                    ->orWhereHas('user', fn (Builder $userQuery) => $userQuery->whereDoesntHave(
+                        'role',
+                        fn (Builder $roleQuery) => $roleQuery->whereIn('name', [Role::MANAGER, Role::LEADER, Role::ADMIN])
+                    ));
+            });
+    }
+
     /**
      * Nhân viên thuộc phòng ban do quản lý này phụ trách.
      */

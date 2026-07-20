@@ -31,16 +31,9 @@ class TeamMembershipRequestController extends Controller
             ->latest()
             ->paginate(10);
 
-        // á»¨ng viĂªn cĂ³ thá»ƒ Ä‘á» xuáº¥t thĂªm: cĂ¹ng phĂ²ng ban, chÆ°a thuá»™c nhĂ³m nĂ o.
+        // Ứng viên có thể đề xuất thêm: cùng phòng ban, chưa thuộc nhóm, không phải Trưởng phòng.
         $addCandidates = Employee::query()
-            ->where('department_id', $leader->department_id)
-            ->where('id', '!=', $leader->id)
-            ->where('status', 'active')
-            ->whereDoesntHave('user', function ($q) {
-                $q->whereHas('role', function ($role) {
-                    $role->where('name', 'manager');
-                });
-            })
+            ->eligibleForLeaderTeamAdd($leader)
             ->orderBy('full_name')
             ->get(['id', 'full_name', 'employee_code']);
         // ThĂ nh viĂªn hiá»‡n táº¡i cĂ³ thá»ƒ Ä‘á» xuáº¥t Ä‘Æ°a ra khá»i nhĂ³m.

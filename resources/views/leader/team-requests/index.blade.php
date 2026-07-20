@@ -35,7 +35,7 @@
                 <div>
                     <label class="leader-label">Nhân viên</label>
                     <select name="employee_id" class="leader-field">
-                        <optgroup label="Có thể thêm (cùng phòng ban, chưa có nhóm)" x-show="action === 'add'">
+                        <optgroup label="Có thể thêm (cùng phòng ban, chưa có nhóm, không gồm Trưởng phòng)" x-show="action === 'add'">
                             @foreach ($addCandidates as $candidate)
                                 <option value="{{ $candidate->id }}" @selected(old('employee_id') == $candidate->id)>{{ $candidate->full_name }} ({{ $candidate->employee_code }})</option>
                             @endforeach
