@@ -69,6 +69,8 @@ class LeaderStatsService
             $kpis = EmployeeKPI::query()
                 ->with('kpi')
                 ->where('employee_id', $employee->id)
+                ->whereMonth('updated_at', $month)
+                ->whereYear('updated_at', $year)
                 ->get();
 
             $attendance = Attendance::query()
