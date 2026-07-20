@@ -5,13 +5,16 @@ namespace App\Policies;
 use App\Models\Contract;
 use App\Models\Employee;
 use App\Models\User;
+use App\Services\LeaderScopeService;
 use App\Services\ManagerScopeService;
 use Illuminate\Auth\Access\Response;
 
 class ContractPolicy
 {
-    public function __construct(private readonly ManagerScopeService $managerScope)
-    {
+    public function __construct(
+        private readonly ManagerScopeService $managerScope,
+        private readonly LeaderScopeService $leaderScope,
+    ) {
     }
 
     public function viewAny(User $user): Response
@@ -93,34 +96,30 @@ class ContractPolicy
         return Response::deny('Bạn chỉ được xem hợp đồng nhân viên phòng mình.', 403);
     }
     private function leaderCanViewResponse(User $user, Contract $contract): Response
-{
-    $employee = $contract->employee;
+    {
+        $employee = $contract->employee;
 
-    if (! $employee) {
-        return Response::deny('Hợp đồng không gắn nhân viên.', 403);
+        if (! $employee) {
+            return Response::deny('Hợp đồng không gắn nhân viên.', 403);
+        }
+
+        $leader = $this->leaderScope->resolveLeaderEmployee($user);
+
+        if (! $leader) {
+            return Response::deny('Tài khoản trưởng nhóm chưa liên kết hồ sơ nhân viên.', 403);
+        }
+
+        if ((int) $employee->user_id === (int) $user->id) {
+            return Response::allow();
+        }
+
+        if ($employee->isDirectReportOf($leader)) {
+            return Response::allow();
+        }
+
+        return Response::deny(
+            'Bạn chỉ được xem hợp đồng thành viên trong nhóm.',
+            403
+        );
     }
-
-    $leader = Employee::query()
-        ->where('user_id', $user->id)
-        ->first();
-
-    if (! $leader) {
-        return Response::deny('Không tìm thấy thông tin Leader.', 403);
-    }
-
-    // Leader xem được hợp đồng của chính mình
-    if ($employee->user_id === $user->id) {
-        return Response::allow();
-    }
-
-    // Leader xem được nhân viên trực tiếp trong nhóm
-    if ($employee->isDirectReportOf($leader)) {
-        return Response::allow();
-    }
-
-    return Response::deny(
-        'Bạn chỉ được xem hợp đồng thành viên trong nhóm.',
-        403
-    );
-}
 }
