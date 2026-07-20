@@ -104,8 +104,9 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="button"
-                                                    onclick="openDeleteModal('{{ $position->id }}', @json($position->position_name))"
-                                                    class="w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200"
+                                                    class="js-delete-position w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200"
+                                                    data-position-id="{{ $position->id }}"
+                                                    data-position-name="{{ $position->position_name }}"
                                                     title="Xóa mềm">🗑</button>
                                         </form>
                                     </div>
@@ -175,7 +176,7 @@
         let deleteTargetId = null;
 
         function openDeleteModal(id, name) {
-            deleteTargetId = id;
+            deleteTargetId = String(id);
             document.getElementById('delete-position-name').textContent = name;
             const modal = document.getElementById('delete-modal');
             modal.classList.remove('hidden');
@@ -190,10 +191,21 @@
         }
 
         function confirmDelete() {
-            if (deleteTargetId) {
-                document.getElementById('delete-form-' + deleteTargetId).submit();
+            if (!deleteTargetId) return;
+
+            const form = document.getElementById('delete-form-' + deleteTargetId);
+            if (form) {
+                form.submit();
+            } else {
+                closeDeleteModal();
             }
         }
+
+        document.querySelectorAll('.js-delete-position').forEach(function (button) {
+            button.addEventListener('click', function () {
+                openDeleteModal(this.dataset.positionId, this.dataset.positionName);
+            });
+        });
 
         document.getElementById('delete-modal').addEventListener('click', function (e) {
             if (e.target === this) closeDeleteModal();
