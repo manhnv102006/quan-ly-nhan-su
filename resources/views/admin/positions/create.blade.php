@@ -27,7 +27,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('admin.positions.store') }}" method="POST" class="space-y-5">
+            <form action="{{ route('admin.positions.store') }}" method="POST" class="space-y-5" id="position-create-form" novalidate>
                 @csrf
 
                 <div>
@@ -36,7 +36,7 @@
                     </label>
                     <input type="text" id="position_name" name="position_name"
                            value="{{ old('position_name') }}"
-                           placeholder="Nhập tên chức vụ" required
+                           placeholder="Nhập tên chức vụ" minlength="2" maxlength="30" required
                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('position_name') border-red-400 @enderror">
                     @error('position_name')
                         <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
@@ -108,5 +108,112 @@
         </div>
 
     </div>
+
+    <script>
+        (function () {
+            const form = document.getElementById('position-create-form');
+            if (!form) return;
+
+            const maxSalary = 999999999999.99;
+            const positionNamePattern = /^[\p{L}\s]+$/u;
+
+            function setFieldError(input, message) {
+                input.classList.add('border-red-400');
+                let hint = input.parentElement.querySelector('[data-client-error]');
+                if (!hint) {
+                    hint = document.createElement('p');
+                    hint.dataset.clientError = '1';
+                    hint.className = 'mt-1.5 text-sm text-red-600';
+                    input.parentElement.appendChild(hint);
+                }
+                hint.textContent = message;
+                hint.classList.remove('hidden');
+            }
+
+            function clearClientErrors() {
+                form.querySelectorAll('[data-client-error]').forEach(function (el) {
+                    el.remove();
+                });
+                form.querySelectorAll('.border-red-400').forEach(function (el) {
+                    el.classList.remove('border-red-400');
+                });
+            }
+
+            function parseMoney(value) {
+                if (value === '' || value === null || value === undefined) {
+                    return null;
+                }
+                const number = Number(value);
+                return Number.isFinite(number) ? number : NaN;
+            }
+
+            form.addEventListener('submit', function (event) {
+                clearClientErrors();
+
+                let valid = true;
+                const positionName = form.querySelector('#position_name');
+                const baseSalary = form.querySelector('#base_salary');
+                const allowance = form.querySelector('#allowance');
+                const status = form.querySelector('#status');
+
+                const nameValue = positionName.value.trim();
+                if (!nameValue) {
+                    setFieldError(positionName, 'Vui lòng nhập tên chức vụ.');
+                    valid = false;
+                } else if (nameValue.length < 2) {
+                    setFieldError(positionName, 'Tên chức vụ phải có ít nhất 2 ký tự.');
+                    valid = false;
+                } else if (nameValue.length > 30) {
+                    setFieldError(positionName, 'Tên chức vụ không được vượt quá 30 ký tự.');
+                    valid = false;
+                } else if (!positionNamePattern.test(nameValue)) {
+                    setFieldError(positionName, 'Tên chức vụ chỉ được chứa chữ cái, không được nhập số hoặc ký tự đặc biệt.');
+                    valid = false;
+                }
+
+                const baseSalaryValue = parseMoney(baseSalary.value);
+                if (baseSalary.value.trim() === '') {
+                    setFieldError(baseSalary, 'Vui lòng nhập lương cơ bản.');
+                    valid = false;
+                } else if (Number.isNaN(baseSalaryValue)) {
+                    setFieldError(baseSalary, 'Lương cơ bản phải là số hợp lệ.');
+                    valid = false;
+                } else if (baseSalaryValue < 0) {
+                    setFieldError(baseSalary, 'Lương cơ bản không được âm.');
+                    valid = false;
+                } else if (baseSalaryValue > maxSalary) {
+                    setFieldError(baseSalary, 'Lương cơ bản vượt quá giới hạn cho phép.');
+                    valid = false;
+                }
+
+                if (allowance.value.trim() !== '') {
+                    const allowanceValue = parseMoney(allowance.value);
+                    if (Number.isNaN(allowanceValue)) {
+                        setFieldError(allowance, 'Phụ cấp chức vụ phải là số hợp lệ.');
+                        valid = false;
+                    } else if (allowanceValue < 0) {
+                        setFieldError(allowance, 'Phụ cấp chức vụ không được âm.');
+                        valid = false;
+                    } else if (allowanceValue > maxSalary) {
+                        setFieldError(allowance, 'Phụ cấp chức vụ vượt quá giới hạn cho phép.');
+                        valid = false;
+                    }
+                }
+
+                if (!status.value) {
+                    setFieldError(status, 'Vui lòng chọn trạng thái.');
+                    valid = false;
+                }
+
+                if (!valid) {
+                    event.preventDefault();
+                    const firstInvalid = form.querySelector('.border-red-400');
+                    if (firstInvalid && typeof firstInvalid.focus === 'function') {
+                        firstInvalid.focus();
+                    }
+                }
+            });
+        })();
+    </script>
 
 </x-admin-layout>
