@@ -29,7 +29,9 @@ class PublicRecruitmentController extends Controller
 
     public function apply(JobPost $jobPost): View
     {
-        abort(404);
+        $jobPost = $this->publicJobPost($jobPost);
+
+        return view('public.recruitment.apply', compact('jobPost'));
     }
 
     public function store(Request $request, JobPost $jobPost): RedirectResponse
