@@ -21,7 +21,7 @@ class EmployeeContractController extends Controller
 
     private function getEmployee(): Employee
     {
-        $employee = Employee::where('user_id', Auth::id())->first();
+        $employee = Employee::with('department')->where('user_id', Auth::id())->first();
 
         if (! $employee) {
             abort(403, 'Tài khoản của bạn chưa được liên kết với hồ sơ nhân viên.');
@@ -40,9 +40,18 @@ class EmployeeContractController extends Controller
             ->orderByDesc('start_date')
             ->paginate(10);
 
-        $activeContract = $contracts->first(fn (Contract $c) => $c->status === Contract::STATUS_ACTIVE);
+        $activeContract = Contract::query()
+            ->with(['contractType', 'department', 'position'])
+            ->where('employee_id', $employee->id)
+            ->where('status', Contract::STATUS_ACTIVE)
+            ->orderByDesc('start_date')
+            ->first();
 
-        return view('employee.contracts.index', compact('employee', 'contracts', 'activeContract'));
+        $totalContracts = Contract::query()
+            ->where('employee_id', $employee->id)
+            ->count();
+
+        return view('employee.contracts.index', compact('employee', 'contracts', 'activeContract', 'totalContracts'));
     }
 
     public function show(Contract $contract): View
