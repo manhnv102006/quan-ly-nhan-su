@@ -74,6 +74,8 @@ Route::redirect('/', '/tuyen-dung');
 Route::prefix('tuyen-dung')->name('public.recruitment.')->group(function () {
     Route::get('/', [PublicRecruitmentController::class, 'index'])->name('index');
     Route::get('/gioi-thieu', [PublicRecruitmentController::class, 'about'])->name('about');
+    Route::get('/he-sinh-thai', [PublicRecruitmentController::class, 'ecosystem'])->name('ecosystem');
+    Route::get('/tin-tuc', [PublicRecruitmentController::class, 'news'])->name('news');
     Route::get('/viec-lam', [PublicRecruitmentController::class, 'jobs'])->name('jobs');
     Route::get('/{publicJobPost}', [PublicRecruitmentController::class, 'show'])->name('show');
     Route::get('/{publicJobPost}/ung-tuyen', [PublicRecruitmentController::class, 'apply'])->name('apply');

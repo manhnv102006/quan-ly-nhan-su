@@ -38,6 +38,16 @@ class PublicRecruitmentController extends Controller
         return view('public.recruitment.about');
     }
 
+    public function ecosystem(): View
+    {
+        return view('public.recruitment.ecosystem');
+    }
+
+    public function news(): View
+    {
+        return view('public.recruitment.news');
+    }
+
     public function jobs(): View
     {
         $jobPosts = JobPost::query()
