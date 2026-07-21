@@ -3,7 +3,7 @@
     subtitle="Các KPI bạn phụ trách và giao cho nhân viên trong phòng ban."
 >
     @php
-        $cardsData = $assignments->map(function ($assignment) {
+        $cardsData = $assignments->map(function ($assignment) use ($managedEmployees) {
             return [
                 'id' => $assignment->id,
                 'code' => $assignment->kpi->code ?? 'N/A',
