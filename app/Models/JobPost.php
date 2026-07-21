@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -43,5 +44,16 @@ class JobPost extends Model
     public function recruiter(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'recruiter_id');
+    }
+
+    public function scopePubliclyVisible(Builder $query): Builder
+    {
+        return $query
+            ->where('status', 'open')
+            ->where(function (Builder $query) {
+                $query
+                    ->whereNull('application_deadline')
+                    ->orWhereDate('application_deadline', '>=', now()->toDateString());
+            });
     }
 }
