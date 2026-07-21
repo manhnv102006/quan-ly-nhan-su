@@ -73,9 +73,9 @@ Route::get('/', [DashboardController::class, 'redirect']);
 
 Route::prefix('tuyen-dung')->name('public.recruitment.')->group(function () {
     Route::get('/', [PublicRecruitmentController::class, 'index'])->name('index');
-    Route::get('/{jobPost}', [PublicRecruitmentController::class, 'show'])->name('show');
-    Route::get('/{jobPost}/ung-tuyen', [PublicRecruitmentController::class, 'apply'])->name('apply');
-    Route::post('/{jobPost}/ung-tuyen', [PublicRecruitmentController::class, 'store'])->name('apply.store');
+    Route::get('/{publicJobPost}', [PublicRecruitmentController::class, 'show'])->name('show');
+    Route::get('/{publicJobPost}/ung-tuyen', [PublicRecruitmentController::class, 'apply'])->name('apply');
+    Route::post('/{publicJobPost}/ung-tuyen', [PublicRecruitmentController::class, 'store'])->name('apply.store');
 });
 
 Route::get('/dashboard', [DashboardController::class, 'redirect'])

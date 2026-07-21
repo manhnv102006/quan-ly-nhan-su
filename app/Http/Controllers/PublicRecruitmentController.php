@@ -22,23 +22,23 @@ class PublicRecruitmentController extends Controller
         return view('public.recruitment.index', compact('jobPosts'));
     }
 
-    public function show(JobPost $jobPost): View
+    public function show(JobPost $publicJobPost): View
     {
-        $jobPost = $this->publicJobPost($jobPost);
+        $jobPost = $this->publicJobPost($publicJobPost);
 
         return view('public.recruitment.show', compact('jobPost'));
     }
 
-    public function apply(JobPost $jobPost): View
+    public function apply(JobPost $publicJobPost): View
     {
-        $jobPost = $this->publicJobPost($jobPost);
+        $jobPost = $this->publicJobPost($publicJobPost);
 
         return view('public.recruitment.apply', compact('jobPost'));
     }
 
-    public function store(Request $request, JobPost $jobPost): RedirectResponse
+    public function store(Request $request, JobPost $publicJobPost): RedirectResponse
     {
-        $jobPost = $this->publicJobPost($jobPost);
+        $jobPost = $this->publicJobPost($publicJobPost);
 
         $validated = $this->validateApplication($request);
         $cvPath = $this->storeCvFile($request->file('cv_file'));
