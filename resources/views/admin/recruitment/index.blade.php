@@ -70,6 +70,14 @@
                 'badge' => ($stats['interviews'] ?? 0).' lịch',
                 'tone' => 'amber',
             ],
+            [
+                'title' => 'Ung vien da phong van',
+                'description' => 'Tap trung cac ho so da co lich phong van de theo doi va xu ly ket qua sau phong van.',
+                'route' => route('admin.recruitment.interviewed-candidates'),
+                'cta' => 'Xem ung vien da phong van',
+                'badge' => ($stats['interviewed_candidates'] ?? 0).' ho so',
+                'tone' => 'indigo',
+            ],
         ];
     @endphp
 
@@ -131,7 +139,7 @@
             @endforeach
         </section>
 
-        <section class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <section class="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-4">
             @foreach ($modules as $module)
                 <a href="{{ $module['route'] }}"
                    class="group overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white p-6 shadow-sm shadow-slate-200/60 transition hover:-translate-y-1 hover:border-cyan-200 hover:shadow-lg hover:shadow-cyan-100/60">
