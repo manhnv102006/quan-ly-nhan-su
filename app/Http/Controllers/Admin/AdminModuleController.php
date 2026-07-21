@@ -20,8 +20,46 @@ class AdminModuleController extends Controller
 
     public function employees(Request $request): View
     {
+        $view = $request->string('view')->value();
+        $hasDepartmentParam = $request->query('department_id') !== null;
+
+        if ($view !== 'all' && ! $hasDepartmentParam) {
+            return $this->employeeDepartmentGrid();
+        }
+
+        return $this->employeeList($request);
+    }
+
+    private function employeeStats(): array
+    {
+        return [
+            'total' => Employee::count(),
+            'active' => Employee::where('status', 'active')->count(),
+            'inactive' => Employee::where('status', 'inactive')->count(),
+            'resigned' => Employee::where('status', 'resigned')->count(),
+        ];
+    }
+
+    private function employeeDepartmentGrid(): View
+    {
+        $departments = Department::query()
+            ->withCount('employees')
+            ->with('manager:id,full_name')
+            ->orderBy('department_name')
+            ->get();
+
+        $unassignedCount = Employee::whereNull('department_id')->count();
+        $stats = $this->employeeStats();
+
+        return view('admin.employees.departments', compact('departments', 'unassignedCount', 'stats'));
+    }
+
+    private function employeeList(Request $request): View
+    {
         $search = $request->string('search')->trim()->value();
-        $departmentId = $request->integer('department_id') ?: null;
+        $departmentParam = $request->query('department_id');
+        $unassignedOnly = $departmentParam === 'none';
+        $departmentId = $unassignedOnly ? null : ((int) $departmentParam ?: null);
         $positionId = $request->integer('position_id') ?: null;
         $status = $request->string('status')->trim()->value();
 
@@ -38,6 +76,7 @@ class AdminModuleController extends Controller
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%");
             }))
+            ->when($unassignedOnly, fn ($query) => $query->whereNull('department_id'))
             ->when($departmentId, fn ($query) => $query->where('department_id', $departmentId))
             ->when($positionId, fn ($query) => $query->where('position_id', $positionId))
             ->when($status !== '', fn ($query) => $query->where('status', $status))
@@ -45,24 +84,33 @@ class AdminModuleController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        $stats = [
-            'total' => Employee::count(),
-            'active' => Employee::where('status', 'active')->count(),
-            'inactive' => Employee::where('status', 'inactive')->count(),
-            'resigned' => Employee::where('status', 'resigned')->count(),
-        ];
+        $stats = $this->employeeStats();
 
         $departments = Department::query()->orderBy('department_name')->get(['id', 'department_name']);
         $positions = Position::query()->orderBy('position_name')->get(['id', 'position_name']);
+
+        $currentDepartment = $departmentId
+            ? Department::query()->withCount('employees')->find($departmentId)
+            : null;
 
         $filters = [
             'search' => $search,
             'department_id' => $departmentId,
             'position_id' => $positionId,
             'status' => $status,
+            'unassigned' => $unassignedOnly,
         ];
 
-        return view('admin.employees.index', compact('employees', 'stats', 'search', 'departments', 'positions', 'filters'));
+        return view('admin.employees.index', compact(
+            'employees',
+            'stats',
+            'search',
+            'departments',
+            'positions',
+            'filters',
+            'currentDepartment',
+            'unassignedOnly',
+        ));
     }
 
     public function attendances(): View

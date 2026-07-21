@@ -2,15 +2,35 @@
 
     <div class="space-y-6">
 
+        <div>
+            <a href="{{ route('admin.employees') }}" class="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-violet-600 transition">
+                ← Danh sách phòng ban
+            </a>
+        </div>
+
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
-                <h2 class="text-2xl font-bold text-slate-800">Quản lý nhân viên</h2>
-                <p class="text-sm text-slate-500 mt-1">Danh sách và quản lý hồ sơ nhân viên</p>
+                @if (!empty($currentDepartment))
+                    <h2 class="text-2xl font-bold text-slate-800">{{ $currentDepartment->department_name }}</h2>
+                    <p class="text-sm text-slate-500 mt-1">Nhân viên thuộc phòng ban · {{ $currentDepartment->employees_count }}/{{ $currentDepartment->maxEmployeesLimit() }}</p>
+                @elseif (!empty($unassignedOnly))
+                    <h2 class="text-2xl font-bold text-slate-800">Nhân viên chưa có phòng ban</h2>
+                    <p class="text-sm text-slate-500 mt-1">Danh sách nhân viên chưa được gán phòng ban</p>
+                @else
+                    <h2 class="text-2xl font-bold text-slate-800">Tất cả nhân viên</h2>
+                    <p class="text-sm text-slate-500 mt-1">Danh sách và quản lý hồ sơ nhân viên</p>
+                @endif
             </div>
             <div class="flex flex-wrap items-center gap-3">
-                <a href="{{ route('admin.employees.create') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
-                    + Thêm nhân viên
-                </a>
+                @if (!empty($currentDepartment))
+                    <a href="{{ route('admin.employees.create', ['department_id' => $currentDepartment->id]) }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
+                        + Thêm nhân viên vào phòng này
+                    </a>
+                @else
+                    <a href="{{ route('admin.employees.create') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
+                        + Thêm nhân viên
+                    </a>
+                @endif
                 <a href="{{ route('admin.employees.trash') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
                     Nhân viên đã xóa
                 </a>

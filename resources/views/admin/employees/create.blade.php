@@ -87,7 +87,7 @@
                     <label class="block text-sm font-medium text-slate-700">Phòng ban <span class="text-rose-500">*</span></label>
                     @include('admin.partials.department-select', [
                         'departments' => $departments,
-                        'selected' => old('department_id'),
+                        'selected' => old('department_id', request('department_id')),
                     ])
                     @error('department_id') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
