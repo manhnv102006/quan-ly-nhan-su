@@ -81,20 +81,12 @@ class CandidateController extends Controller
 
         $jobPosts = $this->availableJobPosts();
 
-        return view('admin.recruitment.interviewed-candidates.index', compact('candidates', 'stats', 'filters', 'jobPosts'));
+        return view('admin.recruitment.candidates.index', compact('candidates', 'stats', 'filters', 'jobPosts'));
     }
 
-    public function interviewed(): View
+    public function interviewed(Request $request): View
     {
-        $filters = [
-            'search' => '',
-            'status' => '',
-            'job_post_id' => '',
-            'cv_status' => '',
-            'converted' => '',
-            'created_from' => '',
-            'created_to' => '',
-        ];
+        $filters = $this->interviewedCandidateFilters($request);
 
         $candidates = Candidate::query()
             ->whereHas('interviews')
@@ -103,6 +95,26 @@ class CandidateController extends Controller
                 'employee',
                 'interviews' => fn ($query) => $query->with('interviewer')->latest('interview_date'),
             ])
+            ->when($filters['search'] !== '', function ($query) use ($filters) {
+                $search = $filters['search'];
+
+                $query->where(function ($query) use ($search) {
+                    $query->where('full_name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhereHas('jobPost', function ($jobPostQuery) use ($search) {
+                            $jobPostQuery->where('title', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($filters['status'] !== '', fn ($query) => $query->where('status', $filters['status']))
+            ->when($filters['job_post_id'] !== '', fn ($query) => $query->where('job_post_id', $filters['job_post_id']))
+            ->when($filters['interview_result'] !== '', function ($query) use ($filters) {
+                $query->whereHas('interviews', fn ($interviewQuery) => $interviewQuery->where('result', $filters['interview_result']));
+            })
+            ->when($filters['interview_status'] !== '', function ($query) use ($filters) {
+                $query->whereHas('interviews', fn ($interviewQuery) => $interviewQuery->where('status', $filters['interview_status']));
+            })
             ->latest()
             ->paginate(12)
             ->withQueryString();
@@ -121,7 +133,45 @@ class CandidateController extends Controller
 
         $jobPosts = $this->availableJobPosts();
 
-        return view('admin.recruitment.candidates.index', compact('candidates', 'stats', 'filters', 'jobPosts'));
+        return view('admin.recruitment.interviewed-candidates.index', compact('candidates', 'stats', 'filters', 'jobPosts'));
+    }
+
+    public function updateInterviewDecision(Request $request, Candidate $candidate): RedirectResponse
+    {
+        $interview = $candidate->interviews()
+            ->latest('interview_date')
+            ->first();
+
+        if ($interview === null) {
+            return redirect()
+                ->route('admin.recruitment.interviewed-candidates')
+                ->with('error', 'Ung vien nay chua co lich phong van de xu ly ket qua.');
+        }
+
+        $validated = $request->validate([
+            'result' => ['required', 'in:passed,failed'],
+            'note' => ['nullable', 'string', 'max:2000'],
+        ], [
+            'result.required' => 'Ket qua phong van la bat buoc.',
+            'result.in' => 'Ket qua phong van khong hop le.',
+            'note.max' => 'Ghi chu khong duoc vuot qua 2000 ky tu.',
+        ]);
+
+        DB::transaction(function () use ($candidate, $interview, $validated) {
+            $interview->update([
+                'status' => 'completed',
+                'result' => $validated['result'],
+                'note' => $validated['note'] ?? $interview->note,
+            ]);
+
+            $candidate->update([
+                'status' => $validated['result'],
+            ]);
+        });
+
+        return redirect()
+            ->route('admin.recruitment.interviewed-candidates')
+            ->with('success', 'Da cap nhat ket qua phong van thanh cong.');
     }
 
     public function show(Candidate $candidate): View
@@ -322,6 +372,21 @@ class CandidateController extends Controller
             'converted' => in_array($converted, ['yes', 'no'], true) ? $converted : '',
             'created_from' => (string) $request->input('created_from', ''),
             'created_to' => (string) $request->input('created_to', ''),
+        ];
+    }
+
+    private function interviewedCandidateFilters(Request $request): array
+    {
+        $status = (string) $request->string('status');
+        $interviewResult = (string) $request->string('interview_result');
+        $interviewStatus = (string) $request->string('interview_status');
+
+        return [
+            'search' => (string) $request->string('search')->trim(),
+            'status' => in_array($status, ['interview', 'passed', 'failed'], true) ? $status : '',
+            'job_post_id' => (string) $request->input('job_post_id', ''),
+            'interview_result' => in_array($interviewResult, ['pending', 'passed', 'failed'], true) ? $interviewResult : '',
+            'interview_status' => in_array($interviewStatus, ['scheduled', 'completed', 'cancelled', 'no_show'], true) ? $interviewStatus : '',
         ];
     }
 
