@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\JobPost;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\View\View;
 
 class PublicRecruitmentController extends Controller
@@ -39,6 +40,7 @@ class PublicRecruitmentController extends Controller
         $jobPost = $this->publicJobPost($jobPost);
 
         $this->validateApplication($request);
+        $this->storeCvFile($request->file('cv_file'));
 
         return redirect()->route('public.recruitment.apply', $jobPost);
     }
@@ -75,5 +77,14 @@ class PublicRecruitmentController extends Controller
             'cv_file.mimes' => 'CV chỉ hỗ trợ định dạng PDF, DOC hoặc DOCX.',
             'cv_file.max' => 'CV không được vượt quá 10MB.',
         ]);
+    }
+
+    private function storeCvFile(?UploadedFile $file): ?string
+    {
+        if (! $file instanceof UploadedFile) {
+            return null;
+        }
+
+        return $file->store('candidate-cvs', 'public');
     }
 }
