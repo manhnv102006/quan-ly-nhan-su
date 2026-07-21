@@ -84,6 +84,13 @@ class CandidateController extends Controller
         return view('admin.recruitment.candidates.index', compact('candidates', 'stats', 'filters', 'jobPosts'));
     }
 
+    public function interviewed(): RedirectResponse
+    {
+        return redirect()
+            ->route('admin.recruitment.interviews')
+            ->with('info', 'Trang ung vien da phong van dang duoc chuan bi.');
+    }
+
     public function show(Candidate $candidate): View
     {
         $candidate->load([
