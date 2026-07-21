@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\ContractTypeController;
 use App\Http\Controllers\Admin\KPIController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\NotificationController as UserNotificationController;
+use App\Http\Controllers\PublicRecruitmentController;
 
 use App\Http\Controllers\Admin\PayrollPeriodController;
 use App\Http\Controllers\Admin\PositionController;
@@ -69,6 +70,13 @@ use App\Http\Controllers\Employee\OvertimeController as EmployeeOvertimeControll
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [DashboardController::class, 'redirect']);
+
+Route::prefix('tuyen-dung')->name('public.recruitment.')->group(function () {
+    Route::get('/', [PublicRecruitmentController::class, 'index'])->name('index');
+    Route::get('/{jobPost}', [PublicRecruitmentController::class, 'show'])->name('show');
+    Route::get('/{jobPost}/ung-tuyen', [PublicRecruitmentController::class, 'apply'])->name('apply');
+    Route::post('/{jobPost}/ung-tuyen', [PublicRecruitmentController::class, 'store'])->name('apply.store');
+});
 
 Route::get('/dashboard', [DashboardController::class, 'redirect'])
     ->middleware(['auth', 'verified'])
