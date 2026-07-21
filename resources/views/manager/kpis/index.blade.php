@@ -32,7 +32,7 @@
                             <th>Mã KPI</th>
                             <th>Tên KPI</th>
                             <th>Deadline</th>
-                            <th class="text-center">Đã giao</th>
+                            <th>Nhân viên được giao</th>
                             <th class="text-center">Trạng thái</th>
                             <th>Người giao</th>
                             <th class="text-center">Thao tác</th>
@@ -47,7 +47,20 @@
                                     <p class="mt-1 text-xs text-slate-500">{{ Str::limit($assignment->kpi->description ?? '', 100) }}</p>
                                 </td>
                                 <td>{{ $assignment->end_date->format('d/m/Y') }}</td>
-                                <td class="text-center font-semibold">{{ $assignment->employee_kpis_count }}</td>
+                                <td>
+                                    @if ($assignment->employeeKpis->isNotEmpty())
+                                        @foreach ($assignment->employeeKpis as $employeeKpi)
+                                            <p class="font-semibold text-slate-800">
+                                                {{ $employeeKpi->employee?->full_name ?? '—' }}
+                                            </p>
+                                            @if ($employeeKpi->employee?->employee_code)
+                                                <p class="text-xs text-slate-500">{{ $employeeKpi->employee->employee_code }}</p>
+                                            @endif
+                                        @endforeach
+                                    @else
+                                        <span class="text-sm text-slate-400">Chưa giao</span>
+                                    @endif
+                                </td>
                                 <td class="text-center">
                                     <span class="manager-badge {{ $assignment->status_color }}">{{ $assignment->status_label }}</span>
                                 </td>
@@ -60,9 +73,11 @@
                                         <a href="{{ route('manager.kpis.show', $assignment) }}" class="manager-btn-secondary px-3 py-2 text-xs">
                                             Chi tiết
                                         </a>
-                                        <a href="{{ route('manager.kpis.assign', $assignment) }}" class="manager-btn-primary px-3 py-2 text-xs">
-                                            Giao NV
-                                        </a>
+                                        @if ($assignment->employee_kpis_count === 0)
+                                            <a href="{{ route('manager.kpis.assign', $assignment) }}" class="manager-btn-primary px-3 py-2 text-xs">
+                                                Giao NV
+                                            </a>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

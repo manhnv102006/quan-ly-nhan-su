@@ -20,10 +20,12 @@
                    class="manager-btn-secondary">
                     ← Quay lại
                 </a>
-                <a href="{{ route('manager.kpis.assign', $assignment) }}"
-                   class="manager-btn-primary">
-                    + Giao NV
-                </a>
+                @if ($assignment->employeeKpis->isEmpty())
+                    <a href="{{ route('manager.kpis.assign', $assignment) }}"
+                       class="manager-btn-primary">
+                        + Giao NV
+                    </a>
+                @endif
             </div>
         </div>
 

@@ -25,6 +25,7 @@ class KPIController extends Controller
         $assignments = KPIAssignment::with([
                 'kpi',
                 'assignedBy',
+                'employeeKpis.employee',
             ])
             ->withCount('employeeKpis')
             ->where('manager_id', Auth::id())
@@ -56,9 +57,15 @@ class KPIController extends Controller
     /**
      * Hiển thị form giao KPI cho nhân viên.
      */
-    public function assign(KPIAssignment $assignment): View
+    public function assign(KPIAssignment $assignment): View|RedirectResponse
     {
         abort_if($assignment->manager_id !== Auth::id(), 403);
+
+        if ($assignment->employeeKpis()->exists()) {
+            return redirect()
+                ->route('manager.kpis.show', $assignment)
+                ->with('error', 'KPI này đã được giao cho nhân viên. Mỗi KPI chỉ giao một lần.');
+        }
 
         $assignment->load('kpi');
         $employeesInDepartment = $this->getManagedEmployees();
@@ -72,6 +79,12 @@ class KPIController extends Controller
     public function storeAssign(AssignEmployeeKPIRequest $request, KPIAssignment $assignment): RedirectResponse
     {
         abort_if($assignment->manager_id !== Auth::id(), 403);
+
+        if ($assignment->employeeKpis()->exists()) {
+            return redirect()
+                ->route('manager.kpis.show', $assignment)
+                ->with('error', 'KPI này đã được giao cho nhân viên. Mỗi KPI chỉ giao một lần.');
+        }
 
         $validated = $request->validated();
 
