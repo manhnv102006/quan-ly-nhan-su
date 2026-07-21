@@ -109,8 +109,12 @@
                         </article>
                     @empty
                         <div class="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center md:col-span-2 xl:col-span-3">
-                            <h3 class="text-lg font-black text-slate-900">Chưa có tin tuyển dụng đang mở</h3>
-                            <p class="mt-2 text-sm text-slate-500">Vui lòng quay lại sau để xem các vị trí mới.</p>
+                            <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">Tạm chưa mở tuyển</span>
+                            <h3 class="mt-4 text-lg font-black text-slate-900">Chưa có tin tuyển dụng đang mở</h3>
+                            <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Các vị trí mới sẽ được cập nhật tại đây sau khi bộ phận nhân sự mở tuyển.</p>
+                            <a href="{{ route('login') }}" class="mt-5 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700">
+                                Quay lại đăng nhập
+                            </a>
                         </div>
                     @endforelse
                 </section>
