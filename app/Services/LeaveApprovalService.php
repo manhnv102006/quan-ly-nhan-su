@@ -25,7 +25,6 @@ class LeaveApprovalService
 
         $this->assertActorAuthorized($leaveRequest, $actorId, $manager);
         $this->assertPending($leaveRequest);
-        $this->assertManagerCanFinalize($leaveRequest);
 
         if ($leaveRequest->leave_type === 'annual') {
             $year = $leaveRequest->start_date?->year ?? now()->year;
@@ -69,7 +68,6 @@ class LeaveApprovalService
 
         $this->assertActorAuthorized($leaveRequest, $actorId, $manager);
         $this->assertPending($leaveRequest);
-        $this->assertManagerCanFinalize($leaveRequest);
 
         $this->processDecision(
             leaveRequest: $leaveRequest,
@@ -87,17 +85,6 @@ class LeaveApprovalService
         if (! $leaveRequest->isPending()) {
             throw ValidationException::withMessages([
                 'status' => 'Chỉ xử lý đơn ở trạng thái chờ duyệt.',
-            ]);
-        }
-    }
-
-    protected function assertManagerCanFinalize(LeaveRequest $leaveRequest): void
-    {
-        $leaveRequest->loadMissing('employee');
-
-        if ($leaveRequest->needsLeaderApproval() && $leaveRequest->leader_approved_at === null) {
-            throw ValidationException::withMessages([
-                'status' => 'Đơn này cần Trưởng nhóm duyệt bước 1 trước khi Quản lý phê duyệt.',
             ]);
         }
     }

@@ -122,11 +122,6 @@ class Contract extends Model
         return $this->hasMany(ContractAllowance::class);
     }
 
-    public function activityLogs(): HasMany
-    {
-        return $this->hasMany(ContractActivityLog::class)->orderByDesc('created_at');
-    }
-
     public function histories(): HasMany
     {
         return $this->hasMany(ContractHistory::class)->orderByDesc('created_at');

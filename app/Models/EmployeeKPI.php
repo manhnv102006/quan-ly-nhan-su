@@ -23,8 +23,6 @@ class EmployeeKPI extends Model
         'progress',
         'status',
         'score',
-        'leader_score',
-        'leader_review',
         'comment',
         'review',
         'assigned_by',
@@ -102,11 +100,6 @@ class EmployeeKPI extends Model
     public function assignedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by')->withTrashed();
-    }
-
-    public function hasLeaderScore(): bool
-    {
-        return $this->leader_score !== null;
     }
 }
 
