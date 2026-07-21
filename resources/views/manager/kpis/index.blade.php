@@ -16,7 +16,9 @@
                 'status_tailwind' => $assignment->status_tailwind,
                 'assigned_by' => $assignment->assignedBy->name ?? 'N/A',
                 'assigned_at' => $assignment->created_at?->format('d/m/Y'),
-                'can_assign' => $assignment->employee_kpis_count === 0,
+                'can_assign' => $managedEmployees
+                    ->whereNotIn('id', $assignment->employeeKpis->pluck('employee_id'))
+                    ->isNotEmpty(),
                 'show_url' => route('manager.kpis.show', $assignment),
                 'assign_url' => route('manager.kpis.assign', $assignment),
                 'tasks' => ($assignment->kpi->tasks ?? collect())->map(fn ($task) => [
@@ -118,13 +120,11 @@
                                     <span class="font-semibold text-slate-700">{{ $assignment->end_date->format('d/m/Y') }}</span>
                                 </div>
                                 <div class="flex items-center justify-between text-slate-500">
-                                    <span>Nhân viên</span>
-                                    @if ($assignment->employeeKpis->isNotEmpty())
-                                        <span class="truncate font-semibold text-slate-700 max-w-[55%] text-right">
-                                            {{ $assignment->employeeKpis->first()->employee?->full_name }}
-                                        </span>
+                                    <span>Thành viên</span>
+                                    @if ($assignment->employee_kpis_count > 0)
+                                        <span class="font-semibold text-slate-700">{{ $assignment->employee_kpis_count }} người</span>
                                     @else
-                                        <span class="font-medium text-amber-600">Chưa giao</span>
+                                        <span class="font-medium text-amber-600">Chưa có</span>
                                     @endif
                                 </div>
                             </div>
@@ -257,7 +257,7 @@
                         <div class="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 bg-slate-50 px-6 py-4">
                             <button type="button" @click="closeModal()" class="manager-btn-secondary">Đóng</button>
                             <a :href="selected.show_url" class="manager-btn-secondary">Mở trang chi tiết</a>
-                            <a x-show="selected.can_assign" :href="selected.assign_url" class="manager-btn-primary">Giao NV</a>
+                            <a x-show="selected.can_assign" :href="selected.assign_url" class="manager-btn-primary">+ Thêm thành viên</a>
                         </div>
                     </div>
                 </template>

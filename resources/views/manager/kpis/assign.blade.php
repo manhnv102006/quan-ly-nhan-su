@@ -8,7 +8,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h2 class="text-2xl font-bold text-slate-800">
-                    Giao mục tiêu cho nhân viên
+                    {{ $assignment->employeeKpis->isEmpty() ? 'Giao KPI cho nhân viên' : 'Thêm thành viên vào KPI' }}
                 </h2>
                 <p class="text-sm text-slate-500 mt-1">
                     KPI: {{ $assignment->kpi_code }} — {{ $assignment->kpi_title }}
@@ -127,7 +127,7 @@
                     </a>
                     <button type="submit"
                         class="px-6 py-3 rounded-xl bg-teal-600 text-white font-medium shadow-lg shadow-teal-500/20 hover:bg-teal-700 transition">
-                        Giao mục tiêu
+                        {{ $assignment->employeeKpis->isEmpty() ? 'Giao mục tiêu' : 'Thêm thành viên' }}
                     </button>
                 </div>
             </form>

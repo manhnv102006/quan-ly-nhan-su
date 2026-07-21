@@ -32,7 +32,9 @@ class KPIController extends Controller
             ->latest()
             ->paginate(10);
 
-        return view('manager.kpis.index', compact('assignments'));
+        $managedEmployees = $this->getManagedEmployees();
+
+        return view('manager.kpis.index', compact('assignments', 'managedEmployees'));
     }
 
     /**
@@ -51,7 +53,9 @@ class KPIController extends Controller
             'employeeKpis.employee',
         ]);
 
-        return view('manager.kpis.show', compact('assignment'));
+        $canAssignMore = $this->availableEmployeesForAssignment($assignment)->isNotEmpty();
+
+        return view('manager.kpis.show', compact('assignment', 'canAssignMore'));
     }
 
     /**
@@ -61,16 +65,19 @@ class KPIController extends Controller
     {
         abort_if($assignment->manager_id !== Auth::id(), 403);
 
-        if ($assignment->employeeKpis()->exists()) {
+        $assignment->load(['kpi', 'employeeKpis']);
+        $employeesInDepartment = $this->availableEmployeesForAssignment($assignment);
+
+        if ($employeesInDepartment->isEmpty()) {
             return redirect()
                 ->route('manager.kpis.show', $assignment)
-                ->with('error', 'KPI này đã được giao cho nhân viên. Mỗi KPI chỉ giao một lần.');
+                ->with('error', 'Tất cả nhân viên trong phòng ban đã được giao KPI này.');
         }
 
-        $assignment->load('kpi');
-        $employeesInDepartment = $this->getManagedEmployees();
-
-        return view('manager.kpis.assign', compact('assignment', 'employeesInDepartment'));
+        return view('manager.kpis.assign', [
+            'assignment' => $assignment,
+            'employeesInDepartment' => $employeesInDepartment,
+        ]);
     }
 
     /**
@@ -79,12 +86,6 @@ class KPIController extends Controller
     public function storeAssign(AssignEmployeeKPIRequest $request, KPIAssignment $assignment): RedirectResponse
     {
         abort_if($assignment->manager_id !== Auth::id(), 403);
-
-        if ($assignment->employeeKpis()->exists()) {
-            return redirect()
-                ->route('manager.kpis.show', $assignment)
-                ->with('error', 'KPI này đã được giao cho nhân viên. Mỗi KPI chỉ giao một lần.');
-        }
 
         $validated = $request->validated();
 
@@ -102,7 +103,7 @@ class KPIController extends Controller
 
         return redirect()
             ->route('manager.kpis.show', $assignment)
-            ->with('success', 'Giao mục tiêu cho nhân viên thành công.');
+            ->with('success', 'Đã thêm thành viên vào KPI thành công.');
     }
 
     public function editScore(EmployeeKPI $employeeKpi): View
@@ -154,7 +155,19 @@ class KPIController extends Controller
                     $roleQ->where('name', '!=', 'manager');
                 });
             })
+            ->orderBy('full_name')
             ->get();
+    }
+
+    private function availableEmployeesForAssignment(KPIAssignment $assignment)
+    {
+        $assignedIds = $assignment->relationLoaded('employeeKpis')
+            ? $assignment->employeeKpis->pluck('employee_id')
+            : $assignment->employeeKpis()->pluck('employee_id');
+
+        return $this->getManagedEmployees()->reject(
+            fn (Employee $employee) => $assignedIds->contains($employee->id)
+        )->values();
     }
 
 }
