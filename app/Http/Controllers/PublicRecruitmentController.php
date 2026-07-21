@@ -36,7 +36,11 @@ class PublicRecruitmentController extends Controller
 
     public function store(Request $request, JobPost $jobPost): RedirectResponse
     {
-        abort(404);
+        $jobPost = $this->publicJobPost($jobPost);
+
+        $this->validateApplication($request);
+
+        return redirect()->route('public.recruitment.apply', $jobPost);
     }
 
     private function publicJobPost(JobPost $jobPost): JobPost
@@ -46,5 +50,30 @@ class PublicRecruitmentController extends Controller
             ->with(['department', 'recruiter'])
             ->whereKey($jobPost->getKey())
             ->firstOrFail();
+    }
+
+    private function validateApplication(Request $request): array
+    {
+        return $request->validate([
+            'full_name' => ['required', 'string', 'max:100'],
+            'phone' => ['required', 'string', 'regex:/^[0-9]{10}$/', 'unique:candidates,phone'],
+            'email' => ['required', 'string', 'email', 'max:100', 'unique:candidates,email'],
+            'address' => ['required', 'string', 'max:255'],
+            'birth_date' => ['required', 'date'],
+            'cv_file' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx'],
+        ], [
+            'full_name.required' => 'Họ và tên ứng viên là bắt buộc.',
+            'phone.required' => 'Số điện thoại là bắt buộc.',
+            'phone.regex' => 'Số điện thoại phải gồm đúng 10 chữ số.',
+            'phone.unique' => 'Số điện thoại này đã tồn tại trong danh sách ứng viên.',
+            'email.required' => 'Email là bắt buộc.',
+            'email.email' => 'Email ứng viên không hợp lệ.',
+            'email.unique' => 'Email này đã tồn tại trong danh sách ứng viên.',
+            'address.required' => 'Địa chỉ là bắt buộc.',
+            'birth_date.required' => 'Ngày sinh là bắt buộc.',
+            'birth_date.date' => 'Ngày sinh không hợp lệ.',
+            'cv_file.mimes' => 'CV chỉ hỗ trợ định dạng PDF, DOC hoặc DOCX.',
+            'cv_file.max' => 'CV không được vượt quá 10MB.',
+        ]);
     }
 }
