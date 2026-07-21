@@ -69,7 +69,7 @@
                                 <tbody class="divide-y divide-slate-100">
                                     @foreach($allowanceBreakdown as $item)
                                         <tr>
-                                            <td class="px-4 py-3 font-medium text-slate-800">{{ $item['name'] }}</td>
+                                            <td class="px-4 py-3 font-medium text-slate-800">{{ $item['label'] }}</td>
                                             <td class="px-4 py-3 text-slate-500">{{ $item['note'] ?: '—' }}</td>
                                             <td class="px-4 py-3 text-right font-semibold text-slate-800">
                                                 {{ number_format($item['amount'], 0, ',', '.') }}₫
