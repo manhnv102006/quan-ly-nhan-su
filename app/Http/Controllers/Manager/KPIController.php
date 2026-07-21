@@ -23,7 +23,7 @@ class KPIController extends Controller
         EmployeeKPI::markOverdueAsNotCompleted();
 
         $assignments = KPIAssignment::with([
-                'kpi',
+                'kpi.tasks',
                 'assignedBy',
                 'employeeKpis.employee',
             ])
