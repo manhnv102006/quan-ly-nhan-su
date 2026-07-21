@@ -54,7 +54,9 @@ class PublicRecruitmentController extends Controller
             'status' => 'new',
         ]);
 
-        return redirect()->route('public.recruitment.apply', $jobPost);
+        return redirect()
+            ->route('public.recruitment.show', $jobPost)
+            ->with('application_success', 'Hồ sơ ứng tuyển của bạn đã được gửi thành công. Bộ phận tuyển dụng sẽ liên hệ sau khi xem xét.');
     }
 
     private function publicJobPost(JobPost $jobPost): JobPost
