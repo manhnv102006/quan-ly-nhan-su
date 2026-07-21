@@ -112,7 +112,6 @@ class MasterDemoSeeder extends Seeder
             'holidays',
             'contract_allowances',
             'allowance_types',
-            'team_membership_requests',
             'notification_users',
             'notifications',
             'interviews',

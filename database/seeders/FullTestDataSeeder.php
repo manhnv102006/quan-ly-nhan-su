@@ -29,7 +29,7 @@ class FullTestDataSeeder extends Seeder
 
         $this->clearExtendedTables();
         $this->seedExtraRolesAndUsers();
-        $this->seedTwoTierApprovals();
+        $this->seedApprovalSamples();
         $this->seedEarlyLeave();
         $this->seedAccountantData();
 
@@ -113,71 +113,43 @@ class FullTestDataSeeder extends Seeder
         }
     }
 
-    private function seedTwoTierApprovals(): void
+    private function seedApprovalSamples(): void
     {
-        $leaderUserId = User::query()->where('username', 'leader')->value('id');
         $managerUserId = User::query()->where('username', 'manager')->value('id');
         $emp004Id = Employee::query()->where('employee_code', 'EMP004')->value('id');
         $emp005Id = Employee::query()->where('employee_code', 'EMP005')->value('id');
 
-        // Cập nhật đơn pending hiện có của EMP004 → chờ Leader duyệt
-        LeaveRequest::query()
-            ->where('employee_id', $emp004Id)
-            ->where('status', LeaveRequest::STATUS_PENDING)
-            ->update([
-                'leader_approved_by' => null,
-                'leader_approved_at' => null,
-                'approved_by' => null,
-                'approved_at' => null,
-            ]);
-
-        // Đơn đã qua Leader, chờ Manager
+        // Đơn nghỉ phép chờ Quản lý duyệt
         LeaveRequest::query()->create([
             'employee_id' => $emp005Id,
             'leave_type' => 'annual',
             'start_date' => now()->addDays(12)->toDateString(),
             'end_date' => now()->addDays(14)->toDateString(),
             'total_days' => 3,
-            'reason' => 'Du lịch — Leader đã duyệt, chờ Manager',
+            'reason' => 'Du lịch — chờ Quản lý duyệt',
             'status' => LeaveRequest::STATUS_PENDING,
-            'leader_approved_by' => $leaderUserId,
-            'leader_approved_at' => now()->subDay(),
         ]);
 
-        // Tăng ca chờ Leader
-        OvertimeRequest::query()
-            ->where('employee_id', $emp004Id)
-            ->where('status', OvertimeRequest::STATUS_PENDING)
-            ->update([
-                'leader_approved_by' => null,
-                'leader_approved_at' => null,
-                'approved_by' => null,
-                'approved_at' => null,
-            ]);
-
+        // Tăng ca chờ Quản lý duyệt
         OvertimeRequest::query()->create([
             'employee_id' => $emp005Id,
             'work_date' => now()->addDays(3)->toDateString(),
             'start_time' => '18:00:00',
             'end_time' => '20:00:00',
             'total_hours' => 2,
-            'reason' => 'Hỗ trợ deploy — Leader đã duyệt',
+            'reason' => 'Hỗ trợ deploy — chờ Quản lý duyệt',
             'status' => OvertimeRequest::STATUS_PENDING,
-            'leader_approved_by' => $leaderUserId,
-            'leader_approved_at' => now(),
         ]);
 
-        // Đơn đã hoàn tất 2 bậc
+        // Đơn nghỉ phép đã được Quản lý duyệt
         LeaveRequest::query()->create([
             'employee_id' => $emp004Id,
             'leave_type' => 'sick',
             'start_date' => now()->subDays(5)->toDateString(),
             'end_date' => now()->subDays(4)->toDateString(),
             'total_days' => 2,
-            'reason' => 'Cảm cúm — đã duyệt đủ 2 bậc',
+            'reason' => 'Cảm cúm — đã được duyệt',
             'status' => LeaveRequest::STATUS_APPROVED,
-            'leader_approved_by' => $leaderUserId,
-            'leader_approved_at' => now()->subDays(6),
             'approved_by' => $managerUserId,
             'approved_at' => now()->subDays(5),
         ]);

@@ -13,8 +13,6 @@ class KPIAssignment extends Model
     protected $fillable = [
         'kpi_id',
         'manager_id',
-        'leader_employee_id',
-        'leader_assigned_at',
         'target',
         'start_date',
         'end_date',
@@ -27,7 +25,6 @@ class KPIAssignment extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'target' => 'decimal:2',
-        'leader_assigned_at' => 'datetime',
     ];
 
     public function kpi(): BelongsTo

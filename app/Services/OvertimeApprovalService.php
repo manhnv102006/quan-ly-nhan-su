@@ -18,7 +18,6 @@ class OvertimeApprovalService
     public function approve(OvertimeRequest $overtimeRequest, int $actorId): void
     {
         $this->assertPending($overtimeRequest);
-        $this->assertManagerCanFinalize($overtimeRequest);
 
         $this->processDecision(
             overtimeRequest: $overtimeRequest,
@@ -35,7 +34,6 @@ class OvertimeApprovalService
     public function reject(OvertimeRequest $overtimeRequest, int $actorId, string $reason): void
     {
         $this->assertPending($overtimeRequest);
-        $this->assertManagerCanFinalize($overtimeRequest);
 
         $this->processDecision(
             overtimeRequest: $overtimeRequest,
@@ -53,17 +51,6 @@ class OvertimeApprovalService
         if (! $overtimeRequest->isPending()) {
             throw ValidationException::withMessages([
                 'status' => 'Chỉ xử lý đơn ở trạng thái chờ duyệt.',
-            ]);
-        }
-    }
-
-    protected function assertManagerCanFinalize(OvertimeRequest $overtimeRequest): void
-    {
-        $overtimeRequest->loadMissing('employee');
-
-        if ($overtimeRequest->needsLeaderApproval() && $overtimeRequest->leader_approved_at === null) {
-            throw ValidationException::withMessages([
-                'status' => 'Đơn này cần Trưởng nhóm duyệt bước 1 trước khi Quản lý phê duyệt.',
             ]);
         }
     }
