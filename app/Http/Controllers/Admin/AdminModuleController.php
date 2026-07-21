@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Position;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -18,7 +20,15 @@ class AdminModuleController extends Controller
 
     public function employees(Request $request): View
     {
-        $search = $request->string('search')->trim();
+        $search = $request->string('search')->trim()->value();
+        $departmentId = $request->integer('department_id') ?: null;
+        $positionId = $request->integer('position_id') ?: null;
+        $status = $request->string('status')->trim()->value();
+
+        $allowedStatuses = ['active', 'inactive', 'resigned'];
+        if (! in_array($status, $allowedStatuses, true)) {
+            $status = '';
+        }
 
         $employees = Employee::query()
             ->with(['department', 'position', 'user'])
@@ -28,6 +38,9 @@ class AdminModuleController extends Controller
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%");
             }))
+            ->when($departmentId, fn ($query) => $query->where('department_id', $departmentId))
+            ->when($positionId, fn ($query) => $query->where('position_id', $positionId))
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->orderBy('employee_code')
             ->paginate(12)
             ->withQueryString();
@@ -39,7 +52,17 @@ class AdminModuleController extends Controller
             'resigned' => Employee::where('status', 'resigned')->count(),
         ];
 
-        return view('admin.employees.index', compact('employees', 'stats', 'search'));
+        $departments = Department::query()->orderBy('department_name')->get(['id', 'department_name']);
+        $positions = Position::query()->orderBy('position_name')->get(['id', 'position_name']);
+
+        $filters = [
+            'search' => $search,
+            'department_id' => $departmentId,
+            'position_id' => $positionId,
+            'status' => $status,
+        ];
+
+        return view('admin.employees.index', compact('employees', 'stats', 'search', 'departments', 'positions', 'filters'));
     }
 
     public function attendances(): View
