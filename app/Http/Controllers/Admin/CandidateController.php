@@ -81,7 +81,7 @@ class CandidateController extends Controller
 
         $jobPosts = $this->availableJobPosts();
 
-        return view('admin.recruitment.candidates.index', compact('candidates', 'stats', 'filters', 'jobPosts'));
+        return view('admin.recruitment.interviewed-candidates.index', compact('candidates', 'stats', 'filters', 'jobPosts'));
     }
 
     public function interviewed(): View
