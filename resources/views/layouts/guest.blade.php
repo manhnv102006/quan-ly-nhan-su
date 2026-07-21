@@ -13,6 +13,10 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans text-gray-900 antialiased">
+        @php
+            $isWide = filter_var($attributes->get('wide', false), FILTER_VALIDATE_BOOLEAN);
+        @endphp
+
         <div class="min-h-screen flex flex-col sm:justify-center items-center px-4 py-10 bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500">
             <div class="text-center mb-6">
                 <a href="/" class="inline-flex flex-col items-center group">
@@ -23,9 +27,9 @@
                 </a>
             </div>
 
-            <div class="w-full sm:max-w-md">
+            <div class="w-full {{ $isWide ? 'max-w-6xl' : 'sm:max-w-md' }}">
                 <div class="bg-white/95 backdrop-blur-sm shadow-2xl rounded-2xl overflow-hidden border border-white/20">
-                    <div class="px-8 pt-8 pb-2">
+                    <div class="{{ $isWide ? 'p-4 sm:p-6' : 'px-8 pt-8 pb-2' }}">
                         {{ $slot }}
                     </div>
                 </div>
