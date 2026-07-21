@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Candidate;
 use App\Models\JobPost;
 
 test('guests only see open and unexpired job posts on public recruitment page', function () {
@@ -38,4 +39,31 @@ test('guests only see open and unexpired job posts on public recruitment page', 
     $response->assertSee($noDeadlineJob->title);
     $response->assertDontSee($closedJob->title);
     $response->assertDontSee($expiredJob->title);
+});
+
+test('guests can apply to a public job without uploading a cv', function () {
+    $jobPost = JobPost::create([
+        'title' => 'Public Laravel Developer',
+        'quantity' => 2,
+        'application_deadline' => now()->addWeek()->toDateString(),
+        'status' => 'open',
+    ]);
+
+    $response = $this->post(route('public.recruitment.apply.store', $jobPost), [
+        'full_name' => 'Nguyen Van Public',
+        'phone' => '0912345678',
+        'email' => 'public-candidate@example.com',
+        'birth_date' => '1998-05-10',
+        'address' => 'Ha Noi',
+    ]);
+
+    $response->assertRedirect(route('public.recruitment.show', $jobPost));
+    $response->assertSessionHas('application_success');
+
+    $candidate = Candidate::query()->where('email', 'public-candidate@example.com')->first();
+
+    expect($candidate)->not->toBeNull();
+    expect($candidate->job_post_id)->toBe($jobPost->id);
+    expect($candidate->status)->toBe('new');
+    expect($candidate->cv_file)->toBeNull();
 });
