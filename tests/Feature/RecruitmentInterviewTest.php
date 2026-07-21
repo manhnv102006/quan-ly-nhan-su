@@ -101,3 +101,97 @@ test('admin cannot create an interview in the past', function () {
     expect(Interview::query()->where('candidate_id', $candidate->id)->count())->toBe(0);
     expect($candidate->fresh()->status)->toBe('new');
 });
+
+test('admin can view only candidates with interviews on interviewed candidates page', function () {
+    $interviewedCandidate = Candidate::create([
+        'full_name' => 'Nguyen Van Interviewed',
+        'phone' => '0900000011',
+        'email' => 'interviewed@example.com',
+        'address' => 'Ha Noi',
+        'status' => 'interview',
+    ]);
+
+    $candidateWithoutInterview = Candidate::create([
+        'full_name' => 'Nguyen Van No Interview',
+        'phone' => '0900000012',
+        'email' => 'no-interview@example.com',
+        'address' => 'Da Nang',
+        'status' => 'new',
+    ]);
+
+    Interview::create([
+        'candidate_id' => $interviewedCandidate->id,
+        'interviewer_id' => null,
+        'interview_date' => now()->subDay()->format('Y-m-d H:i:s'),
+        'status' => 'completed',
+        'result' => 'pending',
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->get(route('admin.recruitment.interviewed-candidates'));
+
+    $response->assertOk();
+    $response->assertSee('Nguyen Van Interviewed');
+    $response->assertDontSee('Nguyen Van No Interview');
+});
+
+test('admin can mark interviewed candidate as passed from interviewed candidates page', function () {
+    $candidate = Candidate::create([
+        'full_name' => 'Nguyen Van Passed',
+        'phone' => '0900000013',
+        'email' => 'passed@example.com',
+        'address' => 'Ha Noi',
+        'status' => 'interview',
+    ]);
+
+    $interview = Interview::create([
+        'candidate_id' => $candidate->id,
+        'interviewer_id' => null,
+        'interview_date' => now()->subDay()->format('Y-m-d H:i:s'),
+        'status' => 'scheduled',
+        'result' => 'pending',
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->patch(route('admin.recruitment.interviewed-candidates.decision', $candidate), [
+            'result' => 'passed',
+            'note' => 'Dat yeu cau sau phong van',
+        ]);
+
+    $response->assertRedirect(route('admin.recruitment.interviewed-candidates'));
+    $response->assertSessionHas('success', 'Da cap nhat ket qua phong van thanh cong.');
+
+    expect($candidate->fresh()->status)->toBe('passed');
+    expect($interview->fresh()->status)->toBe('completed');
+    expect($interview->fresh()->result)->toBe('passed');
+    expect($interview->fresh()->note)->toBe('Dat yeu cau sau phong van');
+});
+
+test('admin can mark interviewed candidate as failed from interviewed candidates page', function () {
+    $candidate = Candidate::create([
+        'full_name' => 'Nguyen Van Failed',
+        'phone' => '0900000014',
+        'email' => 'failed@example.com',
+        'address' => 'Ho Chi Minh',
+        'status' => 'interview',
+    ]);
+
+    $interview = Interview::create([
+        'candidate_id' => $candidate->id,
+        'interviewer_id' => null,
+        'interview_date' => now()->subDay()->format('Y-m-d H:i:s'),
+        'status' => 'scheduled',
+        'result' => 'pending',
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->patch(route('admin.recruitment.interviewed-candidates.decision', $candidate), [
+            'result' => 'failed',
+        ]);
+
+    $response->assertRedirect(route('admin.recruitment.interviewed-candidates'));
+
+    expect($candidate->fresh()->status)->toBe('failed');
+    expect($interview->fresh()->status)->toBe('completed');
+    expect($interview->fresh()->result)->toBe('failed');
+});
