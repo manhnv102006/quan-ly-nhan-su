@@ -76,7 +76,7 @@
                         <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Tin tuyển dụng</p>
                         <h2 class="mt-2 text-2xl font-black text-slate-950">Cơ hội đang mở</h2>
                     </div>
-                    <a href="{{ route('public.recruitment.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700">
+                    <a href="{{ route('public.recruitment.index') }}" class="inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700 sm:w-auto">
                         Xem tất cả
                     </a>
                 </div>
@@ -97,10 +97,10 @@
                             </div>
 
                             <div class="mt-4 flex flex-col gap-2 sm:flex-row">
-                                <a href="{{ route('public.recruitment.show', $jobPost) }}" class="inline-flex items-center justify-center rounded-lg bg-cyan-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-cyan-700">
+                                <a href="{{ route('public.recruitment.show', $jobPost) }}" class="inline-flex w-full items-center justify-center rounded-lg bg-cyan-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-cyan-700 sm:w-auto">
                                     Xem chi tiết
                                 </a>
-                                <a href="{{ route('public.recruitment.apply', $jobPost) }}" class="inline-flex items-center justify-center rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-200">
+                                <a href="{{ route('public.recruitment.apply', $jobPost) }}" class="inline-flex w-full items-center justify-center rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-200 sm:w-auto">
                                     Ứng tuyển ngay
                                 </a>
                             </div>

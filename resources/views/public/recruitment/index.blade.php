@@ -36,7 +36,7 @@
                         </div>
                     </a>
 
-                    <a href="{{ route('login') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700">
+                    <a href="{{ route('login') }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700 sm:w-auto">
                         Đăng nhập hệ thống
                     </a>
                 </div>
@@ -119,7 +119,7 @@
                     @endforelse
                 </section>
 
-                <div class="mt-8">
+                <div class="mt-8 overflow-x-auto">
                     {{ $jobPosts->links() }}
                 </div>
             </main>

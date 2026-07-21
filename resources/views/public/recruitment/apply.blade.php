@@ -30,7 +30,7 @@
                         </div>
                     </a>
 
-                    <a href="{{ route('public.recruitment.show', $jobPost) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700">
+                    <a href="{{ route('public.recruitment.show', $jobPost) }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700 sm:w-auto">
                         Quay lại tin tuyển dụng
                     </a>
                 </div>
@@ -102,10 +102,10 @@
                                 </div>
 
                                 <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center">
-                                    <a href="{{ route('public.recruitment.show', $jobPost) }}" class="inline-flex items-center justify-center rounded-xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200">
+                                    <a href="{{ route('public.recruitment.show', $jobPost) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 sm:w-auto">
                                         Hủy
                                     </a>
-                                    <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-cyan-700">
+                                    <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-cyan-700 sm:w-auto">
                                         Gửi hồ sơ
                                     </button>
                                 </div>
@@ -115,7 +115,7 @@
                 </section>
 
                 <aside class="lg:col-span-4">
-                    <div class="sticky top-6 rounded-lg border border-cyan-100 bg-white p-5 shadow-sm">
+                    <div class="rounded-lg border border-cyan-100 bg-white p-5 shadow-sm lg:sticky lg:top-6">
                         <span class="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Đang tuyển</span>
                         <h3 class="mt-4 break-words text-xl font-black text-slate-950">{{ $jobPost->title }}</h3>
                         <div class="mt-4 space-y-3 text-sm text-slate-600">
