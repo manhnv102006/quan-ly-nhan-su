@@ -39,7 +39,7 @@
                     </label>
                     <input type="text" id="position_name" name="position_name"
                            value="{{ old('position_name', $position->position_name) }}"
-                           placeholder="Nhập tên chức vụ" required
+                           placeholder="Nhập tên chức vụ" minlength="2" maxlength="30" required
                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('position_name') border-red-400 @enderror">
                     @error('position_name')
                         <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
