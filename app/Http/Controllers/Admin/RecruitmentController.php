@@ -19,7 +19,7 @@ class RecruitmentController extends Controller
             'candidates' => Candidate::count(),
             'pending_candidates' => Candidate::where('status', 'new')->count(),
             'interview_candidates' => Candidate::where('status', 'interview')->count(),
-            'interviewed_candidates' => Candidate::whereHas('interviews')->count(),
+            'interviewed_candidates' => Candidate::whereHas('interviews')->where('status', 'passed')->count(),
             'interviews' => Interview::count(),
             'passed_candidates' => Candidate::where('status', 'passed')->count(),
             'failed_candidates' => Candidate::where('status', 'failed')->count(),

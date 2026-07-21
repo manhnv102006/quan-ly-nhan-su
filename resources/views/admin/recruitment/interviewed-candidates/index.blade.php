@@ -1,23 +1,9 @@
-<x-admin-layout title="Ung vien da phong van">
+<x-admin-layout title="Ung vien da dat phong van">
     @php
         $filters = $filters ?? [
             'search' => '',
-            'status' => '',
             'job_post_id' => '',
-            'interview_result' => '',
-            'interview_status' => '',
-        ];
-
-        $statusLabels = [
-            'interview' => 'Cho xu ly',
-            'passed' => 'Dat',
-            'failed' => 'Khong dat',
-        ];
-
-        $statusClasses = [
-            'interview' => 'bg-amber-100 text-amber-700 ring-amber-200',
-            'passed' => 'bg-emerald-100 text-emerald-700 ring-emerald-200',
-            'failed' => 'bg-rose-100 text-rose-700 ring-rose-200',
+            'converted' => '',
         ];
 
         $interviewStatusLabels = [
@@ -25,18 +11,6 @@
             'completed' => 'Da phong van',
             'cancelled' => 'Da huy',
             'no_show' => 'Khong den',
-        ];
-
-        $interviewResultLabels = [
-            'pending' => 'Cho ket qua',
-            'passed' => 'Dat',
-            'failed' => 'Khong dat',
-        ];
-
-        $resultClasses = [
-            'pending' => 'bg-amber-100 text-amber-700 ring-amber-200',
-            'passed' => 'bg-emerald-100 text-emerald-700 ring-emerald-200',
-            'failed' => 'bg-rose-100 text-rose-700 ring-rose-200',
         ];
 
         $hasFilters = collect($filters)->filter(fn ($value) => $value !== '')->isNotEmpty();
@@ -51,11 +25,11 @@
                     <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
                         <a href="{{ route('admin.recruitment') }}" class="transition hover:text-cyan-600">Tuyen dung</a>
                         <span>/</span>
-                        <span class="font-semibold text-slate-700">Ung vien da phong van</span>
+                        <span class="font-semibold text-slate-700">Ung vien da dat phong van</span>
                     </div>
-                    <h1 class="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Ung vien da phong van</h1>
+                    <h1 class="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Ung vien da dat phong van</h1>
                     <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-                        Xu ly ket qua sau phong van tai day. Danh sach ung vien thuong chi dung de xem ho so.
+                        Xu ly buoc cuoi: xac nhan ung vien da dat phong van len lam nhan vien cua phong ban trong tin tuyen dung va gan quan ly cua phong ban do.
                     </p>
                 </div>
 
@@ -95,13 +69,11 @@
             </div>
         @endif
 
-        <section class="recruitment-stats grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             @foreach ([
-                ['label' => 'Tong da phong van', 'value' => $stats['total'] ?? 0, 'tone' => 'text-slate-900'],
-                ['label' => 'Cho xu ly', 'value' => $stats['interview'] ?? 0, 'tone' => 'text-amber-700'],
-                ['label' => 'Dat', 'value' => $stats['passed'] ?? 0, 'tone' => 'text-emerald-700'],
-                ['label' => 'Khong dat', 'value' => $stats['failed'] ?? 0, 'tone' => 'text-rose-700'],
-                ['label' => 'Da nhan viec', 'value' => $stats['converted'] ?? 0, 'tone' => 'text-cyan-700'],
+                ['label' => 'Da dat phong van', 'value' => $stats['total'] ?? 0, 'tone' => 'text-emerald-700'],
+                ['label' => 'Cho xac nhan nhan viec', 'value' => $stats['pending_conversion'] ?? 0, 'tone' => 'text-amber-700'],
+                ['label' => 'Da len nhan vien', 'value' => $stats['converted'] ?? 0, 'tone' => 'text-cyan-700'],
             ] as $item)
                 <div class="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-sm">
                     <p class="text-sm font-semibold text-slate-500">{{ $item['label'] }}</p>
@@ -112,41 +84,11 @@
 
         <section class="recruitment-panel rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm">
             <form method="GET" action="{{ route('admin.recruitment.interviewed-candidates') }}"
-                  class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                  class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 <div class="sm:col-span-2">
                     <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Tim kiem</label>
                     <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="Ten, email, so dien thoai..."
                            class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
-                </div>
-
-                <div>
-                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Ket qua ho so</label>
-                    <select name="status" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
-                        <option value="">Tat ca</option>
-                        @foreach ($statusLabels as $value => $label)
-                            <option value="{{ $value }}" @selected($filters['status'] === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Ket qua PV</label>
-                    <select name="interview_result" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
-                        <option value="">Tat ca</option>
-                        @foreach ($interviewResultLabels as $value => $label)
-                            <option value="{{ $value }}" @selected($filters['interview_result'] === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Trang thai lich</label>
-                    <select name="interview_status" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
-                        <option value="">Tat ca</option>
-                        @foreach ($interviewStatusLabels as $value => $label)
-                            <option value="{{ $value }}" @selected($filters['interview_status'] === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
                 </div>
 
                 <div>
@@ -159,11 +101,23 @@
                     </select>
                 </div>
 
-                <div class="flex items-end gap-2 sm:col-span-2 xl:col-span-6">
-                    <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-700">
-                        Loc ket qua
+                <div>
+                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Nhan vien</label>
+                    <select name="converted" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
+                        <option value="">Tat ca</option>
+                        <option value="no" @selected($filters['converted'] === 'no')>Cho xac nhan</option>
+                        <option value="yes" @selected($filters['converted'] === 'yes')>Da len nhan vien</option>
+                    </select>
+                </div>
+
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-700">
+                        Loc
                     </button>
-                    @if ($hasFilters)
+                </div>
+
+                @if ($hasFilters)
+                    <div class="flex items-center gap-2 sm:col-span-2 xl:col-span-5">
                         <a href="{{ route('admin.recruitment.interviewed-candidates') }}"
                            class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                             Xoa bo loc
@@ -171,16 +125,16 @@
                         <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">
                             {{ $candidates->total() }} ket qua
                         </span>
-                    @endif
-                </div>
+                    </div>
+                @endif
             </form>
         </section>
 
         <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
             <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
                 <div>
-                    <h2 class="text-sm font-black text-slate-900">Danh sach ung vien</h2>
-                    <p class="mt-1 text-xs text-slate-500">{{ $candidates->total() }} ung vien co lich phong van</p>
+                    <h2 class="text-sm font-black text-slate-900">Danh sach dat phong van</h2>
+                    <p class="mt-1 text-xs text-slate-500">{{ $candidates->total() }} ho so san sang xac nhan nhan viec</p>
                 </div>
             </div>
 
@@ -188,19 +142,24 @@
                 @forelse ($candidates as $candidate)
                     @php
                         $latestInterview = $candidate->interviews->first();
-                        $statusClass = $statusClasses[$candidate->status] ?? 'bg-slate-100 text-slate-700 ring-slate-200';
-                        $resultClass = $resultClasses[$latestInterview?->result] ?? 'bg-slate-100 text-slate-700 ring-slate-200';
+                        $department = $candidate->jobPost?->department;
+                        $manager = $department?->manager;
+                        $canConvert = $candidate->employee_id === null && $department !== null;
                     @endphp
 
-                    <article class="grid grid-cols-1 gap-5 p-5 transition hover:bg-slate-50/70 xl:grid-cols-[minmax(0,1fr)_minmax(280px,.7fr)_minmax(320px,.85fr)] sm:p-6">
+                    <article class="grid grid-cols-1 gap-5 p-5 transition hover:bg-slate-50/70 xl:grid-cols-[minmax(0,1fr)_minmax(280px,.75fr)_minmax(360px,.95fr)] sm:p-6">
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 {{ $statusClass }}">
-                                    {{ $statusLabels[$candidate->status] ?? $candidate->status }}
+                                <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                                    Da dat phong van
                                 </span>
-                                @if ($latestInterview)
-                                    <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 {{ $resultClass }}">
-                                        {{ $interviewResultLabels[$latestInterview->result] ?? $latestInterview->result }}
+                                @if ($candidate->employee)
+                                    <span class="inline-flex rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700 ring-1 ring-cyan-200">
+                                        Da len nhan vien
+                                    </span>
+                                @else
+                                    <span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
+                                        Cho xac nhan
                                     </span>
                                 @endif
                             </div>
@@ -227,61 +186,92 @@
 
                         <div class="grid grid-cols-1 gap-3 text-sm">
                             <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Phong ban</p>
+                                <p class="mt-1 break-words font-semibold text-slate-800">{{ $department?->department_name ?? 'Chua gan phong ban' }}</p>
+                            </div>
+                            <div class="rounded-2xl bg-slate-50 px-4 py-3">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Quan ly phong ban</p>
+                                <p class="mt-1 break-words font-semibold text-slate-800">{{ $manager?->full_name ?? 'Chua gan quan ly' }}</p>
+                            </div>
+                            <div class="rounded-2xl bg-slate-50 px-4 py-3">
                                 <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Phong van gan nhat</p>
                                 <p class="mt-1 font-semibold text-slate-800">{{ $latestInterview?->interview_date?->format('d/m/Y H:i') ?? '-' }}</p>
-                            </div>
-                            <div class="rounded-2xl bg-slate-50 px-4 py-3">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Nguoi phong van</p>
-                                <p class="mt-1 break-words font-semibold text-slate-800">{{ $latestInterview?->interviewer?->full_name ?? 'Chua gan' }}</p>
-                            </div>
-                            <div class="rounded-2xl bg-slate-50 px-4 py-3">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Trang thai lich</p>
-                                <p class="mt-1 font-semibold text-slate-800">{{ $interviewStatusLabels[$latestInterview?->status] ?? ($latestInterview?->status ?? '-') }}</p>
+                                <p class="mt-1 text-xs text-slate-500">{{ $interviewStatusLabels[$latestInterview?->status] ?? ($latestInterview?->status ?? '-') }}</p>
                             </div>
                         </div>
 
                         <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                            <h4 class="text-sm font-black text-slate-900">Xu ly ket qua</h4>
+                            <h4 class="text-sm font-black text-slate-900">Xac nhan len nhan vien</h4>
                             <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Chon Dat hoac Khong dat de cap nhat ket qua phong van va trang thai ho so.
+                                He thong se tao ho so nhan vien voi phong ban cua tin tuyen dung va gan quan ly cua phong ban do.
                             </p>
 
-                            @if ($candidate->status === 'interview' || $latestInterview?->result === 'pending')
-                                <form action="{{ route('admin.recruitment.interviewed-candidates.decision', $candidate) }}" method="POST" class="mt-4 space-y-3">
-                                    @csrf
-                                    @method('PATCH')
-
-                                    <textarea name="note" rows="2" placeholder="Ghi chu ket qua neu co"
-                                              class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">{{ old('note') }}</textarea>
-
-                                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                        <button type="submit" name="result" value="passed"
-                                                class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                                            Dat
-                                        </button>
-                                        <button type="submit" name="result" value="failed"
-                                                class="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
-                                            Khong dat
-                                        </button>
-                                    </div>
-                                </form>
-                            @else
-                                <div class="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
-                                    Ho so da co ket qua: {{ $statusLabels[$candidate->status] ?? $candidate->status }}
+                            @if ($candidate->employee)
+                                <div class="mt-4 rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-semibold text-cyan-700">
+                                    Da tao nhan vien: {{ $candidate->employee->employee_code }}
                                 </div>
+                            @elseif (! $department)
+                                <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+                                    Tin tuyen dung chua gan phong ban, chua the xac nhan len nhan vien.
+                                </div>
+                            @else
+                                <form action="{{ route('admin.recruitment.candidates.convert-to-employee', $candidate) }}" method="POST" class="mt-4 space-y-3">
+                                    @csrf
+                                    <input type="hidden" name="department_id" value="{{ $department->id }}">
+                                    <input type="hidden" name="status" value="active">
+
+                                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                        <div>
+                                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Ma nhan vien</label>
+                                            <input type="text" name="employee_code" value="{{ old('employee_code', $candidate->suggested_employee_code) }}" required
+                                                   class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
+                                        </div>
+                                        <div>
+                                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Ngay vao lam</label>
+                                            <input type="date" name="hire_date" value="{{ old('hire_date', now()->format('Y-m-d')) }}" required
+                                                   class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
+                                        </div>
+                                        <div>
+                                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Gioi tinh</label>
+                                            <select name="gender" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
+                                                <option value="male" @selected(old('gender') === 'male')>Nam</option>
+                                                <option value="female" @selected(old('gender') === 'female')>Nu</option>
+                                                <option value="other" @selected(old('gender') === 'other')>Khac</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Ngay sinh</label>
+                                            <input type="date" name="date_of_birth" value="{{ old('date_of_birth', $candidate->birth_date?->format('Y-m-d')) }}" required
+                                                   class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Chuc vu</label>
+                                        <select name="position_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
+                                            <option value="">Chua gan</option>
+                                            @foreach ($positions as $position)
+                                                <option value="{{ $position->id }}" @selected(old('position_id') == $position->id)>{{ $position->position_name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <button type="submit"
+                                            class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                                        Xac nhan len nhan vien
+                                    </button>
+                                </form>
                             @endif
                         </div>
                     </article>
                 @empty
                     <div class="px-5 py-14 text-center sm:px-6">
-                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-400">
-                            <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M4 11h16M7 21h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v11a3 3 0 0 0 3 3Z"/>
-                            </svg>
+                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-50 text-xl font-black text-emerald-600">
+                            OK
                         </div>
-                        <h3 class="mt-5 text-lg font-black text-slate-900">Chua co ung vien da phong van</h3>
+                        <h3 class="mt-5 text-lg font-black text-slate-900">Chua co ung vien dat phong van</h3>
                         <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-                            Khi ung vien co lich phong van, ho se xuat hien tai day de bo phan tuyen dung xu ly ket qua.
+                            Khi ung vien duoc cap nhat ket qua Dat sau phong van, ho se xuat hien tai day de xac nhan len nhan vien.
                         </p>
                     </div>
                 @endforelse

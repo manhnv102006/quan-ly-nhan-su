@@ -26,13 +26,13 @@
                 </nav>
                 <h1 class="text-2xl font-black text-slate-900">Ho so ung vien</h1>
                 <p class="mt-1 max-w-3xl text-sm leading-6 text-slate-500">
-                    Khu vuc nay dung de xem va tra cuu ho so. Xu ly ket qua Dat/Khong dat duoc thuc hien tai trang Ung vien da phong van.
+                    Khu vuc nay dung de xem va tra cuu ho so. Ung vien da dat phong van se duoc xac nhan len nhan vien o trang rieng.
                 </p>
             </div>
 
             <a href="{{ route('admin.recruitment.interviewed-candidates') }}"
                class="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
-                Ung vien da phong van
+                Ung vien da dat phong van
             </a>
         </div>
     </section>

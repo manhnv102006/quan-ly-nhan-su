@@ -90,8 +90,9 @@ class CandidateController extends Controller
 
         $candidates = Candidate::query()
             ->whereHas('interviews')
+            ->where('status', 'passed')
             ->with([
-                'jobPost',
+                'jobPost.department.manager',
                 'employee',
                 'interviews' => fn ($query) => $query->with('interviewer')->latest('interview_date'),
             ])
@@ -107,33 +108,31 @@ class CandidateController extends Controller
                         });
                 });
             })
-            ->when($filters['status'] !== '', fn ($query) => $query->where('status', $filters['status']))
             ->when($filters['job_post_id'] !== '', fn ($query) => $query->where('job_post_id', $filters['job_post_id']))
-            ->when($filters['interview_result'] !== '', function ($query) use ($filters) {
-                $query->whereHas('interviews', fn ($interviewQuery) => $interviewQuery->where('result', $filters['interview_result']));
-            })
-            ->when($filters['interview_status'] !== '', function ($query) use ($filters) {
-                $query->whereHas('interviews', fn ($interviewQuery) => $interviewQuery->where('status', $filters['interview_status']));
-            })
+            ->when($filters['converted'] === 'yes', fn ($query) => $query->whereNotNull('employee_id'))
+            ->when($filters['converted'] === 'no', fn ($query) => $query->whereNull('employee_id'))
             ->latest()
             ->paginate(12)
             ->withQueryString();
 
+        $candidates->getCollection()->each(function (Candidate $candidate) {
+            $candidate->setAttribute('suggested_employee_code', $this->suggestEmployeeCode($candidate));
+        });
+
         $interviewedCandidatesQuery = Candidate::query()
-            ->whereHas('interviews');
+            ->whereHas('interviews')
+            ->where('status', 'passed');
 
         $stats = [
             'total' => (clone $interviewedCandidatesQuery)->count(),
-            'new' => (clone $interviewedCandidatesQuery)->where('status', 'new')->count(),
-            'interview' => (clone $interviewedCandidatesQuery)->where('status', 'interview')->count(),
-            'passed' => (clone $interviewedCandidatesQuery)->where('status', 'passed')->count(),
-            'failed' => (clone $interviewedCandidatesQuery)->where('status', 'failed')->count(),
+            'pending_conversion' => (clone $interviewedCandidatesQuery)->whereNull('employee_id')->count(),
             'converted' => (clone $interviewedCandidatesQuery)->whereNotNull('employee_id')->count(),
         ];
 
         $jobPosts = $this->availableJobPosts();
+        $positions = $this->activePositions();
 
-        return view('admin.recruitment.interviewed-candidates.index', compact('candidates', 'stats', 'filters', 'jobPosts'));
+        return view('admin.recruitment.interviewed-candidates.index', compact('candidates', 'stats', 'filters', 'jobPosts', 'positions'));
     }
 
     public function updateInterviewDecision(Request $request, Candidate $candidate): RedirectResponse
@@ -245,19 +244,19 @@ class CandidateController extends Controller
     {
         if ($candidate->status !== 'passed') {
             return redirect()
-                ->route('admin.recruitment.candidates.show', $candidate)
+                ->back()
                 ->with('error', 'Chỉ ứng viên đã đạt mới có thể chuyển thành nhân viên.');
         }
 
         if ($candidate->employee_id !== null) {
             return redirect()
-                ->route('admin.recruitment.candidates.show', $candidate)
+                ->back()
                 ->with('error', 'Ứng viên này đã được chuyển thành nhân viên.');
         }
 
         if (Employee::where('email', $candidate->email)->exists()) {
             return redirect()
-                ->route('admin.recruitment.candidates.show', $candidate)
+                ->back()
                 ->with('error', 'Email của ứng viên đã tồn tại trong danh sách nhân viên.');
         }
 
@@ -276,7 +275,11 @@ class CandidateController extends Controller
             'hire_date.required' => 'Ngày vào làm là bắt buộc.',
         ]);
 
-        $employee = DB::transaction(function () use ($candidate, $validated) {
+        $department = filled($validated['department_id'] ?? null)
+            ? Department::query()->find($validated['department_id'])
+            : null;
+
+        $employee = DB::transaction(function () use ($candidate, $validated, $department) {
             $employee = Employee::create([
                 'employee_code' => strtoupper($validated['employee_code']),
                 'full_name' => $candidate->full_name,
@@ -287,6 +290,7 @@ class CandidateController extends Controller
                 'address' => $candidate->address,
                 'department_id' => ($validated['department_id'] ?? null) ?: null,
                 'position_id' => ($validated['position_id'] ?? null) ?: null,
+                'manager_id' => $department?->manager_id,
                 'hire_date' => $validated['hire_date'],
                 'status' => $validated['status'],
             ]);
@@ -328,7 +332,7 @@ class CandidateController extends Controller
     private function availableJobPosts()
     {
         return JobPost::query()
-            ->with('department')
+            ->with('department.manager')
             ->orderBy('title')
             ->get(['id', 'department_id', 'title', 'status']);
     }
@@ -377,16 +381,12 @@ class CandidateController extends Controller
 
     private function interviewedCandidateFilters(Request $request): array
     {
-        $status = (string) $request->string('status');
-        $interviewResult = (string) $request->string('interview_result');
-        $interviewStatus = (string) $request->string('interview_status');
+        $converted = (string) $request->string('converted');
 
         return [
             'search' => (string) $request->string('search')->trim(),
-            'status' => in_array($status, ['interview', 'passed', 'failed'], true) ? $status : '',
             'job_post_id' => (string) $request->input('job_post_id', ''),
-            'interview_result' => in_array($interviewResult, ['pending', 'passed', 'failed'], true) ? $interviewResult : '',
-            'interview_status' => in_array($interviewStatus, ['scheduled', 'completed', 'cancelled', 'no_show'], true) ? $interviewStatus : '',
+            'converted' => in_array($converted, ['yes', 'no'], true) ? $converted : '',
         ];
     }
 

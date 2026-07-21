@@ -71,10 +71,10 @@
                 'tone' => 'amber',
             ],
             [
-                'title' => 'Ung vien da phong van',
-                'description' => 'Tap trung cac ho so da co lich phong van de theo doi va xu ly ket qua sau phong van.',
+                'title' => 'Ung vien da dat phong van',
+                'description' => 'Tap trung cac ho so da dat phong van de xac nhan len nhan vien dung phong ban va quan ly.',
                 'route' => route('admin.recruitment.interviewed-candidates'),
-                'cta' => 'Xem ung vien da phong van',
+                'cta' => 'Xem ung vien da dat',
                 'badge' => ($stats['interviewed_candidates'] ?? 0).' ho so',
                 'tone' => 'indigo',
             ],

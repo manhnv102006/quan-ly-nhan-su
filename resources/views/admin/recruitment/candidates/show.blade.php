@@ -64,10 +64,10 @@
                             Mo CV
                         </a>
                     @endif
-                    @if ($candidate->interviews->isNotEmpty())
+                    @if ($candidate->status === 'passed')
                         <a href="{{ route('admin.recruitment.interviewed-candidates', ['search' => $candidate->email]) }}"
                            class="inline-flex items-center justify-center rounded-2xl bg-amber-100 px-5 py-3 text-sm font-bold text-amber-700 transition hover:bg-amber-200">
-                            Xu ly sau phong van
+                            Xac nhan nhan viec
                         </a>
                     @endif
                     <a href="{{ route('admin.recruitment.candidates') }}"
