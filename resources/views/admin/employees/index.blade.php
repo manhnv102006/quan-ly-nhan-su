@@ -2,15 +2,35 @@
 
     <div class="space-y-6">
 
+        <div>
+            <a href="{{ route('admin.employees') }}" class="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-violet-600 transition">
+                ← Danh sách phòng ban
+            </a>
+        </div>
+
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
-                <h2 class="text-2xl font-bold text-slate-800">Quản lý nhân viên</h2>
-                <p class="text-sm text-slate-500 mt-1">Danh sách và quản lý hồ sơ nhân viên</p>
+                @if (!empty($currentDepartment))
+                    <h2 class="text-2xl font-bold text-slate-800">{{ $currentDepartment->department_name }}</h2>
+                    <p class="text-sm text-slate-500 mt-1">Nhân viên thuộc phòng ban · {{ $currentDepartment->employees_count }}/{{ $currentDepartment->maxEmployeesLimit() }}</p>
+                @elseif (!empty($unassignedOnly))
+                    <h2 class="text-2xl font-bold text-slate-800">Nhân viên chưa có phòng ban</h2>
+                    <p class="text-sm text-slate-500 mt-1">Danh sách nhân viên chưa được gán phòng ban</p>
+                @else
+                    <h2 class="text-2xl font-bold text-slate-800">Tất cả nhân viên</h2>
+                    <p class="text-sm text-slate-500 mt-1">Danh sách và quản lý hồ sơ nhân viên</p>
+                @endif
             </div>
             <div class="flex flex-wrap items-center gap-3">
-                <a href="{{ route('admin.employees.create') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
-                    + Thêm nhân viên
-                </a>
+                @if (!empty($currentDepartment))
+                    <a href="{{ route('admin.employees.create', ['department_id' => $currentDepartment->id]) }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
+                        + Thêm nhân viên vào phòng này
+                    </a>
+                @else
+                    <a href="{{ route('admin.employees.create') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition">
+                        + Thêm nhân viên
+                    </a>
+                @endif
                 <a href="{{ route('admin.employees.trash') }}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
                     Nhân viên đã xóa
                 </a>
@@ -47,7 +67,78 @@
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
 
             <div class="px-6 py-4 border-b border-slate-200">
-                <h3 class="font-semibold text-slate-800">Danh sách nhân viên</h3>
+                @php
+                    $hasFilters = ($filters['search'] ?? '') !== ''
+                        || !empty($filters['department_id'])
+                        || !empty($filters['position_id'])
+                        || ($filters['status'] ?? '') !== '';
+                @endphp
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h3 class="font-semibold text-slate-800">Danh sách nhân viên</h3>
+                    <span class="text-sm text-slate-500">Tìm thấy {{ $employees->total() }} nhân viên</span>
+                </div>
+
+                <form method="GET" action="{{ route('admin.employees') }}" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-12">
+                    <div class="md:col-span-4">
+                        <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Tìm kiếm</label>
+                        <input type="text" name="search" value="{{ $filters['search'] ?? '' }}"
+                               placeholder="Mã NV, tên, email, SĐT..."
+                               class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+                    </div>
+
+                    <div class="md:col-span-3">
+                        <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Phòng ban</label>
+                        <select name="department_id"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+                            <option value="">Tất cả phòng ban</option>
+                            @foreach ($departments as $department)
+                                <option value="{{ $department->id }}" @selected((int) ($filters['department_id'] ?? 0) === $department->id)>
+                                    {{ $department->department_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Chức vụ</label>
+                        <select name="position_id"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+                            <option value="">Tất cả chức vụ</option>
+                            @foreach ($positions as $position)
+                                <option value="{{ $position->id }}" @selected((int) ($filters['position_id'] ?? 0) === $position->id)>
+                                    {{ $position->position_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="mb-1 block text-xs font-semibold uppercase text-slate-500">Trạng thái</label>
+                        <select name="status"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="active" @selected(($filters['status'] ?? '') === 'active')>Hoạt động</option>
+                            <option value="inactive" @selected(($filters['status'] ?? '') === 'inactive')>Tạm khóa</option>
+                            <option value="resigned" @selected(($filters['status'] ?? '') === 'resigned')>Đã nghỉ</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-end gap-2 md:col-span-1">
+                        <button type="submit"
+                                class="w-full rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-violet-700">
+                            Lọc
+                        </button>
+                    </div>
+
+                    @if ($hasFilters)
+                        <div class="md:col-span-12">
+                            <a href="{{ route('admin.employees') }}"
+                               class="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-violet-600 transition">
+                                ✕ Xóa bộ lọc
+                            </a>
+                        </div>
+                    @endif
+                </form>
             </div>
 
             <div class="overflow-x-auto">

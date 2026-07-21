@@ -18,19 +18,26 @@
                 </p>
             </div>
 
-            {{-- Search (decorative) --}}
-            <div class="ml-4 hidden max-w-md flex-1 md:flex">
+            {{-- Quick search: tìm nhân viên theo mã, tên, email, SĐT --}}
+            <form method="GET" action="{{ route('admin.employees') }}" class="ml-4 hidden max-w-md flex-1 md:flex">
+                <input type="hidden" name="view" value="all">
                 <div class="relative w-full">
-                    <svg class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                    </svg>
+                    <button type="submit"
+                            class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-violet-600"
+                            aria-label="Tìm kiếm">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                        </svg>
+                    </button>
                     <input
-                        type="text"
-                        placeholder="Tìm kiếm nhanh..."
+                        type="search"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="Tìm nhân viên (mã, tên, email, SĐT)..."
                         class="w-full rounded-2xl border border-white/70 bg-white/75 py-2.5 pl-10 pr-4 text-sm text-slate-600 shadow-sm shadow-slate-200/50 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:bg-white focus:ring-4 focus:ring-violet-500/10"
                     >
                 </div>
-            </div>
+            </form>
         </div>
 
         <div class="flex shrink-0 items-center gap-1.5 sm:gap-3">

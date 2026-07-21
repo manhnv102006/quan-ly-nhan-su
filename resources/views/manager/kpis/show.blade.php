@@ -20,10 +20,12 @@
                    class="manager-btn-secondary">
                     ← Quay lại
                 </a>
-                <a href="{{ route('manager.kpis.assign', $assignment) }}"
-                   class="manager-btn-primary">
-                    + Giao NV
-                </a>
+                @if ($canAssignMore)
+                    <a href="{{ route('manager.kpis.assign', $assignment) }}"
+                       class="manager-btn-primary">
+                        + Thêm thành viên
+                    </a>
+                @endif
             </div>
         </div>
 
@@ -97,10 +99,16 @@
 
         {{-- Danh sách mục tiêu đã giao cho nhân viên --}}
         <div class="manager-panel">
-            <div class="px-6 py-5 border-b border-slate-100">
+            <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <h3 class="font-semibold text-slate-800">
-                    Các mục tiêu đã giao cho nhân viên ({{ $assignment->employeeKpis->count() }})
+                    Thành viên thực hiện KPI ({{ $assignment->employeeKpis->count() }})
                 </h3>
+                @if ($canAssignMore)
+                    <a href="{{ route('manager.kpis.assign', $assignment) }}"
+                       class="manager-btn-primary text-sm px-4 py-2">
+                        + Thêm thành viên
+                    </a>
+                @endif
             </div>
 
             <div class="overflow-x-auto">

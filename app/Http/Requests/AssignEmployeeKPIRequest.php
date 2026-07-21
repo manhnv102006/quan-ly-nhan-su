@@ -39,6 +39,13 @@ class AssignEmployeeKPIRequest extends FormRequest
                         $fail('Nhân viên được chọn không thuộc phòng ban của bạn.');
                     }
                 },
+                function ($attribute, $value, $fail) {
+                    /** @var \App\Models\KPIAssignment|null $assignment */
+                    $assignment = $this->route('assignment');
+                    if ($assignment && $assignment->employeeKpis()->where('employee_id', $value)->exists()) {
+                        $fail('Nhân viên này đã được giao KPI này rồi.');
+                    }
+                },
             ],
             'target' => ['required', 'string', 'max:255'],
             'comment' => ['nullable', 'string', 'max:1000'],

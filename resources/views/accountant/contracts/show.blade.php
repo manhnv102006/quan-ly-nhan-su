@@ -66,7 +66,7 @@
                                     <tbody class="divide-y divide-slate-100">
                                         @foreach($allowanceBreakdown as $item)
                                             <tr>
-                                                <td class="px-4 py-3 font-medium">{{ $item['name'] }}</td>
+                                                <td class="px-4 py-3 font-medium">{{ $item['label'] }}</td>
                                                 <td class="px-4 py-3 text-slate-500">{{ $item['note'] ?: '—' }}</td>
                                                 <td class="px-4 py-3 text-right font-semibold">{{ $formatMoney($item['amount']) }}</td>
                                             </tr>
