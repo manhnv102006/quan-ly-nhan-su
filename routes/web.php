@@ -69,10 +69,12 @@ use App\Http\Controllers\Employee\OvertimeController as EmployeeOvertimeControll
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [DashboardController::class, 'redirect']);
+Route::redirect('/', '/tuyen-dung');
 
 Route::prefix('tuyen-dung')->name('public.recruitment.')->group(function () {
     Route::get('/', [PublicRecruitmentController::class, 'index'])->name('index');
+    Route::get('/gioi-thieu', [PublicRecruitmentController::class, 'about'])->name('about');
+    Route::get('/viec-lam', [PublicRecruitmentController::class, 'jobs'])->name('jobs');
     Route::get('/{publicJobPost}', [PublicRecruitmentController::class, 'show'])->name('show');
     Route::get('/{publicJobPost}/ung-tuyen', [PublicRecruitmentController::class, 'apply'])->name('apply');
     Route::post('/{publicJobPost}/ung-tuyen', [PublicRecruitmentController::class, 'store'])->name('apply.store');

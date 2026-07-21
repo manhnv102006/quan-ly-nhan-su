@@ -1,7 +1,7 @@
 <x-guest-layout wide="true">
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
-        <section class="lg:col-span-5">
-            <div class="rounded-xl bg-white p-4 sm:p-6">
+    <div class="flex flex-col gap-6 xl:flex-row xl:items-stretch">
+        <section class="w-full min-w-0 xl:max-w-md xl:shrink-0">
+            <div class="h-full rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100 sm:p-7">
                 <div class="mb-6 text-center">
                     <h1 class="text-2xl font-bold text-gray-900">Đăng nhập</h1>
                     <p class="mt-1 text-sm text-gray-500">Chào mừng trở lại! Vui lòng đăng nhập để tiếp tục.</p>
@@ -69,54 +69,6 @@
             </div>
         </section>
 
-        <section class="lg:col-span-7">
-            <div class="h-full rounded-xl bg-slate-50 p-4 sm:p-6">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Tin tuyển dụng</p>
-                        <h2 class="mt-2 text-2xl font-black text-slate-950">Cơ hội đang mở</h2>
-                    </div>
-                    <a href="{{ route('public.recruitment.index') }}" class="inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700 sm:w-auto">
-                        Xem tất cả
-                    </a>
-                </div>
 
-                <div class="mt-5 space-y-3">
-                    @forelse (($publicJobPosts ?? collect()) as $jobPost)
-                        <article class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                <div class="min-w-0">
-                                    <p class="text-sm font-bold text-cyan-700">{{ $jobPost->department?->department_name ?? 'Chưa gắn phòng ban' }}</p>
-                                    <h3 class="mt-1 break-words text-lg font-black text-slate-950">{{ $jobPost->title }}</h3>
-                                    <p class="mt-2 text-sm text-slate-500">
-                                        Hạn nộp:
-                                        <span class="font-bold text-slate-700">{{ $jobPost->application_deadline?->format('d/m/Y') ?? 'Không giới hạn' }}</span>
-                                    </p>
-                                </div>
-                                <span class="inline-flex w-fit shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Đang tuyển</span>
-                            </div>
-
-                            <div class="mt-4 flex flex-col gap-2 sm:flex-row">
-                                <a href="{{ route('public.recruitment.show', $jobPost) }}" class="inline-flex w-full items-center justify-center rounded-lg bg-cyan-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-cyan-700 sm:w-auto">
-                                    Xem chi tiết
-                                </a>
-                                <a href="{{ route('public.recruitment.apply', $jobPost) }}" class="inline-flex w-full items-center justify-center rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-200 sm:w-auto">
-                                    Ứng tuyển ngay
-                                </a>
-                            </div>
-                        </article>
-                    @empty
-                        <div class="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
-                            <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">Tạm chưa mở tuyển</span>
-                            <h3 class="mt-4 text-base font-black text-slate-900">Chưa có tin tuyển dụng đang mở</h3>
-                            <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">Khi có vị trí mới, danh sách sẽ xuất hiện tại đây để ứng viên xem và nộp hồ sơ.</p>
-                            <a href="{{ route('public.recruitment.index') }}" class="mt-5 inline-flex items-center justify-center rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-200">
-                                Xem trang tuyển dụng
-                            </a>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-        </section>
     </div>
 </x-guest-layout>
