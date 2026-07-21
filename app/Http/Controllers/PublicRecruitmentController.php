@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Candidate;
 use App\Models\JobPost;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,8 +40,19 @@ class PublicRecruitmentController extends Controller
     {
         $jobPost = $this->publicJobPost($jobPost);
 
-        $this->validateApplication($request);
-        $this->storeCvFile($request->file('cv_file'));
+        $validated = $this->validateApplication($request);
+        $cvPath = $this->storeCvFile($request->file('cv_file'));
+
+        Candidate::create([
+            'job_post_id' => $jobPost->id,
+            'full_name' => $validated['full_name'],
+            'phone' => $validated['phone'],
+            'email' => $validated['email'],
+            'address' => $validated['address'],
+            'birth_date' => $validated['birth_date'],
+            'cv_file' => $cvPath,
+            'status' => 'new',
+        ]);
 
         return redirect()->route('public.recruitment.apply', $jobPost);
     }
