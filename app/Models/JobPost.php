@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
 class JobPost extends Model
@@ -51,6 +52,11 @@ class JobPost extends Model
     public function submittedBy(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'submitted_by_employee_id');
+    }
+
+    public function candidates(): HasMany
+    {
+        return $this->hasMany(Candidate::class, 'job_post_id');
     }
 
     public function scopePubliclyListed(Builder $query): Builder

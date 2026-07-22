@@ -49,6 +49,24 @@ class JobPostController extends Controller
             ->with('success', 'Thêm tin tuyển dụng thành công.');
     }
 
+    public function show(JobPost $jobPost): View
+    {
+        $jobPost->load(['department.manager', 'recruiter', 'submittedBy']);
+        $jobPost->loadCount([
+            'candidates',
+            'candidates as candidates_new_count' => fn ($query) => $query->where('status', 'new'),
+            'candidates as candidates_interview_count' => fn ($query) => $query->where('status', 'interview'),
+            'candidates as candidates_passed_count' => fn ($query) => $query->where('status', 'passed'),
+        ]);
+
+        $recentCandidates = $jobPost->candidates()
+            ->latest()
+            ->limit(15)
+            ->get(['id', 'full_name', 'email', 'phone', 'status', 'created_at']);
+
+        return view('admin.recruitment.job-posts.show', compact('jobPost', 'recentCandidates'));
+    }
+
     public function edit(JobPost $jobPost): View
     {
         $filters = $this->defaultFilters();

@@ -339,23 +339,10 @@
                                             - {{ $workTypes[$jobPost->work_type] ?? $jobPost->work_type }}
                                         @endif
                                     </p>
-                                    <details class="mt-3 max-w-md rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                                        <summary class="cursor-pointer text-sm font-bold text-cyan-700">Xem chi tiết nhanh</summary>
-                                        <div class="mt-3 space-y-3 text-sm leading-6 text-slate-600">
-                                            <div>
-                                                <p class="font-bold text-slate-800">Mô tả</p>
-                                                <p class="break-words">{{ $jobPost->description ?: 'Chưa có mô tả.' }}</p>
-                                            </div>
-                                            <div>
-                                                <p class="font-bold text-slate-800">Yêu cầu</p>
-                                                <p class="break-words">{{ $jobPost->requirements ?: 'Chưa có yêu cầu.' }}</p>
-                                            </div>
-                                            <div>
-                                                <p class="font-bold text-slate-800">Quyền lợi</p>
-                                                <p class="break-words">{{ $jobPost->benefits ?: 'Chưa có quyền lợi.' }}</p>
-                                            </div>
-                                        </div>
-                                    </details>
+                                    <a href="{{ route('admin.recruitment.job-posts.show', $jobPost) }}"
+                                       class="mt-3 inline-flex text-sm font-bold text-cyan-700 transition hover:text-cyan-900">
+                                        Xem chi tiết →
+                                    </a>
                                 </td>
                                 <td class="px-5 py-4 text-sm text-slate-600">{{ $jobPost->department?->department_name ?? 'Chưa gắn' }}</td>
                                 <td class="px-5 py-4 text-sm text-slate-600">
@@ -404,6 +391,7 @@
                                                 <button type="submit" class="rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 hover:bg-rose-100">Từ chối</button>
                                             </form>
                                         @endif
+                                        <a href="{{ route('admin.recruitment.job-posts.show', $jobPost) }}" class="rounded-xl bg-sky-50 px-3 py-2 text-sm font-bold text-sky-700 transition hover:bg-sky-100">Chi tiết</a>
                                         <a href="{{ route('admin.recruitment.job-posts.edit', $jobPost) }}" class="rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700 transition hover:bg-amber-100">Sửa</a>
                                         <form action="{{ route('admin.recruitment.job-posts.destroy', $jobPost) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn xóa tin tuyển dụng này?')">
                                             @csrf
