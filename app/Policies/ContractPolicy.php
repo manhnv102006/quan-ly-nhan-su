@@ -25,7 +25,7 @@ class ContractPolicy
 
         $contract->loadMissing('employee');
 
-        if ($user->isEmployee()) {
+        if ($user->isEmployee() || $user->isAccountant()) {
             if ($contract->employee?->user_id === $user->id) {
                 return Response::allow();
             }

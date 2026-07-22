@@ -348,6 +348,14 @@
                             <span class="font-medium">Thuế TNCN:</span>
                             <span class="font-bold" id="modalPit">-0 ₫</span>
                         </div>
+                        <div class="flex justify-between items-center text-rose-500">
+                            <span class="font-medium">Trừ tạm ứng lương (kỳ này):</span>
+                            <span class="font-bold" id="modalAdvanceDeduction">-0 ₫</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-600">
+                            <span class="font-medium text-sm">Dư nợ tạm ứng (còn lại):</span>
+                            <span class="font-bold text-sm" id="modalAdvanceOutstanding">0 ₫</span>
+                        </div>
                         <div class="flex justify-between items-center font-bold text-rose-600 border-t border-slate-200/60 pt-2">
                             <span>Tổng giảm trừ:</span>
                             <span id="modalDeduction">-0 ₫</span>
@@ -486,6 +494,9 @@
             document.getElementById('modalBhyt').innerText = data.bhyt_employee + ' ₫';
             document.getElementById('modalBhtn').innerText = data.bhtn_employee + ' ₫';
             document.getElementById('modalPit').innerText = '-' + data.pit + ' ₫';
+            const advanceDeduction = data.advance_deduction || '0';
+            document.getElementById('modalAdvanceDeduction').innerText = '-' + advanceDeduction + ' ₫';
+            document.getElementById('modalAdvanceOutstanding').innerText = (data.advance_outstanding || '0') + ' ₫';
             document.getElementById('modalDeduction').innerText = '-' + data.total_deductions + ' ₫';
             document.getElementById('modalTotalSalary').innerText = data.net_salary + ' ₫';
             document.getElementById('modalPaidSalary').innerText = data.paid_salary + ' ₫';

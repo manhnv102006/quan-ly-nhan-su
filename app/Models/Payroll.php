@@ -7,6 +7,7 @@ use App\Services\TaxService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payroll extends Model
@@ -68,6 +69,33 @@ class Payroll extends Model
         return $this->belongsTo(User::class, 'paid_by');
     }
 
+    public function salaryAdvanceDeductions(): HasMany
+    {
+        return $this->hasMany(SalaryAdvanceDeduction::class);
+    }
+
+    public function advanceDeductionAmount(): float
+    {
+        if ($this->relationLoaded('salaryAdvanceDeductions')) {
+            return (float) $this->salaryAdvanceDeductions->sum('amount');
+        }
+
+        return (float) $this->salaryAdvanceDeductions()->sum('amount');
+    }
+
+    public function outstandingAdvanceBalance(): float
+    {
+        if (! $this->employee_id) {
+            return 0.0;
+        }
+
+        return (float) SalaryAdvance::query()
+            ->where('employee_id', $this->employee_id)
+            ->whereIn('status', [SalaryAdvance::STATUS_APPROVED, SalaryAdvance::STATUS_PARTIAL])
+            ->get()
+            ->sum(fn (SalaryAdvance $advance) => $advance->remainingBalance());
+    }
+
     public function displayStatus(): string
     {
         return $this->status ?? $this->payrollPeriod?->status ?? 'open';
@@ -108,10 +136,14 @@ class Payroll extends Model
      *     pit: float,
      *     total_deductions: float,
      *     net_salary: float,
+     *     advance_deduction: float,
+     *     advance_outstanding: float,
      * }
      */
     public function payslipBreakdown(?Carbon $onDate = null): array
     {
+        $advanceDeduction = $this->advanceDeductionAmount();
+        $advanceOutstanding = $this->outstandingAdvanceBalance();
         $penalty = (float) $this->deduction;
         $gross = (float) $this->total_salary;
         $grossIncome = $gross + $penalty;
@@ -128,6 +160,8 @@ class Payroll extends Model
                 'pit' => 0,
                 'total_deductions' => $penalty,
                 'net_salary' => $gross,
+                'advance_deduction' => $advanceDeduction,
+                'advance_outstanding' => 0.0,
             ];
         }
 
@@ -161,6 +195,8 @@ class Payroll extends Model
             'pit' => $pit,
             'total_deductions' => $totalDeductions,
             'net_salary' => (float) $tax['net_income'],
+            'advance_deduction' => $advanceDeduction,
+            'advance_outstanding' => $advanceOutstanding,
         ];
     }
 
@@ -203,6 +239,8 @@ class Payroll extends Model
             'bhyt_employee' => $fmt($breakdown['bhyt_employee']),
             'bhtn_employee' => $fmt($breakdown['bhtn_employee']),
             'pit' => $fmt($breakdown['pit']),
+            'advance_deduction' => $fmt($breakdown['advance_deduction']),
+            'advance_outstanding' => $fmt($breakdown['advance_outstanding']),
             'total_deductions' => $fmt($breakdown['total_deductions']),
             'net_salary' => $fmt($netSalary),
             'paid_salary' => $isPaid ? $fmt($netSalary) : '0',
