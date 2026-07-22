@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Department;
-use App\Models\Employee;
 use App\Models\JobPost;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +19,6 @@ class JobPostController extends Controller
 
         return view('admin.recruitment.job-posts.index', array_merge($data, [
             'departments' => $this->activeDepartments(),
-            'recruiters' => $this->activeRecruiters(),
             'showCreateForm' => true,
             'showEditForm' => false,
         ]));
@@ -42,8 +40,7 @@ class JobPostController extends Controller
     {
         $validated = $this->validateJobPost($request);
 
-        $validated['department_id'] = ($validated['department_id'] ?? null) ?: null;
-        $validated['recruiter_id'] = ($validated['recruiter_id'] ?? null) ?: null;
+        $validated = $this->applyDepartmentRecruiter($validated);
 
         JobPost::create($validated);
 
@@ -59,10 +56,9 @@ class JobPostController extends Controller
 
         return view('admin.recruitment.job-posts.index', array_merge($data, [
             'departments' => $this->activeDepartments(),
-            'recruiters' => $this->activeRecruiters(),
             'showCreateForm' => false,
             'showEditForm' => true,
-            'editingJobPost' => $jobPost->load(['department', 'recruiter']),
+            'editingJobPost' => $jobPost->load(['department.manager', 'recruiter']),
         ]));
     }
 
@@ -70,8 +66,7 @@ class JobPostController extends Controller
     {
         $validated = $this->validateJobPost($request);
 
-        $validated['department_id'] = ($validated['department_id'] ?? null) ?: null;
-        $validated['recruiter_id'] = ($validated['recruiter_id'] ?? null) ?: null;
+        $validated = $this->applyDepartmentRecruiter($validated);
 
         $jobPost->update($validated);
 
@@ -155,23 +150,34 @@ class JobPostController extends Controller
     {
         return Department::query()
             ->where('status', 'active')
+            ->with('manager:id,full_name,employee_code')
             ->orderBy('department_name')
-            ->get(['id', 'department_name']);
+            ->get(['id', 'department_name', 'manager_id']);
     }
 
-    private function activeRecruiters()
+    private function applyDepartmentRecruiter(array $validated): array
     {
-        return Employee::query()
-            ->where('status', 'active')
-            ->orderBy('full_name')
-            ->get(['id', 'full_name', 'employee_code']);
+        $validated['department_id'] = ($validated['department_id'] ?? null) ?: null;
+
+        if ($validated['department_id'] === null) {
+            $validated['recruiter_id'] = null;
+
+            return $validated;
+        }
+
+        $managerId = Department::query()
+            ->whereKey($validated['department_id'])
+            ->value('manager_id');
+
+        $validated['recruiter_id'] = $managerId ?: null;
+
+        return $validated;
     }
 
     private function validateJobPost(Request $request): array
     {
         return $request->validate([
             'department_id' => ['nullable', 'exists:departments,id'],
-            'recruiter_id' => ['nullable', 'exists:employees,id'],
             'title' => ['required', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
             'salary_min' => ['nullable', 'numeric', 'min:0'],
@@ -185,7 +191,6 @@ class JobPostController extends Controller
             'status' => ['required', 'in:open,closed'],
         ], [
             'department_id.exists' => 'Phòng ban được chọn không hợp lệ.',
-            'recruiter_id.exists' => 'Người phụ trách tuyển dụng không hợp lệ.',
             'title.required' => 'Tiêu đề tin tuyển dụng là bắt buộc.',
             'title.max' => 'Tiêu đề tin tuyển dụng không được vượt quá 255 ký tự.',
             'quantity.required' => 'Số lượng tuyển là bắt buộc.',
