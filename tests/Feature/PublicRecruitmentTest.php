@@ -2,6 +2,8 @@
 
 use App\Models\Candidate;
 use App\Models\JobPost;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 test('guests only see open job posts on public recruitment page', function () {
     $visibleJob = JobPost::create([
@@ -45,7 +47,9 @@ test('guests only see open job posts on public recruitment page', function () {
     $jobsPage->assertSee($expiredJob->title);
 });
 
-test('guests can apply to a public job without uploading a cv', function () {
+test('guests can apply to a public job with a cv', function () {
+    Storage::fake('public');
+
     $jobPost = JobPost::create([
         'title' => 'Public Laravel Developer',
         'quantity' => 2,
@@ -53,12 +57,13 @@ test('guests can apply to a public job without uploading a cv', function () {
         'status' => 'open',
     ]);
 
+    $cv = UploadedFile::fake()->create('ho-so.pdf', 100, 'application/pdf');
+
     $response = $this->post(route('public.recruitment.apply.store', $jobPost), [
         'full_name' => 'Nguyen Van Public',
         'phone' => '0912345678',
         'email' => 'public-candidate@example.com',
-        'birth_date' => '1998-05-10',
-        'address' => 'Ha Noi',
+        'cv_file' => $cv,
     ]);
 
     $response->assertRedirect(route('public.recruitment.show', $jobPost));
@@ -69,7 +74,9 @@ test('guests can apply to a public job without uploading a cv', function () {
     expect($candidate)->not->toBeNull();
     expect($candidate->job_post_id)->toBe($jobPost->id);
     expect($candidate->status)->toBe('new');
-    expect($candidate->cv_file)->toBeNull();
+    expect($candidate->cv_file)->not->toBeNull();
+    expect($candidate->birth_date)->toBeNull();
+    expect($candidate->address)->toBe('');
 });
 
 test('guests cannot view or apply to closed public jobs', function () {
@@ -121,8 +128,7 @@ test('public application rejects duplicate phone and email', function () {
             'full_name' => 'Duplicate Candidate',
             'phone' => '0901111222',
             'email' => 'existing-public@example.com',
-            'birth_date' => '1998-05-10',
-            'address' => 'Ha Noi',
+            'cv_file' => UploadedFile::fake()->create('cv.pdf', 100, 'application/pdf'),
         ]);
 
     $response->assertRedirect(route('public.recruitment.apply', $jobPost));

@@ -72,7 +72,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/tuyen-dung');
 
-Route::prefix('tuyen-dung')->name('public.recruitment.')->group(function () {
+Route::prefix('tuyen-dung')->name('public.recruitment.')->middleware(\App\Http\Middleware\SetPublicRecruitmentLocale::class)->group(function () {
+    Route::get('/ngon-ngu/{locale}', [PublicRecruitmentController::class, 'switchLocale'])->name('locale')->whereIn('locale', ['vi', 'en']);
     Route::get('/', [PublicRecruitmentController::class, 'index'])->name('index');
     Route::get('/gioi-thieu', [PublicRecruitmentController::class, 'about'])->name('about');
     Route::get('/he-sinh-thai', [PublicRecruitmentController::class, 'ecosystem'])->name('ecosystem');

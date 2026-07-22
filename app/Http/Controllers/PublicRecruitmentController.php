@@ -6,7 +6,6 @@ use App\Models\Candidate;
 use App\Models\JobPost;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Illuminate\View\View;
 
 class PublicRecruitmentController extends Controller
@@ -73,27 +72,38 @@ class PublicRecruitmentController extends Controller
         return view('public.recruitment.apply', compact('jobPost'));
     }
 
+    public function switchLocale(string $locale): RedirectResponse
+    {
+        if (! in_array($locale, ['vi', 'en'], true)) {
+            $locale = 'vi';
+        }
+
+        session(['public_recruitment_locale' => $locale]);
+
+        return redirect()->back();
+    }
+
     public function store(Request $request, JobPost $publicJobPost): RedirectResponse
     {
         $jobPost = $this->publicJobPost($publicJobPost);
 
         $validated = $this->validateApplication($request);
-        $cvPath = $this->storeCvFile($request->file('cv_file'));
+        $cvPath = $request->file('cv_file')->store('candidate-cvs', 'public');
 
         Candidate::create([
             'job_post_id' => $jobPost->id,
             'full_name' => $validated['full_name'],
             'phone' => $validated['phone'],
             'email' => $validated['email'],
-            'address' => $validated['address'],
-            'birth_date' => $validated['birth_date'],
+            'address' => '',
+            'birth_date' => null,
             'cv_file' => $cvPath,
             'status' => 'new',
         ]);
 
         return redirect()
             ->route('public.recruitment.show', $jobPost)
-            ->with('application_success', 'Hồ sơ ứng tuyển của bạn đã được gửi thành công. Bộ phận tuyển dụng sẽ liên hệ sau khi xem xét.');
+            ->with('application_success', __('recruitment.apply.success'));
     }
 
     private function publicJobPost(JobPost $jobPost): JobPost
@@ -107,35 +117,41 @@ class PublicRecruitmentController extends Controller
 
     private function validateApplication(Request $request): array
     {
+        $request->merge([
+            'phone' => $this->normalizeVietnamesePhone($request->input('phone')),
+        ]);
+
         return $request->validate([
             'full_name' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'string', 'regex:/^[0-9]{10}$/', 'unique:candidates,phone'],
+            'phone' => ['required', 'string', 'regex:/^0(3|5|7|8|9)\d{8}$/', 'unique:candidates,phone'],
             'email' => ['required', 'string', 'email', 'max:100', 'unique:candidates,email'],
-            'address' => ['required', 'string', 'max:255'],
-            'birth_date' => ['required', 'date'],
-            'cv_file' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx'],
+            'cv_file' => ['required', 'file', 'max:10240', 'mimes:pdf,doc,docx'],
         ], [
-            'full_name.required' => 'Họ và tên ứng viên là bắt buộc.',
-            'phone.required' => 'Số điện thoại là bắt buộc.',
-            'phone.regex' => 'Số điện thoại phải gồm đúng 10 chữ số.',
-            'phone.unique' => 'Số điện thoại này đã tồn tại trong danh sách ứng viên.',
-            'email.required' => 'Email là bắt buộc.',
-            'email.email' => 'Email ứng viên không hợp lệ.',
-            'email.unique' => 'Email này đã tồn tại trong danh sách ứng viên.',
-            'address.required' => 'Địa chỉ là bắt buộc.',
-            'birth_date.required' => 'Ngày sinh là bắt buộc.',
-            'birth_date.date' => 'Ngày sinh không hợp lệ.',
-            'cv_file.mimes' => 'CV chỉ hỗ trợ định dạng PDF, DOC hoặc DOCX.',
-            'cv_file.max' => 'CV không được vượt quá 10MB.',
+            'full_name.required' => __('recruitment.validation.full_name_required'),
+            'phone.required' => __('recruitment.validation.phone_required'),
+            'phone.regex' => __('recruitment.validation.phone_regex'),
+            'phone.unique' => __('recruitment.validation.phone_unique'),
+            'email.required' => __('recruitment.validation.email_required'),
+            'email.email' => __('recruitment.validation.email_email'),
+            'email.unique' => __('recruitment.validation.email_unique'),
+            'cv_file.required' => __('recruitment.validation.cv_required'),
+            'cv_file.mimes' => __('recruitment.validation.cv_mimes'),
+            'cv_file.max' => __('recruitment.validation.cv_max'),
         ]);
     }
 
-    private function storeCvFile(?UploadedFile $file): ?string
+    private function normalizeVietnamesePhone(?string $phone): string
     {
-        if (! $file instanceof UploadedFile) {
-            return null;
+        $normalized = preg_replace('/[\s.\-]/', '', trim((string) $phone));
+
+        if (preg_match('/^\+84(\d{9})$/', $normalized, $matches)) {
+            return '0'.$matches[1];
         }
 
-        return $file->store('candidate-cvs', 'public');
+        if (preg_match('/^84(\d{9})$/', $normalized, $matches)) {
+            return '0'.$matches[1];
+        }
+
+        return $normalized;
     }
 }
