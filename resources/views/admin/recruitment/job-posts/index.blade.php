@@ -46,10 +46,17 @@
                     </p>
                 </div>
 
+                @if (!$showForm)
                 <a href="{{ route('admin.recruitment.job-posts.create') }}"
                    class="recruitment-btn-primary inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
                     Tạo tin tuyển dụng
                 </a>
+                @else
+                <a href="{{ route('admin.recruitment.job-posts') }}"
+                   class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-cyan-300 hover:text-cyan-800">
+                    ← Danh sách tin
+                </a>
+                @endif
             </div>
         </section>
 
@@ -72,6 +79,7 @@
             </div>
         @endif
 
+        @unless ($showForm)
         <section class="recruitment-stats grid grid-cols-1 gap-4 md:grid-cols-3">
             <div class="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-sm">
                 <p class="text-sm font-bold text-slate-500">Tổng tin</p>
@@ -86,6 +94,7 @@
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ $stats['closed'] ?? 0 }}</p>
             </div>
         </section>
+        @endunless
 
         @if ($showForm)
             <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
@@ -259,6 +268,7 @@
             </script>
         @endif
 
+        @unless ($showForm)
         <section class="recruitment-panel rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm shadow-slate-200/60">
             <form method="GET" action="{{ route('admin.recruitment.job-posts') }}" class="grid grid-cols-1 gap-4 lg:grid-cols-12">
                 <div class="lg:col-span-5">
@@ -382,5 +392,6 @@
                 {{ $jobPosts->links() }}
             </div>
         </section>
+        @endunless
     </div>
 </x-admin-layout>
