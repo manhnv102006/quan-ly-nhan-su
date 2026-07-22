@@ -175,6 +175,10 @@
                             <dd class="font-bold text-slate-800">{{ $kpi->assignments_count }}</dd>
                         </div>
                         <div class="flex items-center justify-between gap-3">
+                            <dt class="text-slate-500">Đã hoàn thành</dt>
+                            <dd class="font-bold text-emerald-700">{{ $kpi->assignments_completed_count ?? 0 }}</dd>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
                             <dt class="text-slate-500">Số nhiệm vụ</dt>
                             <dd class="font-bold text-slate-800">{{ $kpi->tasks->count() }}</dd>
                         </div>

@@ -8,6 +8,7 @@ use App\Http\Requests\StoreKPIRequest;
 use App\Http\Requests\UpdateKPIRequest;
 use App\Models\Department;
 use App\Models\KPI;
+use App\Models\KPIAssignment;
 use Illuminate\Http\Request;
 
 class KPIController extends Controller
@@ -42,7 +43,10 @@ class KPIController extends Controller
             });
         }
 
-        $kpis = $query->latest()->paginate(10);
+        $kpis = $query->withCount([
+            'assignments',
+            'assignments as assignments_completed_count' => fn ($assignmentQuery) => $assignmentQuery->where('status', 'completed'),
+        ])->latest()->paginate(10);
         $departments = Department::all();
 
         return view('admin.kpis.index', compact('kpis', 'departments'));
@@ -91,7 +95,20 @@ class KPIController extends Controller
      */
     public function show(KPI $kpi)
     {
-        $kpi->load(['departments', 'tasks'])->loadCount('assignments');
+        $kpi->load(['departments', 'tasks'])->loadCount([
+            'assignments',
+            'assignments as assignments_completed_count' => fn ($q) => $q->where('status', 'completed'),
+        ]);
+
+        KPIAssignment::query()
+            ->where('kpi_id', $kpi->id)
+            ->each(fn (KPIAssignment $assignment) => $assignment->syncStatusFromEmployeeKpis());
+
+        $kpi->refresh();
+        $kpi->loadCount([
+            'assignments',
+            'assignments as assignments_completed_count' => fn ($q) => $q->where('status', 'completed'),
+        ]);
 
         return view('admin.kpis.show', compact('kpi'));
     }

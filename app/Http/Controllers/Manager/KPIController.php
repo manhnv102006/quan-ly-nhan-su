@@ -32,6 +32,11 @@ class KPIController extends Controller
             ->latest()
             ->paginate(10);
 
+        $assignments->getCollection()->each(function (KPIAssignment $assignment) {
+            $assignment->syncStatusFromEmployeeKpis();
+            $assignment->refresh();
+        });
+
         $managedEmployees = $this->getManagedEmployees();
 
         return view('manager.kpis.index', compact('assignments', 'managedEmployees'));
@@ -47,6 +52,14 @@ class KPIController extends Controller
         // Đảm bảo Manager chỉ xem KPI của chính mình
         abort_if($assignment->manager_id !== Auth::id(), 403);
 
+        $assignment->load([
+            'kpi.tasks',
+            'assignedBy',
+            'employeeKpis.employee',
+        ]);
+
+        $assignment->syncStatusFromEmployeeKpis();
+        $assignment->refresh();
         $assignment->load([
             'kpi.tasks',
             'assignedBy',
