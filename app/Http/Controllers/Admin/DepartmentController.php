@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreDepartmentRequest;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Services\ManagerDepartmentSyncService;
@@ -79,14 +80,10 @@ class DepartmentController extends Controller
         return view('admin.departments.create', compact('employees'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreDepartmentRequest $request): RedirectResponse
     {
-        $validated = $request->validate(
-            $this->departmentValidationRules(),
-            $this->departmentValidationMessages(),
-        );
+        $validated = $request->validated();
 
-        $validated['department_code'] = strtoupper($validated['department_code']);
         $validated['manager_id'] = $validated['manager_id'] ?: null;
         $validated['max_employees'] = (int) $validated['max_employees'];
 

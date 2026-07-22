@@ -14,7 +14,7 @@ class Department extends Model
 
     public const MIN_MAX_EMPLOYEES = 1;
 
-    public const MAX_MAX_EMPLOYEES = 100;
+    public const MAX_MAX_EMPLOYEES = 20;
 
     protected $table = 'departments';
 

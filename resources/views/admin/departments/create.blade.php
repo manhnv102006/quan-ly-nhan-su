@@ -27,7 +27,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('admin.departments.store') }}" method="POST" class="space-y-5">
+            <form action="{{ route('admin.departments.store') }}" method="POST" class="space-y-5" id="department-create-form" novalidate>
                 @csrf
 
                 <div>
@@ -40,7 +40,9 @@
                         name="department_code"
                         value="{{ old('department_code') }}"
                         placeholder="VD: HR, IT, SALE"
+                        minlength="2"
                         maxlength="20"
+                        pattern="[A-Za-z0-9_-]+"
                         required
                         class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('department_code') border-red-400 @enderror"
                     >
@@ -59,6 +61,7 @@
                         name="department_name"
                         value="{{ old('department_name') }}"
                         placeholder="Nhập tên phòng ban"
+                        minlength="2"
                         maxlength="100"
                         required
                         class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('department_name') border-red-400 @enderror"
@@ -140,5 +143,66 @@
         </div>
 
     </div>
+
+    <script>
+        (function () {
+            const form = document.getElementById('department-create-form');
+            if (!form) return;
+
+            const minMaxEmployees = {{ \App\Models\Department::MIN_MAX_EMPLOYEES }};
+            const maxMaxEmployees = {{ \App\Models\Department::MAX_MAX_EMPLOYEES }};
+            const departmentCodePattern = /^[A-Z0-9_-]+$/;
+
+            function setFieldError(input, message) {
+                input.classList.add('border-red-400');
+                let hint = input.parentElement.querySelector('[data-client-error]');
+                if (!hint) {
+                    hint = document.createElement('p');
+                    hint.dataset.clientError = '1';
+                    hint.className = 'mt-1.5 text-sm text-red-600';
+                    input.parentElement.appendChild(hint);
+                }
+                hint.textContent = message;
+            }
+
+            function clearClientErrors() {
+                form.querySelectorAll('[data-client-error]').forEach(el => el.remove());
+                form.querySelectorAll('.border-red-400').forEach(el => el.classList.remove('border-red-400'));
+            }
+
+            form.addEventListener('submit', function (event) {
+                clearClientErrors();
+                let valid = true;
+
+                const departmentCode = form.querySelector('#department_code');
+                const departmentName = form.querySelector('#department_name');
+                const maxEmployees = form.querySelector('#max_employees');
+                const status = form.querySelector('#status');
+
+                const codeValue = departmentCode.value.trim().toUpperCase();
+                if (!codeValue) { setFieldError(departmentCode, 'Vui lòng nhập mã phòng ban.'); valid = false; }
+                else if (codeValue.length < 2 || codeValue.length > 20) { setFieldError(departmentCode, 'Mã phòng ban phải từ 2 đến 20 ký tự.'); valid = false; }
+                else if (!departmentCodePattern.test(codeValue)) { setFieldError(departmentCode, 'Mã phòng ban chỉ được chứa chữ in hoa, số, gạch ngang và gạch dưới.'); valid = false; }
+
+                const nameValue = departmentName.value.trim();
+                if (!nameValue) { setFieldError(departmentName, 'Vui lòng nhập tên phòng ban.'); valid = false; }
+                else if (nameValue.length < 2) { setFieldError(departmentName, 'Tên phòng ban phải có ít nhất 2 ký tự.'); valid = false; }
+
+                const maxEmployeesValue = Number(maxEmployees.value);
+                if (maxEmployees.value.trim() === '') { setFieldError(maxEmployees, 'Vui lòng nhập giới hạn nhân viên.'); valid = false; }
+                else if (!Number.isInteger(maxEmployeesValue) || maxEmployeesValue < minMaxEmployees || maxEmployeesValue > maxMaxEmployees) {
+                    setFieldError(maxEmployees, 'Giới hạn nhân viên phải từ ' + minMaxEmployees + ' đến ' + maxMaxEmployees + '.');
+                    valid = false;
+                }
+
+                if (!status.value) { setFieldError(status, 'Vui lòng chọn trạng thái.'); valid = false; }
+
+                if (!valid) {
+                    event.preventDefault();
+                    form.querySelector('.border-red-400')?.focus();
+                }
+            });
+        })();
+    </script>
 
 </x-admin-layout>
