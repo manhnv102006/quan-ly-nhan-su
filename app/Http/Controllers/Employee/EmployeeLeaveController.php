@@ -8,6 +8,7 @@ use App\Models\LeaveRequest;
 use App\Services\AutoNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class EmployeeLeaveController extends Controller
@@ -113,23 +114,41 @@ class EmployeeLeaveController extends Controller
             return back()->withErrors(['start_date' => 'Khoảng thời gian bạn chọn toàn bộ là ngày nghỉ/ngày Lễ. Vui lòng chọn lại.'])->withInput();
         }
 
-        $leaveRequest = LeaveRequest::create([
-            'employee_id' => $employee->id,
-            'leave_type' => $request->leave_type,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'total_days' => $totalDays,
-            'reason' => $request->reason,
-            'status' => 'pending',
-            'approved_by' => null,
-            'approved_at' => null,
-            'reject_reason' => null,
-        ]);
-
-        $this->autoNotifications->leaveSubmitted($leaveRequest);
-
-        return redirect()
+        $redirect = redirect()
             ->route('employee.leave-requests')
             ->with('success', 'Tạo đơn xin nghỉ phép thành công.');
+
+        DB::transaction(function () use ($employee, $request, $totalDays) {
+            Employee::query()->whereKey($employee->id)->lockForUpdate()->first();
+
+            $duplicatePending = LeaveRequest::query()
+                ->where('employee_id', $employee->id)
+                ->where('status', LeaveRequest::STATUS_PENDING)
+                ->where('leave_type', $request->leave_type)
+                ->whereDate('start_date', $request->start_date)
+                ->whereDate('end_date', $request->end_date)
+                ->exists();
+
+            if ($duplicatePending) {
+                return;
+            }
+
+            $leaveRequest = LeaveRequest::create([
+                'employee_id' => $employee->id,
+                'leave_type' => $request->leave_type,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+                'total_days' => $totalDays,
+                'reason' => $request->reason,
+                'status' => LeaveRequest::STATUS_PENDING,
+                'approved_by' => null,
+                'approved_at' => null,
+                'reject_reason' => null,
+            ]);
+
+            $this->autoNotifications->leaveSubmitted($leaveRequest);
+        });
+
+        return $redirect;
     }
 }
