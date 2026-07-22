@@ -97,8 +97,13 @@ class AttendanceController extends Controller
 
         $overtimeSessions = $this->overtimeAttendance->sessionsForDate($employee, $today);
 
+        $dayOffReason = $this->attendanceService->dayOffReason($now);
+        $hasApprovedOvertimeToday = $this->attendanceService->hasApprovedOvertimeOn($employee, $now);
+        $isBlockedDayOff = $dayOffReason !== null && ! $hasApprovedOvertimeToday;
+
         $faceEnrolled = $employee->hasFaceEnrolled();
         $canFaceScan = $faceEnrolled
+            && ! $isBlockedDayOff
             && $todayShift?->shift
             && $this->faceAttendance->canScanNow(
                 $employee,
@@ -120,6 +125,9 @@ class AttendanceController extends Controller
             'overtimeSessions',
             'faceEnrolled',
             'canFaceScan',
+            'dayOffReason',
+            'hasApprovedOvertimeToday',
+            'isBlockedDayOff',
         ));
     }
 
