@@ -13,24 +13,24 @@ class PublicRecruitmentController extends Controller
 {
     public function index(): View
     {
-        $featuredJobPosts = JobPost::query()
-            ->publiclyVisible()
-            ->with('department')
+        $homepageJobPosts = JobPost::query()
+            ->where('status', 'open')
+            ->with(['department', 'recruiter'])
             ->latest()
-            ->limit(6)
+            ->limit(5)
             ->get();
 
         $stats = [
-            'open_jobs' => JobPost::query()->publiclyVisible()->count(),
+            'open_jobs' => JobPost::query()->where('status', 'open')->count(),
             'applications' => Candidate::count(),
             'departments' => JobPost::query()
-                ->publiclyVisible()
+                ->where('status', 'open')
                 ->whereNotNull('department_id')
                 ->distinct('department_id')
                 ->count('department_id'),
         ];
 
-        return view('public.recruitment.index', compact('featuredJobPosts', 'stats'));
+        return view('public.recruitment.index', compact('homepageJobPosts', 'stats'));
     }
 
     public function about(): View
