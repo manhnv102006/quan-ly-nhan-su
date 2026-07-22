@@ -197,7 +197,7 @@ class JobPostController extends Controller
         return $request->validate([
             'department_id' => ['nullable', 'exists:departments,id'],
             'title' => ['required', 'string', 'max:255'],
-            'quantity' => ['required', 'integer', 'min:1'],
+            'quantity' => ['required', 'integer', 'min:0'],
             'salary_min' => ['nullable', 'numeric', 'min:0'],
             'salary_max' => ['nullable', 'numeric', 'min:0', 'gte:salary_min'],
             'work_location' => ['nullable', 'string', 'max:255'],
@@ -213,7 +213,7 @@ class JobPostController extends Controller
             'title.max' => 'Tiêu đề tin tuyển dụng không được vượt quá 255 ký tự.',
             'quantity.required' => 'Số lượng tuyển là bắt buộc.',
             'quantity.integer' => 'Số lượng tuyển phải là số nguyên.',
-            'quantity.min' => 'Số lượng tuyển phải lớn hơn 0.',
+            'quantity.min' => 'Số lượng tuyển không được âm.',
             'salary_min.numeric' => 'Lương tối thiểu phải là số.',
             'salary_max.numeric' => 'Lương tối đa phải là số.',
             'salary_max.gte' => 'Lương tối đa phải lớn hơn hoặc bằng lương tối thiểu.',

@@ -29,9 +29,10 @@ class InterviewController extends Controller
     public function index(): View
     {
         $interviews = Interview::query()
-            ->with(['candidate.jobPost', 'interviewer'])
-            ->orderByDesc('interview_date')
-            ->paginate(12)
+            ->with(['candidate.jobPost.department', 'interviewer'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate(15)
             ->withQueryString();
 
         $stats = [
@@ -118,8 +119,8 @@ class InterviewController extends Controller
         $returnTo = $request->input('return_to');
         if (is_string($returnTo) && $this->isCandidateShowReturnUrl($returnTo, (int) $validated['candidate_id'])) {
             return redirect()
-                ->to($returnTo)
-                ->with('success', 'Tạo lịch phỏng vấn thành công.');
+                ->route('admin.recruitment.interviews')
+                ->with('success', 'Tạo lịch phỏng vấn thành công. Lịch đã hiển thị trong danh sách bên dưới.');
         }
 
         return redirect()

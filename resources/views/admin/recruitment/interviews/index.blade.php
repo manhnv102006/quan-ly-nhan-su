@@ -7,10 +7,10 @@
             'no_show' => 'Không đến',
         ];
         $statusClasses = [
-            'scheduled' => 'bg-sky-100 text-sky-700 ring-sky-200',
-            'completed' => 'bg-indigo-100 text-indigo-700 ring-indigo-200',
-            'cancelled' => 'bg-slate-100 text-slate-700 ring-slate-200',
-            'no_show' => 'bg-orange-100 text-orange-700 ring-orange-200',
+            'scheduled' => 'bg-sky-100 text-sky-800',
+            'completed' => 'bg-indigo-100 text-indigo-800',
+            'cancelled' => 'bg-slate-100 text-slate-700',
+            'no_show' => 'bg-orange-100 text-orange-800',
         ];
         $resultLabels = [
             'pending' => 'Chờ kết quả',
@@ -18,9 +18,9 @@
             'failed' => 'Không đạt',
         ];
         $resultClasses = [
-            'pending' => 'bg-amber-100 text-amber-700 ring-amber-200',
-            'passed' => 'bg-emerald-100 text-emerald-700 ring-emerald-200',
-            'failed' => 'bg-rose-100 text-rose-700 ring-rose-200',
+            'pending' => 'bg-amber-100 text-amber-800',
+            'passed' => 'bg-emerald-100 text-emerald-800',
+            'failed' => 'bg-rose-100 text-rose-800',
         ];
         $recommendationLabels = [
             '' => 'Chưa chọn',
@@ -34,48 +34,38 @@
             'attitude_score' => 'Thái độ',
             'culture_score' => 'Văn hóa',
         ];
-        $summaryStats = [
-            ['label' => 'Tổng lịch', 'value' => $stats['total'] ?? 0, 'class' => 'from-slate-700 to-slate-900 text-white'],
-            ['label' => 'Chờ kết quả', 'value' => $stats['pending'] ?? 0, 'class' => 'from-amber-500 to-orange-500 text-white'],
-            ['label' => 'Đạt', 'value' => $stats['passed'] ?? 0, 'class' => 'from-emerald-500 to-teal-500 text-white'],
-            ['label' => 'Không đạt', 'value' => $stats['failed'] ?? 0, 'class' => 'from-rose-500 to-pink-500 text-white'],
-        ];
+        $inputClass = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm normal-case text-slate-800 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20';
+        $labelClass = 'mb-1 block text-xs font-medium normal-case tracking-normal text-slate-600';
     @endphp
 
-    @include('admin.recruitment.partials.ui-contrast')
-
-    <div class="recruitment-ui max-w-full overflow-hidden space-y-6">
-        <div class="recruitment-hero rounded-[2rem] border border-white/80 bg-white/85 p-5 shadow-sm shadow-slate-200/60 backdrop-blur sm:p-6">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                        <a href="{{ route('admin.recruitment') }}" class="hover:text-cyan-600 transition">Tuyển dụng</a>
-                        <span>/</span>
-                        <span class="font-medium text-slate-700">Phỏng vấn</span>
-                    </div>
-                    <h2 class="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Quản lý phỏng vấn</h2>
-                    <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-                        Theo dõi lịch phỏng vấn, cập nhật kết quả và điểm đánh giá ứng viên trong một màn hình gọn hơn.
-                    </p>
-                </div>
-
-                <a href="{{ route('admin.recruitment.interviews.create') }}"
-                   class="recruitment-btn-primary inline-flex w-full items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700 sm:w-auto">
-                    Tạo lịch phỏng vấn
-                </a>
+    <div class="space-y-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <nav class="mb-1 flex items-center gap-2 text-xs text-slate-500">
+                    <a href="{{ route('admin.recruitment') }}" class="hover:text-violet-600">Tuyển dụng</a>
+                    <span>/</span>
+                    <span class="font-semibold text-slate-700">Phỏng vấn</span>
+                </nav>
+                <h1 class="text-xl font-bold text-slate-800">Quản lý phỏng vấn</h1>
+                <p class="mt-0.5 text-xs text-slate-500">
+                    Tạo lịch từ hồ sơ ứng viên · lịch mới hiển thị đầu danh sách
+                </p>
             </div>
+            <a href="{{ route('admin.recruitment.candidates') }}"
+               class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-violet-300">
+                Danh sách ứng viên
+            </a>
         </div>
 
         @if (session('success'))
-            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
+            <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
                 {{ session('success') }}
             </div>
         @endif
 
         @if (isset($errors) && $errors->any())
-            <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
-                <p class="font-semibold">Vui lòng kiểm tra lại thông tin phỏng vấn:</p>
-                <ul class="mt-2 list-disc space-y-1 pl-5">
+            <div class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                <ul class="list-disc pl-4">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -83,179 +73,168 @@
             </div>
         @endif
 
-        <div class="recruitment-stats grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            @foreach ($summaryStats as $item)
-                <div class="overflow-hidden rounded-[1.75rem] bg-gradient-to-br {{ $item['class'] }} p-5 shadow-sm">
-                    <p class="text-sm font-semibold opacity-85">{{ $item['label'] }}</p>
-                    <p class="mt-3 text-3xl font-extrabold">{{ $item['value'] }}</p>
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            @foreach ([
+                ['Tổng', $stats['total'] ?? 0],
+                ['Chờ KQ', $stats['pending'] ?? 0],
+                ['Đạt', $stats['passed'] ?? 0],
+                ['Không đạt', $stats['failed'] ?? 0],
+            ] as [$label, $value])
+                <div class="rounded-lg border border-slate-100 bg-white px-3 py-2 shadow-sm">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{{ $label }}</p>
+                    <p class="text-lg font-bold text-slate-900">{{ $value }}</p>
                 </div>
             @endforeach
         </div>
+        <p class="text-[11px] text-slate-400">
+            Trạng thái: đã lên lịch {{ $stats['scheduled'] ?? 0 }} · đã PV {{ $stats['completed'] ?? 0 }} · hủy {{ $stats['cancelled'] ?? 0 }} · không đến {{ $stats['no_show'] ?? 0 }}
+        </p>
 
-        <div class="recruitment-panel rounded-[1.75rem] border border-slate-100 bg-white/85 p-4 shadow-sm">
-            <div class="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
-                <div class="min-w-0 rounded-2xl bg-slate-50 px-4 py-3">
-                    <p class="truncate font-semibold text-slate-700">Đã lên lịch</p>
-                    <p class="mt-1 text-xl font-bold text-slate-900">{{ $stats['scheduled'] ?? 0 }}</p>
-                </div>
-                <div class="min-w-0 rounded-2xl bg-indigo-50 px-4 py-3">
-                    <p class="truncate font-semibold text-indigo-700">Đã phỏng vấn</p>
-                    <p class="mt-1 text-xl font-bold text-indigo-800">{{ $stats['completed'] ?? 0 }}</p>
-                </div>
-                <div class="min-w-0 rounded-2xl bg-slate-50 px-4 py-3">
-                    <p class="truncate font-semibold text-slate-700">Đã hủy</p>
-                    <p class="mt-1 text-xl font-bold text-slate-900">{{ $stats['cancelled'] ?? 0 }}</p>
-                </div>
-                <div class="min-w-0 rounded-2xl bg-orange-50 px-4 py-3">
-                    <p class="truncate font-semibold text-orange-700">Không đến</p>
-                    <p class="mt-1 text-xl font-bold text-orange-800">{{ $stats['no_show'] ?? 0 }}</p>
-                </div>
+        <div class="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+            <div class="hidden border-b border-slate-100 bg-slate-50/80 px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-slate-500 md:grid md:grid-cols-12 md:gap-2">
+                <span class="md:col-span-3">Ứng viên</span>
+                <span class="md:col-span-2">Thời gian</span>
+                <span class="md:col-span-2">Phỏng vấn viên</span>
+                <span class="md:col-span-2">Trạng thái</span>
+                <span class="md:col-span-3 text-right">Thao tác</span>
             </div>
-        </div>
 
-        <div class="space-y-4">
-            @forelse ($interviews as $interview)
-                @php
-                    $statusClass = $statusClasses[$interview->status] ?? 'bg-slate-100 text-slate-700 ring-slate-200';
-                    $resultClass = $resultClasses[$interview->result] ?? 'bg-slate-100 text-slate-700 ring-slate-200';
-                @endphp
+            <div class="divide-y divide-slate-100">
+                @forelse ($interviews as $interview)
+                    @php
+                        $statusClass = $statusClasses[$interview->status] ?? 'bg-slate-100 text-slate-700';
+                        $resultClass = $resultClasses[$interview->result] ?? 'bg-slate-100 text-slate-700';
+                        $openForm = $loop->first && session('success');
+                    @endphp
 
-                <article class="recruitment-panel max-w-full overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/50">
-                    <div class="grid grid-cols-1 xl:grid-cols-12">
-                        <div class="min-w-0 border-b border-slate-100 bg-slate-50/80 p-5 xl:col-span-4 xl:border-b-0 xl:border-r">
-                            <div class="flex min-w-0 flex-col gap-4">
-                                <div class="min-w-0">
-                                    <div class="flex flex-wrap gap-2">
-                                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 {{ $statusClass }}">
+                    <div class="px-4 py-3">
+                        <details class="group w-full" @if($openForm) open @endif>
+                            <summary class="cursor-pointer list-none marker:content-none [&::-webkit-details-marker]:hidden">
+                                <div class="grid grid-cols-1 items-center gap-2 md:grid-cols-12 md:gap-3">
+                                    <div class="min-w-0 md:col-span-3">
+                                        <p class="truncate text-sm font-semibold text-slate-900">
+                                            {{ $interview->candidate?->full_name ?? 'Ứng viên đã xóa' }}
+                                        </p>
+                                        <p class="truncate text-xs text-slate-500">
+                                            {{ $interview->candidate?->jobPost?->title ?? '—' }}
+                                        </p>
+                                    </div>
+                                    <div class="text-sm text-slate-700 md:col-span-2">
+                                        {{ $interview->interview_date?->format('d/m/Y H:i') ?? '—' }}
+                                    </div>
+                                    <div class="truncate text-sm text-slate-600 md:col-span-2">
+                                        {{ $interview->interviewer?->full_name ?? 'Quản lý phòng ban' }}
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5 md:col-span-2">
+                                        <span class="inline-flex rounded-md px-2 py-0.5 text-xs font-medium {{ $statusClass }}">
                                             {{ $statusLabels[$interview->status] ?? $interview->status }}
                                         </span>
-                                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 {{ $resultClass }}">
+                                        <span class="inline-flex rounded-md px-2 py-0.5 text-xs font-medium {{ $resultClass }}">
                                             {{ $resultLabels[$interview->result] ?? $interview->result }}
                                         </span>
                                     </div>
-
-                                    <h3 class="mt-4 break-words text-lg font-bold leading-7 text-slate-900">
-                                        {{ $interview->candidate?->full_name ?? 'Ứng viên đã xóa' }}
-                                    </h3>
-                                    <p class="mt-1 break-words text-sm leading-6 text-slate-500">
-                                        {{ $interview->candidate?->jobPost?->title ?? 'Chưa gắn tin tuyển dụng' }}
-                                    </p>
-                                </div>
-
-                                <div class="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 xl:grid-cols-1">
-                                    <div class="min-w-0 rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-100">
-                                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Thời gian</p>
-                                        <p class="mt-1 break-words font-semibold text-slate-700">{{ $interview->interview_date?->format('d/m/Y H:i') ?? '-' }}</p>
-                                    </div>
-                                    <div class="min-w-0 rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-100">
-                                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Người phỏng vấn</p>
-                                        <p class="mt-1 break-words font-semibold text-slate-700">{{ $interview->interviewer?->full_name ?? 'Chưa gắn' }}</p>
-                                    </div>
-                                    <div class="min-w-0 rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-100">
-                                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Đề xuất hiện tại</p>
-                                        <p class="mt-1 break-words font-semibold text-slate-700">{{ $recommendationLabels[$interview->recommendation ?? ''] ?? $interview->recommendation }}</p>
-                                    </div>
-                                    <div class="min-w-0 rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-100">
-                                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Điểm tổng quan</p>
-                                        <p class="mt-1 text-2xl font-extrabold text-slate-900">{{ $interview->overall_score ?? '-' }}<span class="text-sm font-semibold text-slate-400">/10</span></p>
+                                    <div class="flex flex-wrap items-center gap-3 md:col-span-3 md:justify-end">
+                                        @if ($interview->candidate)
+                                            <a href="{{ route('admin.recruitment.candidates.show', $interview->candidate) }}"
+                                               class="text-sm font-semibold text-violet-700 hover:text-violet-900"
+                                               onclick="event.stopPropagation()">
+                                                Hồ sơ
+                                            </a>
+                                        @endif
+                                        <span class="inline-flex items-center gap-1 text-sm font-semibold text-violet-700 group-open:text-violet-900">
+                                            Cập nhật kết quả
+                                            <svg class="h-4 w-4 shrink-0 transition group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                                        </span>
                                     </div>
                                 </div>
+                            </summary>
 
-                                @if ($interview->candidate)
-                                    <a href="{{ route('admin.recruitment.candidates.show', $interview->candidate) }}"
-                                       class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700">
-                                        Xem hồ sơ ứng viên
-                                    </a>
-                                @endif
-                            </div>
-                        </div>
+                            <form action="{{ route('admin.recruitment.interviews.update', $interview) }}" method="POST"
+                                  class="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                @csrf
+                                @method('PUT')
 
-                        <form action="{{ route('admin.recruitment.interviews.update', $interview) }}" method="POST" class="min-w-0 p-5 xl:col-span-8">
-                            @csrf
-                            @method('PUT')
+                                <p class="mb-3 text-sm font-semibold text-slate-800">Cập nhật kết quả phỏng vấn</p>
 
-                            <div class="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-3">
-                                <div class="min-w-0">
-                                    <label class="mb-2 block text-sm font-semibold text-slate-700">Trạng thái</label>
-                                    <select name="status" required class="w-full min-w-0 rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
-                                        @foreach ($statusLabels as $value => $label)
-                                            <option value="{{ $value }}" @selected($interview->status === $value)>{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="min-w-0">
-                                    <label class="mb-2 block text-sm font-semibold text-slate-700">Kết quả</label>
-                                    <select name="result" required class="w-full min-w-0 rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
-                                        @foreach ($resultLabels as $value => $label)
-                                            <option value="{{ $value }}" @selected($interview->result === $value)>{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="min-w-0">
-                                    <label class="mb-2 block text-sm font-semibold text-slate-700">Đề xuất</label>
-                                    <select name="recommendation" class="w-full min-w-0 rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
-                                        @foreach ($recommendationLabels as $value => $label)
-                                            <option value="{{ $value }}" @selected((string) $interview->recommendation === (string) $value)>{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="mt-4 grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-4">
-                                @foreach ($scoreFields as $field => $label)
-                                    <div class="min-w-0">
-                                        <label class="mb-2 block truncate text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $label }}</label>
-                                        <input type="number" min="0" max="10" name="{{ $field }}" value="{{ $interview->{$field} }}"
-                                               class="w-full min-w-0 rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                    <div>
+                                        <label class="{{ $labelClass }}">Trạng thái</label>
+                                        <select name="status" required class="{{ $inputClass }}">
+                                            @foreach ($statusLabels as $value => $statusText)
+                                                <option value="{{ $value }}" @selected($interview->status === $value)>{{ $statusText }}</option>
+                                            @endforeach
+                                        </select>
                                     </div>
-                                @endforeach
-                            </div>
-
-                            <details class="mt-4 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                                <summary class="cursor-pointer select-none text-sm font-semibold text-slate-700">
-                                    Ghi chú và đánh giá chi tiết
-                                </summary>
-
-                                <div class="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-3">
-                                    <div class="min-w-0 lg:col-span-3">
-                                        <label class="mb-2 block text-sm font-semibold text-slate-700">Ghi chú chung</label>
-                                        <textarea name="note" rows="2" class="w-full min-w-0 rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">{{ $interview->note }}</textarea>
+                                    <div>
+                                        <label class="{{ $labelClass }}">Kết quả</label>
+                                        <select name="result" required class="{{ $inputClass }}">
+                                            @foreach ($resultLabels as $value => $resultText)
+                                                <option value="{{ $value }}" @selected($interview->result === $value)>{{ $resultText }}</option>
+                                            @endforeach
+                                        </select>
                                     </div>
-
-                                    <div class="min-w-0">
-                                        <label class="mb-2 block text-sm font-semibold text-slate-700">Điểm mạnh</label>
-                                        <textarea name="strengths" rows="3" class="w-full min-w-0 rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">{{ $interview->strengths }}</textarea>
-                                    </div>
-
-                                    <div class="min-w-0 lg:col-span-2">
-                                        <label class="mb-2 block text-sm font-semibold text-slate-700">Điểm cần cải thiện</label>
-                                        <textarea name="weaknesses" rows="3" class="w-full min-w-0 rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-cyan-500 focus:ring-cyan-500">{{ $interview->weaknesses }}</textarea>
+                                    <div>
+                                        <label class="{{ $labelClass }}">Đề xuất</label>
+                                        <select name="recommendation" class="{{ $inputClass }}">
+                                            @foreach ($recommendationLabels as $value => $recText)
+                                                <option value="{{ $value }}" @selected((string) $interview->recommendation === (string) $value)>{{ $recText }}</option>
+                                            @endforeach
+                                        </select>
                                     </div>
                                 </div>
-                            </details>
 
-                            <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <p class="text-xs leading-5 text-slate-500">
-                                    Khi kết quả là Đạt hoặc Không đạt, trạng thái ứng viên sẽ được cập nhật tự động.
-                                </p>
-                                <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-700 sm:w-auto">
-                                    Lưu kết quả
-                                </button>
-                            </div>
-                        </form>
+                                <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                    @foreach ($scoreFields as $field => $scoreLabel)
+                                        <div>
+                                            <label class="{{ $labelClass }}">Điểm {{ $scoreLabel }} (0–10)</label>
+                                            <input type="number" min="0" max="10" name="{{ $field }}" value="{{ $interview->{$field} }}" class="{{ $inputClass }}">
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                <div class="mt-3 space-y-3 border-t border-slate-200 pt-3">
+                                    <p class="text-xs font-semibold text-slate-500">Ghi chú chi tiết</p>
+                                    <div>
+                                        <label class="{{ $labelClass }}">Ghi chú</label>
+                                        <textarea name="note" rows="2" class="{{ $inputClass }} resize-y">{{ $interview->note }}</textarea>
+                                    </div>
+                                    <div class="grid gap-3 sm:grid-cols-2">
+                                        <div>
+                                            <label class="{{ $labelClass }}">Điểm mạnh</label>
+                                            <textarea name="strengths" rows="2" class="{{ $inputClass }} resize-y">{{ $interview->strengths }}</textarea>
+                                        </div>
+                                        <div>
+                                            <label class="{{ $labelClass }}">Cần cải thiện</label>
+                                            <textarea name="weaknesses" rows="2" class="{{ $inputClass }} resize-y">{{ $interview->weaknesses }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+                                    <p class="text-xs text-slate-500">Kết quả Đạt / Không đạt sẽ cập nhật trạng thái ứng viên.</p>
+                                    <button type="submit" class="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700">
+                                        Lưu kết quả
+                                    </button>
+                                </div>
+                            </form>
+                        </details>
                     </div>
-                </article>
-            @empty
-                <div class="recruitment-panel rounded-[1.75rem] border border-dashed border-slate-200 bg-white/80 px-5 py-14 text-center text-sm text-slate-500 shadow-sm">
-                    Chưa có lịch phỏng vấn nào.
-                </div>
-            @endforelse
-        </div>
+                @empty
+                    <div class="px-4 py-10 text-center">
+                        <p class="text-sm font-semibold text-slate-700">Chưa có lịch phỏng vấn</p>
+                        <p class="mt-1 text-xs text-slate-500">Tạo lịch từ hồ sơ ứng viên.</p>
+                        <a href="{{ route('admin.recruitment.candidates') }}" class="mt-3 inline-flex rounded-lg bg-violet-600 px-4 py-2 text-xs font-semibold text-white hover:bg-violet-700">
+                            Đi tới ứng viên
+                        </a>
+                    </div>
+                @endforelse
+            </div>
 
-        <div class="recruitment-panel max-w-full overflow-x-auto rounded-[1.75rem] border border-slate-100 bg-white p-4 shadow-sm">
-            {{ $interviews->links() }}
+            @if ($interviews->hasPages())
+                <div class="border-t border-slate-100 px-4 py-3">
+                    {{ $interviews->links() }}
+                </div>
+            @endif
         </div>
     </div>
 </x-admin-layout>
