@@ -23,7 +23,7 @@
     <body class="{{ $isDarkHeader ? 'bg-[#030712] text-white' : 'bg-white text-slate-900' }} font-sans antialiased">
         <div class="min-h-screen">
             <header class="sticky top-0 z-40 border-b {{ $isDarkHeader ? 'border-white/10 bg-[#030712]/95 text-white backdrop-blur' : 'border-slate-100 bg-white text-slate-900' }}">
-                <div class="mx-auto flex min-h-24 max-w-[1500px] items-center justify-between gap-6 px-5 py-5 sm:px-8 lg:px-12">
+                <div class="mx-auto flex min-h-24 w-[83%] items-center justify-between gap-6 py-5">
                     <a href="{{ route('public.recruitment.index') }}" class="flex min-w-0 items-center gap-3">
                         <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 {{ $isDarkHeader ? 'ring-white/20' : 'ring-slate-200' }}">
                             <x-application-logo class="h-14 w-14 object-contain" />
@@ -69,7 +69,7 @@
             </main>
 
             <footer class="border-t {{ $isDarkHeader ? 'border-white/10 bg-[#030712] text-slate-400' : 'border-slate-200 bg-white text-slate-500' }}">
-                <div class="mx-auto flex max-w-[1500px] flex-col gap-4 px-5 py-8 text-sm sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-12">
+                <div class="mx-auto flex w-[83%] flex-col gap-4 py-8 text-sm lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <p class="font-black {{ $isDarkHeader ? 'text-white' : 'text-slate-900' }}">{{ config('app.name', 'Laravel') }}</p>
                         <p class="mt-1">Kết nối nhân tài với các cơ hội phù hợp.</p>

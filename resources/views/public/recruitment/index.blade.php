@@ -32,7 +32,7 @@
             <div class="pointer-events-none absolute -right-24 top-0 h-80 w-80 rounded-full bg-cyan-100/60 blur-3xl"></div>
             <div class="pointer-events-none absolute -left-16 bottom-0 h-64 w-64 rounded-full bg-orange-100/50 blur-3xl"></div>
 
-            <div class="relative mx-auto max-w-6xl px-5 py-14 sm:px-8 lg:py-20">
+            <div class="relative mx-auto w-[83%] py-14 lg:py-20">
                 <div class="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
                     <div class="reveal-up min-w-0">
                         <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-800">
@@ -124,7 +124,7 @@
         </section>
 
         {{-- Jobs --}}
-        <section id="viec-lam" class="mx-auto max-w-7xl px-5 py-16 sm:px-8">
+        <section id="viec-lam" class="mx-auto w-[83%] py-16">
             <div class="reveal-up flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <p class="text-sm font-bold uppercase tracking-wider text-cyan-700">Cơ hội nghề nghiệp</p>
@@ -223,7 +223,7 @@
 
         {{-- Values --}}
         <section class="border-y border-slate-100 bg-slate-50/80">
-            <div class="mx-auto max-w-6xl px-5 py-16 sm:px-8">
+            <div class="mx-auto w-[83%] py-16">
                 <h2 class="reveal-up text-center text-3xl font-black text-slate-900 sm:text-4xl">Tầm nhìn tuyển dụng</h2>
                 <div class="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
                     <div class="reveal-up rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -252,7 +252,7 @@
         </section>
 
         {{-- Steps --}}
-        <section class="mx-auto max-w-6xl px-5 py-16 sm:px-8">
+        <section class="mx-auto w-[83%] py-16">
             <div class="reveal-up max-w-2xl">
                 <p class="text-sm font-bold uppercase tracking-wider text-cyan-700">Hành trình ứng tuyển</p>
                 <h2 class="mt-2 text-3xl font-black text-slate-900 sm:text-4xl">4 bước gia nhập HRM</h2>
@@ -275,7 +275,7 @@
 
         {{-- FAQ --}}
         <section class="border-t border-slate-100 bg-slate-50/50">
-            <div class="mx-auto max-w-3xl px-5 py-16 sm:px-8">
+            <div class="mx-auto w-[83%] py-16">
                 <h2 class="reveal-up text-center text-3xl font-black text-slate-900">Câu hỏi thường gặp</h2>
                 <div class="mt-8 space-y-3">
                     <details class="reveal-up group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -295,7 +295,7 @@
         </section>
 
         {{-- CTA --}}
-        <section class="mx-auto max-w-6xl px-5 py-16 text-center sm:px-8">
+        <section class="mx-auto w-[83%] py-16 text-center">
             <div class="reveal-up rounded-3xl bg-gradient-to-br from-cyan-600 to-cyan-700 px-6 py-12 text-white shadow-lg shadow-cyan-600/25 sm:px-12">
                 <h2 class="text-3xl font-black sm:text-4xl">Sẵn sàng nâng tầm sự nghiệp?</h2>
                 <p class="mx-auto mt-4 max-w-xl text-cyan-50/95">Khám phá các vị trí đang mở và gửi hồ sơ cho đội ngũ tuyển dụng HRM.</p>
