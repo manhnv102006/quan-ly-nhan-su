@@ -362,11 +362,16 @@
                                     <p class="mt-1 text-slate-500">{{ $jobPost->application_deadline?->format('d/m/Y') ?? 'Chưa có hạn' }}</p>
                                 </td>
                                 <td class="px-5 py-4">
-                                    @if ($jobPost->status === 'open')
-                                        <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">Đang tuyển</span>
-                                    @else
-                                        <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Đã đóng</span>
-                                    @endif
+                                    <form action="{{ route('admin.recruitment.job-posts.update-status', $jobPost) }}" method="POST" class="inline-block">
+                                        @csrf
+                                        @method('PATCH')
+                                        <select name="status"
+                                                class="min-w-[8.5rem] rounded-full border-0 py-1.5 pl-3 pr-8 text-xs font-bold shadow-sm ring-1 ring-inset transition focus:ring-2 focus:ring-cyan-500/30 {{ $jobPost->status === 'open' ? 'bg-emerald-100 text-emerald-800 ring-emerald-200' : 'bg-slate-100 text-slate-700 ring-slate-200' }}"
+                                                onchange="this.form.submit()">
+                                            <option value="open" @selected($jobPost->status === 'open')>Đang tuyển</option>
+                                            <option value="closed" @selected($jobPost->status === 'closed')>Đã đóng</option>
+                                        </select>
+                                    </form>
                                 </td>
                                 <td class="px-5 py-4">
                                     <div class="flex justify-end gap-2">

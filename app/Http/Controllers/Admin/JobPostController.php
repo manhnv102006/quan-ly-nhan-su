@@ -75,6 +75,24 @@ class JobPostController extends Controller
             ->with('success', 'Cập nhật tin tuyển dụng thành công.');
     }
 
+    public function updateStatus(Request $request, JobPost $jobPost): RedirectResponse
+    {
+        $validated = $request->validate([
+            'status' => ['required', 'in:open,closed'],
+        ], [
+            'status.required' => 'Trạng thái là bắt buộc.',
+            'status.in' => 'Trạng thái tin tuyển dụng không hợp lệ.',
+        ]);
+
+        $jobPost->update(['status' => $validated['status']]);
+
+        $redirectTo = $request->headers->get('referer', route('admin.recruitment.job-posts'));
+
+        return redirect()
+            ->to($redirectTo)
+            ->with('success', 'Đã cập nhật trạng thái tin tuyển dụng.');
+    }
+
     public function destroy(JobPost $jobPost): RedirectResponse
     {
         try {
