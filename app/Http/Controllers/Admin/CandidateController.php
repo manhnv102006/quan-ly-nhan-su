@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Candidate;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Interview;
 use App\Models\JobPost;
 use App\Models\Position;
 use App\Rules\DepartmentEmployeeCapacity;
@@ -127,19 +128,20 @@ class CandidateController extends Controller
     public function show(Candidate $candidate): View
     {
         $candidate->load([
-            'jobPost.department',
+            'jobPost.department.manager',
             'employee',
-            'emailLogs' => fn ($query) => $query->latest()->limit(10),
-            'interviews' => fn ($query) => $query->with('interviewer')->latest('interview_date')->limit(10),
         ]);
 
         $cvData = $this->candidateCvData($candidate);
+
+        $canScheduleInterview = ! Interview::query()->where('candidate_id', $candidate->id)->exists();
 
         return view('admin.recruitment.candidates.show', array_merge([
             'candidate' => $candidate,
             'departments' => $this->activeDepartments(),
             'positions' => $this->activePositions(),
             'suggestedEmployeeCode' => $this->suggestEmployeeCode($candidate),
+            'canScheduleInterview' => $canScheduleInterview,
         ], $cvData));
     }
 

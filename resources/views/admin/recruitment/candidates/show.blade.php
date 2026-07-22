@@ -12,16 +12,6 @@
             'passed' => 'bg-emerald-100 text-emerald-700 ring-emerald-200',
             'failed' => 'bg-rose-100 text-rose-700 ring-rose-200',
         ];
-        $interviewResultLabels = [
-            'pending' => 'Chờ kết quả',
-            'passed' => 'Đạt',
-            'failed' => 'Không đạt',
-        ];
-        $recommendationLabels = [
-            'hire' => 'Nên tuyển',
-            'consider' => 'Cần cân nhắc',
-            'reject' => 'Từ chối',
-        ];
         $statusClass = $statusClasses[$candidate->status] ?? 'bg-slate-100 text-slate-700 ring-slate-200';
         $parts = collect(preg_split('/\s+/', trim($candidate->full_name)))->filter();
         $initial = $parts->isNotEmpty() ? \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr((string) $parts->last(), 0, 1)) : 'UV';
@@ -61,23 +51,10 @@
                             Mở CV
                         </a>
                     @endif
-                    <a href="{{ route('admin.recruitment.candidates.edit', $candidate) }}"
-                       class="inline-flex items-center justify-center rounded-2xl bg-amber-100 px-5 py-3 text-sm font-bold text-amber-700 transition hover:bg-amber-200">
-                        Sửa hồ sơ
-                    </a>
                     <a href="{{ route('admin.recruitment.candidates') }}"
                        class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700">
                         Quay lại
                     </a>
-                    <form action="{{ route('admin.recruitment.candidates.destroy', $candidate) }}" method="POST"
-                          onsubmit="return confirm('Bạn có chắc muốn xóa ứng viên này?')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit"
-                                class="inline-flex w-full items-center justify-center rounded-2xl bg-red-50 px-5 py-3 text-sm font-bold text-red-700 transition hover:bg-red-100">
-                            Xóa
-                        </button>
-                    </form>
                 </div>
             </div>
         </section>
@@ -162,45 +139,6 @@
                         @endif
                     </div>
                 </section>
-
-                <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
-                    <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
-                        <h3 class="text-base font-black text-slate-900">Lịch sử phỏng vấn</h3>
-                    </div>
-                    <div class="divide-y divide-slate-100">
-                        @forelse ($candidate->interviews as $interview)
-                            <div class="grid gap-3 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6">
-                                <div class="min-w-0">
-                                    <p class="font-bold text-slate-900">{{ $interview->interview_date?->format('d/m/Y H:i') ?? '-' }}</p>
-                                    <p class="mt-1 break-words text-sm text-slate-500">{{ $interview->interviewer?->full_name ?? 'Chưa gắn người phỏng vấn' }}</p>
-                                    @if ($interview->note)
-                                        <p class="mt-2 break-words text-sm leading-6 text-slate-600">{{ $interview->note }}</p>
-                                    @endif
-                                    <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500 sm:grid-cols-4">
-                                        <span class="rounded-xl bg-slate-50 px-3 py-2">Tổng quan: <strong class="text-slate-800">{{ $interview->overall_score ?? '-' }}/10</strong></span>
-                                        <span class="rounded-xl bg-slate-50 px-3 py-2">Kỹ thuật: <strong class="text-slate-800">{{ $interview->technical_score ?? '-' }}/10</strong></span>
-                                        <span class="rounded-xl bg-slate-50 px-3 py-2">Thái độ: <strong class="text-slate-800">{{ $interview->attitude_score ?? '-' }}/10</strong></span>
-                                        <span class="rounded-xl bg-slate-50 px-3 py-2">Đề xuất: <strong class="text-slate-800">{{ $recommendationLabels[$interview->recommendation] ?? 'Chưa có' }}</strong></span>
-                                    </div>
-                                    @if ($interview->strengths || $interview->weaknesses)
-                                        <details class="mt-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm">
-                                            <summary class="cursor-pointer font-bold text-slate-700">Xem đánh giá chi tiết</summary>
-                                            <div class="mt-3 space-y-2 leading-6 text-slate-600">
-                                                <p><strong class="text-slate-800">Điểm mạnh:</strong> {{ $interview->strengths ?: 'Chưa ghi nhận.' }}</p>
-                                                <p><strong class="text-slate-800">Cần cải thiện:</strong> {{ $interview->weaknesses ?: 'Chưa ghi nhận.' }}</p>
-                                            </div>
-                                        </details>
-                                    @endif
-                                </div>
-                                <span class="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
-                                    {{ $interviewResultLabels[$interview->result] ?? $interview->result }}
-                                </span>
-                            </div>
-                        @empty
-                            <div class="p-8 text-center text-sm text-slate-500">Chưa có lịch phỏng vấn.</div>
-                        @endforelse
-                    </div>
-                </section>
             </div>
 
             <aside class="space-y-6 xl:col-span-4">
@@ -245,37 +183,72 @@
                     </div>
                 </section>
 
-                <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-cyan-100 bg-white shadow-sm shadow-cyan-100/60">
-                    <div class="border-b border-cyan-100 bg-cyan-50 px-5 py-4">
-                        <h3 class="text-base font-black text-cyan-950">Cập nhật trạng thái</h3>
-                        <p class="mt-1 text-sm leading-6 text-cyan-700">
-                            Khi chuyển sang Đạt hoặc Không đạt, hệ thống sẽ gửi email kết quả nếu email đang được cấu hình.
+                <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-violet-100 bg-white shadow-sm shadow-violet-100/60">
+                    <div class="border-b border-violet-100 bg-violet-50 px-5 py-4">
+                        <h3 class="text-base font-black text-violet-950">Tạo lịch phỏng vấn</h3>
+                        <p class="mt-1 text-sm leading-6 text-violet-800">
+                            Lên lịch phỏng vấn cho ứng viên này. Người phỏng vấn là quản lý phòng ban của tin tuyển dụng.
                         </p>
                     </div>
-                    <form action="{{ route('admin.recruitment.candidates.update', $candidate) }}" method="POST" class="space-y-4 p-5">
-                        @csrf
-                        @method('PUT')
-                        <input type="hidden" name="job_post_id" value="{{ $candidate->job_post_id }}">
-                        <input type="hidden" name="full_name" value="{{ $candidate->full_name }}">
-                        <input type="hidden" name="phone" value="{{ $candidate->phone }}">
-                        <input type="hidden" name="email" value="{{ $candidate->email }}">
-                        <input type="hidden" name="address" value="{{ $candidate->address }}">
-                        <input type="hidden" name="birth_date" value="{{ $candidate->birth_date?->format('Y-m-d') }}">
 
-                        <div>
-                            <label class="mb-2 block text-sm font-bold text-slate-700">Trạng thái tuyển dụng</label>
-                            <select name="status" class="{{ $fieldClass }}">
-                                <option value="new" @selected($candidate->status === 'new')>Mới</option>
-                                <option value="interview" @selected($candidate->status === 'interview')>Phỏng vấn</option>
-                                <option value="passed" @selected($candidate->status === 'passed')>Đạt</option>
-                                <option value="failed" @selected($candidate->status === 'failed')>Không đạt</option>
-                            </select>
+                    @if ($canScheduleInterview)
+                        <form action="{{ route('admin.recruitment.interviews.store') }}" method="POST" class="space-y-4 p-5">
+                            @csrf
+                            <input type="hidden" name="candidate_id" value="{{ $candidate->id }}">
+                            <input type="hidden" name="return_to" value="{{ route('admin.recruitment.candidates.show', $candidate) }}">
+
+                            @php
+                                $departmentManager = $candidate->jobPost?->department?->manager;
+                            @endphp
+                            <div>
+                                <label class="mb-2 block text-sm font-bold text-slate-700">Người phỏng vấn</label>
+                                <div class="{{ $fieldClass }} bg-slate-50 text-slate-700">
+                                    @if ($departmentManager)
+                                        {{ $departmentManager->employee_code ? $departmentManager->employee_code.' - ' : '' }}{{ $departmentManager->full_name }}
+                                    @elseif ($candidate->jobPost?->department)
+                                        Phòng ban chưa có quản lý
+                                    @else
+                                        Ứng viên chưa gắn tin/phòng ban
+                                    @endif
+                                </div>
+                                <p class="mt-2 text-xs text-slate-500">Tự động theo quản lý phòng ban.</p>
+                            </div>
+
+                            <div>
+                                <label for="interview_date" class="mb-2 block text-sm font-bold text-slate-700">Thời gian phỏng vấn <span class="text-red-500">*</span></label>
+                                <input type="datetime-local" id="interview_date" name="interview_date"
+                                       value="{{ old('interview_date') }}"
+                                       min="{{ now()->format('Y-m-d\TH:i') }}"
+                                       required
+                                       class="{{ $fieldClass }} @error('interview_date') border-red-400 @enderror">
+                                @error('interview_date')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+
+                            <div>
+                                <label for="interview_note" class="mb-2 block text-sm font-bold text-slate-700">Ghi chú</label>
+                                <textarea id="interview_note" name="note" rows="3" placeholder="Địa điểm, link meet, yêu cầu chuẩn bị…"
+                                          class="{{ $fieldClass }} resize-y @error('note') border-red-400 @enderror">{{ old('note') }}</textarea>
+                                @error('note')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+
+                            @error('candidate_id')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
+
+                            <button type="submit"
+                                    class="inline-flex w-full items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-violet-700">
+                                Tạo lịch phỏng vấn
+                            </button>
+                        </form>
+                    @else
+                        <div class="space-y-4 p-5">
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+                                Ứng viên đã có lịch phỏng vấn. Xem tại trang quản lý phỏng vấn.
+                            </div>
+                            <a href="{{ route('admin.recruitment.interviews') }}"
+                               class="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-violet-300 hover:text-violet-800">
+                                Mở danh sách phỏng vấn
+                            </a>
                         </div>
-
-                        <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-cyan-700">
-                            Lưu trạng thái
-                        </button>
-                    </form>
+                    @endif
                 </section>
 
                 @if ($candidate->status === 'passed' && $candidate->employee_id === null)
@@ -332,27 +305,6 @@
                         </form>
                     </section>
                 @endif
-
-                <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
-                    <div class="border-b border-slate-100 bg-slate-50/70 px-5 py-4">
-                        <h3 class="text-base font-black text-slate-900">Lịch sử email</h3>
-                    </div>
-                    <div class="divide-y divide-slate-100">
-                        @forelse ($candidate->emailLogs as $log)
-                            <div class="p-5">
-                                <div class="flex items-center justify-between gap-3">
-                                    <p class="truncate text-sm font-bold text-slate-900">{{ $log->subject ?? 'Email tuyển dụng' }}</p>
-                                    <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-bold {{ $log->status === 'sent' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
-                                        {{ $log->status === 'sent' ? 'Đã gửi' : 'Lỗi' }}
-                                    </span>
-                                </div>
-                                <p class="mt-2 text-xs text-slate-500">{{ $log->sent_at?->format('d/m/Y H:i') ?? $log->created_at?->format('d/m/Y H:i') }}</p>
-                            </div>
-                        @empty
-                            <div class="p-5 text-sm text-slate-500">Chưa có email nào được ghi nhận.</div>
-                        @endforelse
-                    </div>
-                </section>
             </aside>
         </div>
     </div>

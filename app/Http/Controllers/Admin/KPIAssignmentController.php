@@ -54,6 +54,10 @@ class KPIAssignmentController extends Controller
         }
 
         $assignments = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        $assignments->getCollection()->each(function (KPIAssignment $assignment) {
+            $assignment->syncStatusFromEmployeeKpis();
+        });
         $kpis = KPI::where('status', 'active')->get();
         $managers = User::query()
             ->whereHas('role', fn ($q) => $q->where('name', Role::MANAGER))

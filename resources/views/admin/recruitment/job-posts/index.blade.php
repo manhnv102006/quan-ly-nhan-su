@@ -80,10 +80,14 @@
         @endif
 
         @unless ($showForm)
-        <section class="recruitment-stats grid grid-cols-1 gap-4 md:grid-cols-3">
+        <section class="recruitment-stats grid grid-cols-1 gap-4 md:grid-cols-4">
             <div class="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-sm">
                 <p class="text-sm font-bold text-slate-500">Tổng tin</p>
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ $stats['total'] ?? 0 }}</p>
+            </div>
+            <div class="rounded-[1.5rem] border border-amber-100 bg-amber-50 p-5 shadow-sm">
+                <p class="text-sm font-bold text-amber-800">Chờ duyệt</p>
+                <p class="mt-2 text-3xl font-black text-amber-900">{{ $stats['pending_approval'] ?? 0 }}</p>
             </div>
             <div class="rounded-[1.5rem] border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
                 <p class="text-sm font-bold text-emerald-700">Đang mở</p>
@@ -282,7 +286,9 @@
                     <select name="status" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10">
                         <option value="">Tất cả trạng thái</option>
                         <option value="open" @selected(($filters['status'] ?? '') === 'open')>Đang tuyển</option>
+                        <option value="pending_approval" @selected(($filters['status'] ?? '') === 'pending_approval')>Chờ duyệt</option>
                         <option value="closed" @selected(($filters['status'] ?? '') === 'closed')>Đã đóng</option>
+                        <option value="rejected" @selected(($filters['status'] ?? '') === 'rejected')>Đã từ chối</option>
                     </select>
                 </div>
 
@@ -333,26 +339,18 @@
                                             - {{ $workTypes[$jobPost->work_type] ?? $jobPost->work_type }}
                                         @endif
                                     </p>
-                                    <details class="mt-3 max-w-md rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                                        <summary class="cursor-pointer text-sm font-bold text-cyan-700">Xem chi tiết nhanh</summary>
-                                        <div class="mt-3 space-y-3 text-sm leading-6 text-slate-600">
-                                            <div>
-                                                <p class="font-bold text-slate-800">Mô tả</p>
-                                                <p class="break-words">{{ $jobPost->description ?: 'Chưa có mô tả.' }}</p>
-                                            </div>
-                                            <div>
-                                                <p class="font-bold text-slate-800">Yêu cầu</p>
-                                                <p class="break-words">{{ $jobPost->requirements ?: 'Chưa có yêu cầu.' }}</p>
-                                            </div>
-                                            <div>
-                                                <p class="font-bold text-slate-800">Quyền lợi</p>
-                                                <p class="break-words">{{ $jobPost->benefits ?: 'Chưa có quyền lợi.' }}</p>
-                                            </div>
-                                        </div>
-                                    </details>
+                                    <a href="{{ route('admin.recruitment.job-posts.show', $jobPost) }}"
+                                       class="mt-3 inline-flex text-sm font-bold text-cyan-700 transition hover:text-cyan-900">
+                                        Xem chi tiết →
+                                    </a>
                                 </td>
                                 <td class="px-5 py-4 text-sm text-slate-600">{{ $jobPost->department?->department_name ?? 'Chưa gắn' }}</td>
-                                <td class="px-5 py-4 text-sm text-slate-600">{{ $jobPost->recruiter?->full_name ?? 'Chưa gắn' }}</td>
+                                <td class="px-5 py-4 text-sm text-slate-600">
+                                    {{ $jobPost->recruiter?->full_name ?? 'Chưa gắn' }}
+                                    @if ($jobPost->submittedBy)
+                                        <p class="mt-1 text-xs text-amber-700">Gửi bởi: {{ $jobPost->submittedBy->full_name }}</p>
+                                    @endif
+                                </td>
                                 <td class="px-5 py-4 text-sm text-slate-600">
                                     @if ($jobPost->salary_min || $jobPost->salary_max)
                                         <p>{{ $jobPost->salary_min ? number_format((float) $jobPost->salary_min, 0, ',', '.') : '0' }} - {{ $jobPost->salary_max ? number_format((float) $jobPost->salary_max, 0, ',', '.') : 'Thỏa thuận' }}</p>
@@ -362,14 +360,38 @@
                                     <p class="mt-1 text-slate-500">{{ $jobPost->application_deadline?->format('d/m/Y') ?? 'Chưa có hạn' }}</p>
                                 </td>
                                 <td class="px-5 py-4">
-                                    @if ($jobPost->status === 'open')
-                                        <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">Đang tuyển</span>
+                                    @if ($jobPost->status === 'pending_approval')
+                                        <span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">Chờ duyệt</span>
+                                    @elseif ($jobPost->status === 'rejected')
+                                        <span class="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-800">Đã từ chối</span>
                                     @else
-                                        <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Đã đóng</span>
+                                        <form action="{{ route('admin.recruitment.job-posts.update-status', $jobPost) }}" method="POST" class="inline-block">
+                                            @csrf
+                                            @method('PATCH')
+                                            <select name="status"
+                                                    class="min-w-[8.5rem] rounded-full border-0 py-1.5 pl-3 pr-8 text-xs font-bold shadow-sm ring-1 ring-inset transition focus:ring-2 focus:ring-cyan-500/30 {{ $jobPost->status === 'open' ? 'bg-emerald-100 text-emerald-800 ring-emerald-200' : 'bg-slate-100 text-slate-700 ring-slate-200' }}"
+                                                    onchange="this.form.submit()">
+                                                <option value="open" @selected($jobPost->status === 'open')>Đang tuyển</option>
+                                                <option value="closed" @selected($jobPost->status === 'closed')>Đã đóng</option>
+                                            </select>
+                                        </form>
                                     @endif
                                 </td>
                                 <td class="px-5 py-4">
-                                    <div class="flex justify-end gap-2">
+                                    <div class="flex flex-wrap justify-end gap-2">
+                                        @if ($jobPost->status === 'pending_approval')
+                                            <form action="{{ route('admin.recruitment.job-posts.approve', $jobPost) }}" method="POST">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700">Duyệt</button>
+                                            </form>
+                                            <form action="{{ route('admin.recruitment.job-posts.reject', $jobPost) }}" method="POST" onsubmit="return confirm('Từ chối tin tuyển dụng này?')">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 hover:bg-rose-100">Từ chối</button>
+                                            </form>
+                                        @endif
+                                        <a href="{{ route('admin.recruitment.job-posts.show', $jobPost) }}" class="rounded-xl bg-sky-50 px-3 py-2 text-sm font-bold text-sky-700 transition hover:bg-sky-100">Chi tiết</a>
                                         <a href="{{ route('admin.recruitment.job-posts.edit', $jobPost) }}" class="rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700 transition hover:bg-amber-100">Sửa</a>
                                         <form action="{{ route('admin.recruitment.job-posts.destroy', $jobPost) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn xóa tin tuyển dụng này?')">
                                             @csrf

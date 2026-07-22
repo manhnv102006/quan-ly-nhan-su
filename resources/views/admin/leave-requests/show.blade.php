@@ -38,7 +38,7 @@
                         </button>
                     </form>
                     <button type="button" onclick="openLeaveRejectModal()"
-                            class="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700">
+                            class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">
                         Từ chối
                     </button>
                 @endif

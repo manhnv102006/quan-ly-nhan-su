@@ -11,6 +11,11 @@ use RuntimeException;
 
 class FaceEnrollmentService
 {
+    public function __construct(
+        private readonly FaceMatchService $faceMatch,
+    ) {
+    }
+
     /**
      * @param  list<string>  $imageBase64Samples
      * @return array{descriptor_id: int, sample_count: int, message: string}
@@ -50,6 +55,18 @@ class FaceEnrollmentService
 
         if (! is_array($embedding) || count($embedding) !== 512) {
             throw new RuntimeException('Dữ liệu khuôn mặt không hợp lệ từ dịch vụ nhận diện.');
+        }
+
+        $conflict = $this->faceMatch->findConflictingDescriptor($embedding, $employee->id);
+        if ($conflict) {
+            $owner = $conflict->employee;
+            $ownerLabel = $owner
+                ? trim($owner->full_name.' ('.$owner->employee_code.')')
+                : 'một nhân viên khác';
+
+            throw new RuntimeException(
+                'Khuôn mặt này đã được đăng ký cho '.$ownerLabel.'. Mỗi khuôn mặt chỉ được đăng ký cho một nhân viên.'
+            );
         }
 
         $imagePath = null;

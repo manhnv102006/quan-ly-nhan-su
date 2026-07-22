@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Attendance;
 use App\Models\Employee;
+use App\Models\Holiday;
+use App\Models\OvertimeRequest;
 use App\Models\Shift;
 use App\Services\OvertimeSettlementService;
 use Carbon\Carbon;
@@ -12,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 class EmployeeAttendanceService
 {
     public const GRACE_MINUTES = 5;
+
+    public const EARLY_CHECK_IN_MINUTES = 60;
 
     public function __construct(
         private readonly OvertimeSettlementService $overtimeSettlement,
@@ -73,6 +77,8 @@ class EmployeeAttendanceService
     {
         $today = $now->copy()->startOfDay();
 
+        $this->assertWorkdayOrApprovedOvertime($employee, $now);
+
         $attendance = Attendance::firstOrNew([
             'employee_id' => $employee->id,
             'attendance_date' => $today,
@@ -109,6 +115,7 @@ class EmployeeAttendanceService
             }
 
             $sessionEnd = Carbon::parse($attendance->shift->end_time)->setDateFrom($attendance->attendance_date);
+            $this->assertCheckOutAfterCheckIn($now, Carbon::parse($attendance->check_in));
             $this->assertCanCheckOut($employee, $attendance, $now, $sessionEnd);
 
             $attendance->check_out = $now;
@@ -209,10 +216,12 @@ class EmployeeAttendanceService
 
         if ($attendance->morning_check_in && ! $attendance->morning_check_out) {
             $sessionEnd = Carbon::parse($date)->setTime(12, 0);
+            $this->assertCheckOutAfterCheckIn($now, Carbon::parse($attendance->morning_check_in));
             $this->assertCanCheckOut($employee, $attendance, $now, $sessionEnd);
             $attendance->morning_check_out = $now;
         } elseif ($attendance->afternoon_check_in && ! $attendance->afternoon_check_out) {
             $sessionEnd = Carbon::parse($date)->setTime(17, 0);
+            $this->assertCheckOutAfterCheckIn($now, Carbon::parse($attendance->afternoon_check_in));
             $this->assertCanCheckOut($employee, $attendance, $now, $sessionEnd);
             $attendance->afternoon_check_out = $now;
         } else {
@@ -224,9 +233,11 @@ class EmployeeAttendanceService
 
     private function assertCanCheckIn(Carbon $now, Carbon $sessionStart, Carbon $sessionEnd): void
     {
-        if ($now->lt($sessionStart)) {
+        $earliestCheckIn = $this->earliestCheckInAt($sessionStart);
+
+        if ($now->lt($earliestCheckIn)) {
             throw ValidationException::withMessages([
-                'attendance' => 'Chưa đến giờ check-in. Ca làm bắt đầu lúc '.$sessionStart->format('H:i').'.',
+                'attendance' => 'Chưa đến giờ check-in. Có thể check-in từ lúc '.$earliestCheckIn->format('H:i').' (trước ca '.self::EARLY_CHECK_IN_MINUTES.' phút). Ca bắt đầu lúc '.$sessionStart->format('H:i').'.',
             ]);
         }
 
@@ -255,6 +266,15 @@ class EmployeeAttendanceService
         }
     }
 
+    private function assertCheckOutAfterCheckIn(Carbon $checkOutTime, Carbon $checkInTime): void
+    {
+        if ($checkOutTime->lte($checkInTime)) {
+            throw ValidationException::withMessages([
+                'attendance' => 'Giờ check-out phải sau giờ check-in ('.$checkInTime->format('H:i:s').').',
+            ]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -271,6 +291,7 @@ class EmployeeAttendanceService
         $checkIn = $attendance->{$checkInField};
         $checkOut = $attendance->{$checkOutField};
         $graceDeadline = $sessionStart->copy()->addMinutes(self::GRACE_MINUTES);
+        $earliestCheckIn = $this->earliestCheckInAt($sessionStart);
 
         $priorDone = $requiresPriorCheckout === null || filled($attendance->{$requiresPriorCheckout});
         $canCheckIn = false;
@@ -282,9 +303,13 @@ class EmployeeAttendanceService
             if (! $priorDone) {
                 $statusMessage = 'Hoàn thành buổi trước để check-in';
                 $statusTone = 'waiting';
-            } elseif ($now->lt($sessionStart)) {
-                $statusMessage = 'Check-in mở lúc '.$sessionStart->format('H:i');
+            } elseif ($now->lt($earliestCheckIn)) {
+                $statusMessage = 'Check-in mở lúc '.$earliestCheckIn->format('H:i').' (trước ca '.self::EARLY_CHECK_IN_MINUTES.' phút)';
                 $statusTone = 'upcoming';
+            } elseif ($now->lt($sessionStart)) {
+                $canCheckIn = true;
+                $statusMessage = 'Có thể check-in sớm — ca bắt đầu lúc '.$sessionStart->format('H:i');
+                $statusTone = 'ready';
             } elseif ($now->gt($sessionEnd)) {
                 $statusMessage = 'Đã qua giờ ca làm';
                 $statusTone = 'missed';
@@ -300,7 +325,11 @@ class EmployeeAttendanceService
                 }
             }
         } elseif (! $checkOut) {
-            if ($now->lt($sessionEnd)) {
+            $checkInAt = Carbon::parse($checkIn);
+            if ($now->lte($checkInAt)) {
+                $statusMessage = 'Check-out phải sau giờ check-in ('.$checkInAt->format('H:i:s').')';
+                $statusTone = 'waiting';
+            } elseif ($now->lt($sessionEnd)) {
                 $statusMessage = 'Đang làm việc — check-out lúc '.$sessionEnd->format('H:i');
                 $statusTone = 'active';
             } else {
@@ -333,5 +362,56 @@ class EmployeeAttendanceService
     private function graceLabel(): string
     {
         return self::GRACE_MINUTES.' phút';
+    }
+
+    private function earliestCheckInAt(Carbon $sessionStart): Carbon
+    {
+        return $sessionStart->copy()->subMinutes(self::EARLY_CHECK_IN_MINUTES);
+    }
+
+    /**
+     * Ngày nghỉ (Chủ Nhật / ngày lễ) chỉ được chấm công khi có đơn tăng ca đã duyệt.
+     */
+    private function assertWorkdayOrApprovedOvertime(Employee $employee, Carbon $now): void
+    {
+        $dayOff = $this->dayOffReason($now);
+
+        if ($dayOff === null) {
+            return;
+        }
+
+        if ($this->hasApprovedOvertimeOn($employee, $now)) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'attendance' => 'Hôm nay là '.$dayOff.', bạn không có lịch tăng ca được duyệt. Không thể chấm công.',
+        ]);
+    }
+
+    /**
+     * Nếu ngày là ngày nghỉ, trả về nhãn lý do ('Chủ Nhật' | 'ngày nghỉ lễ'); ngược lại null.
+     */
+    public function dayOffReason(Carbon $date): ?string
+    {
+        if ($date->isSunday()) {
+            return 'Chủ Nhật';
+        }
+
+        $isHoliday = Holiday::inRange($date->format('Y-m-d'), $date->format('Y-m-d'))->exists();
+
+        return $isHoliday ? 'ngày nghỉ lễ' : null;
+    }
+
+    public function hasApprovedOvertimeOn(Employee $employee, Carbon $date): bool
+    {
+        return OvertimeRequest::query()
+            ->where('employee_id', $employee->id)
+            ->whereDate('work_date', $date->format('Y-m-d'))
+            ->whereIn('status', [
+                OvertimeRequest::STATUS_APPROVED,
+                OvertimeRequest::STATUS_COMPLETED,
+            ])
+            ->exists();
     }
 }

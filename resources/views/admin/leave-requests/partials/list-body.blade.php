@@ -216,7 +216,7 @@
                         <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Lý do</th>
                         <th class="px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Trạng thái</th>
                         <th class="px-5 py-3 text-left text-xs font-bold uppercase text-slate-500">Người xử lý</th>
-                        <th class="px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Thao tác</th>
+                        <th class="min-w-[11rem] px-5 py-3 text-center text-xs font-bold uppercase text-slate-500">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -269,28 +269,32 @@
                                     <span class="text-slate-400">Chưa xử lý</span>
                                 @endif
                             </td>
-                            <td class="px-5 py-4 text-center">
+                            <td class="min-w-[11rem] px-5 py-4">
                                 @if ($leaveRequest->status === 'pending' && $leaveRequest->employee?->hasManagerRole())
-                                    <div class="flex items-center justify-center gap-2">
-                                        <form action="{{ route('admin.leave-requests.approve', $leaveRequest) }}" method="POST"
+                                    <div class="flex flex-wrap items-center justify-center gap-1.5">
+                                        <form action="{{ route('admin.leave-requests.approve', $leaveRequest) }}" method="POST" class="inline"
                                               onsubmit="return confirm('Duyệt đơn nghỉ phép của quản lý {{ $leaveRequest->employee?->full_name }}?')">
                                             @csrf
                                             @method('PATCH')
                                             <button type="submit"
-                                                    class="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700">
+                                                    class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm shadow-emerald-600/15 transition hover:bg-emerald-700">
                                                 Duyệt
                                             </button>
                                         </form>
                                         <button type="button"
                                                 onclick="openLeaveRejectModal('{{ route('admin.leave-requests.reject', $leaveRequest) }}', @js($leaveRequest->employee?->full_name))"
-                                                class="rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700">
+                                                class="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100">
                                             Từ chối
                                         </button>
                                         <a href="{{ route('admin.leave-requests.show', $leaveRequest) }}"
-                                           class="text-xs font-medium text-violet-600 hover:text-violet-700">Xem</a>
+                                           class="inline-flex items-center justify-center rounded-xl border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-700 transition hover:bg-sky-100">
+                                            Chi tiết
+                                        </a>
                                     </div>
                                 @else
-                                    <x-view-only-badge :href="route('admin.leave-requests.show', $leaveRequest)" />
+                                    <div class="flex justify-center">
+                                        <x-view-only-badge :href="route('admin.leave-requests.show', $leaveRequest)" />
+                                    </div>
                                 @endif
                             </td>
                         </tr>

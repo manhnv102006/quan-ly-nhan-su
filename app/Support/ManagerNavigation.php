@@ -45,7 +45,8 @@ class ManagerNavigation
                     ],
                     [
                         'label' => 'Tuyển dụng',
-                        'href' => route('manager.dashboard').'#recruitment',
+                        'href' => route('manager.recruitment.index'),
+                        'route' => 'manager.recruitment*',
                     ],
                 ],
             ],

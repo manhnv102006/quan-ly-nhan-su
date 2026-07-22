@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\OvertimeRequest;
+use App\Services\OvertimeLimitService;
 use App\Support\TimeInput;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -83,6 +84,22 @@ abstract class OvertimeRequestBaseRequest extends FormRequest
 
             if ($query->exists()) {
                 $validator->errors()->add('start_time', 'Khoảng thời gian tăng ca bị trùng trong cùng ngày.');
+
+                return;
+            }
+
+            $limitService = app(OvertimeLimitService::class);
+            $newHours = $limitService->hoursBetween((string) $start, (string) $end);
+
+            $violations = $limitService->violations(
+                (int) $employeeId,
+                (string) $workDate,
+                $newHours,
+                $this->ignoreOvertimeRequestId(),
+            );
+
+            foreach ($violations as $field => $message) {
+                $validator->errors()->add($field, $message);
             }
         });
     }

@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
+use App\Services\OvertimeLimitService;
 use Illuminate\Validation\Rule;
 
 class OvertimeRequestStoreRequest extends OvertimeRequestBaseRequest
@@ -58,6 +59,9 @@ class OvertimeRequestStoreRequest extends OvertimeRequestBaseRequest
                 return;
             }
 
+            $limitService = app(OvertimeLimitService::class);
+            $newHours = $limitService->hoursBetween((string) $start, (string) $end);
+
             foreach ($employeeIds as $employeeId) {
                 $exists = OvertimeRequest::query()
                     ->overlappingTime($employeeId, $workDate, $start, $end, $this->ignoreOvertimeRequestId())
@@ -69,6 +73,20 @@ class OvertimeRequestStoreRequest extends OvertimeRequestBaseRequest
                         'start_time',
                         "Khoảng thời gian tăng ca bị trùng trong cùng ngày ({$name})."
                     );
+
+                    break;
+                }
+
+                $violations = $limitService->violations(
+                    (int) $employeeId,
+                    (string) $workDate,
+                    $newHours,
+                    $this->ignoreOvertimeRequestId(),
+                );
+
+                if ($violations !== []) {
+                    $name = Employee::query()->whereKey($employeeId)->value('full_name') ?? 'Nhân viên';
+                    $validator->errors()->add('start_time', $name.': '.reset($violations));
 
                     break;
                 }

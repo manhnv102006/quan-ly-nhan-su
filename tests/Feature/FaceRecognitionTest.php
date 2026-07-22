@@ -70,6 +70,62 @@ test('face api stores descriptor from enroll tool', function () {
     expect(EmployeeFaceDescriptor::query()->where('employee_id', $this->employee->id)->count())->toBe(1);
 });
 
+test('face api rejects descriptor when face already belongs to another employee', function () {
+    $embedding = array_fill(0, 512, 0.02);
+
+    EmployeeFaceDescriptor::create([
+        'employee_id' => $this->employee->id,
+        'embedding' => $embedding,
+        'model_name' => 'buffalo_l',
+    ]);
+
+    $other = Employee::create([
+        'employee_code' => 'NV-FACE-002',
+        'full_name' => 'Trần Thị Face',
+        'gender' => 'female',
+        'date_of_birth' => '1996-02-02',
+        'phone' => '0900000098',
+        'email' => 'face-test-2@example.com',
+        'hire_date' => now()->toDateString(),
+        'status' => 'active',
+    ]);
+
+    $response = $this->withHeader('X-Face-Token', 'test-kiosk-token-secret')
+        ->postJson('/api/face/descriptors', [
+            'employee_id' => $other->id,
+            'embedding' => $embedding,
+            'quality' => 5,
+        ]);
+
+    $response->assertStatus(422)
+        ->assertJsonPath('success', false)
+        ->assertJsonPath('conflict_employee_id', $this->employee->id);
+
+    expect(EmployeeFaceDescriptor::query()->where('employee_id', $other->id)->count())->toBe(0);
+});
+
+test('face api allows same employee to add another descriptor', function () {
+    $embedding = array_fill(0, 512, 0.02);
+
+    EmployeeFaceDescriptor::create([
+        'employee_id' => $this->employee->id,
+        'embedding' => $embedding,
+        'model_name' => 'buffalo_l',
+    ]);
+
+    $response = $this->withHeader('X-Face-Token', 'test-kiosk-token-secret')
+        ->postJson('/api/face/descriptors', [
+            'employee_id' => $this->employee->id,
+            'embedding' => $embedding,
+            'quality' => 5,
+        ]);
+
+    $response->assertCreated()
+        ->assertJsonPath('success', true);
+
+    expect(EmployeeFaceDescriptor::query()->where('employee_id', $this->employee->id)->count())->toBe(2);
+});
+
 test('admin can view face enrollment management page', function () {
     $response = $this->actingAs($this->admin)
         ->get(route('admin.face-enrollments.index'));

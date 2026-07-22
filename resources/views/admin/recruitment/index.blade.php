@@ -106,7 +106,7 @@
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" /></svg>
                         Thêm ứng viên
                     </a>
-                    <a href="{{ route('admin.recruitment.interviews.create') }}"
+                    <a href="{{ route('admin.recruitment.candidates') }}"
                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-transparent bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
                         Lên lịch PV
                     </a>
@@ -251,7 +251,7 @@
 
                 @if ($upcomingInterviews->isEmpty())
                     <p class="mt-6 text-sm text-slate-500">Không có lịch phỏng vấn trong thời gian tới.</p>
-                    <a href="{{ route('admin.recruitment.interviews.create') }}" class="mt-2 inline-block text-sm font-semibold text-cyan-700">Tạo lịch mới</a>
+                    <a href="{{ route('admin.recruitment.candidates') }}" class="mt-2 inline-block text-sm font-semibold text-cyan-700">Tạo lịch từ hồ sơ ứng viên</a>
                 @else
                     <ul class="mt-4 space-y-2">
                         @foreach ($upcomingInterviews as $interview)

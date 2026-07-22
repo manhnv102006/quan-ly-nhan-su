@@ -28,7 +28,24 @@
             <p class="text-sm text-slate-500 mt-1">{{ now()->format('d/m/Y') }}</p>
         </div>
 
-        @include('employee.attendance.partials.face-scanner')
+        @if (($isBlockedDayOff ?? false))
+            <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 shadow-sm rounded-2xl px-5 py-4">
+                <svg class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                    <p class="text-sm font-semibold text-amber-800">Hôm nay là {{ $dayOffReason }} — ngày nghỉ.</p>
+                    <p class="text-xs text-amber-700 mt-1">
+                        Bạn không có lịch tăng ca được duyệt nên không thể chấm công.
+                        Nếu cần làm việc hôm nay, hãy gửi đơn tăng ca và chờ quản lý phê duyệt.
+                    </p>
+                </div>
+            </div>
+        @endif
+
+        @unless (($isBlockedDayOff ?? false))
+            @include('employee.attendance.partials.face-scanner')
+        @endunless
 
         {{-- Ca làm --}}
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
@@ -67,7 +84,11 @@
                 Check-in đúng giờ ca · Miễn trừ {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút đi muộn · Bắt buộc check-out thủ công khi hết giờ ca
             </p>
 
-            @if ($isFullDayShift && $attendanceSessions)
+            @if (($isBlockedDayOff ?? false))
+                <p class="text-sm text-amber-700 font-medium">
+                    Hôm nay là {{ $dayOffReason }}. Không thể chấm công ca thường khi không có đơn tăng ca được duyệt.
+                </p>
+            @elseif ($isFullDayShift && $attendanceSessions)
                 @include('employee.attendance.partials.session-block', [
                     'title' => 'Buổi sáng (08:00 - 12:00)',
                     'session' => $attendanceSessions['morning'],

@@ -18,7 +18,7 @@ class AuthenticatedSessionController extends Controller
     public function create(): View
     {
         $publicJobPosts = JobPost::query()
-            ->publiclyVisible()
+            ->publiclyListed()
             ->with('department')
             ->latest()
             ->limit(3)
