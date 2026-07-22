@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\ContractTypeController;
 use App\Http\Controllers\Admin\KPIController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\NotificationController as UserNotificationController;
+use App\Http\Controllers\PublicRecruitmentController;
 
 use App\Http\Controllers\Admin\PayrollPeriodController;
 use App\Http\Controllers\Admin\PositionController;
@@ -68,7 +69,18 @@ use App\Http\Controllers\Employee\OvertimeController as EmployeeOvertimeControll
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [DashboardController::class, 'redirect']);
+Route::redirect('/', '/tuyen-dung');
+
+Route::prefix('tuyen-dung')->name('public.recruitment.')->group(function () {
+    Route::get('/', [PublicRecruitmentController::class, 'index'])->name('index');
+    Route::get('/gioi-thieu', [PublicRecruitmentController::class, 'about'])->name('about');
+    Route::get('/he-sinh-thai', [PublicRecruitmentController::class, 'ecosystem'])->name('ecosystem');
+    Route::get('/tin-tuc', [PublicRecruitmentController::class, 'news'])->name('news');
+    Route::get('/viec-lam', [PublicRecruitmentController::class, 'jobs'])->name('jobs');
+    Route::get('/{publicJobPost}', [PublicRecruitmentController::class, 'show'])->name('show');
+    Route::get('/{publicJobPost}/ung-tuyen', [PublicRecruitmentController::class, 'apply'])->name('apply');
+    Route::post('/{publicJobPost}/ung-tuyen', [PublicRecruitmentController::class, 'store'])->name('apply.store');
+});
 
 Route::get('/dashboard', [DashboardController::class, 'redirect'])
     ->middleware(['auth', 'verified'])
@@ -222,6 +234,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::patch('/recruitment/job-posts/{jobPost}/status', [JobPostController::class, 'updateStatus'])->name('recruitment.job-posts.update-status');
     Route::delete('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'destroy'])->name('recruitment.job-posts.destroy');
     Route::get('/recruitment/candidates', [CandidateController::class, 'index'])->name('recruitment.candidates');
+    Route::get('/recruitment/interviewed-candidates', [CandidateController::class, 'interviewed'])->name('recruitment.interviewed-candidates');
     Route::get('/recruitment/candidates/create', [CandidateController::class, 'create'])->name('recruitment.candidates.create');
     Route::get('/recruitment/candidates/{candidate}', [CandidateController::class, 'show'])->name('recruitment.candidates.show');
     Route::get('/recruitment/candidates/{candidate}/edit', [CandidateController::class, 'edit'])->name('recruitment.candidates.edit');

@@ -84,6 +84,46 @@ class CandidateController extends Controller
         return view('admin.recruitment.candidates.index', compact('candidates', 'stats', 'filters', 'jobPosts'));
     }
 
+    public function interviewed(): View
+    {
+        $filters = [
+            'search' => '',
+            'status' => '',
+            'job_post_id' => '',
+            'cv_status' => '',
+            'converted' => '',
+            'created_from' => '',
+            'created_to' => '',
+        ];
+
+        $candidates = Candidate::query()
+            ->whereHas('interviews')
+            ->with([
+                'jobPost',
+                'employee',
+                'interviews' => fn ($query) => $query->with('interviewer')->latest('interview_date'),
+            ])
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
+
+        $interviewedCandidatesQuery = Candidate::query()
+            ->whereHas('interviews');
+
+        $stats = [
+            'total' => (clone $interviewedCandidatesQuery)->count(),
+            'new' => (clone $interviewedCandidatesQuery)->where('status', 'new')->count(),
+            'interview' => (clone $interviewedCandidatesQuery)->where('status', 'interview')->count(),
+            'passed' => (clone $interviewedCandidatesQuery)->where('status', 'passed')->count(),
+            'failed' => (clone $interviewedCandidatesQuery)->where('status', 'failed')->count(),
+            'converted' => (clone $interviewedCandidatesQuery)->whereNotNull('employee_id')->count(),
+        ];
+
+        $jobPosts = $this->availableJobPosts();
+
+        return view('admin.recruitment.candidates.index', compact('candidates', 'stats', 'filters', 'jobPosts'));
+    }
+
     public function show(Candidate $candidate): View
     {
         $candidate->load([

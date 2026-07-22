@@ -19,20 +19,32 @@
         </div>
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden p-8">
+            @if ($errors->any())
+                <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <p class="font-semibold mb-1">Vui lòng kiểm tra lại thông tin:</p>
+                    <ul class="list-disc list-inside space-y-0.5">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <form action="{{ route('admin.holidays.store') }}" method="POST" class="space-y-6">
                 @csrf
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="md:col-span-2">
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Tên sự kiện <span class="text-rose-500">*</span></label>
-                        <input type="text" name="name" value="{{ old('name') }}" required placeholder="VD: Nghỉ Tết Nguyên Đán, Du lịch Phú Quốc..."
-                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all">
+                        <input type="text" name="name" value="{{ old('name') }}" required minlength="2" maxlength="255"
+                            placeholder="VD: Nghỉ Tết Nguyên Đán, Du lịch Phú Quốc..."
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all @error('name') border-red-400 @enderror">
                         @error('name') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Loại sự kiện <span class="text-rose-500">*</span></label>
-                        <select name="type" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all">
+                        <select name="type" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all @error('type') border-red-400 @enderror">
                             <option value="public_holiday" {{ old('type') == 'public_holiday' ? 'selected' : '' }}>Nghỉ Lễ, Tết</option>
                             <option value="company_trip" {{ old('type') == 'company_trip' ? 'selected' : '' }}>Du lịch / Sự kiện công ty</option>
                         </select>
@@ -43,22 +55,22 @@
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-2">Từ ngày <span class="text-rose-500">*</span></label>
                             <input type="date" name="start_date" value="{{ old('start_date') }}" required
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all @error('start_date') border-red-400 @enderror">
                             @error('start_date') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-2">Đến ngày <span class="text-rose-500">*</span></label>
                             <input type="date" name="end_date" value="{{ old('end_date') }}" required
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all @error('end_date') border-red-400 @enderror">
                             @error('end_date') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
                     <div class="md:col-span-2">
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Ghi chú thêm</label>
-                        <textarea name="description" rows="3" placeholder="Ghi chú chi tiết về sự kiện này..."
-                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all">{{ old('description') }}</textarea>
+                        <textarea name="description" rows="3" maxlength="1000" placeholder="Ghi chú chi tiết về sự kiện này..."
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all @error('description') border-red-400 @enderror">{{ old('description') }}</textarea>
                         @error('description') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
