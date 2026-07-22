@@ -57,7 +57,6 @@ class KPIAssignmentController extends Controller
 
         $assignments->getCollection()->each(function (KPIAssignment $assignment) {
             $assignment->syncStatusFromEmployeeKpis();
-            $assignment->refresh();
         });
         $kpis = KPI::where('status', 'active')->get();
         $managers = User::query()

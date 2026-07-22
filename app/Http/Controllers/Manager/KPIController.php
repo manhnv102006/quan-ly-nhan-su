@@ -34,7 +34,6 @@ class KPIController extends Controller
 
         $assignments->getCollection()->each(function (KPIAssignment $assignment) {
             $assignment->syncStatusFromEmployeeKpis();
-            $assignment->refresh();
         });
 
         $managedEmployees = $this->getManagedEmployees();
