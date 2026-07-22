@@ -48,7 +48,10 @@
 
     @if (! $session['check_in'] && ! $session['check_out'])
         <p class="mt-2 text-[11px] text-slate-500">
-            Check-in từ {{ $session['session_start']->format('H:i') }} · Miễn trừ {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút · Check-out bắt buộc từ {{ $session['session_end']->format('H:i') }}
+            Check-in từ {{ $session['session_start']->copy()->subMinutes(\App\Services\EmployeeAttendanceService::EARLY_CHECK_IN_MINUTES)->format('H:i') }}
+            (trước ca {{ \App\Services\EmployeeAttendanceService::EARLY_CHECK_IN_MINUTES }} phút)
+            · Ca {{ $session['session_start']->format('H:i') }}–{{ $session['session_end']->format('H:i') }}
+            · Miễn trừ {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút
         </p>
     @endif
 

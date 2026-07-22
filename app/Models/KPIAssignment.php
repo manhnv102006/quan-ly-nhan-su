@@ -142,6 +142,42 @@ class KPIAssignment extends Model
         return min(100, max(0, (float) $this->target));
     }
 
+    /**
+     * Cập nhật trạng thái giao KPI theo tiến độ nhân viên trong phòng ban.
+     */
+    public function syncStatusFromEmployeeKpis(): void
+    {
+        if (in_array($this->status, ['cancelled', 'pending'], true)) {
+            return;
+        }
+
+        $statuses = $this->employeeKpis()->pluck('status');
+
+        if ($statuses->isEmpty()) {
+            return;
+        }
+
+        if ($statuses->every(fn (string $status) => $status === EmployeeKPI::STATUS_COMPLETED)) {
+            if ($this->status !== 'completed') {
+                $this->forceFill(['status' => 'completed'])->save();
+            }
+
+            return;
+        }
+
+        $hasOpenWork = $statuses->contains(
+            fn (string $status) => in_array($status, [
+                EmployeeKPI::STATUS_PENDING,
+                EmployeeKPI::STATUS_IN_PROGRESS,
+                EmployeeKPI::STATUS_COMPLETED,
+            ], true)
+        );
+
+        if ($hasOpenWork && $this->status === 'completed') {
+            $this->forceFill(['status' => 'active'])->save();
+        }
+    }
+
     private function formatTargetValue(float $value): string
     {
         if (floor($value) == $value) {

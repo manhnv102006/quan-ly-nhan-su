@@ -28,14 +28,6 @@
             <h1 class="text-2xl font-bold text-slate-800">Quản lý ứng viên</h1>
             <p class="mt-1 text-sm text-slate-500">Theo dõi hồ sơ, trạng thái phỏng vấn và chuyển đổi nhân viên</p>
         </div>
-        <a href="{{ route('admin.recruitment.candidates.create') }}"
-           class="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold
-                  text-white shadow-md shadow-violet-500/20 transition hover:bg-violet-700">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
-            </svg>
-            Thêm ứng viên
-        </a>
     </div>
 
     @if(session('success'))
@@ -257,35 +249,6 @@
                             Hồ sơ
                         </a>
 
-                        <a href="{{ route('admin.recruitment.candidates.edit', $candidate) }}"
-                           class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2
-                                  text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"/>
-                            </svg>
-                            Sửa
-                        </a>
-
-                        @if($candidate->status !== 'passed')
-                            <form action="{{ route('admin.recruitment.candidates.update', $candidate) }}" method="POST"
-                                  onsubmit="return confirm('Chấp nhận ứng viên {{ addslashes($candidate->full_name) }}?')">
-                                @csrf @method('PUT')
-                                @foreach(['job_post_id','full_name','phone','email','address'] as $f)
-                                    <input type="hidden" name="{{ $f }}" value="{{ $candidate->$f }}">
-                                @endforeach
-                                <input type="hidden" name="birth_date" value="{{ $candidate->birth_date?->format('Y-m-d') }}">
-                                <input type="hidden" name="status" value="passed">
-                                <button type="submit"
-                                        class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2
-                                               text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700">
-                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
-                                    </svg>
-                                    Đạt
-                                </button>
-                            </form>
-                        @endif
-
                         @if($candidate->status !== 'failed')
                             <form action="{{ route('admin.recruitment.candidates.update', $candidate) }}" method="POST"
                                   onsubmit="return confirm('Từ chối ứng viên {{ addslashes($candidate->full_name) }}?')">
@@ -305,18 +268,6 @@
                                 </button>
                             </form>
                         @endif
-
-                        <form action="{{ route('admin.recruitment.candidates.destroy', $candidate) }}" method="POST"
-                              onsubmit="return confirm('Xóa ứng viên {{ addslashes($candidate->full_name) }}? Hành động này không thể hoàn tác.')">
-                            @csrf @method('DELETE')
-                            <button type="submit"
-                                    class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200
-                                           text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600">
-                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
-                                </svg>
-                            </button>
-                        </form>
                     </div>
                 </div>
             </div>
@@ -332,21 +283,17 @@
                     @if($hasFilters)
                         Không tìm thấy ứng viên phù hợp với bộ lọc hiện tại.
                     @else
-                        Hãy thêm ứng viên mới để bắt đầu quản lý.
+                        Ứng viên sẽ xuất hiện tại đây khi có người nộp hồ sơ từ trang tuyển dụng.
                     @endif
                 </p>
-                <div class="mt-4 flex justify-center gap-3">
-                    @if($hasFilters)
+                @if($hasFilters)
+                    <div class="mt-4 flex justify-center">
                         <a href="{{ route('admin.recruitment.candidates') }}"
                            class="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                             Xóa bộ lọc
                         </a>
-                    @endif
-                    <a href="{{ route('admin.recruitment.candidates.create') }}"
-                       class="inline-flex rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700">
-                        Thêm ứng viên
-                    </a>
-                </div>
+                    </div>
+                @endif
             </div>
         @endforelse
 

@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\EmployeeFaceDescriptor;
 use App\Services\EmployeeAttendanceService;
+use App\Services\FaceMatchService;
 use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -19,6 +20,7 @@ class FaceController extends Controller
     public function __construct(
         private readonly EmployeeAttendanceService $attendanceService,
         private readonly NotificationService $notificationService,
+        private readonly FaceMatchService $faceMatch,
     ) {
     }
 
@@ -80,6 +82,20 @@ class FaceController extends Controller
             'quality' => ['nullable', 'numeric'],
             'image_base64' => ['nullable', 'string'],
         ]);
+
+        $conflict = $this->faceMatch->findConflictingDescriptor($data['embedding'], (int) $data['employee_id']);
+        if ($conflict) {
+            $owner = $conflict->employee;
+            $ownerLabel = $owner
+                ? trim($owner->full_name.' ('.$owner->employee_code.')')
+                : 'một nhân viên khác';
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Khuôn mặt này đã được đăng ký cho '.$ownerLabel.'. Mỗi khuôn mặt chỉ được đăng ký cho một nhân viên.',
+                'conflict_employee_id' => $conflict->employee_id,
+            ], 422);
+        }
 
         $imagePath = null;
         if (! empty($data['image_base64'])) {

@@ -43,6 +43,20 @@ class EmployeeKPI extends Model
             if ($employeeKpi->isOverdue() && $employeeKpi->status !== self::STATUS_COMPLETED) {
                 $employeeKpi->status = self::STATUS_NOT_COMPLETED;
             }
+
+            if ($employeeKpi->status === self::STATUS_COMPLETED) {
+                $employeeKpi->progress = max((int) ($employeeKpi->progress ?? 0), 100);
+            }
+        });
+
+        static::saved(function (EmployeeKPI $employeeKpi) {
+            if (! $employeeKpi->assignment_id) {
+                return;
+            }
+
+            KPIAssignment::query()
+                ->find($employeeKpi->assignment_id)
+                ?->syncStatusFromEmployeeKpis();
         });
     }
 

@@ -61,6 +61,7 @@ use App\Http\Controllers\Employee\EmployeeKPIController;
 use App\Http\Controllers\Manager\EarlyLeaveApprovalController;
 use App\Http\Controllers\Manager\LeaveApprovalController;
 use App\Http\Controllers\Manager\OvertimeApprovalController;
+use App\Http\Controllers\Manager\RecruitmentController as ManagerRecruitmentController;
 
 use App\Http\Controllers\Employee\AttendanceController as EmployeeAttendanceController;
 use App\Http\Controllers\Employee\OvertimeController as EmployeeOvertimeController;
@@ -71,7 +72,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/tuyen-dung');
 
-Route::prefix('tuyen-dung')->name('public.recruitment.')->group(function () {
+Route::prefix('tuyen-dung')->name('public.recruitment.')->middleware(\App\Http\Middleware\SetPublicRecruitmentLocale::class)->group(function () {
+    Route::get('/ngon-ngu/{locale}', [PublicRecruitmentController::class, 'switchLocale'])->name('locale')->whereIn('locale', ['vi', 'en']);
     Route::get('/', [PublicRecruitmentController::class, 'index'])->name('index');
     Route::get('/gioi-thieu', [PublicRecruitmentController::class, 'about'])->name('about');
     Route::get('/he-sinh-thai', [PublicRecruitmentController::class, 'ecosystem'])->name('ecosystem');
@@ -228,10 +230,13 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/recruitment', [RecruitmentController::class, 'index'])->name('recruitment');
     Route::get('/recruitment/job-posts', [JobPostController::class, 'index'])->name('recruitment.job-posts');
     Route::get('/recruitment/job-posts/create', [JobPostController::class, 'create'])->name('recruitment.job-posts.create');
+    Route::get('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'show'])->name('recruitment.job-posts.show');
     Route::post('/recruitment/job-posts', [JobPostController::class, 'store'])->name('recruitment.job-posts.store');
     Route::get('/recruitment/job-posts/{jobPost}/edit', [JobPostController::class, 'edit'])->name('recruitment.job-posts.edit');
     Route::put('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'update'])->name('recruitment.job-posts.update');
     Route::patch('/recruitment/job-posts/{jobPost}/status', [JobPostController::class, 'updateStatus'])->name('recruitment.job-posts.update-status');
+    Route::patch('/recruitment/job-posts/{jobPost}/approve', [JobPostController::class, 'approve'])->name('recruitment.job-posts.approve');
+    Route::patch('/recruitment/job-posts/{jobPost}/reject', [JobPostController::class, 'reject'])->name('recruitment.job-posts.reject');
     Route::delete('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'destroy'])->name('recruitment.job-posts.destroy');
     Route::get('/recruitment/candidates', [CandidateController::class, 'index'])->name('recruitment.candidates');
     Route::get('/recruitment/interviewed-candidates', [CandidateController::class, 'interviewed'])->name('recruitment.interviewed-candidates');
@@ -279,6 +284,11 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::get('/early-leave/{earlyLeaveRequest}', [EarlyLeaveApprovalController::class, 'show'])->name('early-leave.show');
     Route::patch('/early-leave/{earlyLeaveRequest}/approve', [EarlyLeaveApprovalController::class, 'approve'])->name('early-leave.approve');
     Route::patch('/early-leave/{earlyLeaveRequest}/reject', [EarlyLeaveApprovalController::class, 'reject'])->name('early-leave.reject');
+
+    Route::get('/recruitment', [ManagerRecruitmentController::class, 'index'])->name('recruitment.index');
+    Route::get('/recruitment/job-posts/create', [ManagerRecruitmentController::class, 'createJobPost'])->name('recruitment.job-posts.create');
+    Route::post('/recruitment/job-posts', [ManagerRecruitmentController::class, 'storeJobPost'])->name('recruitment.job-posts.store');
+    Route::put('/recruitment/interviews/{interview}', [ManagerRecruitmentController::class, 'updateInterview'])->name('recruitment.interviews.update');
 });
 
 Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager'])

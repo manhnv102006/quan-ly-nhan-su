@@ -18,7 +18,7 @@
                     </div>
                     <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Tạo lịch phỏng vấn</h2>
                     <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                        Chọn ứng viên, người phỏng vấn và thời gian. Hệ thống sẽ tự động chuyển ứng viên sang trạng thái phỏng vấn.
+                        Chọn ứng viên và thời gian phỏng vấn. Người phỏng vấn là quản lý phòng ban của tin tuyển dụng.
                     </p>
                 </div>
 
@@ -67,26 +67,41 @@
                         @error('candidate_id')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
                     </div>
 
-                    <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-                        <div>
-                            <label for="interviewer_id" class="mb-2 block text-sm font-bold text-slate-700">Người phỏng vấn</label>
-                            <select id="interviewer_id" name="interviewer_id" class="{{ $inputClass }} @error('interviewer_id') border-red-400 @enderror">
-                                <option value="">Chưa gắn người phỏng vấn</option>
-                                @foreach ($interviewers as $interviewer)
-                                    <option value="{{ $interviewer->id }}" @selected(old('interviewer_id') == $interviewer->id)>
-                                        {{ $interviewer->full_name }} ({{ $interviewer->employee_code }})
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('interviewer_id')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
-                        </div>
+                    @php
+                        $managerLabels = $candidates->mapWithKeys(function ($candidate) {
+                            $manager = $candidate->jobPost?->department?->manager;
+                            if ($manager) {
+                                $label = trim(($manager->employee_code ? $manager->employee_code.' - ' : '').$manager->full_name);
+                            } elseif ($candidate->jobPost?->department) {
+                                $label = 'Phòng ban chưa có quản lý';
+                            } else {
+                                $label = 'Chưa gắn phòng ban';
+                            }
 
-                        <div>
-                            <label for="interview_date" class="mb-2 block text-sm font-bold text-slate-700">Thời gian phỏng vấn <span class="text-red-500">*</span></label>
-                            <input type="datetime-local" id="interview_date" name="interview_date" value="{{ old('interview_date') }}" min="{{ now()->format('Y-m-d\TH:i') }}" required
-                                   class="{{ $inputClass }} @error('interview_date') border-red-400 @enderror">
-                            @error('interview_date')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                            return [(string) $candidate->id => $label];
+                        });
+                        $selectedCandidateId = (string) old('candidate_id', '');
+                    @endphp
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Người phỏng vấn</label>
+                        <div id="interviewer-display"
+                             class="{{ $inputClass }} bg-slate-50 text-slate-700"
+                             data-empty="Chọn ứng viên để hiển thị quản lý phòng ban">
+                            @if ($selectedCandidateId !== '' && $managerLabels->has($selectedCandidateId))
+                                {{ $managerLabels[$selectedCandidateId] }}
+                            @else
+                                Chọn ứng viên để hiển thị quản lý phòng ban
+                            @endif
                         </div>
+                        <p class="mt-2 text-xs text-slate-500">Tự động theo quản lý phòng ban.</p>
+                    </div>
+
+                    <div>
+                        <label for="interview_date" class="mb-2 block text-sm font-bold text-slate-700">Thời gian phỏng vấn <span class="text-red-500">*</span></label>
+                        <input type="datetime-local" id="interview_date" name="interview_date" value="{{ old('interview_date') }}" min="{{ now()->format('Y-m-d\TH:i') }}" required
+                               class="{{ $inputClass }} @error('interview_date') border-red-400 @enderror">
+                        @error('interview_date')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
                     </div>
 
                     <div class="rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-4">
@@ -117,4 +132,21 @@
             </div>
         </section>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const candidateSelect = document.getElementById('candidate_id');
+            const display = document.getElementById('interviewer-display');
+            if (!candidateSelect || !display) {
+                return;
+            }
+
+            const managers = @json($managerLabels);
+
+            candidateSelect.addEventListener('change', function () {
+                const id = candidateSelect.value;
+                display.textContent = id && managers[id] ? managers[id] : display.dataset.empty;
+            });
+        });
+    </script>
 </x-admin-layout>

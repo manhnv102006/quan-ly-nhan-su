@@ -19,7 +19,9 @@
             $isFlush = filter_var($attributes->get('flush', false), FILTER_VALIDATE_BOOLEAN);
         @endphp
 
-        @if ($isDark)
+        @if ($isFlush)
+            {{ $slot }}
+        @elseif ($isDark)
             <div class="min-h-screen bg-[#030712]">
                 {{ $slot }}
             </div>

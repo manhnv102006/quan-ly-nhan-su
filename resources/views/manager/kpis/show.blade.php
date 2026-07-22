@@ -38,6 +38,20 @@
                 </span>
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                @php
+                    $teamProgress = (int) round($assignment->employeeKpis->avg(fn ($goal) => (int) ($goal->progress ?? 0)) ?? 0);
+                    $completedMembers = $assignment->employeeKpis->where('status', 'completed')->count();
+                    $totalMembers = $assignment->employeeKpis->count();
+                @endphp
+                <div class="md:col-span-2 rounded-xl bg-teal-50 px-4 py-3 border border-teal-100">
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
+                        <span class="text-teal-800 font-semibold">Tiến độ nhóm: {{ $teamProgress }}%</span>
+                        <span class="text-teal-700">Hoàn thành: {{ $completedMembers }}/{{ $totalMembers }} nhân viên</span>
+                    </div>
+                    <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/80">
+                        <div class="h-full rounded-full bg-teal-500" style="width: {{ $teamProgress }}%"></div>
+                    </div>
+                </div>
                 <div class="flex justify-between border-b border-slate-50 pb-2">
                     <span class="text-slate-500">Mã KPI</span>
                     <span class="font-semibold text-slate-800">{{ $assignment->kpi_code }}</span>

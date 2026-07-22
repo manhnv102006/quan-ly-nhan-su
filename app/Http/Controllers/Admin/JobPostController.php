@@ -49,6 +49,24 @@ class JobPostController extends Controller
             ->with('success', 'Thêm tin tuyển dụng thành công.');
     }
 
+    public function show(JobPost $jobPost): View
+    {
+        $jobPost->load(['department.manager', 'recruiter', 'submittedBy']);
+        $jobPost->loadCount([
+            'candidates',
+            'candidates as candidates_new_count' => fn ($query) => $query->where('status', 'new'),
+            'candidates as candidates_interview_count' => fn ($query) => $query->where('status', 'interview'),
+            'candidates as candidates_passed_count' => fn ($query) => $query->where('status', 'passed'),
+        ]);
+
+        $recentCandidates = $jobPost->candidates()
+            ->latest()
+            ->limit(15)
+            ->get(['id', 'full_name', 'email', 'phone', 'status', 'created_at']);
+
+        return view('admin.recruitment.job-posts.show', compact('jobPost', 'recentCandidates'));
+    }
+
     public function edit(JobPost $jobPost): View
     {
         $filters = $this->defaultFilters();
@@ -64,6 +82,12 @@ class JobPostController extends Controller
 
     public function update(Request $request, JobPost $jobPost): RedirectResponse
     {
+        if ($jobPost->status === 'pending_approval') {
+            return redirect()
+                ->route('admin.recruitment.job-posts')
+                ->with('error', 'Tin đang chờ duyệt: hãy dùng nút Duyệt hoặc Từ chối.');
+        }
+
         $validated = $this->validateJobPost($request);
 
         $validated = $this->applyDepartmentRecruiter($validated);
@@ -77,6 +101,12 @@ class JobPostController extends Controller
 
     public function updateStatus(Request $request, JobPost $jobPost): RedirectResponse
     {
+        if (in_array($jobPost->status, ['pending_approval', 'rejected'], true)) {
+            return redirect()
+                ->back()
+                ->with('error', 'Tin chờ duyệt cần dùng nút Duyệt hoặc Từ chối.');
+        }
+
         $validated = $request->validate([
             'status' => ['required', 'in:open,closed'],
         ], [
@@ -91,6 +121,36 @@ class JobPostController extends Controller
         return redirect()
             ->to($redirectTo)
             ->with('success', 'Đã cập nhật trạng thái tin tuyển dụng.');
+    }
+
+    public function approve(JobPost $jobPost): RedirectResponse
+    {
+        if ($jobPost->status !== 'pending_approval') {
+            return redirect()
+                ->route('admin.recruitment.job-posts')
+                ->with('error', 'Chỉ có thể duyệt tin đang chờ phê duyệt.');
+        }
+
+        $jobPost->update(['status' => 'open']);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Đã duyệt tin tuyển dụng. Tin đang hiển thị công khai.');
+    }
+
+    public function reject(Request $request, JobPost $jobPost): RedirectResponse
+    {
+        if ($jobPost->status !== 'pending_approval') {
+            return redirect()
+                ->route('admin.recruitment.job-posts')
+                ->with('error', 'Chỉ có thể từ chối tin đang chờ phê duyệt.');
+        }
+
+        $jobPost->update(['status' => 'rejected']);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Đã từ chối tin tuyển dụng do manager gửi.');
     }
 
     public function destroy(JobPost $jobPost): RedirectResponse
@@ -113,7 +173,7 @@ class JobPostController extends Controller
         $search = $filters['search'];
 
         $jobPosts = JobPost::query()
-            ->with(['department', 'recruiter'])
+            ->with(['department', 'recruiter', 'submittedBy'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('title', 'like', "%{$search}%")
@@ -139,6 +199,7 @@ class JobPostController extends Controller
             'total' => JobPost::count(),
             'open' => JobPost::where('status', 'open')->count(),
             'closed' => JobPost::where('status', 'closed')->count(),
+            'pending_approval' => JobPost::where('status', 'pending_approval')->count(),
         ];
 
         return compact('jobPosts', 'search', 'stats', 'filters');
@@ -159,7 +220,7 @@ class JobPostController extends Controller
 
         return [
             'search' => (string) $request->string('search')->trim(),
-            'status' => in_array($status, ['open', 'closed'], true) ? $status : '',
+            'status' => in_array($status, ['open', 'closed', 'pending_approval', 'rejected'], true) ? $status : '',
             'department_id' => (string) $request->input('department_id', ''),
         ];
     }
@@ -197,7 +258,7 @@ class JobPostController extends Controller
         return $request->validate([
             'department_id' => ['nullable', 'exists:departments,id'],
             'title' => ['required', 'string', 'max:255'],
-            'quantity' => ['required', 'integer', 'min:1'],
+            'quantity' => ['required', 'integer', 'min:0'],
             'salary_min' => ['nullable', 'numeric', 'min:0'],
             'salary_max' => ['nullable', 'numeric', 'min:0', 'gte:salary_min'],
             'work_location' => ['nullable', 'string', 'max:255'],
@@ -213,7 +274,7 @@ class JobPostController extends Controller
             'title.max' => 'Tiêu đề tin tuyển dụng không được vượt quá 255 ký tự.',
             'quantity.required' => 'Số lượng tuyển là bắt buộc.',
             'quantity.integer' => 'Số lượng tuyển phải là số nguyên.',
-            'quantity.min' => 'Số lượng tuyển phải lớn hơn 0.',
+            'quantity.min' => 'Số lượng tuyển không được âm.',
             'salary_min.numeric' => 'Lương tối thiểu phải là số.',
             'salary_max.numeric' => 'Lương tối đa phải là số.',
             'salary_max.gte' => 'Lương tối đa phải lớn hơn hoặc bằng lương tối thiểu.',

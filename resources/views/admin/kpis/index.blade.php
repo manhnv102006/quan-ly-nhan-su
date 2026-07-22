@@ -148,6 +148,10 @@
                             </th>
 
                             <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">
+                                Triển khai
+                            </th>
+
+                            <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">
                                 Trạng thái
                             </th>
 
@@ -204,9 +208,20 @@
                             </td>
 
                             <td class="px-6 py-4 text-center">
+                                @if (($kpi->assignments_count ?? 0) === 0)
+                                    <span class="text-xs text-slate-400">Chưa giao</span>
+                                @else
+                                    <span class="inline-block rounded-lg bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                                        {{ $kpi->assignments_completed_count ?? 0 }}/{{ $kpi->assignments_count }} hoàn thành
+                                    </span>
+                                @endif
+                            </td>
+
+                            <td class="px-6 py-4 text-center">
                                 <span class="inline-block px-3 py-1 rounded-lg text-xs font-medium {{ $kpi->status == 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
                                     {{ $kpi->status_label }}
                                 </span>
+                                <p class="mt-1 text-[10px] text-slate-400">Mẫu KPI</p>
                             </td>
 
                             <td class="px-6 py-4 text-slate-600 text-sm">
@@ -216,6 +231,12 @@
                             <td class="px-6 py-4">
 
                                 <div class="flex justify-center gap-1">
+
+                                    <a href="{{ route('admin.kpis.show', $kpi) }}"
+                                        class="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-100 text-sky-700 transition hover:bg-sky-200"
+                                        title="Xem chi tiết">
+                                        👁
+                                    </a>
 
                                     <a href="{{ route('admin.kpis.edit', $kpi->id) }}"
                                         class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200 transition"
@@ -250,7 +271,7 @@
 
                         <tr>
 
-                            <td colspan="9"
+                            <td colspan="10"
                                 class="text-center py-12 text-slate-400">
                                 Chưa có KPI nào
                             </td>
