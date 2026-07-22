@@ -18,8 +18,12 @@ class TaxService
         return (float) ($profile?->personal_deduction ?? EmployeeTaxProfile::DEFAULT_PERSONAL_DEDUCTION);
     }
 
-    public function activeDependentsCount(Employee $employee, ?Carbon $onDate = null): int
+    public function activeDependentsCount(?Employee $employee, ?Carbon $onDate = null): int
     {
+        if (! $employee) {
+            return 0;
+        }
+
         $date = $onDate ?? now();
 
         return TaxDependent::query()
@@ -33,8 +37,12 @@ class TaxService
             ->count();
     }
 
-    public function dependentDeductionTotal(Employee $employee, ?Carbon $onDate = null): float
+    public function dependentDeductionTotal(?Employee $employee, ?Carbon $onDate = null): float
     {
+        if (! $employee) {
+            return 0;
+        }
+
         $date = $onDate ?? now();
 
         return (float) TaxDependent::query()
@@ -48,8 +56,12 @@ class TaxService
             ->sum('monthly_deduction');
     }
 
-    public function insuranceEmployeeAmount(Employee $employee, float $grossIncome): float
+    public function insuranceEmployeeAmount(?Employee $employee, float $grossIncome): float
     {
+        if (! $employee) {
+            return round($grossIncome * 0.105, 0);
+        }
+
         $profile = $employee->insurance;
 
         if ($profile && $profile->isContributing()) {
@@ -62,10 +74,10 @@ class TaxService
     /**
      * @return array<string, float|int>
      */
-    public function calculateEmployeeMonthly(Employee $employee, float $grossIncome, ?Carbon $onDate = null): array
+    public function calculateEmployeeMonthly(?Employee $employee, float $grossIncome, ?Carbon $onDate = null): array
     {
         $date = $onDate ?? now();
-        $taxProfile = $employee->taxProfile;
+        $taxProfile = $employee?->taxProfile;
         $insurance = $this->insuranceEmployeeAmount($employee, $grossIncome);
         $personal = $this->personalDeduction($taxProfile);
         $dependentDeduction = $this->dependentDeductionTotal($employee, $date);
@@ -131,6 +143,7 @@ class TaxService
     {
         $payrolls = Payroll::query()
             ->with(['employee.taxProfile', 'employee.insurance', 'employee.taxDependents'])
+            ->whereHas('employee')
             ->where('payroll_period_id', $period->id)
             ->orderByDesc('total_salary')
             ->get();
@@ -139,13 +152,17 @@ class TaxService
 
         return $payrolls->map(function (Payroll $payroll) use ($periodDate) {
             $employee = $payroll->employee;
+            if (! $employee) {
+                return null;
+            }
+
             $calc = $this->calculateEmployeeMonthly($employee, (float) $payroll->total_salary, $periodDate);
 
             return array_merge($calc, [
                 'payroll' => $payroll,
                 'employee' => $employee,
             ]);
-        });
+        })->filter()->values();
     }
 
     /**
