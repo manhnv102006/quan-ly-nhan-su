@@ -295,6 +295,14 @@
                     <td>Thuế thu nhập cá nhân (TNCN)</td>
                     <td class="text-right">-{{ number_format($payslip['pit'], 0, ',', '.') }} ₫</td>
                 </tr>
+                <tr class="text-red">
+                    <td>Trừ tạm ứng lương (kỳ này)</td>
+                    <td class="text-right">-{{ number_format($payslip['advance_deduction'], 0, ',', '.') }} ₫</td>
+                </tr>
+                <tr>
+                    <td>Dư nợ tạm ứng (còn lại)</td>
+                    <td class="text-right">{{ number_format($payslip['advance_outstanding'], 0, ',', '.') }} ₫</td>
+                </tr>
                 <tr class="total-row">
                     <td>Thực lĩnh (Net Salary)</td>
                     <td class="text-right">{{ number_format($payslip['net_salary'], 0, ',', '.') }} ₫</td>

@@ -13,6 +13,20 @@
             'hybrid' => 'Hybrid',
             'contract' => 'Contract',
         ];
+
+        $departmentManagers = ($departments ?? collect())->mapWithKeys(function ($department) {
+            $manager = $department->manager;
+            $label = $manager
+                ? trim(($manager->employee_code ? $manager->employee_code.' - ' : '').$manager->full_name)
+                : null;
+
+            return [(string) $department->id => $label];
+        })->all();
+
+        $selectedDepartmentId = (string) old('department_id', $formJobPost?->department_id ?? '');
+        $initialRecruiterLabel = $selectedDepartmentId !== '' && array_key_exists($selectedDepartmentId, $departmentManagers)
+            ? ($departmentManagers[$selectedDepartmentId] ?? null)
+            : null;
     @endphp
 
     @include('admin.recruitment.partials.ui-contrast')
@@ -28,14 +42,21 @@
                     </div>
                     <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Quản lý tin tuyển dụng</h2>
                     <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-                        Tạo nhu cầu tuyển dụng, gắn phòng ban, người phụ trách, mức lương và hạn nộp hồ sơ.
+                        Tạo nhu cầu tuyển dụng, gắn phòng ban, mức lương và hạn nộp hồ sơ. Người phụ trách là quản lý phòng ban.
                     </p>
                 </div>
 
+                @if (!$showForm)
                 <a href="{{ route('admin.recruitment.job-posts.create') }}"
                    class="recruitment-btn-primary inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
                     Tạo tin tuyển dụng
                 </a>
+                @else
+                <a href="{{ route('admin.recruitment.job-posts') }}"
+                   class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-cyan-300 hover:text-cyan-800">
+                    ← Danh sách tin
+                </a>
+                @endif
             </div>
         </section>
 
@@ -58,6 +79,7 @@
             </div>
         @endif
 
+        @unless ($showForm)
         <section class="recruitment-stats grid grid-cols-1 gap-4 md:grid-cols-3">
             <div class="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-sm">
                 <p class="text-sm font-bold text-slate-500">Tổng tin</p>
@@ -72,6 +94,7 @@
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ $stats['closed'] ?? 0 }}</p>
             </div>
         </section>
+        @endunless
 
         @if ($showForm)
             <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
@@ -93,7 +116,7 @@
 
                     <div class="rounded-2xl bg-cyan-50 px-4 py-3 lg:col-span-2">
                         <h4 class="text-sm font-black text-cyan-950">Thông tin công việc</h4>
-                        <p class="mt-1 text-sm text-cyan-700">Nhập vị trí, phòng ban, người phụ trách và số lượng cần tuyển.</p>
+                        <p class="mt-1 text-sm text-cyan-700">Nhập vị trí, phòng ban và số lượng cần tuyển. Quản lý phòng ban sẽ phụ trách tin.</p>
                     </div>
 
                     <div class="lg:col-span-2">
@@ -104,7 +127,7 @@
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Phòng ban</label>
-                        <select name="department_id" class="{{ $inputClass }}">
+                        <select id="job-post-department-id" name="department_id" class="{{ $inputClass }}">
                             <option value="">Chưa gắn phòng ban</option>
                             @foreach (($departments ?? collect()) as $department)
                                 <option value="{{ $department->id }}" @selected((string) old('department_id', $formJobPost?->department_id) === (string) $department->id)>
@@ -117,15 +140,19 @@
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Người phụ trách</label>
-                        <select name="recruiter_id" class="{{ $inputClass }}">
-                            <option value="">Chưa gắn người phụ trách</option>
-                            @foreach (($recruiters ?? collect()) as $recruiter)
-                                <option value="{{ $recruiter->id }}" @selected((string) old('recruiter_id', $formJobPost?->recruiter_id) === (string) $recruiter->id)>
-                                    {{ $recruiter->employee_code }} - {{ $recruiter->full_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('recruiter_id')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                        <div id="job-post-recruiter-display"
+                             class="{{ $inputClass }} bg-slate-50 text-slate-600"
+                             data-empty="Chọn phòng ban để hiển thị quản lý phòng ban"
+                             data-no-manager="Phòng ban chưa có quản lý">
+                            @if ($initialRecruiterLabel)
+                                {{ $initialRecruiterLabel }}
+                            @elseif ($selectedDepartmentId !== '')
+                                Phòng ban chưa có quản lý
+                            @else
+                                Chọn phòng ban để hiển thị quản lý phòng ban
+                            @endif
+                        </div>
+                        <p class="mt-2 text-xs text-slate-500">Tự động theo quản lý của phòng ban đã chọn.</p>
                     </div>
 
                     <div>
@@ -214,8 +241,34 @@
                     </div>
                 </form>
             </section>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const departmentSelect = document.getElementById('job-post-department-id');
+                    const recruiterDisplay = document.getElementById('job-post-recruiter-display');
+                    if (!departmentSelect || !recruiterDisplay) {
+                        return;
+                    }
+
+                    const managers = @json($departmentManagers);
+
+                    function refreshRecruiterLabel() {
+                        const departmentId = departmentSelect.value;
+                        if (!departmentId) {
+                            recruiterDisplay.textContent = recruiterDisplay.dataset.empty;
+                            return;
+                        }
+
+                        const managerName = managers[departmentId] ?? null;
+                        recruiterDisplay.textContent = managerName || recruiterDisplay.dataset.noManager;
+                    }
+
+                    departmentSelect.addEventListener('change', refreshRecruiterLabel);
+                });
+            </script>
         @endif
 
+        @unless ($showForm)
         <section class="recruitment-panel rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm shadow-slate-200/60">
             <form method="GET" action="{{ route('admin.recruitment.job-posts') }}" class="grid grid-cols-1 gap-4 lg:grid-cols-12">
                 <div class="lg:col-span-5">
@@ -339,5 +392,6 @@
                 {{ $jobPosts->links() }}
             </div>
         </section>
+        @endunless
     </div>
 </x-admin-layout>

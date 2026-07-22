@@ -25,6 +25,35 @@ class RecruitmentController extends Controller
             'converted_candidates' => Candidate::whereNotNull('employee_id')->count(),
         ];
 
-        return view('admin.recruitment.index', compact('stats'));
+        $recentCandidates = Candidate::query()
+            ->with('jobPost:id,title')
+            ->latest()
+            ->limit(5)
+            ->get(['id', 'full_name', 'email', 'status', 'job_post_id', 'created_at']);
+
+        $upcomingInterviews = Interview::query()
+            ->with([
+                'candidate:id,full_name',
+                'interviewer:id,full_name',
+            ])
+            ->where('status', 'scheduled')
+            ->where('interview_date', '>=', now())
+            ->orderBy('interview_date')
+            ->limit(5)
+            ->get(['id', 'candidate_id', 'interviewer_id', 'interview_date', 'status']);
+
+        $openJobPosts = JobPost::query()
+            ->with('department:id,department_name')
+            ->where('status', 'open')
+            ->orderByDesc('created_at')
+            ->limit(4)
+            ->get(['id', 'title', 'department_id', 'quantity', 'application_deadline', 'status']);
+
+        return view('admin.recruitment.index', compact(
+            'stats',
+            'recentCandidates',
+            'upcomingInterviews',
+            'openJobPosts',
+        ));
     }
 }

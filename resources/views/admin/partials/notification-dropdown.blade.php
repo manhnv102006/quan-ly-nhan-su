@@ -5,18 +5,19 @@
     $notificationsIndexRoute = match (true) {
         $user?->isAdmin() => 'notifications.index',
         $user?->isManager() => 'manager.notifications.index',
-        $user?->isEmployee() => 'employee.notifications.index',
+        $user?->isAccountant(), $user?->isEmployee() => 'employee.notifications.index',
         default => 'notifications.index',
     };
     $notificationsShowRoute = match (true) {
         $user?->isAdmin() => 'notifications.show',
         $user?->isManager() => 'manager.notifications.show',
-        $user?->isEmployee() => 'employee.notifications.show',
+        $user?->isAccountant(), $user?->isEmployee() => 'employee.notifications.show',
         default => null,
     };
     $notificationsShowAccent = match (true) {
         $user?->isAdmin() => 'violet',
         $user?->isManager() => 'emerald',
+        $user?->isAccountant() => 'amber',
         $user?->isEmployee() => 'sky',
         default => 'sky',
     };

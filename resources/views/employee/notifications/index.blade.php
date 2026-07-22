@@ -12,6 +12,6 @@
         'readAllRoute' => 'employee.notifications.read-all',
         'readRoute' => 'employee.notifications.read',
         'showRoute' => 'employee.notifications.show',
-        'showAccent' => 'sky',
+        'showAccent' => auth()->user()?->isAccountant() ? 'amber' : 'sky',
     ])
 </x-dynamic-component>
