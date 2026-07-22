@@ -50,8 +50,7 @@
                             </svg>
                         </button>
                         <span class="hidden text-sm font-black {{ $isDarkHeader ? 'text-white' : 'text-slate-950' }} sm:inline-flex">VI</span>
-                        <a href="{{ route('login') }}" class="inline-flex items-center justify-center whitespace-nowrap rounded-xl border {{ $isDarkHeader ? 'border-white/15 bg-white/5 text-white hover:border-cyan-300/60 hover:bg-cyan-300/10' : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:text-cyan-700' }} px-4 py-2.5 text-sm font-black transition">Đăng nhập</a>
-                        <a href="{{ route('register') }}" class="hidden items-center justify-center whitespace-nowrap rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-cyan-700 sm:inline-flex">Đăng ký</a>
+                        <a href="{{ route('login') }}" class="inline-flex items-center justify-center whitespace-nowrap rounded-xl border px-4 py-2.5 text-sm font-black transition {{ $isDarkHeader ? 'border-white/15 bg-white/5 text-white hover:border-cyan-300/60 hover:bg-cyan-300/10 hover:text-cyan-300' : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:text-cyan-700' }}">Đăng nhập</a>
                     </div>
                 </div>
 

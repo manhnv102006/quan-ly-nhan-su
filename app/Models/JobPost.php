@@ -14,6 +14,7 @@ class JobPost extends Model
     protected $fillable = [
         'department_id',
         'recruiter_id',
+        'submitted_by_employee_id',
         'title',
         'quantity',
         'salary_min',
@@ -47,16 +48,19 @@ class JobPost extends Model
         return $this->belongsTo(Employee::class, 'recruiter_id');
     }
 
+    public function submittedBy(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'submitted_by_employee_id');
+    }
+
+    public function scopePubliclyListed(Builder $query): Builder
+    {
+        return $query->where('status', 'open');
+    }
+
     public function scopePubliclyVisible(Builder $query): Builder
     {
-        return $query
-            ->where('status', 'open')
-            ->where('quantity', '>', 0)
-            ->where(function (Builder $query) {
-                $query
-                    ->whereNull('application_deadline')
-                    ->orWhereDate('application_deadline', '>=', now()->toDateString());
-            });
+        return $query->publiclyListed();
     }
 
     public static function recordSuccessfulHire(?int $jobPostId): void

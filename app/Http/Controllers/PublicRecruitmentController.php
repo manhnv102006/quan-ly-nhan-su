@@ -14,17 +14,17 @@ class PublicRecruitmentController extends Controller
     public function index(): View
     {
         $homepageJobPosts = JobPost::query()
-            ->where('status', 'open')
+            ->publiclyListed()
             ->with(['department', 'recruiter'])
             ->latest()
             ->limit(5)
             ->get();
 
         $stats = [
-            'open_jobs' => JobPost::query()->where('status', 'open')->count(),
+            'open_jobs' => JobPost::query()->publiclyListed()->count(),
             'applications' => Candidate::count(),
             'departments' => JobPost::query()
-                ->where('status', 'open')
+                ->publiclyListed()
                 ->whereNotNull('department_id')
                 ->distinct('department_id')
                 ->count('department_id'),
@@ -51,7 +51,7 @@ class PublicRecruitmentController extends Controller
     public function jobs(): View
     {
         $jobPosts = JobPost::query()
-            ->publiclyVisible()
+            ->publiclyListed()
             ->with('department')
             ->latest()
             ->paginate(9);
@@ -99,7 +99,7 @@ class PublicRecruitmentController extends Controller
     private function publicJobPost(JobPost $jobPost): JobPost
     {
         return JobPost::query()
-            ->publiclyVisible()
+            ->publiclyListed()
             ->with(['department', 'recruiter'])
             ->whereKey($jobPost->getKey())
             ->firstOrFail();

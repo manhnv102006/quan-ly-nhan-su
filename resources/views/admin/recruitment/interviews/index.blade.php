@@ -65,7 +65,8 @@
 
         @if (isset($errors) && $errors->any())
             <div class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                <ul class="list-disc pl-4">
+                <p class="font-semibold">Không thể hoàn thành đánh giá:</p>
+                <ul class="mt-1 list-disc pl-4">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -150,6 +151,7 @@
                             </summary>
 
                             <form action="{{ route('admin.recruitment.interviews.update', $interview) }}" method="POST"
+                                  data-interview-evaluation
                                   class="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 p-4">
                                 @csrf
                                 @method('PUT')
@@ -184,10 +186,16 @@
                                 </div>
 
                                 <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                    <p class="col-span-full text-xs text-slate-500">
+                                        Bắt buộc nhập đủ 4 tiêu chí khi trạng thái <strong>Đã phỏng vấn</strong> hoặc kết quả <strong>Đạt / Không đạt</strong>.
+                                    </p>
                                     @foreach ($scoreFields as $field => $scoreLabel)
                                         <div>
-                                            <label class="{{ $labelClass }}">Điểm {{ $scoreLabel }} (0–10)</label>
-                                            <input type="number" min="0" max="10" name="{{ $field }}" value="{{ $interview->{$field} }}" class="{{ $inputClass }}">
+                                            <label class="{{ $labelClass }}">Điểm {{ $scoreLabel }} (0–10) <span class="text-red-600">*</span></label>
+                                            <input type="number" min="0" max="10" step="1" name="{{ $field }}" value="{{ old($field, $interview->{$field}) }}" class="{{ $inputClass }} @error($field) border-red-400 @enderror">
+                                            @error($field)
+                                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                            @enderror
                                         </div>
                                     @endforeach
                                 </div>
@@ -237,4 +245,6 @@
             @endif
         </div>
     </div>
+
+    @include('recruitment.partials.interview-score-validation')
 </x-admin-layout>

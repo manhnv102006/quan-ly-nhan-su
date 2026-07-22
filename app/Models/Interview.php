@@ -7,6 +7,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Interview extends Model
 {
+    /** @var list<string> */
+    public const EVALUATION_SCORE_FIELDS = [
+        'overall_score',
+        'technical_score',
+        'attitude_score',
+        'culture_score',
+    ];
+
     protected $table = 'interviews';
 
     protected $fillable = [
@@ -44,5 +52,14 @@ class Interview extends Model
     public function interviewer(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'interviewer_id');
+    }
+
+    public static function evaluationScoresRequired(?string $status, ?string $result): bool
+    {
+        if ($status === 'completed') {
+            return true;
+        }
+
+        return in_array($result, ['passed', 'failed'], true);
     }
 }

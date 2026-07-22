@@ -3,7 +3,7 @@
 use App\Models\Candidate;
 use App\Models\JobPost;
 
-test('guests only see open and unexpired job posts on public recruitment page', function () {
+test('guests only see open job posts on public recruitment page', function () {
     $visibleJob = JobPost::create([
         'title' => 'Public PHP Developer',
         'quantity' => 2,
@@ -37,8 +37,12 @@ test('guests only see open and unexpired job posts on public recruitment page', 
     $response->assertOk();
     $response->assertSee($visibleJob->title);
     $response->assertSee($noDeadlineJob->title);
+    $response->assertSee($expiredJob->title);
     $response->assertDontSee($closedJob->title);
-    $response->assertDontSee($expiredJob->title);
+
+    $jobsPage = $this->get(route('public.recruitment.jobs'));
+    $jobsPage->assertOk();
+    $jobsPage->assertSee($expiredJob->title);
 });
 
 test('guests can apply to a public job without uploading a cv', function () {
@@ -68,7 +72,7 @@ test('guests can apply to a public job without uploading a cv', function () {
     expect($candidate->cv_file)->toBeNull();
 });
 
-test('guests cannot view or apply to closed and expired public jobs', function () {
+test('guests cannot view or apply to closed public jobs', function () {
     $closedJob = JobPost::create([
         'title' => 'Closed Public Role',
         'quantity' => 1,
@@ -76,6 +80,12 @@ test('guests cannot view or apply to closed and expired public jobs', function (
         'status' => 'closed',
     ]);
 
+    $this->get(route('public.recruitment.show', $closedJob))->assertNotFound();
+    $this->get(route('public.recruitment.apply', $closedJob))->assertNotFound();
+    $this->post(route('public.recruitment.apply.store', $closedJob), [])->assertNotFound();
+});
+
+test('guests can still view and apply to open jobs past application deadline', function () {
     $expiredJob = JobPost::create([
         'title' => 'Expired Public Role',
         'quantity' => 1,
@@ -83,13 +93,8 @@ test('guests cannot view or apply to closed and expired public jobs', function (
         'status' => 'open',
     ]);
 
-    $this->get(route('public.recruitment.show', $closedJob))->assertNotFound();
-    $this->get(route('public.recruitment.apply', $closedJob))->assertNotFound();
-    $this->post(route('public.recruitment.apply.store', $closedJob), [])->assertNotFound();
-
-    $this->get(route('public.recruitment.show', $expiredJob))->assertNotFound();
-    $this->get(route('public.recruitment.apply', $expiredJob))->assertNotFound();
-    $this->post(route('public.recruitment.apply.store', $expiredJob), [])->assertNotFound();
+    $this->get(route('public.recruitment.show', $expiredJob))->assertOk();
+    $this->get(route('public.recruitment.apply', $expiredJob))->assertOk();
 });
 
 test('public application rejects duplicate phone and email', function () {

@@ -61,6 +61,7 @@ use App\Http\Controllers\Employee\EmployeeKPIController;
 use App\Http\Controllers\Manager\EarlyLeaveApprovalController;
 use App\Http\Controllers\Manager\LeaveApprovalController;
 use App\Http\Controllers\Manager\OvertimeApprovalController;
+use App\Http\Controllers\Manager\RecruitmentController as ManagerRecruitmentController;
 
 use App\Http\Controllers\Employee\AttendanceController as EmployeeAttendanceController;
 use App\Http\Controllers\Employee\OvertimeController as EmployeeOvertimeController;
@@ -232,6 +233,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/recruitment/job-posts/{jobPost}/edit', [JobPostController::class, 'edit'])->name('recruitment.job-posts.edit');
     Route::put('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'update'])->name('recruitment.job-posts.update');
     Route::patch('/recruitment/job-posts/{jobPost}/status', [JobPostController::class, 'updateStatus'])->name('recruitment.job-posts.update-status');
+    Route::patch('/recruitment/job-posts/{jobPost}/approve', [JobPostController::class, 'approve'])->name('recruitment.job-posts.approve');
+    Route::patch('/recruitment/job-posts/{jobPost}/reject', [JobPostController::class, 'reject'])->name('recruitment.job-posts.reject');
     Route::delete('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'destroy'])->name('recruitment.job-posts.destroy');
     Route::get('/recruitment/candidates', [CandidateController::class, 'index'])->name('recruitment.candidates');
     Route::get('/recruitment/interviewed-candidates', [CandidateController::class, 'interviewed'])->name('recruitment.interviewed-candidates');
@@ -279,6 +282,11 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::get('/early-leave/{earlyLeaveRequest}', [EarlyLeaveApprovalController::class, 'show'])->name('early-leave.show');
     Route::patch('/early-leave/{earlyLeaveRequest}/approve', [EarlyLeaveApprovalController::class, 'approve'])->name('early-leave.approve');
     Route::patch('/early-leave/{earlyLeaveRequest}/reject', [EarlyLeaveApprovalController::class, 'reject'])->name('early-leave.reject');
+
+    Route::get('/recruitment', [ManagerRecruitmentController::class, 'index'])->name('recruitment.index');
+    Route::get('/recruitment/job-posts/create', [ManagerRecruitmentController::class, 'createJobPost'])->name('recruitment.job-posts.create');
+    Route::post('/recruitment/job-posts', [ManagerRecruitmentController::class, 'storeJobPost'])->name('recruitment.job-posts.store');
+    Route::put('/recruitment/interviews/{interview}', [ManagerRecruitmentController::class, 'updateInterview'])->name('recruitment.interviews.update');
 });
 
 Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager'])

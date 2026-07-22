@@ -7,6 +7,7 @@ use App\Mail\CandidateInterviewInvitationMail;
 use App\Models\Candidate;
 use App\Models\Interview;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\UpdateInterviewEvaluationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -148,29 +149,9 @@ class InterviewController extends Controller
         return $managerId ?: null;
     }
 
-    public function update(Request $request, Interview $interview): RedirectResponse
+    public function update(UpdateInterviewEvaluationRequest $request, Interview $interview): RedirectResponse
     {
-        $validated = $request->validate([
-            'status' => ['required', 'in:scheduled,completed,cancelled,no_show'],
-            'result' => ['required', 'in:pending,passed,failed'],
-            'technical_score' => ['nullable', 'integer', 'between:0,10'],
-            'attitude_score' => ['nullable', 'integer', 'between:0,10'],
-            'culture_score' => ['nullable', 'integer', 'between:0,10'],
-            'overall_score' => ['nullable', 'integer', 'between:0,10'],
-            'recommendation' => ['nullable', 'in:hire,consider,reject'],
-            'strengths' => ['nullable', 'string'],
-            'weaknesses' => ['nullable', 'string'],
-            'note' => ['nullable', 'string'],
-        ], [
-            'status.required' => 'Trạng thái buổi phỏng vấn là bắt buộc.',
-            'status.in' => 'Trạng thái buổi phỏng vấn không hợp lệ.',
-            'result.required' => 'Kết quả phỏng vấn là bắt buộc.',
-            'result.in' => 'Kết quả phỏng vấn không hợp lệ.',
-            'technical_score.between' => 'Điểm kỹ thuật phải từ 0 đến 10.',
-            'attitude_score.between' => 'Điểm thái độ phải từ 0 đến 10.',
-            'culture_score.between' => 'Điểm phù hợp văn hóa phải từ 0 đến 10.',
-            'overall_score.between' => 'Điểm tổng quan phải từ 0 đến 10.',
-        ]);
+        $validated = $request->validated();
 
         DB::transaction(function () use ($interview, $validated) {
             $interview->update([
