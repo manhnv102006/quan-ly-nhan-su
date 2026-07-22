@@ -13,6 +13,8 @@ class EmployeeAttendanceService
 {
     public const GRACE_MINUTES = 5;
 
+    public const EARLY_CHECK_IN_MINUTES = 60;
+
     public function __construct(
         private readonly OvertimeSettlementService $overtimeSettlement,
     ) {
@@ -224,9 +226,11 @@ class EmployeeAttendanceService
 
     private function assertCanCheckIn(Carbon $now, Carbon $sessionStart, Carbon $sessionEnd): void
     {
-        if ($now->lt($sessionStart)) {
+        $earliestCheckIn = $this->earliestCheckInAt($sessionStart);
+
+        if ($now->lt($earliestCheckIn)) {
             throw ValidationException::withMessages([
-                'attendance' => 'Chưa đến giờ check-in. Ca làm bắt đầu lúc '.$sessionStart->format('H:i').'.',
+                'attendance' => 'Chưa đến giờ check-in. Có thể check-in từ lúc '.$earliestCheckIn->format('H:i').' (trước ca '.self::EARLY_CHECK_IN_MINUTES.' phút). Ca bắt đầu lúc '.$sessionStart->format('H:i').'.',
             ]);
         }
 
@@ -271,6 +275,7 @@ class EmployeeAttendanceService
         $checkIn = $attendance->{$checkInField};
         $checkOut = $attendance->{$checkOutField};
         $graceDeadline = $sessionStart->copy()->addMinutes(self::GRACE_MINUTES);
+        $earliestCheckIn = $this->earliestCheckInAt($sessionStart);
 
         $priorDone = $requiresPriorCheckout === null || filled($attendance->{$requiresPriorCheckout});
         $canCheckIn = false;
@@ -282,9 +287,13 @@ class EmployeeAttendanceService
             if (! $priorDone) {
                 $statusMessage = 'Hoàn thành buổi trước để check-in';
                 $statusTone = 'waiting';
-            } elseif ($now->lt($sessionStart)) {
-                $statusMessage = 'Check-in mở lúc '.$sessionStart->format('H:i');
+            } elseif ($now->lt($earliestCheckIn)) {
+                $statusMessage = 'Check-in mở lúc '.$earliestCheckIn->format('H:i').' (trước ca '.self::EARLY_CHECK_IN_MINUTES.' phút)';
                 $statusTone = 'upcoming';
+            } elseif ($now->lt($sessionStart)) {
+                $canCheckIn = true;
+                $statusMessage = 'Có thể check-in sớm — ca bắt đầu lúc '.$sessionStart->format('H:i');
+                $statusTone = 'ready';
             } elseif ($now->gt($sessionEnd)) {
                 $statusMessage = 'Đã qua giờ ca làm';
                 $statusTone = 'missed';
@@ -333,5 +342,10 @@ class EmployeeAttendanceService
     private function graceLabel(): string
     {
         return self::GRACE_MINUTES.' phút';
+    }
+
+    private function earliestCheckInAt(Carbon $sessionStart): Carbon
+    {
+        return $sessionStart->copy()->subMinutes(self::EARLY_CHECK_IN_MINUTES);
     }
 }
