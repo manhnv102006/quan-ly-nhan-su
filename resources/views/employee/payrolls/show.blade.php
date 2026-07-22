@@ -247,9 +247,17 @@
                             <span class="text-rose-500">Bảo hiểm (BHXH+BHYT+BHTN)</span>
                             <span class="font-semibold text-rose-600">-{{ number_format($payslip['insurance'], 0, ',', '.') }}đ</span>
                         </div>
-                        <div class="flex items-center justify-between sm:col-span-2">
+                        <div class="flex items-center justify-between">
                             <span class="text-rose-500">Thuế thu nhập cá nhân</span>
                             <span class="font-semibold text-rose-600">-{{ number_format($payslip['pit'], 0, ',', '.') }}đ</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-rose-500">Trừ tạm ứng lương (kỳ này)</span>
+                            <span class="font-semibold text-rose-600">-{{ number_format($payslip['advance_deduction'], 0, ',', '.') }}đ</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-500">Dư nợ tạm ứng (còn lại)</span>
+                            <span class="font-semibold text-slate-700">{{ number_format($payslip['advance_outstanding'], 0, ',', '.') }}đ</span>
                         </div>
                     </div>
                 </div>
