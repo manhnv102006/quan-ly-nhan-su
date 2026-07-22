@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StorePositionRequest;
 use App\Models\Position;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,23 +32,9 @@ class PositionController extends Controller
         return view('admin.positions.create');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StorePositionRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'position_name' => 'required|string|max:255|unique:positions,position_name',
-            'base_salary' => 'required|numeric|min:0',
-            'allowance' => 'nullable|numeric|min:0',
-            'description' => 'nullable|string',
-            'status' => 'required|in:active,inactive',
-        ], [
-            'position_name.required' => 'Tên chức vụ là bắt buộc',
-            'position_name.unique' => 'Tên chức vụ đã tồn tại',
-            'base_salary.required' => 'Lương cơ bản là bắt buộc',
-            'base_salary.numeric' => 'Lương cơ bản phải là số',
-            'status.required' => 'Trạng thái là bắt buộc',
-        ]);
-
-        Position::create($validated);
+        Position::create($request->validated());
 
         return redirect()
             ->route('admin.positions')
@@ -71,13 +58,23 @@ class PositionController extends Controller
     public function update(Request $request, Position $position): RedirectResponse
     {
         $validated = $request->validate([
-            'position_name' => 'required|string|max:255|unique:positions,position_name,' . $position->id,
+            'position_name' => [
+                'required',
+                'string',
+                'min:2',
+                'max:30',
+                'regex:/^[\p{L}\s]+$/u',
+                'unique:positions,position_name,'.$position->id,
+            ],
             'base_salary' => 'required|numeric|min:0',
             'allowance' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
         ], [
             'position_name.required' => 'Tên chức vụ là bắt buộc',
+            'position_name.min' => 'Tên chức vụ phải có ít nhất 2 ký tự.',
+            'position_name.max' => 'Tên chức vụ không được vượt quá 30 ký tự.',
+            'position_name.regex' => 'Tên chức vụ chỉ được chứa chữ cái, không được nhập số hoặc ký tự đặc biệt.',
             'position_name.unique' => 'Tên chức vụ đã tồn tại',
             'base_salary.required' => 'Lương cơ bản là bắt buộc',
             'base_salary.numeric' => 'Lương cơ bản phải là số',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\JobPost;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +17,14 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
-        return view('auth.login');
+        $publicJobPosts = JobPost::query()
+            ->publiclyVisible()
+            ->with('department')
+            ->latest()
+            ->limit(3)
+            ->get();
+
+        return view('auth.login', compact('publicJobPosts'));
     }
 
     /**

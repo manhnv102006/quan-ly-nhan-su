@@ -22,13 +22,6 @@
             </div>
         </div>
 
-        @if(session('success'))
-            <div class="bg-emerald-50 text-emerald-600 p-4 rounded-xl border border-emerald-100 flex items-center gap-3">
-                <i class="bi bi-check-circle-fill"></i>
-                {{ session('success') }}
-            </div>
-        @endif
-
         {{-- Table --}}
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div class="overflow-x-auto">

@@ -16,25 +16,6 @@
             </a>
         </div>
 
-        @if (session('success'))
-            <div id="success-toast"
-                 class="flex items-center gap-3 bg-white border border-emerald-200 shadow-sm rounded-2xl px-5 py-4">
-                <div class="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                </div>
-                <p class="text-sm font-medium text-emerald-700">{{ session('success') }}</p>
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div id="error-toast"
-                 class="flex items-center gap-3 bg-white border border-red-200 shadow-sm rounded-2xl px-5 py-4">
-                <p class="text-sm font-medium text-red-700">{{ session('error') }}</p>
-            </div>
-        @endif
-
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div class="px-6 py-5 border-b border-slate-100">
                 <form action="{{ route('admin.employees.trash') }}" method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -279,16 +260,6 @@
 
             forceDeleteModal?.addEventListener('click', function (e) {
                 if (e.target === forceDeleteModal) closeForceDeleteModal();
-            });
-
-            ['success-toast', 'error-toast'].forEach(function (id) {
-                const toast = document.getElementById(id);
-                if (!toast) return;
-                setTimeout(function () {
-                    toast.style.transition = 'opacity 0.3s ease';
-                    toast.style.opacity = '0';
-                    setTimeout(function () { toast.remove(); }, 300);
-                }, 4000);
             });
         })();
     </script>

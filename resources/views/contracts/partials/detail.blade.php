@@ -52,7 +52,7 @@
                 <div class="space-y-2">
                     @foreach($allowanceBreakdown as $item)
                         <div class="flex justify-between text-sm">
-                            <span class="text-slate-600">{{ $item['name'] }}</span>
+                            <span class="text-slate-600">{{ $item['label'] }}</span>
                             <span class="font-semibold text-slate-800">{{ number_format($item['amount'], 0, ',', '.') }}₫</span>
                         </div>
                     @endforeach
