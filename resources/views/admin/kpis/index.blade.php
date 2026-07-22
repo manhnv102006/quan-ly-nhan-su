@@ -217,6 +217,12 @@
 
                                 <div class="flex justify-center gap-1">
 
+                                    <a href="{{ route('admin.kpis.show', $kpi) }}"
+                                        class="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-100 text-sky-700 transition hover:bg-sky-200"
+                                        title="Xem chi tiết">
+                                        👁
+                                    </a>
+
                                     <a href="{{ route('admin.kpis.edit', $kpi->id) }}"
                                         class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-200 transition"
                                         title="Sửa">

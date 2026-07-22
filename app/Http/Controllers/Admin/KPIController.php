@@ -89,9 +89,11 @@ class KPIController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(KPI $kpi)
     {
-        //
+        $kpi->load(['departments', 'tasks'])->loadCount('assignments');
+
+        return view('admin.kpis.show', compact('kpi'));
     }
 
     /**
