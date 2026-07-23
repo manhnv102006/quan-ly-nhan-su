@@ -45,7 +45,7 @@ class PayrollService
 
         // 2. Lấy danh sách nhân viên đang hoạt động (lọc theo phòng ban nếu có)
         $employeesQuery = Employee::with(['position', 'contracts' => function ($query) {
-            $query->where('status', 'active')->with('contractType');
+            $query->where('status', 'active')->with(['contractType', 'contractAllowances.allowanceType']);
         }])->where('status', 'active');
 
         if ($departmentId) {
@@ -99,18 +99,6 @@ class PayrollService
                 $contractSalary = $activeContract->salary;
             } elseif ($employee->position) {
                 $contractSalary = $employee->position->base_salary;
-            }
-
-            // B. Phụ cấp bóc tách: Ăn trưa, Điện thoại, Xăng xe, Chức vụ
-            $allowanceMeal = 0;
-            $allowancePhone = 50000; // Mặc định 50k
-            $allowanceFuel = 100000;  // Mặc định 100k
-            $allowancePosition = (float) ($employee->position?->allowance ?? 0);
-
-            if ($activeContract) {
-                $allowancePhone = $activeContract->allowance_phone > 0 ? (float) $activeContract->allowance_phone : 50000;
-                $allowanceFuel = $activeContract->allowance_fuel > 0 ? (float) $activeContract->allowance_fuel : 100000;
-                $allowancePosition = $activeContract->allowance_position > 0 ? (float) $activeContract->allowance_position : $allowancePosition;
             }
 
             // C. Chấm công: Đếm ngày đi làm thực tế (present + late)
@@ -178,38 +166,26 @@ class PayrollService
             // Đảm bảo không vượt quá ngày công chuẩn
             $actualWorkingDays = min($actualWorkingDays, $standardWorkingDays);
 
-            // Phụ cấp ăn trưa mặc định là 30.000 VND / ngày thực tế đi làm (trừ khi có quy định khác trong hợp đồng)
-            $mealRate = 30000;
-            if ($activeContract && $activeContract->allowance_meal > 0) {
-                $mealRate = $standardWorkingDays > 0 ? ($activeContract->allowance_meal / $standardWorkingDays) : 30000;
-            }
-            $allowanceMeal = round($mealRate * $presentDays, 0);
-
-            // Hợp đồng thực tập hoặc không đi làm ngày nào: không được hưởng phụ cấp
+            // B. Phụ cấp: tính động theo các khoản phụ cấp đã lưu trong hợp đồng.
+            // Không đi làm ngày nào hoặc HĐ thực tập => không được hưởng phụ cấp.
             $isInternship = $activeContract?->contractType?->isInternship() ?? false;
             $noAllowance = $presentDays == 0 || $isInternship;
 
-            if ($noAllowance) {
-                $allowanceMeal = 0;
-                $allowancePhone = 0;
-                $allowanceFuel = 0;
-                $allowancePosition = 0;
-            }
+            $allowanceResult = $this->buildAllowanceSnapshot(
+                $activeContract,
+                $noAllowance,
+                $presentDays,
+                $actualWorkingDays,
+                $standardWorkingDays
+            );
 
-            // Phụ cấp cố định 1.500.000đ cho mọi nhân viên (dùng chung hằng số với hợp đồng).
-            $allowance = $noAllowance ? 0 : ContractService::FIXED_ALLOWANCE;
-
-            // Pro-rata các khoản phụ cấp cố định theo ngày làm việc thực tế
-            if (!$noAllowance && $standardWorkingDays > 0) {
-                $prorataRatio = $actualWorkingDays / $standardWorkingDays;
-                $allowancePhone = round($allowancePhone * $prorataRatio, 0);
-                $allowanceFuel = round($allowanceFuel * $prorataRatio, 0);
-                $allowancePosition = round($allowancePosition * $prorataRatio, 0);
-                $allowance = round($allowance * $prorataRatio, 0);
-            }
-
-            // Tổng phụ cấp thực nhận (cố định + ăn trưa + điện thoại + xăng xe + chức vụ)
-            $totalAllowance = $allowance + $allowanceMeal + $allowancePhone + $allowanceFuel + $allowancePosition;
+            $allowanceSnapshots = $allowanceResult['snapshots'];
+            $allowance = $allowanceResult['columns']['allowance'];
+            $allowanceMeal = $allowanceResult['columns']['allowance_meal'];
+            $allowancePhone = $allowanceResult['columns']['allowance_phone'];
+            $allowanceFuel = $allowanceResult['columns']['allowance_fuel'];
+            $allowancePosition = $allowanceResult['columns']['allowance_position'];
+            $totalAllowance = $allowanceResult['total'];
 
             // F. Lương cơ bản PRO-RATA theo ngày công thực tế
             $basicSalary = $standardWorkingDays > 0
@@ -288,7 +264,7 @@ class PayrollService
             }
 
             // K. Tạo bản ghi bảng lương
-            Payroll::create([
+            $payroll = Payroll::create([
                 'employee_id' => $employee->id,
                 'payroll_period_id' => $period->id,
                 'generated_by' => Auth::id() ?? 1, // Fallback cho seeder hoặc chạy CLI
@@ -309,6 +285,12 @@ class PayrollService
                 'total_salary' => $totalSalary,
                 'status' => 'calculated',
             ]);
+
+            // Chốt (snapshot) từng khoản phụ cấp để không bị ảnh hưởng khi loại phụ cấp
+            // hoặc hợp đồng thay đổi về sau.
+            foreach ($allowanceSnapshots as $snapshot) {
+                $payroll->payrollAllowances()->create($snapshot);
+            }
 
         }
 
@@ -349,6 +331,74 @@ class PayrollService
 
         // Gọi lại hàm tính lương ban đầu
         return $this->calculatePayrollForPeriod($period, $departmentId);
+    }
+
+    /**
+     * Tính các khoản phụ cấp cho kỳ lương dựa hoàn toàn trên phụ cấp đã lưu trong hợp đồng.
+     * Trả về danh sách snapshot (để chốt lịch sử), các cột legacy (tương thích ngược) và tổng.
+     *
+     * @return array{snapshots: array<int, array<string, mixed>>, columns: array<string, float>, total: float}
+     */
+    private function buildAllowanceSnapshot(
+        ?\App\Models\Contract $contract,
+        bool $noAllowance,
+        float $presentDays,
+        float $actualWorkingDays,
+        int $standardWorkingDays
+    ): array {
+        $columns = [
+            'allowance' => 0.0,
+            'allowance_meal' => 0.0,
+            'allowance_phone' => 0.0,
+            'allowance_fuel' => 0.0,
+            'allowance_position' => 0.0,
+        ];
+        $snapshots = [];
+
+        if (! $contract || $noAllowance) {
+            return ['snapshots' => $snapshots, 'columns' => $columns, 'total' => 0.0];
+        }
+
+        $contract->loadMissing('contractAllowances.allowanceType');
+
+        foreach ($contract->contractAllowances as $item) {
+            $base = (float) $item->amount;
+            if ($base <= 0) {
+                continue;
+            }
+
+            $type = $item->allowanceType;
+            $calcType = $type?->calculation_type ?? \App\Models\AllowanceType::CALC_PRORATA;
+
+            $amount = match ($calcType) {
+                \App\Models\AllowanceType::CALC_FIXED => $base,
+                \App\Models\AllowanceType::CALC_PER_PRESENT_DAY => $standardWorkingDays > 0
+                    ? round($base * ($presentDays / $standardWorkingDays), 0)
+                    : 0.0,
+                default => $standardWorkingDays > 0
+                    ? round($base * ($actualWorkingDays / $standardWorkingDays), 0)
+                    : $base,
+            };
+
+            if ($amount <= 0) {
+                continue;
+            }
+
+            $code = $type?->code;
+            $column = $code ? (ContractAllowanceService::COLUMN_MAP[$code] ?? 'allowance') : 'allowance';
+            $columns[$column] += $amount;
+
+            $snapshots[] = [
+                'allowance_type_id' => $type?->id,
+                'name' => $type?->name ?? 'Phụ cấp',
+                'code' => $code,
+                'amount' => $amount,
+            ];
+        }
+
+        $total = (float) array_sum(array_column($snapshots, 'amount'));
+
+        return ['snapshots' => $snapshots, 'columns' => $columns, 'total' => $total];
     }
 
     /**
@@ -428,11 +478,7 @@ class PayrollService
         $overtimePay = round($overtimePay, 0);
 
         // Tính lại tổng lương thực lĩnh (cộng đủ các khoản phụ cấp đã lưu)
-        $totalAllowance = (float) $payroll->allowance
-            + (float) $payroll->allowance_meal
-            + (float) $payroll->allowance_phone
-            + (float) $payroll->allowance_fuel
-            + (float) $payroll->allowance_position;
+        $totalAllowance = $payroll->totalAllowance();
 
         $totalSalary = (float) $payroll->basic_salary
             + $totalAllowance

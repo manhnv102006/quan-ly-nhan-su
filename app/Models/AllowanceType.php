@@ -13,10 +13,27 @@ class AllowanceType extends Model
     public const CODE_POSITION = 'position';
     public const CODE_FIXED = 'fixed';
 
+    /**
+     * Cách tính phụ cấp khi lên bảng lương.
+     * - prorata: chia theo số ngày công thực tế / ngày công chuẩn.
+     * - per_present_day: chia theo số ngày đi làm thực tế / ngày công chuẩn.
+     * - fixed: giữ nguyên số tiền, không pro-rata theo ngày công.
+     */
+    public const CALC_PRORATA = 'prorata';
+    public const CALC_PER_PRESENT_DAY = 'per_present_day';
+    public const CALC_FIXED = 'fixed';
+
+    public const CALC_LABELS = [
+        self::CALC_PRORATA => 'Chia theo ngày công thực tế',
+        self::CALC_PER_PRESENT_DAY => 'Chia theo ngày đi làm thực tế',
+        self::CALC_FIXED => 'Cố định (không chia theo ngày công)',
+    ];
+
     protected $fillable = [
         'name',
         'code',
         'default_amount',
+        'calculation_type',
         'description',
         'calculation_note',
         'is_system',

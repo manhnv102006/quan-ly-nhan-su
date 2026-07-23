@@ -24,7 +24,7 @@ class PayrollController extends Controller
 
     public function index(Request $request): View
     {
-        $query = Payroll::query()->with(['employee', 'payrollPeriod.approver', 'payrollPeriod.payer']);
+        $query = Payroll::query()->with(['employee', 'payrollPeriod.approver', 'payrollPeriod.payer', 'payrollAllowances']);
 
         // Tìm kiếm theo tên nhân viên
         if ($request->filled('search')) {
@@ -52,7 +52,8 @@ class PayrollController extends Controller
             'employee.insurance',
             'employee.taxProfile',
             'payrollPeriod.approver',
-            'payrollPeriod.payer'
+            'payrollPeriod.payer',
+            'payrollAllowances',
         ]);
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.payrolls.pdf', compact('payroll'));

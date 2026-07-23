@@ -74,6 +74,60 @@ class Payroll extends Model
         return $this->hasMany(SalaryAdvanceDeduction::class);
     }
 
+    public function payrollAllowances(): HasMany
+    {
+        return $this->hasMany(PayrollAllowance::class);
+    }
+
+    /**
+     * Danh sách phụ cấp đã "chốt" (snapshot) của kỳ lương.
+     * Ưu tiên bản snapshot; nếu chưa có (dữ liệu cũ) thì suy ra từ các cột phụ cấp legacy.
+     *
+     * @return \Illuminate\Support\Collection<int, array{label: string, code: ?string, amount: float}>
+     */
+    public function allowanceBreakdown(): \Illuminate\Support\Collection
+    {
+        $snapshots = $this->relationLoaded('payrollAllowances')
+            ? $this->payrollAllowances
+            : $this->payrollAllowances()->get();
+
+        if ($snapshots->isNotEmpty()) {
+            return $snapshots
+                ->map(fn (PayrollAllowance $item) => [
+                    'label' => $item->name,
+                    'code' => $item->code,
+                    'amount' => (float) $item->amount,
+                ])
+                ->filter(fn (array $row) => $row['amount'] > 0)
+                ->values();
+        }
+
+        $legacy = [
+            'Phụ cấp cố định' => (float) $this->allowance,
+            'Ăn trưa' => (float) ($this->allowance_meal ?? 0),
+            'Điện thoại' => (float) ($this->allowance_phone ?? 0),
+            'Xăng xe' => (float) ($this->allowance_fuel ?? 0),
+            'Chức vụ' => (float) ($this->allowance_position ?? 0),
+        ];
+
+        return collect($legacy)
+            ->map(fn (float $amount, string $label) => [
+                'label' => $label,
+                'code' => null,
+                'amount' => $amount,
+            ])
+            ->filter(fn (array $row) => $row['amount'] > 0)
+            ->values();
+    }
+
+    /**
+     * Tổng phụ cấp thực nhận của kỳ lương (cộng tất cả các khoản phụ cấp).
+     */
+    public function totalAllowance(): float
+    {
+        return (float) $this->allowanceBreakdown()->sum('amount');
+    }
+
     public function advanceDeductionAmount(): float
     {
         if ($this->relationLoaded('salaryAdvanceDeductions')) {
@@ -224,6 +278,14 @@ class Payroll extends Model
             'allowance_phone' => $fmt((float) $this->allowance_phone),
             'allowance_fuel' => $fmt((float) $this->allowance_fuel),
             'allowance_position' => $fmt((float) $this->allowance_position),
+            'allowance_total' => $fmt($this->totalAllowance()),
+            'allowances' => $this->allowanceBreakdown()
+                ->map(fn (array $row) => [
+                    'label' => $row['label'],
+                    'amount' => $fmt($row['amount']),
+                ])
+                ->values()
+                ->all(),
             'bonus' => $fmt((float) $this->bonus),
             'overtime_hours' => (float) $this->overtime_hours,
             'overtime_pay' => $fmt((float) $this->overtime_pay),

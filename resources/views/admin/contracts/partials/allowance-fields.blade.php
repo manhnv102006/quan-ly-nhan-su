@@ -1,13 +1,12 @@
 @php
     $allowanceValues = $allowanceValues ?? [];
-    $positionsData = ($positions ?? collect())->mapWithKeys(fn ($pos) => [$pos->id => (int) $pos->allowance])->toArray();
 @endphp
 
 <div class="mt-2 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 sm:p-5">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
             <h4 class="text-sm font-bold text-slate-800">Phụ cấp theo hợp đồng</h4>
-            <p class="text-xs text-slate-500">Chọn từ danh mục loại phụ cấp — mặc định tự điền, có thể điều chỉnh.</p>
+            <p class="text-xs text-slate-500">Nhập số tiền cho từng loại phụ cấp áp dụng. Để trống nghĩa là không có khoản phụ cấp đó.</p>
         </div>
         <a href="{{ route('admin.allowance-types.index') }}" class="text-xs font-semibold text-violet-600 hover:text-violet-700">
             Quản lý loại phụ cấp →
@@ -17,9 +16,7 @@
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         @forelse($allowanceTypes as $type)
             @php
-                $value = old('allowances.'.$type->id, $allowanceValues[$type->id] ?? $type->default_amount);
-                $isFixed = $type->code === \App\Models\AllowanceType::CODE_FIXED;
-                $isPosition = $type->code === \App\Models\AllowanceType::CODE_POSITION;
+                $value = old('allowances.'.$type->id, $allowanceValues[$type->id] ?? null);
             @endphp
             <div>
                 <label for="allowance_{{ $type->id }}" class="admin-label">
@@ -32,12 +29,11 @@
                     type="text"
                     id="allowance_{{ $type->id }}"
                     name="allowances[{{ $type->id }}]"
-                    class="admin-field allowance-input {{ $isFixed ? 'bg-slate-50 cursor-not-allowed' : '' }}"
+                    class="admin-field allowance-input"
                     inputmode="numeric"
                     data-allowance-code="{{ $type->code }}"
-                    data-default="{{ (int) $type->default_amount }}"
+                    placeholder="Mặc định: {{ number_format((float) $type->default_amount, 0, ',', '.') }} (để trống nếu không áp dụng)"
                     value="{{ is_numeric($value) ? number_format((float) $value, 0, ',', '.') : $value }}"
-                    {{ $isFixed ? 'readonly' : '' }}
                 >
                 @error('allowances.'.$type->id)<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
             </div>
@@ -52,51 +48,18 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const typeSelect = document.querySelector('[data-contract-type-select]');
-            const positionSelect = document.querySelector('[data-position-select]');
             const allowanceInputs = document.querySelectorAll('.allowance-input');
-            const positions = @json($positionsData);
 
             function formatMoney(value) {
                 const digits = (value || '').toString().replace(/\D/g, '');
-                if (digits === '') return '0';
+                if (digits === '') return '';
                 return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
             }
 
-            function syncFixedAllowance() {
-                const fixedInput = document.querySelector('[data-allowance-code="fixed"]');
-                if (!fixedInput || !typeSelect) return;
-                const opt = typeSelect.selectedOptions[0];
-                const isInternship = opt && opt.dataset.internship === '1';
-                fixedInput.value = isInternship ? '0' : formatMoney('1500000');
-
-                allowanceInputs.forEach(function (input) {
-                    if (input.dataset.allowanceCode === 'fixed') return;
-                    input.readOnly = isInternship;
-                    if (isInternship) {
-                        input.value = '0';
-                        input.classList.add('bg-slate-50');
-                    } else if (input.dataset.allowanceCode !== 'fixed') {
-                        input.readOnly = false;
-                        input.classList.remove('bg-slate-50');
-                    }
-                });
-            }
-
-            function syncPositionAllowance() {
-                const positionInput = document.querySelector('[data-allowance-code="position"]');
-                if (!positionInput || !positionSelect) return;
-                const posId = positionSelect.value;
-                if (!posId || positionInput.dataset.userEdited === '1') return;
-                const amount = positions[posId] ?? positionInput.dataset.default ?? 0;
-                positionInput.value = formatMoney(String(amount));
-            }
-
             allowanceInputs.forEach(function (input) {
+                input.value = formatMoney(input.value);
+
                 input.addEventListener('input', function () {
-                    if (this.dataset.allowanceCode === 'position') {
-                        this.dataset.userEdited = '1';
-                    }
                     this.value = formatMoney(this.value);
                 });
 
@@ -107,20 +70,6 @@
                     });
                 }
             });
-
-            if (typeSelect) {
-                typeSelect.addEventListener('change', syncFixedAllowance);
-                syncFixedAllowance();
-            }
-
-            if (positionSelect) {
-                positionSelect.addEventListener('change', function () {
-                    const positionInput = document.querySelector('[data-allowance-code="position"]');
-                    if (positionInput) positionInput.dataset.userEdited = '0';
-                    syncPositionAllowance();
-                });
-                syncPositionAllowance();
-            }
         });
     </script>
 @endpush
