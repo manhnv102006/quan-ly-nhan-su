@@ -46,6 +46,48 @@ class OvertimeApprovalService
         );
     }
 
+    /**
+     * @param  iterable<OvertimeRequest>  $overtimeRequests
+     * @return array{approved: int, failed: int}
+     */
+    public function bulkApprove(iterable $overtimeRequests, int $actorId): array
+    {
+        $approved = 0;
+        $failed = 0;
+
+        foreach ($overtimeRequests as $overtimeRequest) {
+            try {
+                $this->approve($overtimeRequest, $actorId);
+                $approved++;
+            } catch (ValidationException) {
+                $failed++;
+            }
+        }
+
+        return compact('approved', 'failed');
+    }
+
+    /**
+     * @param  iterable<OvertimeRequest>  $overtimeRequests
+     * @return array{rejected: int, failed: int}
+     */
+    public function bulkReject(iterable $overtimeRequests, int $actorId, string $reason): array
+    {
+        $rejected = 0;
+        $failed = 0;
+
+        foreach ($overtimeRequests as $overtimeRequest) {
+            try {
+                $this->reject($overtimeRequest, $actorId, $reason);
+                $rejected++;
+            } catch (ValidationException) {
+                $failed++;
+            }
+        }
+
+        return compact('rejected', 'failed');
+    }
+
     protected function assertPending(OvertimeRequest $overtimeRequest): void
     {
         if (! $overtimeRequest->isPending()) {

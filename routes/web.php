@@ -276,6 +276,8 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::post('/kpis/{assignment}/assign', [ManagerKPIController::class, 'storeAssign'])->name('kpis.store_assign');
 
     Route::get('/overtime-requests', [OvertimeApprovalController::class, 'index'])->name('overtime-requests.index');
+    Route::patch('/overtime-requests/bulk-approve', [OvertimeApprovalController::class, 'bulkApprove'])->name('overtime-requests.bulk-approve');
+    Route::patch('/overtime-requests/bulk-reject', [OvertimeApprovalController::class, 'bulkReject'])->name('overtime-requests.bulk-reject');
     Route::get('/overtime-requests/{overtimeRequest}', [OvertimeApprovalController::class, 'show'])->name('overtime-requests.show');
     Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeApprovalController::class, 'approve'])->name('overtime-requests.approve');
     Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeApprovalController::class, 'reject'])->name('overtime-requests.reject');
@@ -296,6 +298,8 @@ Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager']
     ->name('manager.leave-requests.')
     ->group(function () {
         Route::get('/', [LeaveApprovalController::class, 'index'])->name('index');
+        Route::patch('/bulk-approve', [LeaveApprovalController::class, 'bulkApprove'])->name('bulk-approve');
+        Route::patch('/bulk-reject', [LeaveApprovalController::class, 'bulkReject'])->name('bulk-reject');
         Route::patch('/{leaveRequest}/approve', [LeaveApprovalController::class, 'approve'])->name('approve');
         Route::patch('/{leaveRequest}/reject', [LeaveApprovalController::class, 'reject'])->name('reject');
         Route::get('/{leaveRequest}', [LeaveApprovalController::class, 'show'])->name('show');

@@ -60,8 +60,12 @@ class TaxService
         return (float) ($policy?->dependent_deduction_default ?? TaxDependent::DEFAULT_MONTHLY_DEDUCTION);
     }
 
-    public function activeDependentsCount(Employee $employee, ?Carbon $onDate = null): int
+    public function activeDependentsCount(?Employee $employee, ?Carbon $onDate = null): int
     {
+        if (! $employee) {
+            return 0;
+        }
+
         $date = $onDate ?? now();
 
         return TaxDependent::query()
@@ -75,8 +79,12 @@ class TaxService
             ->count();
     }
 
-    public function dependentDeductionTotal(Employee $employee, ?Carbon $onDate = null): float
+    public function dependentDeductionTotal(?Employee $employee, ?Carbon $onDate = null): float
     {
+        if (! $employee) {
+            return 0;
+        }
+
         $date = $onDate ?? now();
 
         return (float) TaxDependent::query()
@@ -90,8 +98,12 @@ class TaxService
             ->sum('monthly_deduction');
     }
 
-    public function insuranceEmployeeAmount(Employee $employee, float $grossIncome): float
+    public function insuranceEmployeeAmount(?Employee $employee, float $grossIncome): float
     {
+        if (! $employee) {
+            return round($grossIncome * 0.105, 0);
+        }
+
         $profile = $employee->insurance;
 
         if ($profile && $profile->isContributing()) {
@@ -104,6 +116,7 @@ class TaxService
     /**
      * @return array<string, float|int|TaxPolicy>
      */
+
     public function calculateEmployeeMonthly(
         Employee $employee,
         float $grossIncome,
@@ -113,6 +126,12 @@ class TaxService
         $date = $onDate ?? now();
         $policy = $policy ?? $this->policyForDate($date);
         $taxProfile = $employee->taxProfile;
+
+    public function calculateEmployeeMonthly(?Employee $employee, float $grossIncome, ?Carbon $onDate = null): array
+    {
+        $date = $onDate ?? now();
+        $taxProfile = $employee?->taxProfile;
+
         $insurance = $this->insuranceEmployeeAmount($employee, $grossIncome);
         $personal = $this->personalDeductionForPolicy($taxProfile, $policy);
         $dependentDeduction = $this->dependentDeductionTotal($employee, $date);
@@ -242,6 +261,7 @@ class TaxService
     public function calculateForPeriod(PayrollPeriod $period): Collection
     {
         $payrolls = Payroll::query()
+
             ->with([
                 'payrollTaxSnapshot',
                 'employee.taxProfile',
@@ -249,6 +269,10 @@ class TaxService
                 'employee.taxDependents',
                 'employee.department',
             ])
+
+            ->with(['employee.taxProfile', 'employee.insurance', 'employee.taxDependents'])
+            ->whereHas('employee')
+
             ->where('payroll_period_id', $period->id)
             ->orderByDesc('total_salary')
             ->get();
@@ -258,8 +282,13 @@ class TaxService
         return $payrolls->map(function (Payroll $payroll) use ($periodDate) {
             $employee = $payroll->employee;
 
+
             if ($payroll->payrollTaxSnapshot && $employee) {
                 return $payroll->payrollTaxSnapshot->toTaxRow($employee, $payroll);
+
+            if (! $employee) {
+                return null;
+
             }
 
             $calc = $this->calculateEmployeeMonthly($employee, (float) $payroll->total_salary, $periodDate);
@@ -270,7 +299,7 @@ class TaxService
                 'employee' => $employee,
                 'from_snapshot' => false,
             ]);
-        });
+        })->filter()->values();
     }
 
     /**
