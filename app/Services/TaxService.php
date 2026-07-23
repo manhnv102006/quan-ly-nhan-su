@@ -116,20 +116,14 @@ class TaxService
     /**
      * @return array<string, float|int|TaxPolicy>
      */
-
     public function calculateEmployeeMonthly(
-        Employee $employee,
+        ?Employee $employee,
         float $grossIncome,
         ?Carbon $onDate = null,
         ?TaxPolicy $policy = null,
     ): array {
         $date = $onDate ?? now();
         $policy = $policy ?? $this->policyForDate($date);
-        $taxProfile = $employee->taxProfile;
-
-    public function calculateEmployeeMonthly(?Employee $employee, float $grossIncome, ?Carbon $onDate = null): array
-    {
-        $date = $onDate ?? now();
         $taxProfile = $employee?->taxProfile;
 
         $insurance = $this->insuranceEmployeeAmount($employee, $grossIncome);
@@ -261,7 +255,6 @@ class TaxService
     public function calculateForPeriod(PayrollPeriod $period): Collection
     {
         $payrolls = Payroll::query()
-
             ->with([
                 'payrollTaxSnapshot',
                 'employee.taxProfile',
@@ -269,10 +262,7 @@ class TaxService
                 'employee.taxDependents',
                 'employee.department',
             ])
-
-            ->with(['employee.taxProfile', 'employee.insurance', 'employee.taxDependents'])
             ->whereHas('employee')
-
             ->where('payroll_period_id', $period->id)
             ->orderByDesc('total_salary')
             ->get();
@@ -282,13 +272,12 @@ class TaxService
         return $payrolls->map(function (Payroll $payroll) use ($periodDate) {
             $employee = $payroll->employee;
 
-
-            if ($payroll->payrollTaxSnapshot && $employee) {
-                return $payroll->payrollTaxSnapshot->toTaxRow($employee, $payroll);
-
             if (! $employee) {
                 return null;
+            }
 
+            if ($payroll->payrollTaxSnapshot) {
+                return $payroll->payrollTaxSnapshot->toTaxRow($employee, $payroll);
             }
 
             $calc = $this->calculateEmployeeMonthly($employee, (float) $payroll->total_salary, $periodDate);
