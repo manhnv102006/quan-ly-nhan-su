@@ -1,7 +1,5 @@
 <x-accountant-layout title="Báo cáo" subtitle="Trung tâm báo cáo tài chính & nhân sự">
-    @include('accountant.reports.partials.sub-nav', ['active' => 'hub'])
-
-    <div class="accountant-page">
+<div class="accountant-page">
         <section class="accountant-hero !mb-4">
             <div class="relative max-w-2xl">
                 <h2 class="text-2xl font-bold sm:text-3xl">Trung tâm báo cáo</h2>

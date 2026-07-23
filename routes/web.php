@@ -276,6 +276,8 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::post('/kpis/{assignment}/assign', [ManagerKPIController::class, 'storeAssign'])->name('kpis.store_assign');
 
     Route::get('/overtime-requests', [OvertimeApprovalController::class, 'index'])->name('overtime-requests.index');
+    Route::patch('/overtime-requests/bulk-approve', [OvertimeApprovalController::class, 'bulkApprove'])->name('overtime-requests.bulk-approve');
+    Route::patch('/overtime-requests/bulk-reject', [OvertimeApprovalController::class, 'bulkReject'])->name('overtime-requests.bulk-reject');
     Route::get('/overtime-requests/{overtimeRequest}', [OvertimeApprovalController::class, 'show'])->name('overtime-requests.show');
     Route::patch('/overtime-requests/{overtimeRequest}/approve', [OvertimeApprovalController::class, 'approve'])->name('overtime-requests.approve');
     Route::patch('/overtime-requests/{overtimeRequest}/reject', [OvertimeApprovalController::class, 'reject'])->name('overtime-requests.reject');
@@ -296,6 +298,8 @@ Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager']
     ->name('manager.leave-requests.')
     ->group(function () {
         Route::get('/', [LeaveApprovalController::class, 'index'])->name('index');
+        Route::patch('/bulk-approve', [LeaveApprovalController::class, 'bulkApprove'])->name('bulk-approve');
+        Route::patch('/bulk-reject', [LeaveApprovalController::class, 'bulkReject'])->name('bulk-reject');
         Route::patch('/{leaveRequest}/approve', [LeaveApprovalController::class, 'approve'])->name('approve');
         Route::patch('/{leaveRequest}/reject', [LeaveApprovalController::class, 'reject'])->name('reject');
         Route::get('/{leaveRequest}', [LeaveApprovalController::class, 'show'])->name('show');
@@ -330,14 +334,12 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
     Route::post('/insurance/{insurance}/stop', [AccountantInsuranceController::class, 'stop'])->name('insurance.stop');
     Route::post('/insurance/resigned/{employee}/stop', [AccountantInsuranceController::class, 'stopResigned'])->name('insurance.stop-resigned');
     Route::get('/tax', [AccountantTaxController::class, 'index'])->name('tax.index');
-    Route::get('/tax/dependents', [AccountantTaxController::class, 'dependents'])->name('tax.dependents');
+    Route::redirect('/tax/dependents', '/accountant/tax/dependent-registrations')->name('tax.dependents');
     Route::get('/tax/dependent-registrations', [AccountantTaxController::class, 'pendingRegistrations'])->name('tax.pending-registrations');
     Route::post('/tax/dependent-registrations/{dependent}/approve', [AccountantTaxController::class, 'approveRegistration'])->name('tax.registrations.approve');
     Route::post('/tax/dependent-registrations/{dependent}/reject', [AccountantTaxController::class, 'rejectRegistration'])->name('tax.registrations.reject');
-    Route::post('/tax/dependents/{employee}', [AccountantTaxController::class, 'storeDependent'])->name('tax.dependents.store');
-    Route::put('/tax/dependents/{employee}/{dependent}', [AccountantTaxController::class, 'updateDependent'])->name('tax.dependents.update');
-    Route::delete('/tax/dependents/{employee}/{dependent}', [AccountantTaxController::class, 'destroyDependent'])->name('tax.dependents.destroy');
-    Route::put('/tax/profile/{employee}', [AccountantTaxController::class, 'updateProfile'])->name('tax.profile.update');
+    Route::get('/tax/dependent-registrations/{dependent}/documents/{document}', [AccountantTaxController::class, 'downloadDependentDocument'])
+        ->name('tax.registrations.document');
     Route::get('/tax/declaration', [AccountantTaxController::class, 'declaration'])->name('tax.declaration');
     Route::get('/tax/declaration/export', [AccountantTaxController::class, 'exportDeclaration'])->name('tax.declaration.export');
     Route::get('/tax/settlement', [AccountantTaxController::class, 'settlement'])->name('tax.settlement');
@@ -416,6 +418,8 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,accountant'])->gro
     Route::get('/employee/tax-dependents/create', [EmployeeTaxDependentController::class, 'create'])->name('employee.tax-dependents.create');
     Route::post('/employee/tax-dependents', [EmployeeTaxDependentController::class, 'store'])->name('employee.tax-dependents.store');
     Route::get('/employee/tax-dependents/{taxDependent}', [EmployeeTaxDependentController::class, 'show'])->name('employee.tax-dependents.show');
+    Route::get('/employee/tax-dependents/{taxDependent}/documents/{document}', [EmployeeTaxDependentController::class, 'downloadDocument'])
+        ->name('employee.tax-dependents.documents.download');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

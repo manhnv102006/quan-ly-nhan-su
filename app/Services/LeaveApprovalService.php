@@ -50,6 +50,42 @@ class LeaveApprovalService
             throw ValidationException::withMessages(['start_date' => 'Đơn này trùng thời gian với đơn đã duyệt khác.']);
         }
 
+        $leaveRequest->loadMissing('employee');
+        $departmentId = $leaveRequest->employee?->department_id;
+
+        if ($departmentId) {
+            $overlappingLeaves = LeaveRequest::whereHas('employee', function ($q) use ($departmentId) {
+                $q->where('department_id', $departmentId);
+            })
+            ->where('id', '!=', $leaveRequest->id)
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->whereDate('start_date', '<=', $leaveRequest->end_date)
+            ->whereDate('end_date', '>=', $leaveRequest->start_date)
+            ->get();
+
+            if ($overlappingLeaves->isNotEmpty()) {
+                $current = \Carbon\Carbon::parse($leaveRequest->start_date)->copy();
+                $end = \Carbon\Carbon::parse($leaveRequest->end_date);
+                
+                while ($current->lte($end)) {
+                    $dateStr = $current->format('Y-m-d');
+                    
+                    $countOnDay = $overlappingLeaves->filter(function ($leave) use ($dateStr) {
+                        return $leave->start_date->format('Y-m-d') <= $dateStr 
+                            && $leave->end_date->format('Y-m-d') >= $dateStr;
+                    })->count();
+                    
+                    if ($countOnDay >= 5) {
+                        throw ValidationException::withMessages([
+                            'start_date' => 'Phòng ban đã có ' . $countOnDay . ' người nghỉ phép vào ngày ' . $current->format('d/m/Y') . '. Tối đa chỉ được nghỉ 5 người/ngày.'
+                        ]);
+                    }
+                    
+                    $current->addDay();
+                }
+            }
+        }
+
         $this->processDecision(
             leaveRequest: $leaveRequest,
             actorId: $actorId,
@@ -97,22 +133,22 @@ class LeaveApprovalService
 
         if ($isFromManager) {
             if (! $user?->isAdmin()) {
-                abort(403, 'Đơn nghỉ phép của quản lý chỉ Admin mới được duyệt hoặc từ chối.');
+                throw ValidationException::withMessages(['authorization' => 'Đơn nghỉ phép của quản lý chỉ Admin mới được duyệt hoặc từ chối.']);
             }
 
             return;
         }
 
         if ($user?->isAdmin()) {
-            abort(403, 'Admin chỉ được duyệt đơn nghỉ phép của quản lý, không được duyệt đơn của nhân viên.');
+            throw ValidationException::withMessages(['authorization' => 'Admin chỉ được duyệt đơn nghỉ phép của quản lý, không được duyệt đơn của nhân viên.']);
         }
 
         if (! $user?->isManager()) {
-            abort(403, 'Chỉ quản lý hoặc admin mới được duyệt hoặc từ chối đơn nghỉ phép.');
+            throw ValidationException::withMessages(['authorization' => 'Chỉ quản lý hoặc admin mới được duyệt hoặc từ chối đơn nghỉ phép.']);
         }
 
         if (! $manager) {
-            abort(403, 'Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Vui lòng liên hệ quản trị để được hỗ trợ.');
+            throw ValidationException::withMessages(['authorization' => 'Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Vui lòng liên hệ quản trị để được hỗ trợ.']);
         }
 
         $leaveRequest->authorizeManagerAction($manager);
@@ -160,5 +196,47 @@ class LeaveApprovalService
                 $this->notifications->sendToUser($employeeUserId, $title, $content, $actorId);
             }
         });
+    }
+
+    /**
+     * @param  iterable<LeaveRequest>  $leaveRequests
+     * @return array{approved: int, failed: int}
+     */
+    public function bulkApprove(iterable $leaveRequests, int $actorId, Employee $manager): array
+    {
+        $approved = 0;
+        $failed = 0;
+
+        foreach ($leaveRequests as $leaveRequest) {
+            try {
+                $this->approve($leaveRequest, $actorId, $manager);
+                $approved++;
+            } catch (ValidationException) {
+                $failed++;
+            }
+        }
+
+        return compact('approved', 'failed');
+    }
+
+    /**
+     * @param  iterable<LeaveRequest>  $leaveRequests
+     * @return array{rejected: int, failed: int}
+     */
+    public function bulkReject(iterable $leaveRequests, int $actorId, Employee $manager, string $reason): array
+    {
+        $rejected = 0;
+        $failed = 0;
+
+        foreach ($leaveRequests as $leaveRequest) {
+            try {
+                $this->reject($leaveRequest, $actorId, $manager, $reason);
+                $rejected++;
+            } catch (ValidationException) {
+                $failed++;
+            }
+        }
+
+        return compact('rejected', 'failed');
     }
 }

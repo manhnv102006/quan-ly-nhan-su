@@ -7,19 +7,65 @@ use App\Models\EmployeeInsurance;
 use App\Models\EmployeeTaxProfile;
 use App\Models\Payroll;
 use App\Models\PayrollPeriod;
+use App\Models\PayrollTaxSnapshot;
 use App\Models\TaxDependent;
+use App\Models\TaxPolicy;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class TaxService
 {
-    public function personalDeduction(?EmployeeTaxProfile $profile): float
+    public function policyForDate(Carbon $date): TaxPolicy
     {
-        return (float) ($profile?->personal_deduction ?? EmployeeTaxProfile::DEFAULT_PERSONAL_DEDUCTION);
+        return TaxPolicy::forDate($date) ?? TaxPolicy::fallbackForDate($date);
     }
 
-    public function activeDependentsCount(Employee $employee, ?Carbon $onDate = null): int
+    public function personalDeduction(?EmployeeTaxProfile $profile, ?TaxPolicy $policy = null): float
     {
+        if ($profile && $profile->personal_deduction !== null) {
+            return (float) $profile->personal_deduction;
+        }
+
+        $policy ??= TaxPolicy::current();
+
+        return (float) ($policy?->personal_deduction ?? EmployeeTaxProfile::DEFAULT_PERSONAL_DEDUCTION);
+    }
+
+    /**
+     * Mức GT bản thân khi tính/chốt thuế theo kỳ: theo chính sách của kỳ,
+     * trừ khi hồ sơ có mức tùy chỉnh (khác các mức mặc định từng áp dụng).
+     */
+    public function personalDeductionForPolicy(?EmployeeTaxProfile $profile, TaxPolicy $policy): float
+    {
+        if ($profile && $profile->personal_deduction !== null) {
+            $stored = (float) $profile->personal_deduction;
+            $systemDefaults = [11_000_000, 15_500_000, (float) $policy->personal_deduction];
+
+            foreach ($systemDefaults as $default) {
+                if (abs($stored - $default) < 0.01) {
+                    return (float) $policy->personal_deduction;
+                }
+            }
+
+            return $stored;
+        }
+
+        return (float) $policy->personal_deduction;
+    }
+
+    public function defaultDependentDeduction(?Carbon $onDate = null): float
+    {
+        $policy = TaxPolicy::forDate($onDate ?? now());
+
+        return (float) ($policy?->dependent_deduction_default ?? TaxDependent::DEFAULT_MONTHLY_DEDUCTION);
+    }
+
+    public function activeDependentsCount(?Employee $employee, ?Carbon $onDate = null): int
+    {
+        if (! $employee) {
+            return 0;
+        }
+
         $date = $onDate ?? now();
 
         return TaxDependent::query()
@@ -33,8 +79,12 @@ class TaxService
             ->count();
     }
 
-    public function dependentDeductionTotal(Employee $employee, ?Carbon $onDate = null): float
+    public function dependentDeductionTotal(?Employee $employee, ?Carbon $onDate = null): float
     {
+        if (! $employee) {
+            return 0;
+        }
+
         $date = $onDate ?? now();
 
         return (float) TaxDependent::query()
@@ -48,8 +98,12 @@ class TaxService
             ->sum('monthly_deduction');
     }
 
-    public function insuranceEmployeeAmount(Employee $employee, float $grossIncome): float
+    public function insuranceEmployeeAmount(?Employee $employee, float $grossIncome): float
     {
+        if (! $employee) {
+            return round($grossIncome * 0.105, 0);
+        }
+
         $profile = $employee->insurance;
 
         if ($profile && $profile->isContributing()) {
@@ -60,20 +114,32 @@ class TaxService
     }
 
     /**
-     * @return array<string, float|int>
+     * @return array<string, float|int|TaxPolicy>
      */
-    public function calculateEmployeeMonthly(Employee $employee, float $grossIncome, ?Carbon $onDate = null): array
+
+    public function calculateEmployeeMonthly(
+        Employee $employee,
+        float $grossIncome,
+        ?Carbon $onDate = null,
+        ?TaxPolicy $policy = null,
+    ): array {
+        $date = $onDate ?? now();
+        $policy = $policy ?? $this->policyForDate($date);
+        $taxProfile = $employee->taxProfile;
+
+    public function calculateEmployeeMonthly(?Employee $employee, float $grossIncome, ?Carbon $onDate = null): array
     {
         $date = $onDate ?? now();
-        $taxProfile = $employee->taxProfile;
+        $taxProfile = $employee?->taxProfile;
+
         $insurance = $this->insuranceEmployeeAmount($employee, $grossIncome);
-        $personal = $this->personalDeduction($taxProfile);
+        $personal = $this->personalDeductionForPolicy($taxProfile, $policy);
         $dependentDeduction = $this->dependentDeductionTotal($employee, $date);
         $dependentsCount = $this->activeDependentsCount($employee, $date);
 
         $assessable = max(0, $grossIncome - $insurance);
         $taxable = max(0, $assessable - $personal - $dependentDeduction);
-        $pit = $this->progressivePit($taxable);
+        $pit = $this->progressivePit($taxable, $policy->progressiveBrackets());
 
         return [
             'gross' => $grossIncome,
@@ -85,24 +151,22 @@ class TaxService
             'taxable_income' => $taxable,
             'pit' => $pit,
             'net_income' => max(0, $grossIncome - $insurance - $pit),
+            'tax_policy' => $policy,
         ];
     }
 
-    public function progressivePit(float $taxableIncome): float
+    /**
+     * @param  array<int, array{0: float, 1: float}>|null  $brackets
+     */
+    public function progressivePit(float $taxableIncome, ?array $brackets = null): float
     {
         if ($taxableIncome <= 0) {
             return 0;
         }
 
-        $brackets = [
-            [5_000_000, 0.05],
-            [10_000_000, 0.10],
-            [18_000_000, 0.15],
-            [32_000_000, 0.20],
-            [52_000_000, 0.25],
-            [80_000_000, 0.30],
-            [PHP_FLOAT_MAX, 0.35],
-        ];
+        if ($brackets === null) {
+            $brackets = $this->policyForDate(now())->progressiveBrackets();
+        }
 
         $tax = 0.0;
         $remaining = $taxableIncome;
@@ -124,13 +188,91 @@ class TaxService
         return round($tax, 0);
     }
 
+    public function snapshotForPayroll(Payroll $payroll): PayrollTaxSnapshot
+    {
+        $payroll->loadMissing([
+            'employee.taxProfile',
+            'employee.insurance',
+            'employee.taxDependents',
+            'payrollPeriod',
+        ]);
+
+        $employee = $payroll->employee;
+        abort_unless($employee, 422, 'Phiếu lương không có nhân viên.');
+
+        $period = $payroll->payrollPeriod;
+        $periodDate = $period
+            ? Carbon::create((int) $period->year, (int) $period->month, 15)
+            : now();
+
+        $calc = $this->calculateEmployeeMonthly($employee, (float) $payroll->total_salary, $periodDate);
+        /** @var TaxPolicy $policy */
+        $policy = $calc['tax_policy'];
+
+        return PayrollTaxSnapshot::query()->updateOrCreate(
+            ['payroll_id' => $payroll->id],
+            [
+                'tax_policy_id' => $policy->id > 0 ? $policy->id : null,
+                'policy_code' => $policy->code,
+                'policy_label' => $policy->name,
+                'dependents_count' => (int) $calc['dependents_count'],
+                'personal_deduction' => $calc['personal_deduction'],
+                'dependent_deduction' => $calc['dependent_deduction'],
+                'gross_income' => $calc['gross'],
+                'insurance_employee' => $calc['insurance'],
+                'assessable_income' => $calc['assessable_income'],
+                'taxable_income' => $calc['taxable_income'],
+                'pit' => $calc['pit'],
+                'net_income' => $calc['net_income'],
+                'brackets_snapshot' => $policy->brackets,
+            ]
+        );
+    }
+
+    /**
+     * @return array<string, float|int>|null
+     */
+    public function breakdownFromSnapshot(Payroll $payroll): ?array
+    {
+        $snapshot = $payroll->relationLoaded('payrollTaxSnapshot')
+            ? $payroll->payrollTaxSnapshot
+            : $payroll->payrollTaxSnapshot()->first();
+
+        if (! $snapshot) {
+            return null;
+        }
+
+        return [
+            'gross_income' => (float) $snapshot->gross_income,
+            'insurance' => (float) $snapshot->insurance_employee,
+            'personal_deduction' => (float) $snapshot->personal_deduction,
+            'dependent_deduction' => (float) $snapshot->dependent_deduction,
+            'dependents_count' => (int) $snapshot->dependents_count,
+            'taxable_income' => (float) $snapshot->taxable_income,
+            'pit' => (float) $snapshot->pit,
+            'net_income' => (float) $snapshot->net_income,
+            'policy_label' => $snapshot->policy_label,
+        ];
+    }
+
     /**
      * @return Collection<int, array<string, mixed>>
      */
     public function calculateForPeriod(PayrollPeriod $period): Collection
     {
         $payrolls = Payroll::query()
+
+            ->with([
+                'payrollTaxSnapshot',
+                'employee.taxProfile',
+                'employee.insurance',
+                'employee.taxDependents',
+                'employee.department',
+            ])
+
             ->with(['employee.taxProfile', 'employee.insurance', 'employee.taxDependents'])
+            ->whereHas('employee')
+
             ->where('payroll_period_id', $period->id)
             ->orderByDesc('total_salary')
             ->get();
@@ -139,13 +281,61 @@ class TaxService
 
         return $payrolls->map(function (Payroll $payroll) use ($periodDate) {
             $employee = $payroll->employee;
+
+
+            if ($payroll->payrollTaxSnapshot && $employee) {
+                return $payroll->payrollTaxSnapshot->toTaxRow($employee, $payroll);
+
+            if (! $employee) {
+                return null;
+
+            }
+
             $calc = $this->calculateEmployeeMonthly($employee, (float) $payroll->total_salary, $periodDate);
+            unset($calc['tax_policy']);
 
             return array_merge($calc, [
                 'payroll' => $payroll,
                 'employee' => $employee,
+                'from_snapshot' => false,
             ]);
-        });
+        })->filter()->values();
+    }
+
+    /**
+     * @param  array{department_id?: mixed, search?: mixed, pit_filter?: mixed}  $filters
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function filterPeriodRows(Collection $rows, array $filters): Collection
+    {
+        $departmentId = filled($filters['department_id'] ?? null) ? (int) $filters['department_id'] : null;
+        $search = mb_strtolower(trim((string) ($filters['search'] ?? '')));
+        $pitFilter = (string) ($filters['pit_filter'] ?? '');
+
+        return $rows->filter(function (array $row) use ($departmentId, $search, $pitFilter) {
+            $employee = $row['employee'] ?? null;
+            if (! $employee instanceof Employee) {
+                return false;
+            }
+
+            if ($departmentId && (int) $employee->department_id !== $departmentId) {
+                return false;
+            }
+
+            if ($search !== '') {
+                $needle = mb_strtolower(trim($employee->full_name.' '.$employee->employee_code));
+                if (! str_contains($needle, $search)) {
+                    return false;
+                }
+            }
+
+            return match ($pitFilter) {
+                'with_tax' => (float) $row['pit'] > 0,
+                'no_tax' => (float) $row['pit'] <= 0,
+                'with_dependents' => (int) ($row['dependents_count'] ?? 0) > 0,
+                default => true,
+            };
+        })->values();
     }
 
     /**
@@ -226,7 +416,7 @@ class TaxService
     }
 
     /**
-     * Quyết toán thuế cuối năm theo nhân viên.
+     * Quyết toán thuế cuối năm theo nhân viên (dùng snapshot đã chốt từng tháng).
      *
      * @return Collection<int, array<string, mixed>>
      */
@@ -256,6 +446,8 @@ class TaxService
                         'total_gross' => 0,
                         'total_insurance' => 0,
                         'total_pit_withheld' => 0,
+                        'total_personal_deduction' => 0,
+                        'total_dependent_deduction' => 0,
                         'months_count' => 0,
                     ];
                 }
@@ -263,20 +455,21 @@ class TaxService
                 $byEmployee[$empId]['total_gross'] += $row['gross'];
                 $byEmployee[$empId]['total_insurance'] += $row['insurance'];
                 $byEmployee[$empId]['total_pit_withheld'] += $row['pit'];
+                $byEmployee[$empId]['total_personal_deduction'] += $row['personal_deduction'];
+                $byEmployee[$empId]['total_dependent_deduction'] += $row['dependent_deduction'];
                 $byEmployee[$empId]['months_count']++;
             }
         }
 
-        return collect($byEmployee)->map(function (array $data) use ($year) {
+        $yearEndPolicy = $this->policyForDate(Carbon::create($year, 12, 31));
+
+        return collect($byEmployee)->map(function (array $data) use ($year, $yearEndPolicy) {
             $employee = $data['employee'];
-            $months = max(1, $data['months_count']);
-            $personalAnnual = $this->personalDeduction($employee->taxProfile) * 12;
-            $dependentAnnual = $this->dependentDeductionTotal($employee) * 12;
 
             $assessable = max(0, $data['total_gross'] - $data['total_insurance']);
-            $taxableAnnual = max(0, $assessable - $personalAnnual - $dependentAnnual);
-            $avgMonthlyTaxable = $taxableAnnual / 12;
-            $pitLiability = $this->progressivePit($avgMonthlyTaxable) * 12;
+            $taxableAnnual = max(0, $assessable - $data['total_personal_deduction'] - $data['total_dependent_deduction']);
+            $avgMonthlyTaxable = $taxableAnnual / max(1, $data['months_count']);
+            $pitLiability = $this->progressivePit($avgMonthlyTaxable, $yearEndPolicy->progressiveBrackets()) * $data['months_count'];
 
             $difference = $data['total_pit_withheld'] - $pitLiability;
 
@@ -284,8 +477,8 @@ class TaxService
                 'employee' => $employee,
                 'total_gross' => $data['total_gross'],
                 'total_insurance' => $data['total_insurance'],
-                'personal_annual' => $personalAnnual,
-                'dependent_annual' => $dependentAnnual,
+                'personal_annual' => $data['total_personal_deduction'],
+                'dependent_annual' => $data['total_dependent_deduction'],
                 'dependents_count' => $this->activeDependentsCount($employee),
                 'taxable_annual' => $taxableAnnual,
                 'pit_withheld' => $data['total_pit_withheld'],

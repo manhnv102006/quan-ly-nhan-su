@@ -7,11 +7,8 @@
     $layout = \App\Support\SelfServiceLayout::component($roleName);
 
     $period = $payroll->payrollPeriod;
-    $totalAllowance = (float) $payroll->allowance
-        + (float) ($payroll->allowance_meal ?? 0)
-        + (float) ($payroll->allowance_phone ?? 0)
-        + (float) ($payroll->allowance_fuel ?? 0)
-        + (float) ($payroll->allowance_position ?? 0);
+    $allowanceBreakdown = $payroll->allowanceBreakdown();
+    $totalAllowance = (float) $allowanceBreakdown->sum('amount');
     $income = (float) $payroll->basic_salary + $totalAllowance + (float) $payroll->bonus + (float) ($payroll->overtime_pay ?? 0);
     $payslip = $payroll->payslipBreakdown();
 
@@ -161,28 +158,18 @@
                             </div>
                             <div>
                                 <p class="text-sm font-semibold text-slate-700">Tổng phụ cấp</p>
-                                <p class="text-xs text-slate-400">Chuyên cần, ăn trưa, điện thoại, xăng xe, chức vụ</p>
+                                <p class="text-xs text-slate-400">Cộng tất cả các khoản phụ cấp theo hợp đồng</p>
                             </div>
                         </div>
                         <span class="text-sm font-bold text-slate-800">{{ number_format($totalAllowance, 0, ',', '.') }}đ</span>
                     </div>
 
-                    @php
-                        $allowanceRows = array_filter([
-                            ['label' => 'Phụ cấp cố định', 'value' => (float) $payroll->allowance],
-                            ['label' => 'Ăn trưa', 'value' => (float) ($payroll->allowance_meal ?? 0)],
-                            ['label' => 'Điện thoại', 'value' => (float) ($payroll->allowance_phone ?? 0)],
-                            ['label' => 'Xăng xe', 'value' => (float) ($payroll->allowance_fuel ?? 0)],
-                            ['label' => 'Chức vụ', 'value' => (float) ($payroll->allowance_position ?? 0)],
-                        ], fn ($row) => $row['value'] > 0);
-                    @endphp
-
-                    @if (count($allowanceRows) > 0)
+                    @if ($allowanceBreakdown->isNotEmpty())
                         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 border-t border-dashed border-slate-200 pt-3">
-                            @foreach ($allowanceRows as $row)
+                            @foreach ($allowanceBreakdown as $row)
                                 <div class="flex items-center justify-between text-xs">
                                     <span class="text-slate-500">{{ $row['label'] }}</span>
-                                    <span class="font-semibold text-slate-600">{{ number_format($row['value'], 0, ',', '.') }}đ</span>
+                                    <span class="font-semibold text-slate-600">{{ number_format($row['amount'], 0, ',', '.') }}đ</span>
                                 </div>
                             @endforeach
                         </div>

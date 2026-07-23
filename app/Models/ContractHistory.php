@@ -60,6 +60,7 @@ class ContractHistory extends Model
         'action',
         'summary',
         'changes',
+        'allowances_snapshot',
         'note',
         'performed_by',
     ];
@@ -68,6 +69,7 @@ class ContractHistory extends Model
     {
         return [
             'changes' => 'array',
+            'allowances_snapshot' => 'array',
         ];
     }
 

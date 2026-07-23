@@ -166,6 +166,7 @@ class PayrollController extends Controller
             'employee.taxProfile',
             'payrollPeriod.approver',
             'payrollPeriod.payer',
+            'payrollAllowances',
         ]);
 
         $pdf = Pdf::loadView('admin.payrolls.pdf', compact('payroll'));

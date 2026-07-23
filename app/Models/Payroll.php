@@ -74,6 +74,65 @@ class Payroll extends Model
         return $this->hasMany(SalaryAdvanceDeduction::class);
     }
 
+    public function payrollAllowances(): HasMany
+    {
+        return $this->hasMany(PayrollAllowance::class);
+    }
+
+    public function payrollTaxSnapshot(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(PayrollTaxSnapshot::class);
+    }
+
+    /**
+     * Danh sách phụ cấp đã "chốt" (snapshot) của kỳ lương.
+     * Ưu tiên bản snapshot; nếu chưa có (dữ liệu cũ) thì suy ra từ các cột phụ cấp legacy.
+     *
+     * @return \Illuminate\Support\Collection<int, array{label: string, code: ?string, amount: float}>
+     */
+    public function allowanceBreakdown(): \Illuminate\Support\Collection
+    {
+        $snapshots = $this->relationLoaded('payrollAllowances')
+            ? $this->payrollAllowances
+            : $this->payrollAllowances()->get();
+
+        if ($snapshots->isNotEmpty()) {
+            return $snapshots
+                ->map(fn (PayrollAllowance $item) => [
+                    'label' => $item->name,
+                    'code' => $item->code,
+                    'amount' => (float) $item->amount,
+                ])
+                ->filter(fn (array $row) => $row['amount'] > 0)
+                ->values();
+        }
+
+        $legacy = [
+            'Phụ cấp cố định' => (float) $this->allowance,
+            'Ăn trưa' => (float) ($this->allowance_meal ?? 0),
+            'Điện thoại' => (float) ($this->allowance_phone ?? 0),
+            'Xăng xe' => (float) ($this->allowance_fuel ?? 0),
+            'Chức vụ' => (float) ($this->allowance_position ?? 0),
+        ];
+
+        return collect($legacy)
+            ->map(fn (float $amount, string $label) => [
+                'label' => $label,
+                'code' => null,
+                'amount' => $amount,
+            ])
+            ->filter(fn (array $row) => $row['amount'] > 0)
+            ->values();
+    }
+
+    /**
+     * Tổng phụ cấp thực nhận của kỳ lương (cộng tất cả các khoản phụ cấp).
+     */
+    public function totalAllowance(): float
+    {
+        return (float) $this->allowanceBreakdown()->sum('amount');
+    }
+
     public function advanceDeductionAmount(): float
     {
         if ($this->relationLoaded('salaryAdvanceDeductions')) {
@@ -170,7 +229,40 @@ class Payroll extends Model
             ? Carbon::create((int) $period->year, (int) $period->month, 15)
             : now());
 
-        $tax = app(TaxService::class)->calculateEmployeeMonthly($employee, $gross, $periodDate);
+        $taxService = app(TaxService::class);
+        $fromSnapshot = $taxService->breakdownFromSnapshot($this);
+
+        if ($fromSnapshot !== null) {
+            $pit = (float) $fromSnapshot['pit'];
+            $insurance = (float) $fromSnapshot['insurance'];
+            $totalDeductions = $penalty + $insurance + $pit;
+            $netSalary = max(0, $gross - $insurance - $pit);
+
+            $bhxh = $bhyt = $bhtn = 0.0;
+            $profile = $employee->insurance;
+            if ($profile?->isContributing()) {
+                $contributions = app(InsuranceService::class)->calculateContributions($profile);
+                $bhxh = (float) $contributions['bhxh_employee'];
+                $bhyt = (float) $contributions['bhyt_employee'];
+                $bhtn = (float) $contributions['bhtn_employee'];
+            }
+
+            return [
+                'gross_income' => $grossIncome,
+                'penalty' => $penalty,
+                'insurance' => $insurance,
+                'bhxh_employee' => $bhxh,
+                'bhyt_employee' => $bhyt,
+                'bhtn_employee' => $bhtn,
+                'pit' => $pit,
+                'total_deductions' => $totalDeductions,
+                'net_salary' => $netSalary,
+                'advance_deduction' => $advanceDeduction,
+                'advance_outstanding' => $advanceOutstanding,
+            ];
+        }
+
+        $tax = $taxService->calculateEmployeeMonthly($employee, $gross, $periodDate);
 
         $bhxh = $bhyt = $bhtn = 0.0;
         $profile = $employee->insurance;
@@ -224,6 +316,14 @@ class Payroll extends Model
             'allowance_phone' => $fmt((float) $this->allowance_phone),
             'allowance_fuel' => $fmt((float) $this->allowance_fuel),
             'allowance_position' => $fmt((float) $this->allowance_position),
+            'allowance_total' => $fmt($this->totalAllowance()),
+            'allowances' => $this->allowanceBreakdown()
+                ->map(fn (array $row) => [
+                    'label' => $row['label'],
+                    'amount' => $fmt($row['amount']),
+                ])
+                ->values()
+                ->all(),
             'bonus' => $fmt((float) $this->bonus),
             'overtime_hours' => (float) $this->overtime_hours,
             'overtime_pay' => $fmt((float) $this->overtime_pay),

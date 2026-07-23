@@ -4,8 +4,7 @@
 @endphp
 
 <x-accountant-layout title="Nhân viên - {{ $department->department_name }}" subtitle="Chọn nhân viên để xem hồ sơ BH">
-    @include('accountant.insurance.partials.sub-nav', ['active' => 'profiles'])
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <nav class="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">

@@ -4,8 +4,7 @@
 @endphp
 
 <x-accountant-layout title="Tạm ứng - {{ $department->department_name }}" subtitle="Nhân viên có yêu cầu ứng lương">
-    @include('accountant.advances.partials.sub-nav', ['active' => 'requests'])
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <nav class="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">

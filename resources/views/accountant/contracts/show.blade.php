@@ -1,9 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
 <x-accountant-layout title="Chi tiết hợp đồng" subtitle="{{ $contract->contract_code }}">
-    @include('accountant.contracts.partials.sub-nav', ['active' => ''])
-
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3 text-sm text-amber-900">
             Chế độ chỉ xem — thông tin lương và phụ cấp phục vụ tính lương, bảo hiểm, thuế.
         </div>

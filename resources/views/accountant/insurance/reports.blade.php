@@ -1,8 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
 <x-accountant-layout title="Báo cáo nộp BH" subtitle="Theo tháng hoặc quý">
-    @include('accountant.insurance.partials.sub-nav', ['active' => 'reports'])
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="flex flex-wrap items-end justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-900">Báo cáo nộp bảo hiểm</h2>

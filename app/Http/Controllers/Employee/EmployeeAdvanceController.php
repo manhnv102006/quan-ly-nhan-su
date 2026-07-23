@@ -33,6 +33,8 @@ class EmployeeAdvanceController extends Controller
             'advances' => $advances,
             'summary' => $this->advances->employeeSummary($employee),
             'maxAdvanceAmount' => $this->advances->maxAdvanceAmount($employee),
+            'advanceSalaryCap' => $this->advances->advanceSalaryCap($employee),
+            'usedAdvanceQuota' => $this->advances->usedAdvanceQuota($employee),
             'referenceSalary' => $this->advances->referenceSalary($employee),
         ]);
     }
@@ -41,17 +43,28 @@ class EmployeeAdvanceController extends Controller
     {
         $employee = $this->linkedEmployee();
         $maxAmount = $this->advances->maxAdvanceAmount($employee);
+        $cap = $this->advances->advanceSalaryCap($employee);
 
-        if ($maxAmount < SalaryAdvance::MIN_AMOUNT) {
+        if ($cap <= 0) {
             return redirect()
                 ->route('employee.advances.index')
-                ->with('error', 'Hạn mức ứng lương của bạn ('.number_format($maxAmount, 0, ',', '.').'₫) thấp hơn mức tối thiểu '.number_format(SalaryAdvance::MIN_AMOUNT, 0, ',', '.').'₫.');
+                ->with('error', 'Chưa có lương tham chiếu (hợp đồng/lương). Không thể ứng lương.');
         }
+
+        if ($maxAmount <= 0) {
+            return redirect()
+                ->route('employee.advances.index')
+                ->with('error', 'Bạn đã dùng hết hạn mức ứng lương (tối đa 50% lương tháng: '.number_format($cap, 0, ',', '.').'₫).');
+        }
+
+        $minAmount = min(SalaryAdvance::MIN_AMOUNT, $maxAmount);
 
         return view('employee.advances.create', [
             'maxAdvanceAmount' => $maxAmount,
+            'minAdvanceAmount' => $minAmount,
+            'advanceSalaryCap' => $cap,
+            'usedAdvanceQuota' => $this->advances->usedAdvanceQuota($employee),
             'referenceSalary' => $this->advances->referenceSalary($employee),
-            'minAdvanceAmount' => SalaryAdvance::MIN_AMOUNT,
         ]);
     }
 
@@ -59,7 +72,7 @@ class EmployeeAdvanceController extends Controller
     {
         $employee = $this->linkedEmployee();
         $maxAmount = $this->advances->maxAdvanceAmount($employee);
-        $minAmount = SalaryAdvance::MIN_AMOUNT;
+        $minAmount = min(SalaryAdvance::MIN_AMOUNT, $maxAmount);
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:'.$minAmount.'|max:'.$maxAmount,
@@ -68,7 +81,7 @@ class EmployeeAdvanceController extends Controller
             'note' => 'nullable|string|max:2000',
         ], [
             'amount.min' => 'Số tiền ứng tối thiểu '.number_format($minAmount, 0, ',', '.').'₫.',
-            'amount.max' => 'Số tiền ứng không được vượt quá '.number_format($maxAmount, 0, ',', '.').'₫ (tối đa mỗi lần).',
+            'amount.max' => 'Số tiền ứng không được vượt hạn mức còn lại '.number_format($maxAmount, 0, ',', '.').'₫ (tối đa 50% lương tháng).',
             'reason.required' => 'Vui lòng nhập lý do ứng lương.',
         ]);
 

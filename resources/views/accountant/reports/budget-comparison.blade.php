@@ -1,9 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
 <x-accountant-layout title="Ngân sách dự kiến vs thực tế" subtitle="So sánh chi phí lương">
-    @include('accountant.reports.partials.sub-nav', ['active' => 'budget'])
-
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="flex flex-wrap items-end justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-900">So sánh ngân sách dự kiến vs thực tế</h2>

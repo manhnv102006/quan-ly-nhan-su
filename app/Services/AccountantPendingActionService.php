@@ -27,6 +27,16 @@ class AccountantPendingActionService
                 $item['badge'] = $unread;
             }
 
+            if (! empty($item['children'])) {
+                $item['children'] = array_map(function (array $child) use ($unread) {
+                    if (($child['route'] ?? null) === 'employee.notifications*') {
+                        $child['badge'] = $unread;
+                    }
+
+                    return $child;
+                }, $item['children']);
+            }
+
             return $item;
         }, $navigation);
     }

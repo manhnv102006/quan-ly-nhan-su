@@ -37,6 +37,7 @@ class AllowanceTypeRequest extends FormRequest
                 Rule::unique('allowance_types', 'code')->ignore($typeId),
             ],
             'default_amount' => ['required', 'numeric', 'min:0'],
+            'calculation_type' => ['required', 'string', Rule::in(array_keys(AllowanceType::CALC_LABELS))],
             'description' => ['nullable', 'string', 'max:255'],
             'calculation_note' => ['nullable', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],

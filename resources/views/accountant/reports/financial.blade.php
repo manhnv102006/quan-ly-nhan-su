@@ -1,9 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
 <x-accountant-layout title="Xuất báo cáo tài chính NS" subtitle="Tổng hợp & xuất CSV">
-    @include('accountant.reports.partials.sub-nav', ['active' => 'financial'])
-
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="flex flex-wrap items-end justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-900">Báo cáo tài chính nhân sự</h2>

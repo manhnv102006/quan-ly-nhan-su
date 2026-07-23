@@ -5,9 +5,7 @@
 @endphp
 
 <x-accountant-layout title="Chấm công - {{ $department->department_name }}" subtitle="Bảng công tháng {{ $monthLabel }}">
-    @include('accountant.attendance.partials.sub-nav', ['active' => 'departments'])
-
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <nav class="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">

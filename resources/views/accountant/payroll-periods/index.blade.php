@@ -1,8 +1,5 @@
 <x-accountant-layout title="Quản lý kỳ lương">
-
-    @include('accountant.payrolls.partials.sub-nav', ['active' => 'periods'])
-
-    <div class="space-y-6">
+<div class="space-y-6">
 
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>

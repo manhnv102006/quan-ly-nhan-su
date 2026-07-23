@@ -131,7 +131,7 @@
                                     {{ number_format($payroll->basic_salary, 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4 text-slate-600">
-                                    {{ number_format($payroll->allowance, 0, ',', '.') }} ₫
+                                    {{ number_format($payroll->totalAllowance(), 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4 font-medium text-emerald-600">
                                     @if($payroll->bonus > 0)+@endif{{ number_format($payroll->bonus, 0, ',', '.') }} ₫
@@ -180,7 +180,8 @@
                                                     'period_name' => $payroll->payrollPeriod?->name ?: '—',
                                                     'period_range' => ($payroll->payrollPeriod?->start_date?->format('d/m/Y') ?: '') . ' - ' . ($payroll->payrollPeriod?->end_date?->format('d/m/Y') ?: ''),
                                                     'basic_salary' => number_format($payroll->basic_salary, 0, ',', '.'),
-                                                    'allowance' => number_format((float) $payroll->allowance + (float) $payroll->allowance_meal + (float) $payroll->allowance_phone + (float) $payroll->allowance_fuel + (float) $payroll->allowance_position, 0, ',', '.'),
+                                                    'allowance' => number_format($payroll->totalAllowance(), 0, ',', '.'),
+                                                    'allowances' => $payroll->allowanceBreakdown()->map(fn ($row) => ['label' => $row['label'], 'amount' => number_format($row['amount'], 0, ',', '.')])->values()->all(),
                                                     'bonus' => number_format($payroll->bonus, 0, ',', '.'),
                                                     'overtime_hours' => $payroll->overtime_hours,
                                                     'overtime_pay' => number_format($payroll->overtime_pay, 0, ',', '.'),
@@ -347,6 +348,7 @@
                             <span class="text-slate-600 font-medium">Phụ cấp:</span>
                             <span class="font-bold text-slate-800" id="modalAllowance">500,000 ₫</span>
                         </div>
+                        <div id="modalAllowanceBreakdown" class="space-y-1 pl-3 -mt-1"></div>
                         <div class="flex justify-between items-center">
                             <span class="text-slate-600 font-medium">Thưởng (KPI):</span>
                             <span class="font-bold text-slate-800 text-emerald-600" id="modalBonus">0 ₫</span>
@@ -452,6 +454,18 @@
             document.getElementById('modalStandardDays').innerText = data.standard_working_days;
             document.getElementById('modalActualDays').innerText = data.actual_working_days;
             document.getElementById('modalAllowance').innerText = data.allowance + ' ₫';
+
+            const breakdownEl = document.getElementById('modalAllowanceBreakdown');
+            breakdownEl.innerHTML = '';
+            if (Array.isArray(data.allowances) && data.allowances.length > 0) {
+                data.allowances.forEach(function (row) {
+                    const line = document.createElement('div');
+                    line.className = 'flex justify-between items-center text-xs text-slate-500';
+                    line.innerHTML = '<span>' + row.label + '</span><span class="font-medium">' + row.amount + ' ₫</span>';
+                    breakdownEl.appendChild(line);
+                });
+            }
+
             document.getElementById('modalBonus').innerText = data.bonus + ' ₫';
             document.getElementById('modalOvertime').innerText = data.overtime_pay + ' ₫';
             
