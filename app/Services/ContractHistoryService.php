@@ -30,6 +30,7 @@ class ContractHistoryService
         'allowance_phone' => 'Phụ cấp điện thoại',
         'allowance_fuel' => 'Phụ cấp xăng',
         'allowance_position' => 'Phụ cấp chức vụ',
+        'allowances' => 'Phụ cấp (chi tiết)',
         'signed_date' => 'Ngày ký',
     ];
 
@@ -64,11 +65,21 @@ class ContractHistoryService
             $this->employeeName($contract),
         );
 
-        return $this->store($contract, ContractHistory::ACTION_CREATE, $summary, $performedBy);
+        return $this->store(
+            $contract,
+            ContractHistory::ACTION_CREATE,
+            $summary,
+            $performedBy,
+            ['allowances_snapshot' => $this->allowancesSnapshot($contract)],
+        );
     }
 
-    public function logUpdate(Contract $contract, array $changes, ?int $performedBy = null): ?ContractHistory
-    {
+    public function logUpdate(
+        Contract $contract,
+        array $changes,
+        ?int $performedBy = null,
+        ?array $allowancesSnapshot = null,
+    ): ?ContractHistory {
         if ($changes === []) {
             return null;
         }
@@ -87,7 +98,10 @@ class ContractHistoryService
             ContractHistory::ACTION_UPDATE,
             $summary,
             $performedBy,
-            ['changes' => $formatted],
+            [
+                'changes' => $formatted,
+                'allowances_snapshot' => $allowancesSnapshot ?? $this->allowancesSnapshot($contract),
+            ],
         );
     }
 
@@ -108,7 +122,10 @@ class ContractHistoryService
             ContractHistory::ACTION_EXTEND,
             $summary,
             $performedBy,
-            ['related_contract_id' => $newContract->id],
+            [
+                'related_contract_id' => $newContract->id,
+                'allowances_snapshot' => $this->allowancesSnapshot($newContract),
+            ],
         );
     }
 
@@ -136,7 +153,10 @@ class ContractHistoryService
             ContractHistory::ACTION_CONVERT,
             $summary,
             $performedBy,
-            ['related_contract_id' => $newContract->id],
+            [
+                'related_contract_id' => $newContract->id,
+                'allowances_snapshot' => $this->allowancesSnapshot($newContract),
+            ],
         );
     }
 
@@ -252,15 +272,16 @@ class ContractHistoryService
         array $extra = [],
     ): ContractHistory {
         $history = ContractHistory::create([
-    'contract_id' => $contract->id,
-    'employee_id' => $contract->employee_id,
-
-    'action' => $action,
-    'summary' => $summary,
-    'changes' => $extra['changes'] ?? null,
-    'note' => $extra['note'] ?? null,
-    'performed_by' => $performedBy,
-]);
+            'contract_id' => $contract->id,
+            'employee_id' => $contract->employee_id,
+            'related_contract_id' => $extra['related_contract_id'] ?? null,
+            'action' => $action,
+            'summary' => $summary,
+            'changes' => $extra['changes'] ?? null,
+            'allowances_snapshot' => $extra['allowances_snapshot'] ?? null,
+            'note' => $extra['note'] ?? null,
+            'performed_by' => $performedBy,
+        ]);
         app(ModuleChangeLogService::class)
             ->syncFromContractHistory($history);
 
@@ -330,5 +351,15 @@ class ContractHistoryService
         }
 
         return $formatted;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    protected function allowancesSnapshot(Contract $contract): array
+    {
+        $contract->loadMissing('contractAllowances');
+
+        return app(ContractAllowanceService::class)->snapshotLines($contract);
     }
 }

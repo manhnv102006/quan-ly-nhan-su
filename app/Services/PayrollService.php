@@ -371,7 +371,8 @@ class PayrollService
             }
 
             $type = $item->allowanceType;
-            $calcType = $type?->calculation_type ?? \App\Models\AllowanceType::CALC_PRORATA;
+            $code = $item->allowance_code ?? $type?->code;
+            $calcType = $item->calculation_type ?? $type?->calculation_type ?? \App\Models\AllowanceType::CALC_PRORATA;
 
             $amount = match ($calcType) {
                 \App\Models\AllowanceType::CALC_FIXED => $base,
@@ -387,13 +388,12 @@ class PayrollService
                 continue;
             }
 
-            $code = $type?->code;
             $column = $code ? (ContractAllowanceService::COLUMN_MAP[$code] ?? 'allowance') : 'allowance';
             $columns[$column] += $amount;
 
             $snapshots[] = [
-                'allowance_type_id' => $type?->id,
-                'name' => $type?->name ?? 'Phụ cấp',
+                'allowance_type_id' => $item->allowance_type_id ?? $type?->id,
+                'name' => $item->allowance_name ?? $type?->name ?? 'Phụ cấp',
                 'code' => $code,
                 'amount' => $amount,
             ];

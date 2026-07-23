@@ -107,7 +107,7 @@ class ContractService
 
             $contract = Contract::create($data);
             $this->allowanceService->syncContractAllowances($contract, $allowanceInput, $data['contract_type_id']);
-            $this->historyService->logCreate($contract, $creatorId);
+            $this->historyService->logCreate($contract->refresh(), $creatorId);
 
             return $contract;
         });
@@ -121,6 +121,8 @@ class ContractService
 
         return DB::transaction(function () use ($contract, $data, $performedBy) {
             $original = $contract->only(ContractHistoryService::TRACKED_FIELDS);
+            $contract->loadMissing('contractAllowances');
+            $allowancesBefore = $this->allowanceService->snapshotLines($contract);
             $allowanceInput = $data['allowances'] ?? [];
             unset($data['allowances']);
 
@@ -167,7 +169,13 @@ class ContractService
             );
 
             $changes = $this->historyService->collectChanges($contract, $original);
-            $this->historyService->logUpdate($contract, $changes, $performedBy);
+            $allowancesAfter = $this->allowanceService->snapshotLines($contract->refresh()->load('contractAllowances'));
+
+            if ($allowanceDiff = $this->allowanceService->diffAllowanceSnapshots($allowancesBefore, $allowancesAfter)) {
+                $changes['allowances'] = $allowanceDiff;
+            }
+
+            $this->historyService->logUpdate($contract, $changes, $performedBy, $allowancesAfter);
 
             return $contract->refresh();
         });
@@ -277,7 +285,7 @@ class ContractService
                 'performed_by' => $creatorId,
             ]);
 
-            $this->historyService->logExtend($contract, $newContract, $creatorId);
+            $this->historyService->logExtend($contract, $newContract->refresh(), $creatorId);
 
             $this->autoNotifications->clearContractExpiringNotifications($contract);
             $this->autoNotifications->notifyContractRenewed($contract, $newContract, $creatorId);
@@ -433,7 +441,7 @@ class ContractService
 
             $this->historyService->logConvert(
                 $contract,
-                $newContract,
+                $newContract->refresh(),
                 $sourceTypeName,
                 $targetType->contract_name,
                 $creatorId,

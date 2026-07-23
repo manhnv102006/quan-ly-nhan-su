@@ -28,6 +28,18 @@
                                     @endforeach
                                 </ul>
                             </details>
+                        @elseif(! empty($item->allowances_snapshot))
+                            <details class="mt-2" open>
+                                <summary class="cursor-pointer text-xs font-semibold text-violet-600">Phụ cấp đã chốt</summary>
+                                <ul class="mt-2 space-y-1 text-xs text-slate-600">
+                                    @foreach($item->allowances_snapshot as $line)
+                                        <li>
+                                            <span class="font-medium text-slate-700">{{ $line['label'] ?? 'Phụ cấp' }}:</span>
+                                            {{ number_format((float) ($line['amount'] ?? 0), 0, ',', '.') }}₫
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </details>
                         @endif
                     </div>
                     <div class="text-right text-xs text-slate-500">

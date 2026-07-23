@@ -11,6 +11,10 @@ class ContractAllowance extends Model
         'contract_id',
         'allowance_type_id',
         'amount',
+        'allowance_name',
+        'allowance_code',
+        'calculation_type',
+        'calculation_note',
     ];
 
     protected $casts = [
