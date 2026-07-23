@@ -274,6 +274,8 @@ Route::middleware(['auth', 'verified', 'role:manager', 'leave.approval.manager']
     ->name('manager.leave-requests.')
     ->group(function () {
         Route::get('/', [LeaveApprovalController::class, 'index'])->name('index');
+        Route::patch('/bulk-approve', [LeaveApprovalController::class, 'bulkApprove'])->name('bulk-approve');
+        Route::patch('/bulk-reject', [LeaveApprovalController::class, 'bulkReject'])->name('bulk-reject');
         Route::patch('/{leaveRequest}/approve', [LeaveApprovalController::class, 'approve'])->name('approve');
         Route::patch('/{leaveRequest}/reject', [LeaveApprovalController::class, 'reject'])->name('reject');
         Route::get('/{leaveRequest}', [LeaveApprovalController::class, 'show'])->name('show');

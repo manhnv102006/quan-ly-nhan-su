@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Concerns\ResolvesCurrentEmployee;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveRequestRejectRequest;
+use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Models\LeaveRequestHistory;
 use App\Services\LeaveApprovalService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -39,13 +42,7 @@ class LeaveApprovalController extends Controller
 
         $filters = $request->only(['employee_name', 'employee_code', 'leave_type', 'status', 'start_from', 'start_to']);
 
-        $scopedQuery = LeaveRequest::query()
-            ->forManager($manager)
-            ->whereHas('employee', function ($query) {
-                $query->whereDoesntHave('user', function ($userQuery) {
-                    $userQuery->whereHas('role', fn ($roleQuery) => $roleQuery->where('name', 'manager'));
-                });
-            });
+        $scopedQuery = $this->managerScopedQuery($manager);
 
         $stats = [
             'pending' => (clone $scopedQuery)->awaitingManagerApproval()->count(),
@@ -125,6 +122,100 @@ class LeaveApprovalController extends Controller
             ->with('success', 'Đã duyệt đơn nghỉ phép thành công.');
     }
 
+    public function bulkApprove(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'leave_request_ids' => ['required', 'array', 'min:1'],
+            'leave_request_ids.*' => ['integer'],
+        ]);
+
+        $manager = $this->currentManagerOrNull();
+
+        if (! $manager) {
+            return back()->with('error', 'Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Vui lòng liên hệ quản trị để được hỗ trợ.');
+        }
+
+        $leaveRequests = $this->resolveSelectedRequests($manager, $validated['leave_request_ids']);
+
+        if ($leaveRequests->isEmpty()) {
+            return back()
+                ->withInput()
+                ->with('error', 'Không có đơn hợp lệ để duyệt.');
+        }
+
+        foreach ($leaveRequests as $leaveRequest) {
+            $this->authorize('approve', $leaveRequest);
+        }
+
+        $result = $this->service->bulkApprove($leaveRequests, (int) Auth::id(), $manager);
+
+        if ($result['approved'] === 0) {
+            return back()
+                ->withInput()
+                ->with('error', 'Không thể duyệt các đơn đã chọn.');
+        }
+
+        $message = 'Đã duyệt thành công '.$result['approved'].' đơn nghỉ phép.';
+
+        if ($result['failed'] > 0) {
+            $message .= ' '.$result['failed'].' đơn không thể duyệt.';
+        }
+
+        return back()->with('success', $message);
+    }
+
+    public function bulkReject(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'leave_request_ids' => ['required', 'array', 'min:1'],
+            'leave_request_ids.*' => ['integer'],
+            'reject_reason' => ['required', 'string', 'min:1', 'max:1000'],
+        ], [
+            'reject_reason.required' => 'Vui lòng nhập lý do từ chối.',
+            'reject_reason.min' => 'Vui lòng nhập lý do từ chối.',
+            'reject_reason.max' => 'Lý do từ chối không được vượt quá 1000 ký tự.',
+        ]);
+
+        $manager = $this->currentManagerOrNull();
+
+        if (! $manager) {
+            return back()->with('error', 'Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Vui lòng liên hệ quản trị để được hỗ trợ.');
+        }
+
+        $leaveRequests = $this->resolveSelectedRequests($manager, $validated['leave_request_ids']);
+
+        if ($leaveRequests->isEmpty()) {
+            return back()
+                ->withInput()
+                ->with('error', 'Không có đơn hợp lệ để từ chối.');
+        }
+
+        foreach ($leaveRequests as $leaveRequest) {
+            $this->authorize('reject', $leaveRequest);
+        }
+
+        $result = $this->service->bulkReject(
+            $leaveRequests,
+            (int) Auth::id(),
+            $manager,
+            trim($validated['reject_reason'])
+        );
+
+        if ($result['rejected'] === 0) {
+            return back()
+                ->withInput()
+                ->with('error', 'Không thể từ chối các đơn đã chọn.');
+        }
+
+        $message = 'Đã từ chối thành công '.$result['rejected'].' đơn nghỉ phép.';
+
+        if ($result['failed'] > 0) {
+            $message .= ' '.$result['failed'].' đơn không thể từ chối.';
+        }
+
+        return back()->with('success', $message);
+    }
+
     public function reject(LeaveRequestRejectRequest $request, LeaveRequest $leaveRequest): RedirectResponse
     {
         $this->authorize('reject', $leaveRequest);
@@ -143,5 +234,33 @@ class LeaveApprovalController extends Controller
         return redirect()
             ->route('manager.leave-requests.index')
             ->with('success', 'Đã từ chối đơn nghỉ phép thành công.');
+    }
+
+    /**
+     * @return Builder<LeaveRequest>
+     */
+    private function managerScopedQuery(Employee $manager): Builder
+    {
+        return LeaveRequest::query()
+            ->forManager($manager)
+            ->whereHas('employee', function ($query) {
+                $query->whereDoesntHave('user', function ($userQuery) {
+                    $userQuery->whereHas('role', fn ($roleQuery) => $roleQuery->where('name', 'manager'));
+                });
+            });
+    }
+
+    /**
+     * @param  array<int>  $ids
+     * @return Collection<int, LeaveRequest>
+     */
+    private function resolveSelectedRequests(Employee $manager, array $ids): Collection
+    {
+        return $this->managerScopedQuery($manager)
+            ->awaitingManagerApproval()
+            ->whereIn('id', $ids)
+            ->get()
+            ->filter(fn (LeaveRequest $leaveRequest) => $leaveRequest->isAwaitingManagerApproval())
+            ->values();
     }
 }
