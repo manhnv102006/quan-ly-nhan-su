@@ -10,7 +10,7 @@ use App\Models\PayrollPeriod;
 use App\Models\TaxDependent;
 use App\Models\TaxDependentDocument;
 use App\Models\TaxPolicy;
-use App\Services\ModuleChangeLogService;
+use App\Rules\CitizenIdNumber;
 use App\Services\TaxDependentDocumentService;
 use App\Services\TaxDependentRegistrationService;
 use App\Services\TaxService;
@@ -96,7 +96,17 @@ class TaxController extends Controller
 
     public function storeDependent(Request $request, Employee $employee): RedirectResponse
     {
+        if (! $this->registrations->canEmployeeRegister($employee)) {
+            return redirect()
+                ->route('accountant.tax.dependents', ['employee_id' => $employee->id])
+                ->with('error', 'Mỗi nhân viên chỉ được 1 NPT (chờ duyệt hoặc đã duyệt).');
+        }
+
+        $request->merge(['id_number' => CitizenIdNumber::normalize($request->input('id_number'))]);
+
         $validated = $this->validateDependent($request);
+        $this->registrations->assertIdNumberAvailableForEmployee($employee, $validated['id_number']);
+
         $validated['employee_id'] = $employee->id;
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['status'] = TaxDependent::STATUS_APPROVED;
@@ -116,7 +126,10 @@ class TaxController extends Controller
     {
         abort_unless($dependent->employee_id === $employee->id, 404);
 
+        $request->merge(['id_number' => CitizenIdNumber::normalize($request->input('id_number'))]);
+
         $validated = $this->validateDependent($request);
+        $this->registrations->assertIdNumberAvailableForEmployee($employee, $validated['id_number'], $dependent->id);
         $original = $dependent->only(array_keys(ModuleChangeLogService::TAX_DEPENDENT_FIELDS));
         $validated['is_active'] = $request->boolean('is_active');
 
@@ -222,6 +235,18 @@ class TaxController extends Controller
     public function approveRegistration(TaxDependent $dependent): RedirectResponse
     {
         abort_unless($dependent->status === TaxDependent::STATUS_PENDING, 404);
+
+        $hasOther = TaxDependent::query()
+            ->where('employee_id', $dependent->employee_id)
+            ->where('status', TaxDependent::STATUS_APPROVED)
+            ->where('id', '!=', $dependent->id)
+            ->exists();
+
+        if ($hasOther) {
+            return redirect()
+                ->route('accountant.tax.pending-registrations')
+                ->with('error', 'Nhân viên này đã có NPT được duyệt. Mỗi nhân viên chỉ được 1 NPT.');
+        }
 
         $employeeId = $dependent->employee_id;
         $this->registrations->approve($dependent);
@@ -339,11 +364,13 @@ class TaxController extends Controller
             'full_name' => 'required|string|max:255',
             'relationship' => 'required|in:child,spouse,parent,other',
             'date_of_birth' => 'nullable|date',
-            'id_number' => 'nullable|string|max:30',
+            'id_number' => ['required', 'string', new CitizenIdNumber],
             'monthly_deduction' => 'required|numeric|min:0',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'note' => 'nullable|string|max:1000',
+        ], [
+            'id_number.required' => 'Vui lòng nhập số CCCD/CMND.',
         ]);
     }
 }

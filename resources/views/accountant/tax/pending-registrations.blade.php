@@ -7,6 +7,11 @@
                 {{ session('success') }}
             </div>
         @endif
+        @if(session('error'))
+            <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
+                {{ session('error') }}
+            </div>
+        @endif
 
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>

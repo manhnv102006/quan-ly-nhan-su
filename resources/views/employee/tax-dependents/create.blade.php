@@ -82,9 +82,12 @@
                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
                     </div>
                     <div>
-                        <label class="mb-2 block text-xs font-bold uppercase text-slate-500">Số CCCD/CMND (nhập trên giấy tờ)</label>
-                        <input type="text" name="id_number" maxlength="30" value="{{ old('id_number') }}"
-                               class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
+                        <label class="mb-2 block text-xs font-bold uppercase text-slate-500">Số CCCD/CMND <span class="text-rose-500">*</span></label>
+                        <input type="text" name="id_number" required maxlength="12" inputmode="numeric" pattern="[0-9]{9}|[0-9]{12}"
+                               value="{{ old('id_number') }}"
+                               class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                               placeholder="12 chữ số (CCCD) hoặc 9 chữ số (CMND cũ)">
+                        <p class="mt-1 text-xs text-slate-400">Chỉ nhập số, không dấu cách. CCCD: 12 số (mã tỉnh 001–096).</p>
                     </div>
                 </div>
 

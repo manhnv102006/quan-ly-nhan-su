@@ -21,22 +21,24 @@ class TaxDependentRegistrationService
     {
         abort_unless($employee->status === 'active', 422, 'Chỉ nhân viên đang làm việc mới được đăng ký NPT.');
 
+        $this->assertEmployeeRegistrationQuota($employee);
+
         $fullName = trim((string) $data['full_name']);
-        $idNumber = isset($data['id_number']) ? trim((string) $data['id_number']) : null;
+        $idNumber = \App\Rules\CitizenIdNumber::normalize($data['id_number'] ?? '');
+
+        abort_if($idNumber === '', 422, 'Vui lòng nhập số CCCD/CMND của người phụ thuộc.');
+
+        $this->assertIdNumberAvailableForEmployee($employee, $idNumber);
 
         $duplicateQuery = TaxDependent::query()
             ->where('employee_id', $employee->id)
             ->where('status', TaxDependent::STATUS_PENDING)
             ->where('full_name', $fullName);
 
-        if ($idNumber !== null && $idNumber !== '') {
-            $duplicateQuery->where('id_number', $idNumber);
-        }
-
         abort_if(
             $duplicateQuery->exists(),
             422,
-            'Bạn đã có đăng ký NPT chờ duyệt cho người này. Vui lòng chờ kế toán xử lý.'
+            'Bạn đã có yêu cầu đăng ký NPT chờ duyệt cho người này. Vui lòng chờ kế toán xử lý.'
         );
 
         return DB::transaction(function () use ($employee, $data, $requestedBy, $fullName, $idNumber) {
@@ -48,7 +50,7 @@ class TaxDependentRegistrationService
                     ? ($data['child_category'] ?? null)
                     : null,
                 'date_of_birth' => $data['date_of_birth'] ?? null,
-                'id_number' => $idNumber ?: null,
+                'id_number' => $idNumber,
                 'monthly_deduction' => $data['monthly_deduction'] ?? app(TaxService::class)->defaultDependentDeduction(),
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'] ?? null,
@@ -134,6 +136,42 @@ class TaxDependentRegistrationService
     public function pendingCount(): int
     {
         return TaxDependent::query()->where('status', TaxDependent::STATUS_PENDING)->count();
+    }
+
+    /** Mỗi nhân viên chỉ được 1 NPT (chờ duyệt hoặc đã duyệt). */
+    public function canEmployeeRegister(Employee $employee): bool
+    {
+        return ! TaxDependent::query()
+            ->where('employee_id', $employee->id)
+            ->whereIn('status', [TaxDependent::STATUS_PENDING, TaxDependent::STATUS_APPROVED])
+            ->exists();
+    }
+
+    public function assertEmployeeRegistrationQuota(Employee $employee): void
+    {
+        abort_if(
+            ! $this->canEmployeeRegister($employee),
+            422,
+            'Mỗi nhân viên chỉ được đăng ký 1 người phụ thuộc (NPT). Bạn đã có NPT chờ duyệt hoặc đã được duyệt.'
+        );
+    }
+
+    public function assertIdNumberAvailableForEmployee(Employee $employee, string $idNumber, ?int $ignoreDependentId = null): void
+    {
+        $query = TaxDependent::query()
+            ->where('employee_id', $employee->id)
+            ->whereIn('status', [TaxDependent::STATUS_PENDING, TaxDependent::STATUS_APPROVED])
+            ->where('id_number', $idNumber);
+
+        if ($ignoreDependentId) {
+            $query->where('id', '!=', $ignoreDependentId);
+        }
+
+        abort_if(
+            $query->exists(),
+            422,
+            'Số CCCD/CMND này đã được dùng cho NPT khác trong hồ sơ của bạn.'
+        );
     }
 
     private function ensureTaxProfile(Employee $employee): void

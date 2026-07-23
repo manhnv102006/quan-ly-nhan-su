@@ -34,7 +34,7 @@
         @endif
 
         <div class="rounded-2xl border border-violet-100 bg-violet-50/60 px-5 py-4 text-sm text-violet-900">
-            Đăng ký <strong>người phụ thuộc (NPT)</strong> gửi tới <strong>kế toán</strong> duyệt kèm <strong>giấy tờ bắt buộc</strong> theo quan hệ (khai sinh, thẻ SV, đăng ký kết hôn, CCCD…). Sau khi duyệt, mỗi NPT được giảm trừ <strong>6,2 triệu/tháng</strong> theo quy định 2026.
+            Đăng ký <strong>người phụ thuộc (NPT)</strong> gửi tới <strong>kế toán</strong> duyệt kèm <strong>giấy tờ bắt buộc</strong>. <strong>Mỗi nhân viên chỉ được 1 NPT</strong> (chờ duyệt hoặc đã duyệt). CCCD người phụ thuộc: <strong>12 chữ số</strong>.
         </div>
 
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -67,9 +67,15 @@
                         ← Duyệt đăng ký (Kế toán)
                     </a>
                 @endif
-                <a href="{{ route('employee.tax-dependents.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-violet-500/20 hover:bg-violet-700">
-                    + Đăng ký NPT mới
-                </a>
+                @if($canRegister ?? true)
+                    <a href="{{ route('employee.tax-dependents.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-violet-500/20 hover:bg-violet-700">
+                        + Đăng ký NPT mới
+                    </a>
+                @else
+                    <span class="inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-500" title="Đã có NPT chờ duyệt hoặc đã duyệt">
+                        + Đăng ký NPT mới
+                    </span>
+                @endif
             </div>
         </div>
 

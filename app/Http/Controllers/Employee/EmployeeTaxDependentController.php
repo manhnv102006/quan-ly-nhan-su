@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\ResolvesLinkedEmployee;
 use App\Http\Controllers\Controller;
 use App\Models\TaxDependent;
 use App\Models\TaxDependentDocument;
+use App\Rules\CitizenIdNumber;
 use App\Services\TaxDependentDocumentService;
 use App\Services\TaxDependentRegistrationService;
 use App\Support\TaxDependentDocumentRules;
@@ -37,11 +38,20 @@ class EmployeeTaxDependentController extends Controller
             'dependents' => $dependents,
             'summary' => $this->registrations->employeeSummary($employee),
             'documentGuide' => TaxDependentDocumentRules::requirementGuide(),
+            'canRegister' => $this->registrations->canEmployeeRegister($employee),
         ]);
     }
 
-    public function create(): View
+    public function create(): View|RedirectResponse
     {
+        $employee = $this->linkedEmployee();
+
+        if (! $this->registrations->canEmployeeRegister($employee)) {
+            return redirect()
+                ->route('employee.tax-dependents.index')
+                ->with('error', 'Mỗi nhân viên chỉ được đăng ký 1 người phụ thuộc (NPT). Bạn đã có NPT chờ duyệt hoặc đã được duyệt.');
+        }
+
         return view('employee.tax-dependents.create', [
             'relationshipLabels' => TaxDependent::RELATIONSHIP_LABELS,
             'childCategoryLabels' => TaxDependent::CHILD_CATEGORY_LABELS,
@@ -65,17 +75,22 @@ class EmployeeTaxDependentController extends Controller
         $relationship = (string) $request->input('relationship');
         $childCategory = $relationship === 'child' ? $request->input('child_category') : null;
 
+        $request->merge([
+            'id_number' => CitizenIdNumber::normalize($request->input('id_number')),
+        ]);
+
         $validated = $request->validate(array_merge([
             'full_name' => 'required|string|max:255',
             'relationship' => 'required|in:child,spouse,parent,other',
             'date_of_birth' => 'nullable|date',
-            'id_number' => 'nullable|string|max:30',
+            'id_number' => ['required', 'string', new CitizenIdNumber],
             'start_date' => 'required|date',
             'note' => 'nullable|string|max:1000',
         ], $this->documents->validationRules($relationship, $childCategory)), array_merge([
             'full_name.required' => 'Vui lòng nhập họ tên người phụ thuộc.',
             'relationship.required' => 'Vui lòng chọn quan hệ.',
             'start_date.required' => 'Vui lòng chọn ngày bắt đầu giảm trừ.',
+            'id_number.required' => 'Vui lòng nhập số CCCD/CMND của người phụ thuộc.',
         ], $this->documents->validationMessages()));
 
         $this->documents->assertChildAgeMatchesCategory(
@@ -91,7 +106,9 @@ class EmployeeTaxDependentController extends Controller
             $dependent = $this->registrations->submitRequest($employee, $validated, (int) auth()->id());
             $this->documents->attachFromRequest($dependent, $employee, $request->all());
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            return back()->withErrors(['full_name' => $e->getMessage()])->withInput();
+            $field = str_contains($e->getMessage(), 'CCCD') ? 'id_number' : 'full_name';
+
+            return back()->withErrors([$field => $e->getMessage()])->withInput();
         }
 
         return redirect()
