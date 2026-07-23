@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmployeeTaxProfile;
 use App\Models\PayrollPeriod;
@@ -37,11 +38,26 @@ class TaxController extends Controller
             ->get();
 
         $period = $periodId ? PayrollPeriod::find($periodId) : null;
-        $rows = $period ? $this->tax->calculateForPeriod($period) : collect();
+
+        $filters = [
+            'department_id' => $request->input('department_id'),
+            'search' => $request->input('search'),
+            'pit_filter' => $request->input('pit_filter'),
+        ];
+
+        $departments = Department::query()
+            ->where('status', 'active')
+            ->orderBy('department_name')
+            ->get(['id', 'department_code', 'department_name']);
+
+        $allRows = $period ? $this->tax->calculateForPeriod($period) : collect();
+        $rows = $this->tax->filterPeriodRows($allRows, $filters);
 
         return view('accountant.tax.index', [
             'periods' => $periods,
             'period' => $period,
+            'departments' => $departments,
+            'filters' => $filters,
             'rows' => $rows,
             'totalPit' => (float) $rows->sum('pit'),
             'totalGross' => (float) $rows->sum('gross'),

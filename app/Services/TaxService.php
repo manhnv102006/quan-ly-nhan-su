@@ -130,7 +130,7 @@ class TaxService
     public function calculateForPeriod(PayrollPeriod $period): Collection
     {
         $payrolls = Payroll::query()
-            ->with(['employee.taxProfile', 'employee.insurance', 'employee.taxDependents'])
+            ->with(['employee.taxProfile', 'employee.insurance', 'employee.taxDependents', 'employee.department'])
             ->where('payroll_period_id', $period->id)
             ->orderByDesc('total_salary')
             ->get();
@@ -146,6 +146,42 @@ class TaxService
                 'employee' => $employee,
             ]);
         });
+    }
+
+    /**
+     * @param  array{department_id?: mixed, search?: mixed, pit_filter?: mixed}  $filters
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function filterPeriodRows(Collection $rows, array $filters): Collection
+    {
+        $departmentId = filled($filters['department_id'] ?? null) ? (int) $filters['department_id'] : null;
+        $search = mb_strtolower(trim((string) ($filters['search'] ?? '')));
+        $pitFilter = (string) ($filters['pit_filter'] ?? '');
+
+        return $rows->filter(function (array $row) use ($departmentId, $search, $pitFilter) {
+            $employee = $row['employee'] ?? null;
+            if (! $employee instanceof Employee) {
+                return false;
+            }
+
+            if ($departmentId && (int) $employee->department_id !== $departmentId) {
+                return false;
+            }
+
+            if ($search !== '') {
+                $needle = mb_strtolower(trim($employee->full_name.' '.$employee->employee_code));
+                if (! str_contains($needle, $search)) {
+                    return false;
+                }
+            }
+
+            return match ($pitFilter) {
+                'with_tax' => (float) $row['pit'] > 0,
+                'no_tax' => (float) $row['pit'] <= 0,
+                'with_dependents' => (int) ($row['dependents_count'] ?? 0) > 0,
+                default => true,
+            };
+        })->values();
     }
 
     /**
