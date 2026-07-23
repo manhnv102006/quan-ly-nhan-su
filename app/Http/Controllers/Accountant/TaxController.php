@@ -11,6 +11,7 @@ use App\Models\TaxDependent;
 use App\Models\TaxDependentDocument;
 use App\Models\TaxPolicy;
 use App\Rules\CitizenIdNumber;
+use App\Services\ModuleChangeLogService;
 use App\Services\TaxDependentDocumentService;
 use App\Services\TaxDependentRegistrationService;
 use App\Services\TaxService;
