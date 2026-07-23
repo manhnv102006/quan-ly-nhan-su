@@ -134,7 +134,7 @@ class LeaveRequest extends Model
         $this->loadMissing('employee');
 
         if (! $this->employee?->isManagedBy($manager)) {
-            abort(403, 'Bạn không có quyền xử lý đơn nghỉ phép này. Đơn không thuộc nhân viên do bạn quản lý.');
+            throw \Illuminate\Validation\ValidationException::withMessages(['authorization' => 'Bạn không có quyền xử lý đơn nghỉ phép này. Đơn không thuộc nhân viên do bạn quản lý.']);
         }
     }
 
