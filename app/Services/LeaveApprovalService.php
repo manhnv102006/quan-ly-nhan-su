@@ -50,6 +50,42 @@ class LeaveApprovalService
             throw ValidationException::withMessages(['start_date' => 'Đơn này trùng thời gian với đơn đã duyệt khác.']);
         }
 
+        $leaveRequest->loadMissing('employee');
+        $departmentId = $leaveRequest->employee?->department_id;
+
+        if ($departmentId) {
+            $overlappingLeaves = LeaveRequest::whereHas('employee', function ($q) use ($departmentId) {
+                $q->where('department_id', $departmentId);
+            })
+            ->where('id', '!=', $leaveRequest->id)
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->whereDate('start_date', '<=', $leaveRequest->end_date)
+            ->whereDate('end_date', '>=', $leaveRequest->start_date)
+            ->get();
+
+            if ($overlappingLeaves->isNotEmpty()) {
+                $current = \Carbon\Carbon::parse($leaveRequest->start_date)->copy();
+                $end = \Carbon\Carbon::parse($leaveRequest->end_date);
+                
+                while ($current->lte($end)) {
+                    $dateStr = $current->format('Y-m-d');
+                    
+                    $countOnDay = $overlappingLeaves->filter(function ($leave) use ($dateStr) {
+                        return $leave->start_date->format('Y-m-d') <= $dateStr 
+                            && $leave->end_date->format('Y-m-d') >= $dateStr;
+                    })->count();
+                    
+                    if ($countOnDay >= 5) {
+                        throw ValidationException::withMessages([
+                            'start_date' => 'Phòng ban đã có ' . $countOnDay . ' người nghỉ phép vào ngày ' . $current->format('d/m/Y') . '. Tối đa chỉ được nghỉ 5 người/ngày.'
+                        ]);
+                    }
+                    
+                    $current->addDay();
+                }
+            }
+        }
+
         $this->processDecision(
             leaveRequest: $leaveRequest,
             actorId: $actorId,
