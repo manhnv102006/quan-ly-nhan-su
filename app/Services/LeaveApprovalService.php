@@ -197,4 +197,46 @@ class LeaveApprovalService
             }
         });
     }
+
+    /**
+     * @param  iterable<LeaveRequest>  $leaveRequests
+     * @return array{approved: int, failed: int}
+     */
+    public function bulkApprove(iterable $leaveRequests, int $actorId, Employee $manager): array
+    {
+        $approved = 0;
+        $failed = 0;
+
+        foreach ($leaveRequests as $leaveRequest) {
+            try {
+                $this->approve($leaveRequest, $actorId, $manager);
+                $approved++;
+            } catch (ValidationException) {
+                $failed++;
+            }
+        }
+
+        return compact('approved', 'failed');
+    }
+
+    /**
+     * @param  iterable<LeaveRequest>  $leaveRequests
+     * @return array{rejected: int, failed: int}
+     */
+    public function bulkReject(iterable $leaveRequests, int $actorId, Employee $manager, string $reason): array
+    {
+        $rejected = 0;
+        $failed = 0;
+
+        foreach ($leaveRequests as $leaveRequest) {
+            try {
+                $this->reject($leaveRequest, $actorId, $manager, $reason);
+                $rejected++;
+            } catch (ValidationException) {
+                $failed++;
+            }
+        }
+
+        return compact('rejected', 'failed');
+    }
 }
