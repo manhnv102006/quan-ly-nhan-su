@@ -16,11 +16,8 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h2 class="text-2xl font-bold text-slate-900">Đăng ký NPT chờ duyệt</h2>
-                <p class="text-sm text-slate-500">{{ $pendingCount }} yêu cầu đang chờ · Duyệt xong chuyển vào người phụ thuộc thuế</p>
+                <p class="text-sm text-slate-500">{{ $pendingCount }} yêu cầu đang chờ · Nhân viên đăng ký NPT qua cổng cá nhân</p>
             </div>
-            <a href="{{ route('accountant.tax.dependents') }}" class="accountant-btn-secondary !text-xs">
-                Quản lý người phụ thuộc →
-            </a>
         </div>
 
         <div class="accountant-card mt-6 overflow-hidden">

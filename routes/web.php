@@ -330,16 +330,12 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
     Route::post('/insurance/{insurance}/stop', [AccountantInsuranceController::class, 'stop'])->name('insurance.stop');
     Route::post('/insurance/resigned/{employee}/stop', [AccountantInsuranceController::class, 'stopResigned'])->name('insurance.stop-resigned');
     Route::get('/tax', [AccountantTaxController::class, 'index'])->name('tax.index');
-    Route::get('/tax/dependents', [AccountantTaxController::class, 'dependents'])->name('tax.dependents');
+    Route::redirect('/tax/dependents', '/accountant/tax/dependent-registrations')->name('tax.dependents');
     Route::get('/tax/dependent-registrations', [AccountantTaxController::class, 'pendingRegistrations'])->name('tax.pending-registrations');
     Route::post('/tax/dependent-registrations/{dependent}/approve', [AccountantTaxController::class, 'approveRegistration'])->name('tax.registrations.approve');
     Route::post('/tax/dependent-registrations/{dependent}/reject', [AccountantTaxController::class, 'rejectRegistration'])->name('tax.registrations.reject');
     Route::get('/tax/dependent-registrations/{dependent}/documents/{document}', [AccountantTaxController::class, 'downloadDependentDocument'])
         ->name('tax.registrations.document');
-    Route::post('/tax/dependents/{employee}', [AccountantTaxController::class, 'storeDependent'])->name('tax.dependents.store');
-    Route::put('/tax/dependents/{employee}/{dependent}', [AccountantTaxController::class, 'updateDependent'])->name('tax.dependents.update');
-    Route::delete('/tax/dependents/{employee}/{dependent}', [AccountantTaxController::class, 'destroyDependent'])->name('tax.dependents.destroy');
-    Route::put('/tax/profile/{employee}', [AccountantTaxController::class, 'updateProfile'])->name('tax.profile.update');
     Route::get('/tax/declaration', [AccountantTaxController::class, 'declaration'])->name('tax.declaration');
     Route::get('/tax/declaration/export', [AccountantTaxController::class, 'exportDeclaration'])->name('tax.declaration.export');
     Route::get('/tax/settlement', [AccountantTaxController::class, 'settlement'])->name('tax.settlement');

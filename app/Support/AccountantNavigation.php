@@ -107,17 +107,12 @@ class AccountantNavigation
                 'match' => 'accountant.tax.*',
                 'group' => self::GROUP_FINANCE,
                 'icon' => 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75M9 16.5v.75m3-3v3M15 12v.75M3 4.5h15M4.5 19.5h15a1.5 1.5 0 001.5-1.5V6.75a1.5 1.5 0 00-1.5-1.5H4.5a1.5 1.5 0 00-1.5 1.5v11.25a1.5 1.5 0 001.5 1.5z',
-                'note' => 'Tính thuế, người phụ thuộc, tờ khai',
+                'note' => 'Tính thuế, duyệt NPT, tờ khai',
                 'children' => [
                     [
                         'label' => 'Tính thuế',
                         'href' => route('accountant.tax.index'),
                         'match' => 'accountant.tax.index',
-                    ],
-                    [
-                        'label' => 'Người phụ thuộc',
-                        'href' => route('accountant.tax.dependents'),
-                        'match' => ['accountant.tax.dependents', 'accountant.tax.dependents.*', 'accountant.tax.profile.*'],
                     ],
                     [
                         'label' => 'Duyệt đăng ký người phụ thuộc',

@@ -2,7 +2,6 @@
     $pendingNptCount = \App\Models\TaxDependent::query()->where('status', \App\Models\TaxDependent::STATUS_PENDING)->count();
     $items = [
         ['label' => 'Tính thuế', 'route' => 'accountant.tax.index', 'key' => 'calc'],
-        ['label' => 'Người phụ thuộc', 'route' => 'accountant.tax.dependents', 'key' => 'dependents'],
         ['label' => 'Duyệt đăng ký NPT' . ($pendingNptCount > 0 ? " ({$pendingNptCount})" : ''), 'route' => 'accountant.tax.pending-registrations', 'key' => 'pending'],
         ['label' => 'Tờ khai thuế', 'route' => 'accountant.tax.declaration', 'key' => 'declaration'],
         ['label' => 'Quyết toán năm', 'route' => 'accountant.tax.settlement', 'key' => 'settlement'],

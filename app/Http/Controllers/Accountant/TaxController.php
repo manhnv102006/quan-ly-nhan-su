@@ -4,14 +4,10 @@ namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Department;
-use App\Models\Employee;
-use App\Models\EmployeeTaxProfile;
 use App\Models\PayrollPeriod;
 use App\Models\TaxDependent;
 use App\Models\TaxDependentDocument;
 use App\Models\TaxPolicy;
-use App\Rules\CitizenIdNumber;
-use App\Services\ModuleChangeLogService;
 use App\Services\TaxDependentDocumentService;
 use App\Services\TaxDependentRegistrationService;
 use App\Services\TaxService;
@@ -25,7 +21,6 @@ class TaxController extends Controller
 {
     public function __construct(
         private readonly TaxService $tax,
-        private readonly ModuleChangeLogService $changeLogs,
         private readonly TaxDependentRegistrationService $registrations,
         private readonly TaxDependentDocumentService $dependentDocuments,
     ) {}
@@ -74,107 +69,6 @@ class TaxController extends Controller
             'periodTaxPolicy' => $periodTaxPolicy,
             'currentTaxPolicy' => TaxPolicy::current(),
         ]);
-    }
-
-    public function dependents(Request $request): View
-    {
-        $employeeId = $request->integer('employee_id');
-
-        $employees = Employee::query()
-            ->whereIn('status', ['active', 'inactive'])
-            ->withCount(['taxDependents as active_dependents_count' => fn ($q) => $q
-                ->where('status', TaxDependent::STATUS_APPROVED)
-                ->where('is_active', true)])
-            ->with('taxProfile')
-            ->orderBy('full_name')
-            ->get();
-
-        $selectedEmployee = $employeeId ? Employee::with(['taxProfile', 'taxDependents'])->find($employeeId) : null;
-        $dependents = $selectedEmployee?->taxDependents()->orderByDesc('is_active')->orderBy('full_name')->get() ?? collect();
-
-        return view('accountant.tax.dependents', compact('employees', 'selectedEmployee', 'dependents'));
-    }
-
-    public function storeDependent(Request $request, Employee $employee): RedirectResponse
-    {
-        if (! $this->registrations->canEmployeeRegister($employee)) {
-            return redirect()
-                ->route('accountant.tax.dependents', ['employee_id' => $employee->id])
-                ->with('error', 'Mỗi nhân viên chỉ được 1 NPT (chờ duyệt hoặc đã duyệt).');
-        }
-
-        $request->merge(['id_number' => CitizenIdNumber::normalize($request->input('id_number'))]);
-
-        $validated = $this->validateDependent($request);
-        $this->registrations->assertIdNumberAvailableForEmployee($employee, $validated['id_number']);
-
-        $validated['employee_id'] = $employee->id;
-        $validated['is_active'] = $request->boolean('is_active', true);
-        $validated['status'] = TaxDependent::STATUS_APPROVED;
-        $validated['approved_by'] = auth()->id();
-        $validated['approved_at'] = now();
-
-        $dependent = TaxDependent::create($validated);
-        $this->ensureTaxProfile($employee);
-        $this->changeLogs->logTaxDependentCreate($dependent);
-
-        return redirect()
-            ->route('accountant.tax.dependents', ['employee_id' => $employee->id])
-            ->with('success', 'Đã thêm người phụ thuộc.');
-    }
-
-    public function updateDependent(Request $request, Employee $employee, TaxDependent $dependent): RedirectResponse
-    {
-        abort_unless($dependent->employee_id === $employee->id, 404);
-
-        $request->merge(['id_number' => CitizenIdNumber::normalize($request->input('id_number'))]);
-
-        $validated = $this->validateDependent($request);
-        $this->registrations->assertIdNumberAvailableForEmployee($employee, $validated['id_number'], $dependent->id);
-        $original = $dependent->only(array_keys(ModuleChangeLogService::TAX_DEPENDENT_FIELDS));
-        $validated['is_active'] = $request->boolean('is_active');
-
-        $dependent->update($validated);
-        $this->changeLogs->logTaxDependentUpdate($dependent, $original);
-
-        return redirect()
-            ->route('accountant.tax.dependents', ['employee_id' => $employee->id])
-            ->with('success', 'Đã cập nhật người phụ thuộc.');
-    }
-
-    public function destroyDependent(Employee $employee, TaxDependent $dependent): RedirectResponse
-    {
-        abort_unless($dependent->employee_id === $employee->id, 404);
-        $this->changeLogs->logTaxDependentDelete($dependent);
-        $dependent->delete();
-
-        return redirect()
-            ->route('accountant.tax.dependents', ['employee_id' => $employee->id])
-            ->with('success', 'Đã xóa người phụ thuộc.');
-    }
-
-    public function updateProfile(Request $request, Employee $employee): RedirectResponse
-    {
-        $validated = $request->validate([
-            'tax_code' => 'nullable|string|max:20',
-            'personal_deduction' => 'required|numeric|min:0',
-            'note' => 'nullable|string|max:2000',
-        ]);
-
-        $profile = EmployeeTaxProfile::query()->firstOrNew(['employee_id' => $employee->id]);
-        $original = $profile->exists
-            ? $profile->only(array_keys(ModuleChangeLogService::TAX_PROFILE_FIELDS))
-            : [];
-
-        $profile->fill($validated);
-        $profile->employee_id = $employee->id;
-        $profile->save();
-
-        $this->changeLogs->logTaxProfileUpdate($profile, $original, $employee->id);
-
-        return redirect()
-            ->route('accountant.tax.dependents', ['employee_id' => $employee->id])
-            ->with('success', 'Đã cập nhật hồ sơ thuế.');
     }
 
     public function declaration(Request $request): View
@@ -249,12 +143,11 @@ class TaxController extends Controller
                 ->with('error', 'Nhân viên này đã có NPT được duyệt. Mỗi nhân viên chỉ được 1 NPT.');
         }
 
-        $employeeId = $dependent->employee_id;
         $this->registrations->approve($dependent);
 
         return redirect()
-            ->route('accountant.tax.dependents', ['employee_id' => $employeeId])
-            ->with('success', 'Đã duyệt đăng ký NPT. Người phụ thuộc đã được áp dụng giảm trừ thuế (GT phụ thuộc).');
+            ->route('accountant.tax.pending-registrations')
+            ->with('success', 'Đã duyệt đăng ký NPT. Giảm trừ phụ thuộc đã được áp dụng khi tính lương.');
     }
 
     public function rejectRegistration(Request $request, TaxDependent $dependent): RedirectResponse
@@ -339,39 +232,6 @@ class TaxController extends Controller
         return response($csv, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="quyet_toan_tncn_'.$year.'.csv"',
-        ]);
-    }
-
-    private function ensureTaxProfile(Employee $employee): void
-    {
-        if ($employee->taxProfile) {
-            return;
-        }
-
-        $policy = TaxPolicy::current();
-
-        EmployeeTaxProfile::create([
-            'employee_id' => $employee->id,
-            'personal_deduction' => $policy?->personal_deduction ?? EmployeeTaxProfile::DEFAULT_PERSONAL_DEDUCTION,
-        ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function validateDependent(Request $request): array
-    {
-        return $request->validate([
-            'full_name' => 'required|string|max:255',
-            'relationship' => 'required|in:child,spouse,parent,other',
-            'date_of_birth' => 'nullable|date',
-            'id_number' => ['required', 'string', new CitizenIdNumber],
-            'monthly_deduction' => 'required|numeric|min:0',
-            'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'note' => 'nullable|string|max:1000',
-        ], [
-            'id_number.required' => 'Vui lòng nhập số CCCD/CMND.',
         ]);
     }
 }
