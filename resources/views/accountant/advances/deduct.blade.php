@@ -1,8 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
 <x-accountant-layout title="Trừ tạm ứng vào lương" subtitle="Khấu trừ vào bảng lương kỳ calculated">
-    @include('accountant.advances.partials.sub-nav', ['active' => 'deduct'])
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="flex flex-wrap items-end justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-900">Trừ tạm ứng vào kỳ lương</h2>

@@ -1,7 +1,5 @@
 <x-accountant-layout title="Chấm công" subtitle="Xem bảng công phục vụ tính lương">
-    @include('accountant.attendance.partials.sub-nav', ['active' => 'departments'])
-
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
             Chế độ chỉ xem — dữ liệu chấm công dùng đối chiếu khi tính lương, không chỉnh sửa tại đây.
         </div>

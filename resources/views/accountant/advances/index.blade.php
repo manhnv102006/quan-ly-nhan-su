@@ -5,8 +5,7 @@
 @endphp
 
 <x-accountant-layout title="Tạm ứng lương" subtitle="Phòng ban → Nhân viên → Yêu cầu ứng lương">
-    @include('accountant.advances.partials.sub-nav', ['active' => 'requests'])
-    <div class="accountant-page">
+<div class="accountant-page">
         <div>
             <h2 class="text-2xl font-bold text-slate-900">Tạm ứng lương</h2>
             <p class="text-sm text-slate-500">Duyệt yêu cầu ứng lương theo phòng ban và nhân viên.</p>

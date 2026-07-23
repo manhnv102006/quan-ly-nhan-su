@@ -1,9 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
 <x-accountant-layout title="Hợp đồng sắp hết hạn" subtitle="Cảnh báo hết hạn hợp đồng lao động">
-    @include('accountant.contracts.partials.sub-nav', ['active' => 'expiring'])
-
-    <div class="accountant-page">
+<div class="accountant-page">
         <div>
             <h2 class="text-2xl font-bold text-slate-900">Cảnh báo hợp đồng sắp hết hạn</h2>
             <p class="text-sm text-slate-500">Theo dõi hợp đồng hiệu lực sắp đến ngày kết thúc để chuẩn bị gia hạn hoặc điều chỉnh lương.</p>

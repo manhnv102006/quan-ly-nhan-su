@@ -6,9 +6,7 @@
 @endphp
 
 <x-accountant-layout title="Bảng công tháng" subtitle="Tháng {{ $monthLabel }} — phục vụ tính lương">
-    @include('accountant.attendance.partials.sub-nav', ['active' => 'timesheet'])
-
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
             Bảng công tổng hợp toàn công ty — chỉ xem, dùng đối chiếu trước khi tính/duyệt lương.
         </div>

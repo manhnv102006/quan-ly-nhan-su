@@ -1,8 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
 <x-accountant-layout title="Người phụ thuộc" subtitle="Giảm trừ gia cảnh 4.4 triệu/người/tháng">
-    @include('accountant.tax.partials.sub-nav', ['active' => 'dependents'])
-    <div class="accountant-page">
+<div class="accountant-page">
         <div>
             <h2 class="text-2xl font-bold text-slate-900">Quản lý người phụ thuộc</h2>
             <p class="text-sm text-slate-500">Đăng ký NPT để giảm trừ thuế TNCN khi tính lương</p>

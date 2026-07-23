@@ -6,9 +6,7 @@
 @endphp
 
 <x-accountant-layout title="Hợp đồng" subtitle="Phòng ban → Nhân viên → Hợp đồng">
-    @include('accountant.contracts.partials.sub-nav', ['active' => 'departments'])
-
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-900">Hợp đồng lao động</h2>

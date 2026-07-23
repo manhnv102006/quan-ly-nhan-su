@@ -1,8 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
 <x-accountant-layout title="Thuế TNCN" subtitle="Tính thuế theo nhân viên từng kỳ lương">
-    @include('accountant.tax.partials.sub-nav', ['active' => 'calc'])
-    <div class="accountant-page">
+<div class="accountant-page">
         <div>
             <h2 class="text-2xl font-bold text-slate-900">Tính thuế TNCN</h2>
             <p class="text-sm text-slate-500">Biểu thuế lũy tiến · GT bản thân 11 triệu · GT phụ thuộc 4.4 triệu/NPT</p>
