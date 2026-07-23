@@ -97,22 +97,22 @@ class LeaveApprovalService
 
         if ($isFromManager) {
             if (! $user?->isAdmin()) {
-                abort(403, 'Đơn nghỉ phép của quản lý chỉ Admin mới được duyệt hoặc từ chối.');
+                throw ValidationException::withMessages(['authorization' => 'Đơn nghỉ phép của quản lý chỉ Admin mới được duyệt hoặc từ chối.']);
             }
 
             return;
         }
 
         if ($user?->isAdmin()) {
-            abort(403, 'Admin chỉ được duyệt đơn nghỉ phép của quản lý, không được duyệt đơn của nhân viên.');
+            throw ValidationException::withMessages(['authorization' => 'Admin chỉ được duyệt đơn nghỉ phép của quản lý, không được duyệt đơn của nhân viên.']);
         }
 
         if (! $user?->isManager()) {
-            abort(403, 'Chỉ quản lý hoặc admin mới được duyệt hoặc từ chối đơn nghỉ phép.');
+            throw ValidationException::withMessages(['authorization' => 'Chỉ quản lý hoặc admin mới được duyệt hoặc từ chối đơn nghỉ phép.']);
         }
 
         if (! $manager) {
-            abort(403, 'Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Vui lòng liên hệ quản trị để được hỗ trợ.');
+            throw ValidationException::withMessages(['authorization' => 'Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Vui lòng liên hệ quản trị để được hỗ trợ.']);
         }
 
         $leaveRequest->authorizeManagerAction($manager);

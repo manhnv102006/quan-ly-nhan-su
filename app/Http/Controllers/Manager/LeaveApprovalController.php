@@ -114,10 +114,11 @@ class LeaveApprovalController extends Controller
         try {
             $this->service->approve($leaveRequest, (int) Auth::id(), $manager);
         } catch (ValidationException $e) {
+            $reason = collect($e->errors())->flatten()->first() ?? 'Lỗi không xác định.';
             return redirect()
                 ->route('manager.leave-requests.show', $leaveRequest)
                 ->withErrors($e->errors())
-                ->with('error', 'Không thể duyệt đơn.');
+                ->with('error', 'Không thể duyệt đơn: ' . $reason);
         }
 
         return redirect()
@@ -134,10 +135,11 @@ class LeaveApprovalController extends Controller
         try {
             $this->service->reject($leaveRequest, (int) Auth::id(), $manager, $request->validated('reject_reason'));
         } catch (ValidationException $e) {
+            $reason = collect($e->errors())->flatten()->first() ?? 'Lỗi không xác định.';
             return redirect()
                 ->route('manager.leave-requests.show', $leaveRequest)
                 ->withErrors($e->errors())
-                ->with('error', 'Không thể từ chối đơn.');
+                ->with('error', 'Không thể từ chối đơn: ' . $reason);
         }
 
         return redirect()
