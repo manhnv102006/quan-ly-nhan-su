@@ -29,6 +29,18 @@
                 </div>
             </div>
         @else
+            @if (session('success'))
+                <div class="flex items-center gap-3 rounded-2xl border border-teal-200 bg-teal-50 px-5 py-4 shadow-sm">
+                    <p class="text-sm font-medium text-teal-800">{{ session('success') }}</p>
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 shadow-sm">
+                    <p class="text-sm font-medium text-rose-800">{{ session('error') }}</p>
+                </div>
+            @endif
+
             <section class="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div class="manager-stat-card border border-amber-100/80 bg-white/90">
                     <div class="flex items-start justify-between">
@@ -122,11 +134,102 @@
                 </div>
             </section>
 
-            <section class="manager-card overflow-hidden">
+            <section class="manager-card overflow-hidden"
+                     x-data="{
+                         selectedCount: 0,
+                         allSelected: false,
+                         showRejectModal: {{ ($errors->has('reject_reason') || old('overtime_request_ids')) ? 'true' : 'false' }},
+                         syncSelection() {
+                             const boxes = this.$refs.tableForm.querySelectorAll('input[name=\'overtime_request_ids[]\']');
+                             const checked = this.$refs.tableForm.querySelectorAll('input[name=\'overtime_request_ids[]\']:checked');
+                             this.selectedCount = checked.length;
+                             this.allSelected = boxes.length > 0 && checked.length === boxes.length;
+                         },
+                         toggleAll(event) {
+                             const checked = event.target.checked;
+                             this.$refs.tableForm.querySelectorAll('input[name=\'overtime_request_ids[]\']').forEach(box => {
+                                 box.checked = checked;
+                             });
+                             this.syncSelection();
+                         },
+                         confirmApprove(event) {
+                             if (this.selectedCount === 0) {
+                                 event.preventDefault();
+                                 alert('Vui lòng chọn ít nhất một đơn chờ duyệt.');
+                                 return;
+                             }
+
+                             if (! confirm(`Duyệt ${this.selectedCount} đơn tăng ca đã chọn?`)) {
+                                 event.preventDefault();
+                             }
+                         },
+                         openRejectModal() {
+                             if (this.selectedCount === 0) {
+                                 alert('Vui lòng chọn ít nhất một đơn chờ duyệt.');
+                                 return;
+                             }
+
+                             const container = this.$refs.rejectIds;
+                             container.innerHTML = '';
+
+                             this.$refs.tableForm.querySelectorAll('input[name=\'overtime_request_ids[]\']:checked').forEach(box => {
+                                 const input = document.createElement('input');
+                                 input.type = 'hidden';
+                                 input.name = 'overtime_request_ids[]';
+                                 input.value = box.value;
+                                 container.appendChild(input);
+                             });
+
+                             this.showRejectModal = true;
+                         },
+                         restoreOldSelection() {
+                             @json(array_map('intval', old('overtime_request_ids', []))).forEach(id => {
+                                 const box = this.$refs.tableForm.querySelector(`input[name='overtime_request_ids[]'][value='${id}']`);
+                                 if (box) {
+                                     box.checked = true;
+                                 }
+                             });
+                             this.syncSelection();
+                         }
+                     }"
+                     x-init="restoreOldSelection()">
+                <form id="bulk-overtime-approve-form"
+                      x-ref="tableForm"
+                      method="POST"
+                      action="{{ route('manager.overtime-requests.bulk-approve') }}"
+                      @submit="confirmApprove($event)">
+                    @csrf
+                    @method('PATCH')
+
                 <div class="border-b border-slate-100 px-6 py-5 sm:px-7">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-600">Danh sách</p>
-                    <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-800">Đơn tăng ca nhân viên phòng ban</h3>
-                    <p class="mt-1 text-xs text-slate-500">Không bao gồm đơn của quản lý — Admin là người phê duyệt</p>
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-600">Danh sách</p>
+                            <h3 class="mt-2 text-xl font-bold tracking-tight text-slate-800">Đơn tăng ca nhân viên phòng ban</h3>
+                            <p class="mt-1 text-xs text-slate-500">Chọn các đơn chờ duyệt ở cột bên phải, sau đó dùng nút Duyệt hoặc Từ chối phía trên bảng.</p>
+                        </div>
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            <p class="text-sm font-medium text-slate-600">
+                                <span x-show="selectedCount === 0">Chưa chọn đơn nào</span>
+                                <span x-show="selectedCount > 0" x-cloak>
+                                    Đã chọn <span x-text="selectedCount" class="font-bold text-teal-700"></span> đơn
+                                </span>
+                            </p>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="submit"
+                                        :disabled="selectedCount === 0"
+                                        class="inline-flex items-center justify-center rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-900/20 transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50">
+                                    Duyệt
+                                </button>
+                                <button type="button"
+                                        @click="openRejectModal()"
+                                        :disabled="selectedCount === 0"
+                                        class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-rose-500/20 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">
+                                    Từ chối
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full">
@@ -139,10 +242,20 @@
                                 <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-400">Tổng giờ</th>
                                 <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-400">Trạng thái</th>
                                 <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-400">Thao tác</th>
+                                <th class="px-4 py-4 text-center text-xs font-bold uppercase text-slate-400">
+                                    <input type="checkbox"
+                                           class="rounded border-slate-300 text-teal-600 focus:ring-teal-500/30"
+                                           :checked="allSelected"
+                                           @change="toggleAll($event)"
+                                           aria-label="Chọn tất cả đơn chờ duyệt trên trang">
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @forelse($overtimeRequests as $index => $item)
+                                @php
+                                    $canBulkApprove = auth()->user()->can('approve', $item) && $item->isAwaitingManagerApproval();
+                                @endphp
                                 <tr class="transition hover:bg-slate-50/50">
                                     <td class="px-6 py-4 text-xs font-medium text-slate-500">{{ ($overtimeRequests->firstItem() ?? 0) + $index }}</td>
                                     <td class="px-6 py-4">
@@ -165,10 +278,20 @@
                                             Chi tiết
                                         </a>
                                     </td>
+                                    <td class="px-4 py-4 text-center">
+                                        @if($canBulkApprove)
+                                            <input type="checkbox"
+                                                   name="overtime_request_ids[]"
+                                                   value="{{ $item->id }}"
+                                                   class="rounded border-slate-300 text-teal-600 focus:ring-teal-500/30"
+                                                   @change="syncSelection()"
+                                                   aria-label="Chọn đơn tăng ca của {{ $item->employee?->full_name ?? 'nhân viên' }}">
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-12 text-center text-sm text-slate-400">
+                                    <td colspan="8" class="px-6 py-12 text-center text-sm text-slate-400">
                                         Không có đơn tăng ca phù hợp.
                                     </td>
                                 </tr>
@@ -176,11 +299,54 @@
                         </tbody>
                     </table>
                 </div>
+                </form>
+
                 @if($overtimeRequests->hasPages())
                     <div class="border-t border-slate-100 px-6 py-4">
                         {{ $overtimeRequests->links() }}
                     </div>
                 @endif
+
+                <div x-show="showRejectModal"
+                     x-cloak
+                     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4"
+                     @keydown.escape.window="showRejectModal = false">
+                    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl" @click.outside="showRejectModal = false">
+                        <form method="POST" action="{{ route('manager.overtime-requests.bulk-reject') }}">
+                            @csrf
+                            @method('PATCH')
+                            <div x-ref="rejectIds"></div>
+
+                            <h3 class="text-lg font-bold text-slate-800">Từ chối đơn tăng ca hàng loạt</h3>
+                            <p class="mt-1 text-sm text-slate-500">
+                                Bạn đang từ chối <span x-text="selectedCount" class="font-semibold text-rose-600"></span> đơn. Vui lòng ghi rõ lý do.
+                            </p>
+
+                            <div class="mt-5">
+                                <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                                    Lý do từ chối <span class="text-rose-500">*</span>
+                                </label>
+                                <textarea name="reject_reason" rows="4" required minlength="1"
+                                          class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 focus:border-rose-300 focus:ring-2 focus:ring-rose-500/20 @error('reject_reason') border-rose-400 @enderror">{{ old('reject_reason') }}</textarea>
+                                @error('reject_reason')
+                                    <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="mt-6 flex justify-end gap-2">
+                                <button type="button"
+                                        @click="showRejectModal = false"
+                                        class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                                    Hủy
+                                </button>
+                                <button type="submit"
+                                        class="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700">
+                                    Xác nhận từ chối
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </section>
 
             @include('manager.overtime-requests.partials.history-table', [
