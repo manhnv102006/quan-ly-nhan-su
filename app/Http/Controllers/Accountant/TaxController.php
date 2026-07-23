@@ -8,8 +8,10 @@ use App\Models\Employee;
 use App\Models\EmployeeTaxProfile;
 use App\Models\PayrollPeriod;
 use App\Models\TaxDependent;
+use App\Models\TaxDependentDocument;
 use App\Models\TaxPolicy;
 use App\Services\ModuleChangeLogService;
+use App\Services\TaxDependentDocumentService;
 use App\Services\TaxDependentRegistrationService;
 use App\Services\TaxService;
 use Carbon\Carbon;
@@ -24,6 +26,7 @@ class TaxController extends Controller
         private readonly TaxService $tax,
         private readonly ModuleChangeLogService $changeLogs,
         private readonly TaxDependentRegistrationService $registrations,
+        private readonly TaxDependentDocumentService $dependentDocuments,
     ) {}
 
     public function index(Request $request): View
@@ -243,6 +246,16 @@ class TaxController extends Controller
         return redirect()
             ->route('accountant.tax.pending-registrations')
             ->with('success', 'Đã từ chối đăng ký NPT.');
+    }
+
+    public function downloadDependentDocument(TaxDependent $dependent, TaxDependentDocument $document): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        abort_unless((int) $document->tax_dependent_id === (int) $dependent->id, 404);
+
+        $role = auth()->user()?->role?->name;
+        abort_unless($this->dependentDocuments->userCanDownload($document, (int) auth()->id(), $role), 403);
+
+        return $this->dependentDocuments->downloadResponse($document);
     }
 
     public function settlement(Request $request): View

@@ -68,6 +68,19 @@
                                     </form>
                                 </td>
                             </tr>
+                            @if($dep->documents->isNotEmpty())
+                                <tr class="bg-violet-50/20">
+                                    <td colspan="7" class="px-4 py-3 text-xs text-slate-600">
+                                        <span class="font-semibold text-slate-700">Giấy tờ:</span>
+                                        @foreach($dep->documents as $doc)
+                                            <a href="{{ route('accountant.tax.registrations.document', [$dep, $doc]) }}"
+                                               class="mr-3 inline-flex font-semibold text-violet-700 hover:underline">
+                                                {{ $doc->typeLabel() }}
+                                            </a>
+                                        @endforeach
+                                    </td>
+                                </tr>
+                            @endif
                             @if($dep->note)
                                 <tr class="bg-slate-50/50">
                                     <td colspan="7" class="px-4 py-2 text-xs text-slate-500">

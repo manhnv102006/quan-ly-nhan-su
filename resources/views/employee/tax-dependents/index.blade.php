@@ -34,7 +34,7 @@
         @endif
 
         <div class="rounded-2xl border border-violet-100 bg-violet-50/60 px-5 py-4 text-sm text-violet-900">
-            Đăng ký <strong>người phụ thuộc (NPT)</strong> gửi tới <strong>kế toán</strong> duyệt. Sau khi duyệt, mỗi NPT được giảm trừ <strong>6,2 triệu/tháng</strong> vào thuế TNCN (GT phụ thuộc) theo quy định 2026.
+            Đăng ký <strong>người phụ thuộc (NPT)</strong> gửi tới <strong>kế toán</strong> duyệt kèm <strong>giấy tờ bắt buộc</strong> theo quan hệ (khai sinh, thẻ SV, đăng ký kết hôn, CCCD…). Sau khi duyệt, mỗi NPT được giảm trừ <strong>6,2 triệu/tháng</strong> theo quy định 2026.
         </div>
 
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">

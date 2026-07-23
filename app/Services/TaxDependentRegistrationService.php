@@ -44,6 +44,9 @@ class TaxDependentRegistrationService
                 'employee_id' => $employee->id,
                 'full_name' => $fullName,
                 'relationship' => $data['relationship'],
+                'child_category' => ($data['relationship'] ?? '') === 'child'
+                    ? ($data['child_category'] ?? null)
+                    : null,
                 'date_of_birth' => $data['date_of_birth'] ?? null,
                 'id_number' => $idNumber ?: null,
                 'monthly_deduction' => $data['monthly_deduction'] ?? app(TaxService::class)->defaultDependentDeduction(),
@@ -108,7 +111,7 @@ class TaxDependentRegistrationService
     {
         return TaxDependent::query()
             ->where('status', TaxDependent::STATUS_PENDING)
-            ->with(['employee.department', 'requester'])
+            ->with(['employee.department', 'requester', 'documents'])
             ->orderBy('created_at')
             ->get();
     }
