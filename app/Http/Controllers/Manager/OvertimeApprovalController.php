@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Concerns\ResolvesCurrentEmployee;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\OvertimeRequestRejectRequest;
+use App\Models\Employee;
 use App\Models\OvertimeRequest;
 use App\Models\OvertimeRequestHistory;
 use App\Services\OvertimeApprovalService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -118,14 +120,15 @@ class OvertimeApprovalController extends Controller
             return back()->with('error', 'Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Vui lòng liên hệ quản trị để được hỗ trợ.');
         }
 
-        $overtimeRequests = OvertimeRequest::query()
-            ->forManagerApproval($manager)
-            ->awaitingManagerApproval()
-            ->whereIn('id', $validated['overtime_request_ids'])
-            ->get();
+        $overtimeRequests = $this->resolveSelectedRequests(
+            $manager,
+            $validated['overtime_request_ids'],
+        );
 
         if ($overtimeRequests->isEmpty()) {
-            return back()->with('error', 'Không có đơn hợp lệ để duyệt.');
+            return back()
+                ->withInput()
+                ->with('error', 'Không có đơn hợp lệ để duyệt.');
         }
 
         foreach ($overtimeRequests as $overtimeRequest) {
@@ -165,14 +168,15 @@ class OvertimeApprovalController extends Controller
             return back()->with('error', 'Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Vui lòng liên hệ quản trị để được hỗ trợ.');
         }
 
-        $overtimeRequests = OvertimeRequest::query()
-            ->forManagerApproval($manager)
-            ->awaitingManagerApproval()
-            ->whereIn('id', $validated['overtime_request_ids'])
-            ->get();
+        $overtimeRequests = $this->resolveSelectedRequests(
+            $manager,
+            $validated['overtime_request_ids'],
+        );
 
         if ($overtimeRequests->isEmpty()) {
-            return back()->with('error', 'Không có đơn hợp lệ để từ chối.');
+            return back()
+                ->withInput()
+                ->with('error', 'Không có đơn hợp lệ để từ chối.');
         }
 
         foreach ($overtimeRequests as $overtimeRequest) {
@@ -211,5 +215,20 @@ class OvertimeApprovalController extends Controller
         }
 
         return back()->with('success', 'Từ chối đơn tăng ca thành công.');
+    }
+
+    /**
+     * @param  array<int>  $ids
+     * @return Collection<int, OvertimeRequest>
+     */
+    private function resolveSelectedRequests(Employee $manager, array $ids): Collection
+    {
+        return OvertimeRequest::query()
+            ->forManagerApproval($manager)
+            ->awaitingManagerApproval()
+            ->whereIn('id', $ids)
+            ->get()
+            ->filter(fn (OvertimeRequest $overtimeRequest) => $overtimeRequest->isAwaitingManagerApproval())
+            ->values();
     }
 }
