@@ -1242,7 +1242,7 @@ class MasterDemoSeeder extends Seeder
             DB::table('employee_tax_profiles')->insert([
                 'employee_id'        => $empId,
                 'tax_code'           => $taxCode,
-                'personal_deduction' => 11_000_000,
+                'personal_deduction' => 15_500_000,
                 'created_at'         => now(),
                 'updated_at'         => now(),
             ]);
@@ -1253,7 +1253,7 @@ class MasterDemoSeeder extends Seeder
                     'full_name'          => $name,
                     'relationship'       => $relCode,
                     'date_of_birth'      => '2015-05-10',
-                    'monthly_deduction'  => 4_400_000,
+                    'monthly_deduction'  => 6_200_000,
                     'start_date'         => '2024-01-01',
                     'is_active'          => true,
                     'created_at'         => now(),

@@ -3,9 +3,7 @@
 @endphp
 
 <x-accountant-layout title="Bảng lương" subtitle="Chọn phòng ban để xem phiếu lương">
-    @include('accountant.payrolls.partials.sub-nav', ['active' => 'slips'])
-
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="flex flex-wrap items-end justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-900">Bảng lương theo phòng ban</h2>

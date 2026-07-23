@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class EmployeeTaxProfile extends Model
 {
-    public const DEFAULT_PERSONAL_DEDUCTION = 11_000_000;
+    /** Giá trị dự phòng khi chưa có bản ghi trong bảng tax_policies. */
+    public const DEFAULT_PERSONAL_DEDUCTION = 15_500_000;
 
     protected $fillable = [
         'employee_id',

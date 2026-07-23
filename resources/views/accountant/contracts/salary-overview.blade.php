@@ -1,9 +1,7 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
 <x-accountant-layout title="Lương & phụ cấp HĐ" subtitle="Hợp đồng hiệu lực — chỉ xem">
-    @include('accountant.contracts.partials.sub-nav', ['active' => 'salary'])
-
-    <div class="accountant-page">
+<div class="accountant-page">
         <div>
             <h2 class="text-2xl font-bold text-slate-900">Bảng lương & phụ cấp theo hợp đồng</h2>
             <p class="text-sm text-slate-500">Danh sách hợp đồng đang hiệu lực — dùng cho tính lương, bảo hiểm, thuế.</p>

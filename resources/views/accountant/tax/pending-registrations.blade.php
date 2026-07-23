@@ -1,22 +1,23 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
 <x-accountant-layout title="Duyệt đăng ký NPT" subtitle="Yêu cầu từ nhân viên · Duyệt xong áp dụng GT phụ thuộc ngay">
-    @include('accountant.tax.partials.sub-nav', ['active' => 'pending'])
-    <div class="accountant-page">
+<div class="accountant-page">
         @if(session('success'))
             <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
                 {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
+                {{ session('error') }}
             </div>
         @endif
 
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h2 class="text-2xl font-bold text-slate-900">Đăng ký NPT chờ duyệt</h2>
-                <p class="text-sm text-slate-500">{{ $pendingCount }} yêu cầu đang chờ · Duyệt xong chuyển vào người phụ thuộc thuế</p>
+                <p class="text-sm text-slate-500">{{ $pendingCount }} yêu cầu đang chờ · Nhân viên đăng ký NPT qua cổng cá nhân</p>
             </div>
-            <a href="{{ route('accountant.tax.dependents') }}" class="accountant-btn-secondary !text-xs">
-                Quản lý người phụ thuộc →
-            </a>
         </div>
 
         <div class="accountant-card mt-6 overflow-hidden">
@@ -69,6 +70,19 @@
                                     </form>
                                 </td>
                             </tr>
+                            @if($dep->documents->isNotEmpty())
+                                <tr class="bg-violet-50/20">
+                                    <td colspan="7" class="px-4 py-3 text-xs text-slate-600">
+                                        <span class="font-semibold text-slate-700">Giấy tờ:</span>
+                                        @foreach($dep->documents as $doc)
+                                            <a href="{{ route('accountant.tax.registrations.document', [$dep, $doc]) }}"
+                                               class="mr-3 inline-flex font-semibold text-violet-700 hover:underline">
+                                                {{ $doc->typeLabel() }}
+                                            </a>
+                                        @endforeach
+                                    </td>
+                                </tr>
+                            @endif
                             @if($dep->note)
                                 <tr class="bg-slate-50/50">
                                     <td colspan="7" class="px-4 py-2 text-xs text-slate-500">

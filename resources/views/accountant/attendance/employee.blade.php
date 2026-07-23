@@ -3,9 +3,7 @@
 @endphp
 
 <x-accountant-layout title="Bảng công - {{ $employee->full_name }}" subtitle="Tháng {{ $monthLabel }}">
-    @include('accountant.attendance.partials.sub-nav', ['active' => 'departments'])
-
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
             Chế độ chỉ xem — bảng công dùng đối chiếu khi tính lương kỳ {{ $monthLabel }}.
         </div>

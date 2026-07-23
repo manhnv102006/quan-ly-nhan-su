@@ -1,7 +1,5 @@
 <x-accountant-layout title="Chi tiết chấm công" subtitle="{{ $attendance->attendance_date?->format('d/m/Y') }}">
-    @include('accountant.attendance.partials.sub-nav', ['active' => ''])
-
-    <div class="accountant-page">
+<div class="accountant-page">
         <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
             Chế độ chỉ xem — không thể chỉnh sửa dữ liệu chấm công.
         </div>

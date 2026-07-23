@@ -34,7 +34,7 @@
         @endif
 
         <div class="rounded-2xl border border-cyan-100 bg-cyan-50/60 px-5 py-4 text-sm text-cyan-900">
-            Yêu cầu ứng lương gửi tới <strong>kế toán</strong> duyệt. Sau khi duyệt, số tiền sẽ được <strong>trừ trực tiếp vào lương thực lĩnh</strong> ở kỳ lương kế tiếp.
+            Yêu cầu ứng lương gửi tới <strong>kế toán</strong> duyệt. Tổng ứng (chờ duyệt + chưa trừ hết) không vượt quá <strong>50% lương tháng</strong>. Sau khi duyệt, số tiền sẽ được <strong>trừ trực tiếp vào lương thực lĩnh</strong> ở kỳ lương kế tiếp.
         </div>
 
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -51,16 +51,18 @@
                 <p class="mt-1 text-2xl font-bold text-rose-600">{{ $formatMoney($summary['outstanding']) }}</p>
             </div>
             <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                <p class="text-[10px] font-bold uppercase text-slate-400">Hạn mức ứng/lần</p>
-                <p class="mt-1 text-sm font-bold text-slate-800">
-                    {{ $formatMoney(\App\Models\SalaryAdvance::MIN_AMOUNT) }}
-                    <span class="font-normal text-slate-400">–</span>
-                    {{ $formatMoney($maxAdvanceAmount) }}
-                </p>
-                @if($referenceSalary > 0)
-                    <p class="text-[10px] text-slate-400">Tối đa ≈ 50% lương {{ $formatMoney($referenceSalary) }}</p>
-                @else
-                    <p class="text-[10px] text-slate-400">Tối thiểu {{ number_format(\App\Models\SalaryAdvance::MIN_AMOUNT / 1_000_000, 0) }} triệu/lần</p>
+                <p class="text-[10px] font-bold uppercase text-slate-400">Hạn mức còn lại (50% lương)</p>
+                <p class="mt-1 text-2xl font-bold text-emerald-600">{{ $formatMoney($maxAdvanceAmount) }}</p>
+                @if(($advanceSalaryCap ?? 0) > 0)
+                    <p class="text-[10px] text-slate-400">
+                        Hạn mức {{ $formatMoney($advanceSalaryCap) }}
+                        · Đã dùng {{ $formatMoney($usedAdvanceQuota ?? 0) }}
+                        @if($referenceSalary > 0)
+                            · Lương {{ $formatMoney($referenceSalary) }}
+                        @endif
+                    </p>
+                @elseif($referenceSalary <= 0)
+                    <p class="text-[10px] text-rose-500">Chưa có lương tham chiếu</p>
                 @endif
             </div>
         </div>
@@ -76,9 +78,15 @@
                         ← Duyệt yêu cầu (Kế toán)
                     </a>
                 @endif
-                <a href="{{ route('employee.advances.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-cyan-500/20 hover:bg-cyan-700">
-                    + Gửi yêu cầu ứng lương
-                </a>
+                @if($maxAdvanceAmount > 0)
+                    <a href="{{ route('employee.advances.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-cyan-500/20 hover:bg-cyan-700">
+                        + Gửi yêu cầu ứng lương
+                    </a>
+                @else
+                    <span class="inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-500" title="Đã dùng hết hạn mức 50% lương tháng">
+                        + Gửi yêu cầu ứng lương
+                    </span>
+                @endif
             </div>
         </div>
 

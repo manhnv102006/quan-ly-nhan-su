@@ -107,7 +107,7 @@ class ContractService
 
             $contract = Contract::create($data);
             $this->allowanceService->syncContractAllowances($contract, $allowanceInput, $data['contract_type_id']);
-            $this->historyService->logCreate($contract, $creatorId);
+            $this->historyService->logCreate($contract->refresh(), $creatorId);
 
             return $contract;
         });
@@ -121,6 +121,8 @@ class ContractService
 
         return DB::transaction(function () use ($contract, $data, $performedBy) {
             $original = $contract->only(ContractHistoryService::TRACKED_FIELDS);
+            $contract->loadMissing('contractAllowances');
+            $allowancesBefore = $this->allowanceService->snapshotLines($contract);
             $allowanceInput = $data['allowances'] ?? [];
             unset($data['allowances']);
 
@@ -167,7 +169,13 @@ class ContractService
             );
 
             $changes = $this->historyService->collectChanges($contract, $original);
-            $this->historyService->logUpdate($contract, $changes, $performedBy);
+            $allowancesAfter = $this->allowanceService->snapshotLines($contract->refresh()->load('contractAllowances'));
+
+            if ($allowanceDiff = $this->allowanceService->diffAllowanceSnapshots($allowancesBefore, $allowancesAfter)) {
+                $changes['allowances'] = $allowanceDiff;
+            }
+
+            $this->historyService->logUpdate($contract, $changes, $performedBy, $allowancesAfter);
 
             return $contract->refresh();
         });
@@ -250,11 +258,11 @@ class ContractService
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
                 'salary' => $data['salary'] ?? $contract->salary,
-                'allowance' => $allowanceColumns['allowance'] ?? $this->allowanceForContractType($contractTypeId),
-                'allowance_meal' => $allowanceColumns['allowance_meal'] ?? $contract->allowance_meal,
-                'allowance_phone' => $allowanceColumns['allowance_phone'] ?? $contract->allowance_phone,
-                'allowance_fuel' => $allowanceColumns['allowance_fuel'] ?? $contract->allowance_fuel,
-                'allowance_position' => $allowanceColumns['allowance_position'] ?? $contract->allowance_position,
+                'allowance' => $allowanceColumns['allowance'] ?? 0,
+                'allowance_meal' => $allowanceColumns['allowance_meal'] ?? 0,
+                'allowance_phone' => $allowanceColumns['allowance_phone'] ?? 0,
+                'allowance_fuel' => $allowanceColumns['allowance_fuel'] ?? 0,
+                'allowance_position' => $allowanceColumns['allowance_position'] ?? 0,
                 'description' => $data['description'] ?? $contract->description,
                 'note' => $data['note'] ?? null,
                 'status' => $this->resolveInitialStatus($data['start_date']),
@@ -277,7 +285,7 @@ class ContractService
                 'performed_by' => $creatorId,
             ]);
 
-            $this->historyService->logExtend($contract, $newContract, $creatorId);
+            $this->historyService->logExtend($contract, $newContract->refresh(), $creatorId);
 
             $this->autoNotifications->clearContractExpiringNotifications($contract);
             $this->autoNotifications->notifyContractRenewed($contract, $newContract, $creatorId);
@@ -404,11 +412,11 @@ class ContractService
                 'start_date' => $startDate,
                 'end_date' => $normalizedDates['end_date'],
                 'salary' => $data['salary'] ?? $contract->salary,
-                'allowance' => $allowanceColumns['allowance'] ?? $this->allowanceForContractType($contractTypeId),
-                'allowance_meal' => $allowanceColumns['allowance_meal'] ?? $contract->allowance_meal,
-                'allowance_phone' => $allowanceColumns['allowance_phone'] ?? $contract->allowance_phone,
-                'allowance_fuel' => $allowanceColumns['allowance_fuel'] ?? $contract->allowance_fuel,
-                'allowance_position' => $allowanceColumns['allowance_position'] ?? $contract->allowance_position,
+                'allowance' => $allowanceColumns['allowance'] ?? 0,
+                'allowance_meal' => $allowanceColumns['allowance_meal'] ?? 0,
+                'allowance_phone' => $allowanceColumns['allowance_phone'] ?? 0,
+                'allowance_fuel' => $allowanceColumns['allowance_fuel'] ?? 0,
+                'allowance_position' => $allowanceColumns['allowance_position'] ?? 0,
                 'description' => $data['description'] ?? $contract->description,
                 'note' => $note,
                 'status' => Contract::STATUS_ACTIVE,
@@ -433,7 +441,7 @@ class ContractService
 
             $this->historyService->logConvert(
                 $contract,
-                $newContract,
+                $newContract->refresh(),
                 $sourceTypeName,
                 $targetType->contract_name,
                 $creatorId,

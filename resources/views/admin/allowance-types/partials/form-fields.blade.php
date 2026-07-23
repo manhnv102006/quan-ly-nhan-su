@@ -22,6 +22,19 @@
     </div>
 
     <div>
+        <label for="calculation_type" class="admin-label">Cách tính khi lên bảng lương *</label>
+        <select id="calculation_type" name="calculation_type" class="admin-field" required>
+            @foreach(\App\Models\AllowanceType::CALC_LABELS as $calcValue => $calcLabel)
+                <option value="{{ $calcValue }}"
+                    @selected(old('calculation_type', $allowanceType->calculation_type ?? \App\Models\AllowanceType::CALC_PRORATA) === $calcValue)>
+                    {{ $calcLabel }}
+                </option>
+            @endforeach
+        </select>
+        @error('calculation_type')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
         <label for="sort_order" class="admin-label">Thứ tự hiển thị</label>
         <input type="number" id="sort_order" name="sort_order" class="admin-field" min="0" max="999"
                value="{{ old('sort_order', $allowanceType->sort_order ?? 0) }}">

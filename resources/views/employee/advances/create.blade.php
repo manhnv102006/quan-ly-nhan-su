@@ -21,12 +21,17 @@
         <div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
             <h2 class="mb-2 text-lg font-bold text-slate-800">Yêu cầu ứng lương mới</h2>
             <p class="mb-6 text-sm text-slate-500">
-                Hạn mức mỗi lần ứng:
+                Trong tháng, tổng ứng (chờ duyệt + chưa trừ hết) không vượt quá
+                <strong class="text-cyan-700">50% lương</strong>
+                @if(($advanceSalaryCap ?? 0) > 0)
+                    (hạn mức {{ $formatMoney($advanceSalaryCap) }}, đã dùng {{ $formatMoney($usedAdvanceQuota ?? 0) }}).
+                @endif
+                Lần này bạn có thể ứng:
                 <strong class="text-cyan-700">tối thiểu {{ $formatMoney($minAdvanceAmount) }}</strong>
                 –
                 <strong class="text-cyan-700">tối đa {{ $formatMoney($maxAdvanceAmount) }}</strong>
                 @if($referenceSalary > 0)
-                    <span class="text-slate-400">(tối đa = 50% lương tham chiếu {{ $formatMoney($referenceSalary) }})</span>
+                    <span class="text-slate-400">(lương tham chiếu {{ $formatMoney($referenceSalary) }})</span>
                 @endif
             </p>
 

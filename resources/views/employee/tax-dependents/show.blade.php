@@ -61,6 +61,22 @@
             </dl>
 
             <div class="mt-5 space-y-3 text-sm">
+                @if($dependent->documents->isNotEmpty())
+                    <div>
+                        <p class="text-xs font-bold uppercase text-slate-400">Giấy tờ đính kèm</p>
+                        <ul class="mt-2 space-y-2">
+                            @foreach($dependent->documents as $doc)
+                                <li class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50 px-4 py-2">
+                                    <span class="text-sm font-medium text-slate-800">{{ $doc->typeLabel() }}</span>
+                                    <a href="{{ route('employee.tax-dependents.documents.download', [$dependent, $doc]) }}"
+                                       class="text-xs font-semibold text-violet-700 hover:underline">
+                                        Tải xuống · {{ $doc->original_name }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
                 @if($dependent->note)
                     <div>
                         <p class="text-xs font-bold uppercase text-slate-400">Ghi chú</p>

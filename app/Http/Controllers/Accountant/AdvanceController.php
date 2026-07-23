@@ -129,10 +129,13 @@ class AdvanceController extends Controller
         $summary = [
             'total' => SalaryAdvance::where('employee_id', $employee->id)->count(),
             'pending' => SalaryAdvance::where('employee_id', $employee->id)->where('status', SalaryAdvance::STATUS_PENDING)->count(),
-            'outstanding' => (float) SalaryAdvance::where('employee_id', $employee->id)
-                ->get()
-                ->filter(fn (SalaryAdvance $a) => $a->canBeDeducted())
-                ->sum(fn (SalaryAdvance $a) => $a->remainingBalance()),
+            'total_advanced' => (float) SalaryAdvance::where('employee_id', $employee->id)
+                ->whereIn('status', [
+                    SalaryAdvance::STATUS_APPROVED,
+                    SalaryAdvance::STATUS_PARTIAL,
+                    SalaryAdvance::STATUS_SETTLED,
+                ])
+                ->sum('amount'),
         ];
 
         return view('accountant.advances.employee-advances', [
@@ -154,7 +157,13 @@ class AdvanceController extends Controller
     public function approve(SalaryAdvance $advance): RedirectResponse
     {
         $oldStatus = $advance->status;
-        $this->advances->approve($advance);
+
+        try {
+            $this->advances->approve($advance);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
         $this->changeLogs->logAdvanceStatusChange($advance->fresh(), 'approve', $oldStatus, SalaryAdvance::STATUS_APPROVED);
 
         return back()->with('success', "Đã duyệt tạm ứng {$advance->advance_code}.");

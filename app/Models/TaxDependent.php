@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TaxDependent extends Model
 {
-    public const DEFAULT_MONTHLY_DEDUCTION = 4_400_000;
+    /** Giá trị dự phòng khi chưa có bản ghi trong bảng tax_policies. */
+    public const DEFAULT_MONTHLY_DEDUCTION = 6_200_000;
 
     public const STATUS_PENDING = 'pending';
 
@@ -34,11 +35,17 @@ class TaxDependent extends Model
         'other' => 'Khác',
     ];
 
+    public const CHILD_CATEGORY_LABELS = [
+        'minor' => 'Con dưới 18 tuổi',
+        'student' => 'Con trên 18 tuổi (đang học ĐH)',
+    ];
+
     protected $fillable = [
         'employee_id',
         'status',
         'full_name',
         'relationship',
+        'child_category',
         'date_of_birth',
         'id_number',
         'monthly_deduction',
@@ -87,9 +94,22 @@ class TaxDependent extends Model
         return $this->belongsTo(User::class, 'rejected_by');
     }
 
+    public function documents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(TaxDependentDocument::class);
+    }
+
     public function relationshipLabel(): string
     {
-        return self::RELATIONSHIP_LABELS[$this->relationship] ?? $this->relationship;
+        $base = self::RELATIONSHIP_LABELS[$this->relationship] ?? $this->relationship;
+        if ($this->relationship === 'child' && $this->child_category) {
+            $sub = self::CHILD_CATEGORY_LABELS[$this->child_category] ?? null;
+            if ($sub) {
+                return $base.' — '.$sub;
+            }
+        }
+
+        return $base;
     }
 
     public function statusLabel(): string

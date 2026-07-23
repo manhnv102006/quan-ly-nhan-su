@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Models\Contract;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\EmployeeTaxProfile;
 use App\Models\PayrollPeriod;
 use App\Models\SalaryAdvance;
 use App\Models\TaxDependent;
+use App\Models\TaxPolicy;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -283,44 +285,19 @@ class AccountantStatsService
     }
 
     /**
-     * Ước tính thuế TNCN đơn giản (giảm trừ 11tr, 1 người phụ thuộc).
+     * Ước tính thuế TNCN đơn giản (GT bản thân + 1 NPT theo mức 2026).
      */
     public function estimatePit(float $taxableIncome): float
     {
-        $deduction = 11_000_000 + 4_400_000;
+        $deduction = EmployeeTaxProfile::DEFAULT_PERSONAL_DEDUCTION + TaxDependent::DEFAULT_MONTHLY_DEDUCTION;
+        $policy = TaxPolicy::current();
+        if ($policy) {
+            $deduction = (float) $policy->personal_deduction + (float) $policy->dependent_deduction_default;
+        }
         $income = max(0, $taxableIncome - $deduction);
 
-        if ($income <= 0) {
-            return 0;
-        }
+        $brackets = $policy?->progressiveBrackets();
 
-        $brackets = [
-            [5_000_000, 0.05],
-            [10_000_000, 0.10],
-            [18_000_000, 0.15],
-            [32_000_000, 0.20],
-            [52_000_000, 0.25],
-            [80_000_000, 0.30],
-            [PHP_FLOAT_MAX, 0.35],
-        ];
-
-        $tax = 0.0;
-        $remaining = $income;
-        $prev = 0;
-
-        foreach ($brackets as [$limit, $rate]) {
-            $chunk = min($remaining, $limit - $prev);
-            if ($chunk <= 0) {
-                break;
-            }
-            $tax += $chunk * $rate;
-            $remaining -= $chunk;
-            $prev = $limit;
-            if ($remaining <= 0) {
-                break;
-            }
-        }
-
-        return round($tax, 0);
+        return app(TaxService::class)->progressivePit($income, $brackets);
     }
 }
