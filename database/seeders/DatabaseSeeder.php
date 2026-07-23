@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RoleSeeder::class);
+        $this->call(TaxPolicySeeder::class);
 
         $adminRoleId = Role::query()->where('name', Role::ADMIN)->value('id');
         $managerRoleId = Role::query()->where('name', Role::MANAGER)->value('id');

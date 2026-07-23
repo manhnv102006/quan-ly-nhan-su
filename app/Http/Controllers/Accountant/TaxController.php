@@ -8,9 +8,11 @@ use App\Models\Employee;
 use App\Models\EmployeeTaxProfile;
 use App\Models\PayrollPeriod;
 use App\Models\TaxDependent;
+use App\Models\TaxPolicy;
 use App\Services\ModuleChangeLogService;
 use App\Services\TaxDependentRegistrationService;
 use App\Services\TaxService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -53,6 +55,10 @@ class TaxController extends Controller
         $allRows = $period ? $this->tax->calculateForPeriod($period) : collect();
         $rows = $this->tax->filterPeriodRows($allRows, $filters);
 
+        $periodTaxPolicy = $period
+            ? $this->tax->policyForDate(Carbon::create((int) $period->year, (int) $period->month, 15))
+            : null;
+
         return view('accountant.tax.index', [
             'periods' => $periods,
             'period' => $period,
@@ -61,6 +67,8 @@ class TaxController extends Controller
             'rows' => $rows,
             'totalPit' => (float) $rows->sum('pit'),
             'totalGross' => (float) $rows->sum('gross'),
+            'periodTaxPolicy' => $periodTaxPolicy,
+            'currentTaxPolicy' => TaxPolicy::current(),
         ]);
     }
 
@@ -297,9 +305,16 @@ class TaxController extends Controller
 
     private function ensureTaxProfile(Employee $employee): void
     {
-        if (! $employee->taxProfile) {
-            EmployeeTaxProfile::create(['employee_id' => $employee->id]);
+        if ($employee->taxProfile) {
+            return;
         }
+
+        $policy = TaxPolicy::current();
+
+        EmployeeTaxProfile::create([
+            'employee_id' => $employee->id,
+            'personal_deduction' => $policy?->personal_deduction ?? EmployeeTaxProfile::DEFAULT_PERSONAL_DEDUCTION,
+        ]);
     }
 
     /**

@@ -7,7 +7,7 @@
     $layoutParams = match ($role) {
         'accountant' => [
             'title' => 'Đăng ký NPT',
-            'subtitle' => 'Gửi yêu cầu tới kế toán · GT phụ thuộc 4,4 triệu/người/tháng',
+            'subtitle' => 'Gửi yêu cầu tới kế toán · GT phụ thuộc 6,2 triệu/người/tháng (2026)',
         ],
         'manager' => [
             'title' => 'Đăng ký người phụ thuộc',
@@ -34,7 +34,7 @@
         @endif
 
         <div class="rounded-2xl border border-violet-100 bg-violet-50/60 px-5 py-4 text-sm text-violet-900">
-            Đăng ký <strong>người phụ thuộc (NPT)</strong> gửi tới <strong>kế toán</strong> duyệt. Sau khi duyệt, mỗi NPT được giảm trừ <strong>4,4 triệu/tháng</strong> vào thuế TNCN (GT phụ thuộc) ngay lập tức.
+            Đăng ký <strong>người phụ thuộc (NPT)</strong> gửi tới <strong>kế toán</strong> duyệt. Sau khi duyệt, mỗi NPT được giảm trừ <strong>6,2 triệu/tháng</strong> vào thuế TNCN (GT phụ thuộc) theo quy định 2026.
         </div>
 
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">

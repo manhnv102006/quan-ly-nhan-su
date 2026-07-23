@@ -46,7 +46,7 @@ class TaxDependentRegistrationService
                 'relationship' => $data['relationship'],
                 'date_of_birth' => $data['date_of_birth'] ?? null,
                 'id_number' => $idNumber ?: null,
-                'monthly_deduction' => $data['monthly_deduction'] ?? TaxDependent::DEFAULT_MONTHLY_DEDUCTION,
+                'monthly_deduction' => $data['monthly_deduction'] ?? app(TaxService::class)->defaultDependentDeduction(),
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'] ?? null,
                 'note' => $data['note'] ?? null,
@@ -135,8 +135,15 @@ class TaxDependentRegistrationService
 
     private function ensureTaxProfile(Employee $employee): void
     {
-        if (! $employee->taxProfile) {
-            EmployeeTaxProfile::create(['employee_id' => $employee->id]);
+        if ($employee->taxProfile) {
+            return;
         }
+
+        $policy = \App\Models\TaxPolicy::current();
+
+        EmployeeTaxProfile::create([
+            'employee_id' => $employee->id,
+            'personal_deduction' => $policy?->personal_deduction ?? EmployeeTaxProfile::DEFAULT_PERSONAL_DEDUCTION,
+        ]);
     }
 }

@@ -1,6 +1,6 @@
 @php $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫'; @endphp
 
-<x-accountant-layout title="Người phụ thuộc" subtitle="Giảm trừ gia cảnh 4.4 triệu/người/tháng">
+<x-accountant-layout title="Người phụ thuộc" subtitle="Mức giảm trừ theo chính sách thuế đang hiệu lực (cấu hình tax_policies)">
 <div class="accountant-page">
         <div>
             <h2 class="text-2xl font-bold text-slate-900">Quản lý người phụ thuộc</h2>
@@ -33,7 +33,7 @@
                         <div>
                             <label class="accountant-label">GT bản thân/tháng</label>
                             <input type="number" name="personal_deduction" min="0" step="1000"
-                                   value="{{ old('personal_deduction', $selectedEmployee->taxProfile?->personal_deduction ?? 11000000) }}" class="accountant-field">
+                                   value="{{ old('personal_deduction', $selectedEmployee->taxProfile?->personal_deduction ?? \App\Models\EmployeeTaxProfile::DEFAULT_PERSONAL_DEDUCTION) }}" class="accountant-field">
                         </div>
                         <button type="submit" class="accountant-btn-secondary w-full !text-xs">Lưu hồ sơ thuế</button>
                     </form>
@@ -68,7 +68,7 @@
                             </div>
                             <div>
                                 <label class="accountant-label">GT/tháng</label>
-                                <input type="number" name="monthly_deduction" value="4400000" min="0" class="accountant-field">
+                                <input type="number" name="monthly_deduction" value="{{ \App\Models\TaxPolicy::current()?->dependent_deduction_default ?? \App\Models\TaxDependent::DEFAULT_MONTHLY_DEDUCTION }}" min="0" class="accountant-field">
                             </div>
                             <div>
                                 <label class="accountant-label">Ngày bắt đầu GT *</label>

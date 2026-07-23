@@ -14,7 +14,8 @@ use App\Services\AutoNotificationService;
 class PayrollService
 {
     public function __construct(
-        private AutoNotificationService $notifications
+        private AutoNotificationService $notifications,
+        private TaxService $tax,
     ) {}
 
     // Cấu hình số buổi nghỉ phép hưởng lương tối đa trong 1 tháng
@@ -291,6 +292,8 @@ class PayrollService
             foreach ($allowanceSnapshots as $snapshot) {
                 $payroll->payrollAllowances()->create($snapshot);
             }
+
+            $this->tax->snapshotForPayroll($payroll);
 
         }
 

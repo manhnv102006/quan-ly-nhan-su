@@ -79,6 +79,11 @@ class Payroll extends Model
         return $this->hasMany(PayrollAllowance::class);
     }
 
+    public function payrollTaxSnapshot(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(PayrollTaxSnapshot::class);
+    }
+
     /**
      * Danh sách phụ cấp đã "chốt" (snapshot) của kỳ lương.
      * Ưu tiên bản snapshot; nếu chưa có (dữ liệu cũ) thì suy ra từ các cột phụ cấp legacy.
@@ -224,7 +229,40 @@ class Payroll extends Model
             ? Carbon::create((int) $period->year, (int) $period->month, 15)
             : now());
 
-        $tax = app(TaxService::class)->calculateEmployeeMonthly($employee, $gross, $periodDate);
+        $taxService = app(TaxService::class);
+        $fromSnapshot = $taxService->breakdownFromSnapshot($this);
+
+        if ($fromSnapshot !== null) {
+            $pit = (float) $fromSnapshot['pit'];
+            $insurance = (float) $fromSnapshot['insurance'];
+            $totalDeductions = $penalty + $insurance + $pit;
+            $netSalary = max(0, $gross - $insurance - $pit);
+
+            $bhxh = $bhyt = $bhtn = 0.0;
+            $profile = $employee->insurance;
+            if ($profile?->isContributing()) {
+                $contributions = app(InsuranceService::class)->calculateContributions($profile);
+                $bhxh = (float) $contributions['bhxh_employee'];
+                $bhyt = (float) $contributions['bhyt_employee'];
+                $bhtn = (float) $contributions['bhtn_employee'];
+            }
+
+            return [
+                'gross_income' => $grossIncome,
+                'penalty' => $penalty,
+                'insurance' => $insurance,
+                'bhxh_employee' => $bhxh,
+                'bhyt_employee' => $bhyt,
+                'bhtn_employee' => $bhtn,
+                'pit' => $pit,
+                'total_deductions' => $totalDeductions,
+                'net_salary' => $netSalary,
+                'advance_deduction' => $advanceDeduction,
+                'advance_outstanding' => $advanceOutstanding,
+            ];
+        }
+
+        $tax = $taxService->calculateEmployeeMonthly($employee, $gross, $periodDate);
 
         $bhxh = $bhyt = $bhtn = 0.0;
         $profile = $employee->insurance;

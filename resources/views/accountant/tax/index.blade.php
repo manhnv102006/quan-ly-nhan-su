@@ -1,13 +1,22 @@
 @php
     $formatMoney = fn ($n) => number_format((float) $n, 0, ',', '.') . '₫';
     $hasFilters = collect($filters ?? [])->filter(fn ($v) => filled($v))->isNotEmpty();
+    $policy = $periodTaxPolicy ?? $currentTaxPolicy ?? null;
+    $fmtM = fn ($n) => number_format((float) $n / 1_000_000, 1, ',', '.');
 @endphp
 
 <x-accountant-layout title="Thuế TNCN" subtitle="Tính thuế theo nhân viên từng kỳ lương">
 <div class="accountant-page">
         <div>
             <h2 class="text-2xl font-bold text-slate-900">Tính thuế TNCN</h2>
-            <p class="text-sm text-slate-500">Biểu thuế lũy tiến · GT bản thân 11 triệu · GT phụ thuộc 4.4 triệu/NPT</p>
+            <p class="text-sm text-slate-500">
+                @if($policy)
+                    {{ $policy->name }} · GT bản thân {{ $fmtM($policy->personal_deduction) }} triệu · NPT {{ $fmtM($policy->dependent_deduction_default) }} triệu/tháng
+                @else
+                    Chính sách thuế theo ngày hiệu lực (cấu hình trong hệ thống)
+                @endif
+                · Kỳ đã tính lương hiển thị theo <strong>snapshot đã chốt</strong>
+            </p>
         </div>
 
         <form method="GET" class="accountant-card flex flex-wrap items-end gap-4 p-5">

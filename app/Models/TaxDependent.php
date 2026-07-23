@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TaxDependent extends Model
 {
-    public const DEFAULT_MONTHLY_DEDUCTION = 4_400_000;
+    /** Giá trị dự phòng khi chưa có bản ghi trong bảng tax_policies. */
+    public const DEFAULT_MONTHLY_DEDUCTION = 6_200_000;
 
     public const STATUS_PENDING = 'pending';
 
