@@ -136,26 +136,26 @@
 
             <section class="manager-card overflow-hidden"
                      x-data="{
-                         selectedIds: @json(array_map('intval', old('overtime_request_ids', []))),
+                         selectedCount: 0,
                          allSelected: false,
                          showRejectModal: {{ ($errors->has('reject_reason') || old('overtime_request_ids')) ? 'true' : 'false' }},
-                         get selectedCount() {
-                             return this.selectedIds.length;
-                         },
-                         updateSelection() {
-                             const boxes = this.$el.querySelectorAll('[data-overtime-id]:checked');
-                             this.selectedIds = [...boxes].map(box => Number(box.dataset.overtimeId));
-                             const total = this.$el.querySelectorAll('[data-overtime-id]').length;
-                             this.allSelected = total > 0 && this.selectedIds.length === total;
+                         syncSelection() {
+                             const boxes = this.$refs.tableForm.querySelectorAll('input[name=\'overtime_request_ids[]\']');
+                             const checked = this.$refs.tableForm.querySelectorAll('input[name=\'overtime_request_ids[]\']:checked');
+                             this.selectedCount = checked.length;
+                             this.allSelected = boxes.length > 0 && checked.length === boxes.length;
                          },
                          toggleAll(event) {
                              const checked = event.target.checked;
-                             this.$el.querySelectorAll('[data-overtime-id]').forEach(box => box.checked = checked);
-                             this.updateSelection();
+                             this.$refs.tableForm.querySelectorAll('input[name=\'overtime_request_ids[]\']').forEach(box => {
+                                 box.checked = checked;
+                             });
+                             this.syncSelection();
                          },
                          confirmApprove(event) {
                              if (this.selectedCount === 0) {
                                  event.preventDefault();
+                                 alert('Vui lòng chọn ít nhất một đơn chờ duyệt.');
                                  return;
                              }
 
@@ -165,19 +165,34 @@
                          },
                          openRejectModal() {
                              if (this.selectedCount === 0) {
+                                 alert('Vui lòng chọn ít nhất một đơn chờ duyệt.');
                                  return;
                              }
 
+                             const container = this.$refs.rejectIds;
+                             container.innerHTML = '';
+
+                             this.$refs.tableForm.querySelectorAll('input[name=\'overtime_request_ids[]\']:checked').forEach(box => {
+                                 const input = document.createElement('input');
+                                 input.type = 'hidden';
+                                 input.name = 'overtime_request_ids[]';
+                                 input.value = box.value;
+                                 container.appendChild(input);
+                             });
+
                              this.showRejectModal = true;
+                         },
+                         restoreOldSelection() {
+                             @json(array_map('intval', old('overtime_request_ids', []))).forEach(id => {
+                                 const box = this.$refs.tableForm.querySelector(`input[name='overtime_request_ids[]'][value='${id}']`);
+                                 if (box) {
+                                     box.checked = true;
+                                 }
+                             });
+                             this.syncSelection();
                          }
                      }"
-                     x-init="
-                         selectedIds.forEach(id => {
-                             const box = $el.querySelector(`[data-overtime-id='${id}']`);
-                             if (box) box.checked = true;
-                         });
-                         updateSelection();
-                     ">
+                     x-init="restoreOldSelection()">
                 <div class="border-b border-slate-100 px-6 py-5 sm:px-7">
                     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div>
@@ -193,20 +208,12 @@
                                 </span>
                             </p>
                             <div class="flex flex-wrap gap-2">
-                                <form method="POST"
-                                      action="{{ route('manager.overtime-requests.bulk-approve') }}"
-                                      @submit="confirmApprove($event)">
-                                    @csrf
-                                    @method('PATCH')
-                                    <template x-for="id in selectedIds" :key="'approve-' + id">
-                                        <input type="hidden" name="overtime_request_ids[]" :value="id">
-                                    </template>
-                                    <button type="submit"
-                                            :disabled="selectedCount === 0"
-                                            class="inline-flex items-center justify-center rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-900/20 transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50">
-                                        Duyệt
-                                    </button>
-                                </form>
+                                <button type="submit"
+                                        form="bulk-overtime-approve-form"
+                                        :disabled="selectedCount === 0"
+                                        class="inline-flex items-center justify-center rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-900/20 transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50">
+                                    Duyệt
+                                </button>
                                 <button type="button"
                                         @click="openRejectModal()"
                                         :disabled="selectedCount === 0"
@@ -217,6 +224,14 @@
                         </div>
                     </div>
                 </div>
+
+                <form id="bulk-overtime-approve-form"
+                      x-ref="tableForm"
+                      method="POST"
+                      action="{{ route('manager.overtime-requests.bulk-approve') }}"
+                      @submit="confirmApprove($event)">
+                    @csrf
+                    @method('PATCH')
 
                 <div class="overflow-x-auto">
                     <table class="w-full">
@@ -268,9 +283,10 @@
                                     <td class="px-4 py-4 text-center">
                                         @if($canBulkApprove)
                                             <input type="checkbox"
-                                                   data-overtime-id="{{ $item->id }}"
+                                                   name="overtime_request_ids[]"
+                                                   value="{{ $item->id }}"
                                                    class="rounded border-slate-300 text-teal-600 focus:ring-teal-500/30"
-                                                   @change="updateSelection()"
+                                                   @change="syncSelection()"
                                                    aria-label="Chọn đơn tăng ca của {{ $item->employee?->full_name ?? 'nhân viên' }}">
                                         @endif
                                     </td>
@@ -285,6 +301,7 @@
                         </tbody>
                     </table>
                 </div>
+                </form>
 
                 @if($overtimeRequests->hasPages())
                     <div class="border-t border-slate-100 px-6 py-4">
@@ -300,9 +317,7 @@
                         <form method="POST" action="{{ route('manager.overtime-requests.bulk-reject') }}">
                             @csrf
                             @method('PATCH')
-                            <template x-for="id in selectedIds" :key="'reject-' + id">
-                                <input type="hidden" name="overtime_request_ids[]" :value="id">
-                            </template>
+                            <div x-ref="rejectIds"></div>
 
                             <h3 class="text-lg font-bold text-slate-800">Từ chối đơn tăng ca hàng loạt</h3>
                             <p class="mt-1 text-sm text-slate-500">
