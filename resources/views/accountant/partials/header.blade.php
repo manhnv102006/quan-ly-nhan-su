@@ -3,7 +3,7 @@
     $initial = strtoupper(mb_substr($user?->name ?? 'U', 0, 1));
 @endphp
 
-<header class="accountant-header sticky top-0 z-50">
+<header class="accountant-header sticky top-0 z-50 overflow-visible">
     <div class="flex h-[76px] items-center justify-between px-4 sm:px-6 lg:px-8">
         <div class="flex min-w-0 flex-1 items-center gap-4">
             <button @click="sidebarOpen = !sidebarOpen"
@@ -21,6 +21,8 @@
             </div>
         </div>
         <div class="flex items-center gap-2 sm:gap-3">
+            @include('admin.partials.notification-dropdown')
+
             <span class="hidden items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-100 to-orange-100 px-3 py-1.5 text-xs font-semibold text-amber-800 sm:inline-flex">
                 <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500"></span>
                 Kế toán

@@ -100,6 +100,13 @@ class OvertimeAttendanceService
             ]);
         }
 
+        $checkInAt = Carbon::parse($overtimeRequest->actual_check_in);
+        if ($now->lte($checkInAt)) {
+            throw ValidationException::withMessages([
+                'overtime' => 'Giờ check-out phải sau giờ check-in ('.$checkInAt->format('H:i:s').').',
+            ]);
+        }
+
         if ($now->gt($windowEnd)) {
             throw ValidationException::withMessages([
                 'overtime' => 'Đã quá khung giờ tăng ca ('.$windowEnd->format('H:i').').',
@@ -153,7 +160,8 @@ class OvertimeAttendanceService
         }
 
         if ($request->actual_check_in && ! $request->actual_check_out) {
-            $canCheckOut = $now->lte($windowEnd);
+            $checkInAt = Carbon::parse($request->actual_check_in);
+            $canCheckOut = $now->lte($windowEnd) && $now->gt($checkInAt);
 
             return [
                 'request' => $request,
@@ -163,7 +171,9 @@ class OvertimeAttendanceService
                 'can_check_out' => $canCheckOut,
                 'status_message' => $canCheckOut
                     ? 'Đang trong ca tăng ca — hãy check-out trước '.$endLabel
-                    : 'Đã quá giờ check-out ('.$endLabel.')',
+                    : ($now->lte($checkInAt)
+                        ? 'Check-out phải sau giờ check-in ('.$checkInAt->format('H:i:s').')'
+                        : 'Đã quá giờ check-out ('.$endLabel.')'),
                 'status_tone' => $canCheckOut ? 'active' : 'missed',
             ];
         }

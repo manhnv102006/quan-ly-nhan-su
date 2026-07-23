@@ -25,7 +25,7 @@
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-8">
             <h2 class="text-lg font-bold text-slate-800 mb-6">Đơn xin nghỉ phép mới</h2>
 
-            <form action="{{ route('employee.leave-requests.store') }}" method="POST" class="space-y-6">
+            <form id="leave-request-form" action="{{ route('employee.leave-requests.store') }}" method="POST" class="space-y-6">
                 @csrf
 
                 <div>
@@ -75,13 +75,23 @@
                        class="flex-1 text-center px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
                         Hủy bỏ
                     </a>
-                    <button type="submit"
-                            class="flex-1 px-5 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs shadow-md shadow-sky-500/20 transition">
+                    <button type="submit" id="leave-request-submit"
+                            class="flex-1 px-5 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs shadow-md shadow-sky-500/20 transition disabled:opacity-60 disabled:pointer-events-none">
                         Gửi đơn xin nghỉ
                     </button>
                 </div>
             </form>
         </div>
     </div>
+
+    <script>
+        document.getElementById('leave-request-form')?.addEventListener('submit', function () {
+            const btn = document.getElementById('leave-request-submit');
+            if (btn && !btn.disabled) {
+                btn.disabled = true;
+                btn.textContent = 'Đang gửi...';
+            }
+        });
+    </script>
 
 </x-dynamic-component>

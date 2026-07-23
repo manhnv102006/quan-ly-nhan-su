@@ -183,4 +183,22 @@
     .recruitment-ui textarea::placeholder {
         color: #64748b !important;
     }
+
+    .recruitment-dashboard .recruitment-dashboard-hero {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 45%, #ecfeff 100%) !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 20px 50px -35px rgba(15, 23, 42, 0.35) !important;
+    }
+
+    .recruitment-dashboard a.bg-slate-900 {
+        background: #0f172a !important;
+        border: 1px solid #1e293b !important;
+        color: #fff !important;
+        box-shadow: none !important;
+    }
+
+    .recruitment-dashboard a.bg-slate-900:hover {
+        background: #1e293b !important;
+        color: #fff !important;
+    }
 </style>

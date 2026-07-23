@@ -13,6 +13,20 @@
             'hybrid' => 'Hybrid',
             'contract' => 'Contract',
         ];
+
+        $departmentManagers = ($departments ?? collect())->mapWithKeys(function ($department) {
+            $manager = $department->manager;
+            $label = $manager
+                ? trim(($manager->employee_code ? $manager->employee_code.' - ' : '').$manager->full_name)
+                : null;
+
+            return [(string) $department->id => $label];
+        })->all();
+
+        $selectedDepartmentId = (string) old('department_id', $formJobPost?->department_id ?? '');
+        $initialRecruiterLabel = $selectedDepartmentId !== '' && array_key_exists($selectedDepartmentId, $departmentManagers)
+            ? ($departmentManagers[$selectedDepartmentId] ?? null)
+            : null;
     @endphp
 
     @include('admin.recruitment.partials.ui-contrast')
@@ -28,14 +42,21 @@
                     </div>
                     <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Quản lý tin tuyển dụng</h2>
                     <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-                        Tạo nhu cầu tuyển dụng, gắn phòng ban, người phụ trách, mức lương và hạn nộp hồ sơ.
+                        Tạo nhu cầu tuyển dụng, gắn phòng ban, mức lương và hạn nộp hồ sơ. Người phụ trách là quản lý phòng ban.
                     </p>
                 </div>
 
+                @if (!$showForm)
                 <a href="{{ route('admin.recruitment.job-posts.create') }}"
                    class="recruitment-btn-primary inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
                     Tạo tin tuyển dụng
                 </a>
+                @else
+                <a href="{{ route('admin.recruitment.job-posts') }}"
+                   class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-cyan-300 hover:text-cyan-800">
+                    ← Danh sách tin
+                </a>
+                @endif
             </div>
         </section>
 
@@ -58,10 +79,15 @@
             </div>
         @endif
 
-        <section class="recruitment-stats grid grid-cols-1 gap-4 md:grid-cols-3">
+        @unless ($showForm)
+        <section class="recruitment-stats grid grid-cols-1 gap-4 md:grid-cols-4">
             <div class="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-sm">
                 <p class="text-sm font-bold text-slate-500">Tổng tin</p>
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ $stats['total'] ?? 0 }}</p>
+            </div>
+            <div class="rounded-[1.5rem] border border-amber-100 bg-amber-50 p-5 shadow-sm">
+                <p class="text-sm font-bold text-amber-800">Chờ duyệt</p>
+                <p class="mt-2 text-3xl font-black text-amber-900">{{ $stats['pending_approval'] ?? 0 }}</p>
             </div>
             <div class="rounded-[1.5rem] border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
                 <p class="text-sm font-bold text-emerald-700">Đang mở</p>
@@ -72,6 +98,7 @@
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ $stats['closed'] ?? 0 }}</p>
             </div>
         </section>
+        @endunless
 
         @if ($showForm)
             <section class="recruitment-panel overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/60">
@@ -93,7 +120,7 @@
 
                     <div class="rounded-2xl bg-cyan-50 px-4 py-3 lg:col-span-2">
                         <h4 class="text-sm font-black text-cyan-950">Thông tin công việc</h4>
-                        <p class="mt-1 text-sm text-cyan-700">Nhập vị trí, phòng ban, người phụ trách và số lượng cần tuyển.</p>
+                        <p class="mt-1 text-sm text-cyan-700">Nhập vị trí, phòng ban và số lượng cần tuyển. Quản lý phòng ban sẽ phụ trách tin.</p>
                     </div>
 
                     <div class="lg:col-span-2">
@@ -104,7 +131,7 @@
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Phòng ban</label>
-                        <select name="department_id" class="{{ $inputClass }}">
+                        <select id="job-post-department-id" name="department_id" class="{{ $inputClass }}">
                             <option value="">Chưa gắn phòng ban</option>
                             @foreach (($departments ?? collect()) as $department)
                                 <option value="{{ $department->id }}" @selected((string) old('department_id', $formJobPost?->department_id) === (string) $department->id)>
@@ -117,15 +144,19 @@
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Người phụ trách</label>
-                        <select name="recruiter_id" class="{{ $inputClass }}">
-                            <option value="">Chưa gắn người phụ trách</option>
-                            @foreach (($recruiters ?? collect()) as $recruiter)
-                                <option value="{{ $recruiter->id }}" @selected((string) old('recruiter_id', $formJobPost?->recruiter_id) === (string) $recruiter->id)>
-                                    {{ $recruiter->employee_code }} - {{ $recruiter->full_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('recruiter_id')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                        <div id="job-post-recruiter-display"
+                             class="{{ $inputClass }} bg-slate-50 text-slate-600"
+                             data-empty="Chọn phòng ban để hiển thị quản lý phòng ban"
+                             data-no-manager="Phòng ban chưa có quản lý">
+                            @if ($initialRecruiterLabel)
+                                {{ $initialRecruiterLabel }}
+                            @elseif ($selectedDepartmentId !== '')
+                                Phòng ban chưa có quản lý
+                            @else
+                                Chọn phòng ban để hiển thị quản lý phòng ban
+                            @endif
+                        </div>
+                        <p class="mt-2 text-xs text-slate-500">Tự động theo quản lý của phòng ban đã chọn.</p>
                     </div>
 
                     <div>
@@ -214,8 +245,34 @@
                     </div>
                 </form>
             </section>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const departmentSelect = document.getElementById('job-post-department-id');
+                    const recruiterDisplay = document.getElementById('job-post-recruiter-display');
+                    if (!departmentSelect || !recruiterDisplay) {
+                        return;
+                    }
+
+                    const managers = @json($departmentManagers);
+
+                    function refreshRecruiterLabel() {
+                        const departmentId = departmentSelect.value;
+                        if (!departmentId) {
+                            recruiterDisplay.textContent = recruiterDisplay.dataset.empty;
+                            return;
+                        }
+
+                        const managerName = managers[departmentId] ?? null;
+                        recruiterDisplay.textContent = managerName || recruiterDisplay.dataset.noManager;
+                    }
+
+                    departmentSelect.addEventListener('change', refreshRecruiterLabel);
+                });
+            </script>
         @endif
 
+        @unless ($showForm)
         <section class="recruitment-panel rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm shadow-slate-200/60">
             <form method="GET" action="{{ route('admin.recruitment.job-posts') }}" class="grid grid-cols-1 gap-4 lg:grid-cols-12">
                 <div class="lg:col-span-5">
@@ -229,7 +286,9 @@
                     <select name="status" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10">
                         <option value="">Tất cả trạng thái</option>
                         <option value="open" @selected(($filters['status'] ?? '') === 'open')>Đang tuyển</option>
+                        <option value="pending_approval" @selected(($filters['status'] ?? '') === 'pending_approval')>Chờ duyệt</option>
                         <option value="closed" @selected(($filters['status'] ?? '') === 'closed')>Đã đóng</option>
+                        <option value="rejected" @selected(($filters['status'] ?? '') === 'rejected')>Đã từ chối</option>
                     </select>
                 </div>
 
@@ -280,26 +339,18 @@
                                             - {{ $workTypes[$jobPost->work_type] ?? $jobPost->work_type }}
                                         @endif
                                     </p>
-                                    <details class="mt-3 max-w-md rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                                        <summary class="cursor-pointer text-sm font-bold text-cyan-700">Xem chi tiết nhanh</summary>
-                                        <div class="mt-3 space-y-3 text-sm leading-6 text-slate-600">
-                                            <div>
-                                                <p class="font-bold text-slate-800">Mô tả</p>
-                                                <p class="break-words">{{ $jobPost->description ?: 'Chưa có mô tả.' }}</p>
-                                            </div>
-                                            <div>
-                                                <p class="font-bold text-slate-800">Yêu cầu</p>
-                                                <p class="break-words">{{ $jobPost->requirements ?: 'Chưa có yêu cầu.' }}</p>
-                                            </div>
-                                            <div>
-                                                <p class="font-bold text-slate-800">Quyền lợi</p>
-                                                <p class="break-words">{{ $jobPost->benefits ?: 'Chưa có quyền lợi.' }}</p>
-                                            </div>
-                                        </div>
-                                    </details>
+                                    <a href="{{ route('admin.recruitment.job-posts.show', $jobPost) }}"
+                                       class="mt-3 inline-flex text-sm font-bold text-cyan-700 transition hover:text-cyan-900">
+                                        Xem chi tiết →
+                                    </a>
                                 </td>
                                 <td class="px-5 py-4 text-sm text-slate-600">{{ $jobPost->department?->department_name ?? 'Chưa gắn' }}</td>
-                                <td class="px-5 py-4 text-sm text-slate-600">{{ $jobPost->recruiter?->full_name ?? 'Chưa gắn' }}</td>
+                                <td class="px-5 py-4 text-sm text-slate-600">
+                                    {{ $jobPost->recruiter?->full_name ?? 'Chưa gắn' }}
+                                    @if ($jobPost->submittedBy)
+                                        <p class="mt-1 text-xs text-amber-700">Gửi bởi: {{ $jobPost->submittedBy->full_name }}</p>
+                                    @endif
+                                </td>
                                 <td class="px-5 py-4 text-sm text-slate-600">
                                     @if ($jobPost->salary_min || $jobPost->salary_max)
                                         <p>{{ $jobPost->salary_min ? number_format((float) $jobPost->salary_min, 0, ',', '.') : '0' }} - {{ $jobPost->salary_max ? number_format((float) $jobPost->salary_max, 0, ',', '.') : 'Thỏa thuận' }}</p>
@@ -309,14 +360,38 @@
                                     <p class="mt-1 text-slate-500">{{ $jobPost->application_deadline?->format('d/m/Y') ?? 'Chưa có hạn' }}</p>
                                 </td>
                                 <td class="px-5 py-4">
-                                    @if ($jobPost->status === 'open')
-                                        <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">Đang tuyển</span>
+                                    @if ($jobPost->status === 'pending_approval')
+                                        <span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">Chờ duyệt</span>
+                                    @elseif ($jobPost->status === 'rejected')
+                                        <span class="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-800">Đã từ chối</span>
                                     @else
-                                        <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Đã đóng</span>
+                                        <form action="{{ route('admin.recruitment.job-posts.update-status', $jobPost) }}" method="POST" class="inline-block">
+                                            @csrf
+                                            @method('PATCH')
+                                            <select name="status"
+                                                    class="min-w-[8.5rem] rounded-full border-0 py-1.5 pl-3 pr-8 text-xs font-bold shadow-sm ring-1 ring-inset transition focus:ring-2 focus:ring-cyan-500/30 {{ $jobPost->status === 'open' ? 'bg-emerald-100 text-emerald-800 ring-emerald-200' : 'bg-slate-100 text-slate-700 ring-slate-200' }}"
+                                                    onchange="this.form.submit()">
+                                                <option value="open" @selected($jobPost->status === 'open')>Đang tuyển</option>
+                                                <option value="closed" @selected($jobPost->status === 'closed')>Đã đóng</option>
+                                            </select>
+                                        </form>
                                     @endif
                                 </td>
                                 <td class="px-5 py-4">
-                                    <div class="flex justify-end gap-2">
+                                    <div class="flex flex-wrap justify-end gap-2">
+                                        @if ($jobPost->status === 'pending_approval')
+                                            <form action="{{ route('admin.recruitment.job-posts.approve', $jobPost) }}" method="POST">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700">Duyệt</button>
+                                            </form>
+                                            <form action="{{ route('admin.recruitment.job-posts.reject', $jobPost) }}" method="POST" onsubmit="return confirm('Từ chối tin tuyển dụng này?')">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 hover:bg-rose-100">Từ chối</button>
+                                            </form>
+                                        @endif
+                                        <a href="{{ route('admin.recruitment.job-posts.show', $jobPost) }}" class="rounded-xl bg-sky-50 px-3 py-2 text-sm font-bold text-sky-700 transition hover:bg-sky-100">Chi tiết</a>
                                         <a href="{{ route('admin.recruitment.job-posts.edit', $jobPost) }}" class="rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700 transition hover:bg-amber-100">Sửa</a>
                                         <form action="{{ route('admin.recruitment.job-posts.destroy', $jobPost) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn xóa tin tuyển dụng này?')">
                                             @csrf
@@ -339,5 +414,6 @@
                 {{ $jobPosts->links() }}
             </div>
         </section>
+        @endunless
     </div>
 </x-admin-layout>

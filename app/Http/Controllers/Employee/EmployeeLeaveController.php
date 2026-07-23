@@ -8,6 +8,7 @@ use App\Models\LeaveRequest;
 use App\Services\AutoNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class EmployeeLeaveController extends Controller
@@ -113,66 +114,84 @@ class EmployeeLeaveController extends Controller
             return back()->withErrors(['start_date' => 'Khoảng thời gian bạn chọn toàn bộ là ngày nghỉ/ngày Lễ. Vui lòng chọn lại.'])->withInput();
         }
 
-        $overlap = LeaveRequest::where('employee_id', $employee->id)
-            ->where('status', 'approved')
-            ->whereDate('start_date', '<=', $request->end_date)
-            ->whereDate('end_date', '>=', $request->start_date)
-            ->exists();
+        return DB::transaction(function () use ($employee, $request, $totalDays) {
+            Employee::query()->whereKey($employee->id)->lockForUpdate()->first();
 
-        if ($overlap) {
-            return back()->withErrors(['start_date' => 'Đơn này trùng thời gian với đơn đã duyệt khác.'])->withInput();
-        }
+            $duplicatePending = LeaveRequest::query()
+                ->where('employee_id', $employee->id)
+                ->where('status', LeaveRequest::STATUS_PENDING)
+                ->where('leave_type', $request->leave_type)
+                ->whereDate('start_date', $request->start_date)
+                ->whereDate('end_date', $request->end_date)
+                ->exists();
 
-        $departmentId = $employee->department_id;
-        if ($departmentId) {
-            $overlappingLeaves = LeaveRequest::whereHas('employee', function ($q) use ($departmentId) {
-                $q->where('department_id', $departmentId);
-            })
-            ->where('status', 'approved')
-            ->whereDate('start_date', '<=', $request->end_date)
-            ->whereDate('end_date', '>=', $request->start_date)
-            ->get();
+            if ($duplicatePending) {
+                return redirect()
+                    ->route('employee.leave-requests')
+                    ->with('success', 'Tạo đơn xin nghỉ phép thành công.');
+            }
 
-            if ($overlappingLeaves->isNotEmpty()) {
-                $current = \Carbon\Carbon::parse($request->start_date)->copy();
-                $end = \Carbon\Carbon::parse($request->end_date);
-                
-                while ($current->lte($end)) {
-                    $dateStr = $current->format('Y-m-d');
+            $overlap = LeaveRequest::where('employee_id', $employee->id)
+                ->where('status', 'approved')
+                ->whereDate('start_date', '<=', $request->end_date)
+                ->whereDate('end_date', '>=', $request->start_date)
+                ->exists();
+
+            if ($overlap) {
+                return back()->withErrors(['start_date' => 'Đơn này trùng thời gian với đơn đã duyệt khác.'])->withInput();
+            }
+
+            $departmentId = $employee->department_id;
+            if ($departmentId) {
+                $overlappingLeaves = LeaveRequest::whereHas('employee', function ($q) use ($departmentId) {
+                    $q->where('department_id', $departmentId);
+                })
+                ->where('status', 'approved')
+                ->whereDate('start_date', '<=', $request->end_date)
+                ->whereDate('end_date', '>=', $request->start_date)
+                ->get();
+
+                if ($overlappingLeaves->isNotEmpty()) {
+                    $current = \Carbon\Carbon::parse($request->start_date)->copy();
+                    $end = \Carbon\Carbon::parse($request->end_date);
                     
-                    $countOnDay = $overlappingLeaves->filter(function ($leave) use ($dateStr) {
-                        return $leave->start_date->format('Y-m-d') <= $dateStr 
-                            && $leave->end_date->format('Y-m-d') >= $dateStr;
-                    })->count();
-                    
-                    if ($countOnDay >= 5) {
-                        return back()->withErrors([
-                            'start_date' => 'Phòng ban đã có ' . $countOnDay . ' người nghỉ phép vào ngày ' . $current->format('d/m/Y') . '. Tối đa chỉ được nghỉ 5 người/ngày.'
-                        ])->withInput();
+                    while ($current->lte($end)) {
+                        $dateStr = $current->format('Y-m-d');
+                        
+                        $countOnDay = $overlappingLeaves->filter(function ($leave) use ($dateStr) {
+                            return $leave->start_date->format('Y-m-d') <= $dateStr 
+                                && $leave->end_date->format('Y-m-d') >= $dateStr;
+                        })->count();
+                        
+                        if ($countOnDay >= 5) {
+                            return back()->withErrors([
+                                'start_date' => 'Phòng ban đã có ' . $countOnDay . ' người nghỉ phép vào ngày ' . $current->format('d/m/Y') . '. Tối đa chỉ được nghỉ 5 người/ngày.'
+                            ])->withInput();
+                        }
+                        
+                        $current->addDay();
                     }
-                    
-                    $current->addDay();
                 }
             }
-        }
 
-        $leaveRequest = LeaveRequest::create([
-            'employee_id' => $employee->id,
-            'leave_type' => $request->leave_type,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'total_days' => $totalDays,
-            'reason' => $request->reason,
-            'status' => 'pending',
-            'approved_by' => null,
-            'approved_at' => null,
-            'reject_reason' => null,
-        ]);
+            $leaveRequest = LeaveRequest::create([
+                'employee_id' => $employee->id,
+                'leave_type' => $request->leave_type,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+                'total_days' => $totalDays,
+                'reason' => $request->reason,
+                'status' => LeaveRequest::STATUS_PENDING,
+                'approved_by' => null,
+                'approved_at' => null,
+                'reject_reason' => null,
+            ]);
 
-        $this->autoNotifications->leaveSubmitted($leaveRequest);
+            $this->autoNotifications->leaveSubmitted($leaveRequest);
 
-        return redirect()
-            ->route('employee.leave-requests')
-            ->with('success', 'Tạo đơn xin nghỉ phép thành công.');
+            return redirect()
+                ->route('employee.leave-requests')
+                ->with('success', 'Tạo đơn xin nghỉ phép thành công.');
+        });
     }
 }

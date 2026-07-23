@@ -214,7 +214,7 @@ trait ManagesPayrollPeriods
     {
         $payrolls = $payrollPeriod->payrolls()
             ->whereHas('employee', fn ($q) => $q->where('department_id', $department->id))
-            ->with(['employee.department', 'employee.position', 'employee.insurance', 'employee.taxProfile', 'payrollPeriod'])
+            ->with(['employee.department', 'employee.position', 'employee.insurance', 'employee.taxProfile', 'payrollPeriod', 'salaryAdvanceDeductions'])
             ->latest()
             ->paginate(10);
 

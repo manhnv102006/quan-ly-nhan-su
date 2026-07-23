@@ -96,6 +96,15 @@
                     @error('reason')<p class="text-rose-600 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 
+                <div class="rounded-xl bg-slate-50 border border-slate-100 px-4 py-3 text-xs text-slate-500 leading-relaxed">
+                    <p class="font-semibold text-slate-600 mb-1">Giới hạn tăng ca theo Luật Lao động:</p>
+                    <ul class="list-disc ps-4 space-y-0.5">
+                        <li>Tối đa {{ \App\Services\OvertimeLimitService::MAX_HOURS_PER_DAY }} giờ/ngày (50% giờ làm bình thường).</li>
+                        <li>Tối đa {{ \App\Services\OvertimeLimitService::MAX_HOURS_PER_MONTH }} giờ/tháng.</li>
+                        <li>Tối đa {{ \App\Services\OvertimeLimitService::MAX_HOURS_PER_YEAR }} giờ/năm.</li>
+                    </ul>
+                </div>
+
                 <div class="flex gap-3 pt-1">
                     <button type="submit"
                             class="flex-1 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-semibold shadow-md shadow-amber-500/20 hover:bg-amber-700 transition">

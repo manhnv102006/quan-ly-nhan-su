@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Mail\CandidateInterviewInvitationMail;
 use App\Models\Candidate;
-use App\Models\Employee;
 use App\Models\Interview;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\UpdateInterviewEvaluationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -20,24 +20,20 @@ class InterviewController extends Controller
     public function create(): View
     {
         $candidates = Candidate::query()
-            ->with('jobPost')
+            ->with(['jobPost.department.manager'])
             ->orderBy('full_name')
             ->get(['id', 'job_post_id', 'full_name', 'status']);
 
-        $interviewers = Employee::query()
-            ->where('status', 'active')
-            ->orderBy('full_name')
-            ->get(['id', 'full_name', 'employee_code']);
-
-        return view('admin.recruitment.interviews.create', compact('candidates', 'interviewers'));
+        return view('admin.recruitment.interviews.create', compact('candidates'));
     }
 
     public function index(): View
     {
         $interviews = Interview::query()
-            ->with(['candidate.jobPost', 'interviewer'])
-            ->orderByDesc('interview_date')
-            ->paginate(12)
+            ->with(['candidate.jobPost.department', 'interviewer'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate(15)
             ->withQueryString();
 
         $stats = [
@@ -58,20 +54,18 @@ class InterviewController extends Controller
     {
         $validated = $request->validate([
             'candidate_id' => ['required', 'exists:candidates,id', 'unique:interviews,candidate_id'],
-            'interviewer_id' => ['nullable', 'exists:employees,id'],
             'interview_date' => ['required', 'date', 'after:now'],
             'note' => ['nullable', 'string'],
         ], [
             'candidate_id.required' => 'Ứng viên là bắt buộc.',
             'candidate_id.exists' => 'Ứng viên được chọn không hợp lệ.',
             'candidate_id.unique' => 'Đã tạo lịch phỏng vấn cho ứng viên này rồi.',
-            'interviewer_id.exists' => 'Người phỏng vấn được chọn không hợp lệ.',
             'interview_date.required' => 'Thời gian phỏng vấn là bắt buộc.',
             'interview_date.date' => 'Thời gian phỏng vấn không hợp lệ.',
             'interview_date.after' => 'Thời gian phỏng vấn phải ở tương lai.',
         ]);
 
-        $validated['interviewer_id'] = $validated['interviewer_id'] ?: null;
+        $validated['interviewer_id'] = $this->resolveInterviewerIdForCandidate((int) $validated['candidate_id']);
         $validated['status'] = 'scheduled';
         $validated['result'] = 'pending';
 
@@ -123,34 +117,41 @@ class InterviewController extends Controller
             }
         });
 
+        $returnTo = $request->input('return_to');
+        if (is_string($returnTo) && $this->isCandidateShowReturnUrl($returnTo, (int) $validated['candidate_id'])) {
+            return redirect()
+                ->route('admin.recruitment.interviews')
+                ->with('success', 'Tạo lịch phỏng vấn thành công. Lịch đã hiển thị trong danh sách bên dưới.');
+        }
+
         return redirect()
             ->route('admin.recruitment.interviews')
             ->with('success', 'Tạo lịch phỏng vấn thành công.');
     }
 
-    public function update(Request $request, Interview $interview): RedirectResponse
+    private function isCandidateShowReturnUrl(string $url, int $candidateId): bool
     {
-        $validated = $request->validate([
-            'status' => ['required', 'in:scheduled,completed,cancelled,no_show'],
-            'result' => ['required', 'in:pending,passed,failed'],
-            'technical_score' => ['nullable', 'integer', 'between:0,10'],
-            'attitude_score' => ['nullable', 'integer', 'between:0,10'],
-            'culture_score' => ['nullable', 'integer', 'between:0,10'],
-            'overall_score' => ['nullable', 'integer', 'between:0,10'],
-            'recommendation' => ['nullable', 'in:hire,consider,reject'],
-            'strengths' => ['nullable', 'string'],
-            'weaknesses' => ['nullable', 'string'],
-            'note' => ['nullable', 'string'],
-        ], [
-            'status.required' => 'Trạng thái buổi phỏng vấn là bắt buộc.',
-            'status.in' => 'Trạng thái buổi phỏng vấn không hợp lệ.',
-            'result.required' => 'Kết quả phỏng vấn là bắt buộc.',
-            'result.in' => 'Kết quả phỏng vấn không hợp lệ.',
-            'technical_score.between' => 'Điểm kỹ thuật phải từ 0 đến 10.',
-            'attitude_score.between' => 'Điểm thái độ phải từ 0 đến 10.',
-            'culture_score.between' => 'Điểm phù hợp văn hóa phải từ 0 đến 10.',
-            'overall_score.between' => 'Điểm tổng quan phải từ 0 đến 10.',
-        ]);
+        $expected = route('admin.recruitment.candidates.show', $candidateId, absolute: false);
+
+        return str_starts_with(parse_url($url, PHP_URL_PATH) ?? '', $expected);
+    }
+
+    private function resolveInterviewerIdForCandidate(int $candidateId): ?int
+    {
+        $managerId = Candidate::query()
+            ->whereKey($candidateId)
+            ->with('jobPost.department:id,manager_id')
+            ->first()
+            ?->jobPost
+            ?->department
+            ?->manager_id;
+
+        return $managerId ?: null;
+    }
+
+    public function update(UpdateInterviewEvaluationRequest $request, Interview $interview): RedirectResponse
+    {
+        $validated = $request->validated();
 
         DB::transaction(function () use ($interview, $validated) {
             $interview->update([

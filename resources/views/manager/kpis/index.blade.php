@@ -121,8 +121,9 @@
                                 </div>
                                 <div class="flex items-center justify-between text-slate-500">
                                     <span>Thành viên</span>
-                                    @if ($assignment->employee_kpis_count > 0)
-                                        <span class="font-semibold text-slate-700">{{ $assignment->employee_kpis_count }} người</span>
+                                    @php $memberCount = $assignment->employee_kpis_count ?? $assignment->employeeKpis->count(); @endphp
+                                    @if ($memberCount > 0)
+                                        <span class="font-semibold text-slate-700">{{ $memberCount }} người</span>
                                     @else
                                         <span class="font-medium text-amber-600">Chưa có</span>
                                     @endif

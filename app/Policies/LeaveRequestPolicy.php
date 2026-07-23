@@ -48,6 +48,12 @@ class LeaveRequestPolicy
         }
 
         if ($user->isManager()) {
+            $leaveRequest->loadMissing('employee');
+
+            if ($leaveRequest->employee?->user_id === $user->id) {
+                return Response::allow();
+            }
+
             return $this->managerCanManageResponse($user, $leaveRequest);
         }
 
