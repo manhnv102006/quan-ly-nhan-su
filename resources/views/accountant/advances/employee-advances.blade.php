@@ -34,7 +34,7 @@
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">
             @include('accountant.partials.stat-card', ['label' => 'Tổng yêu cầu', 'value' => $summary['total']])
             @include('accountant.partials.stat-card', ['label' => 'Chờ duyệt', 'value' => $summary['pending'], 'tone' => 'text-amber-600'])
-            @include('accountant.partials.stat-card', ['label' => 'Dư cần trừ', 'value' => $formatMoney($summary['outstanding']), 'tone' => 'text-rose-600'])
+            @include('accountant.partials.stat-card', ['label' => 'Tổng số tiền đã ứng', 'value' => $formatMoney($summary['total_advanced']), 'tone' => 'text-cyan-700'])
         </div>
 
         <form method="GET" action="{{ route('accountant.advances.index') }}" class="accountant-card flex flex-wrap items-end gap-4 p-5">

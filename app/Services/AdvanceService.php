@@ -17,6 +17,18 @@ class AdvanceService
     {
         abort_unless($advance->canBeApproved(), 422, 'Yêu cầu không ở trạng thái chờ duyệt.');
 
+        $advance->loadMissing('employee');
+        $employee = $advance->employee;
+        if ($employee) {
+            $cap = $this->advanceSalaryCap($employee);
+            $usedExcludingThis = $this->usedAdvanceQuota($employee) - (float) $advance->amount;
+            abort_if(
+                $usedExcludingThis + (float) $advance->amount > $cap,
+                422,
+                'Vượt hạn mức ứng lương (tối đa 50% lương tháng: '.number_format($cap, 0, ',', '.').'₫).'
+            );
+        }
+
         $advance->update([
             'status' => SalaryAdvance::STATUS_APPROVED,
             'approved_by' => $userId ?? auth()->id(),
@@ -190,7 +202,11 @@ class AdvanceService
             $totalAmount += (float) $deduction->amount;
         }
 
-        return compact('applied', 'skipped', 'totalAmount');
+        return [
+            'applied' => $applied,
+            'skipped' => $skipped,
+            'total_amount' => $totalAmount,
+        ];
     }
 
     public function stats(): array
@@ -224,15 +240,34 @@ class AdvanceService
         return $payroll ? (float) $payroll->basic_salary : 0;
     }
 
-    public function maxAdvanceAmount(Employee $employee): float
+    /** Hạn mức tối đa: 50% lương tháng (theo hợp đồng / lương tham chiếu). */
+    public function advanceSalaryCap(Employee $employee): float
     {
         $salary = $this->referenceSalary($employee);
 
-        if ($salary <= 0) {
-            return 10_000_000;
-        }
+        return $salary > 0 ? round($salary * 0.5, 0) : 0.0;
+    }
 
-        return round($salary * 0.5, 0);
+    /** Phần hạn mức đã dùng: yêu cầu chờ duyệt + số tiền tạm ứng còn phải trừ. */
+    public function usedAdvanceQuota(Employee $employee): float
+    {
+        $advances = SalaryAdvance::query()->where('employee_id', $employee->id)->get();
+
+        $pending = (float) $advances
+            ->where('status', SalaryAdvance::STATUS_PENDING)
+            ->sum('amount');
+
+        $outstanding = (float) $advances
+            ->filter(fn (SalaryAdvance $a) => $a->canBeDeducted())
+            ->sum(fn (SalaryAdvance $a) => $a->remainingBalance());
+
+        return $pending + $outstanding;
+    }
+
+    /** Số tiền nhân viên còn được ứng thêm (trong hạn 50% lương). */
+    public function maxAdvanceAmount(Employee $employee): float
+    {
+        return max(0.0, $this->advanceSalaryCap($employee) - $this->usedAdvanceQuota($employee));
     }
 
     /**
@@ -251,9 +286,15 @@ class AdvanceService
 
         $amount = (float) $data['amount'];
         $maxAmount = $this->maxAdvanceAmount($employee);
+        $cap = $this->advanceSalaryCap($employee);
 
-        abort_if($amount < SalaryAdvance::MIN_AMOUNT, 422, 'Số tiền ứng tối thiểu '.number_format(SalaryAdvance::MIN_AMOUNT, 0, ',', '.').'₫.');
-        abort_if($amount > $maxAmount, 422, 'Số tiền ứng không được vượt quá '.number_format($maxAmount, 0, ',', '.').'₫ (50% lương).');
+        abort_if($cap <= 0, 422, 'Không xác định được lương tham chiếu hoặc hạn mức ứng lương bằng 0.');
+        abort_if($maxAmount <= 0, 422, 'Bạn đã dùng hết hạn mức ứng lương (tối đa 50% lương tháng: '.number_format($cap, 0, ',', '.').'₫).');
+
+        $effectiveMin = min(SalaryAdvance::MIN_AMOUNT, $maxAmount);
+
+        abort_if($amount < $effectiveMin, 422, 'Số tiền ứng tối thiểu '.number_format($effectiveMin, 0, ',', '.').'₫.');
+        abort_if($amount > $maxAmount, 422, 'Số tiền ứng vượt hạn mức còn lại '.number_format($maxAmount, 0, ',', '.').'₫ (tối đa 50% lương tháng).');
 
         $advance = SalaryAdvance::create([
             'employee_id' => $employee->id,
