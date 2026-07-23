@@ -172,12 +172,7 @@ class OvertimeRequest extends Model
 
     public function scopeAwaitingManagerApproval(Builder $query): Builder
     {
-        return $query
-            ->where('status', self::STATUS_PENDING)
-            ->where(function (Builder $q) {
-                $q->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->whereNull('manager_id'))
-                    ->orWhereNotNull('leader_approved_at');
-            });
+        return $query->where('status', self::STATUS_PENDING);
     }
 
     /**

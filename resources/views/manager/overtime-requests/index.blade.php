@@ -193,6 +193,14 @@
                          }
                      }"
                      x-init="restoreOldSelection()">
+                <form id="bulk-overtime-approve-form"
+                      x-ref="tableForm"
+                      method="POST"
+                      action="{{ route('manager.overtime-requests.bulk-approve') }}"
+                      @submit="confirmApprove($event)">
+                    @csrf
+                    @method('PATCH')
+
                 <div class="border-b border-slate-100 px-6 py-5 sm:px-7">
                     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div>
@@ -209,7 +217,6 @@
                             </p>
                             <div class="flex flex-wrap gap-2">
                                 <button type="submit"
-                                        form="bulk-overtime-approve-form"
                                         :disabled="selectedCount === 0"
                                         class="inline-flex items-center justify-center rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-900/20 transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50">
                                     Duyệt
@@ -224,15 +231,6 @@
                         </div>
                     </div>
                 </div>
-
-                <form id="bulk-overtime-approve-form"
-                      x-ref="tableForm"
-                      method="POST"
-                      action="{{ route('manager.overtime-requests.bulk-approve') }}"
-                      @submit="confirmApprove($event)">
-                    @csrf
-                    @method('PATCH')
-
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
