@@ -29,7 +29,9 @@
             </div>
         @endif
 
-        @if ($errors->any())
+        @include('leave-requests.partials.capacity-limit-alert', ['field' => 'capacity', 'class' => ''])
+
+        @if ($errors->any() && ! $errors->has('capacity'))
             <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4">
                 <ul class="list-disc space-y-1 ps-5 text-sm text-rose-700">
                     @foreach ($errors->all() as $error)

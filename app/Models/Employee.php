@@ -157,6 +157,21 @@ class Employee extends Model
         return (int) round($this->leaveCapacityRatio() * 100);
     }
 
+    public function leaveCapacityRoleLabel(): string
+    {
+        $this->loadMissing('user.role');
+
+        if ($this->user?->isManager()) {
+            return 'Quản lý';
+        }
+
+        if ($this->user?->isAccountant()) {
+            return 'Kế toán';
+        }
+
+        return 'Nhân viên';
+    }
+
     public function linkedUser(): BelongsTo
     {
         return $this->belongsTo(User::class)->withTrashed();

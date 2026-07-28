@@ -9,6 +9,7 @@ use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Models\LeaveRequestHistory;
 use App\Services\LeaveApprovalService;
+use App\Support\LeaveCapacityMessages;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -111,11 +112,18 @@ class LeaveApprovalController extends Controller
         try {
             $this->service->approve($leaveRequest, (int) Auth::id(), $manager);
         } catch (ValidationException $e) {
+            if (isset($e->errors()['capacity'])) {
+                return redirect()
+                    ->route('manager.leave-requests.show', $leaveRequest)
+                    ->withErrors($e->errors());
+            }
+
             $reason = collect($e->errors())->flatten()->first() ?? 'Lỗi không xác định.';
+
             return redirect()
                 ->route('manager.leave-requests.show', $leaveRequest)
                 ->withErrors($e->errors())
-                ->with('error', 'Không thể duyệt đơn: ' . $reason);
+                ->with('error', 'Không thể duyệt đơn: '.$reason);
         }
 
         return redirect()
@@ -159,7 +167,7 @@ class LeaveApprovalController extends Controller
         $message = 'Đã duyệt thành công '.$result['approved'].' đơn nghỉ phép.';
 
         if ($result['failed'] > 0) {
-            $message .= ' '.$result['failed'].' đơn không thể duyệt (có thể do đã đạt giới hạn 30% nghỉ phép phòng ban/ngày).';
+            $message .= ' '.LeaveCapacityMessages::bulkApprovePartialFailure($result['failed']);
         }
 
         return back()->with('success', $message);

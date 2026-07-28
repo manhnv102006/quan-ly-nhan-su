@@ -48,6 +48,14 @@
             </div>
         </div>
 
+        @if (session('error'))
+            <div class="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 shadow-sm">
+                <p class="text-sm font-medium text-rose-800">{{ session('error') }}</p>
+            </div>
+        @endif
+
+        @include('leave-requests.partials.capacity-limit-alert', ['field' => 'capacity'])
+
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
             <div class="rounded-2xl border bg-white p-6 shadow-sm">

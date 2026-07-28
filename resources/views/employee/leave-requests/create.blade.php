@@ -37,15 +37,10 @@
                 — ví dụ 10 người → tối đa {{ $leaveCapacityExampleMax }} người/ngày đã duyệt.
             </p>
 
-            @error('leave_capacity')
-                <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                    <p class="font-semibold text-amber-950 mb-1">Đã đạt giới hạn nghỉ phép</p>
-                    <p class="text-xs leading-relaxed">{{ $message }}</p>
-                </div>
-            @enderror
+            @include('leave-requests.partials.capacity-limit-alert', ['field' => 'leave_capacity', 'class' => 'mb-6'])
 
             <p class="text-xs text-slate-400 mb-6 leading-relaxed">
-                Bạn có thể gửi nhiều đơn chờ duyệt khi phòng ban chưa đủ {{ $leaveCapacityPercent }}% đơn <em>đã duyệt</em> (theo hạn mức vai trò của bạn). Hệ thống kiểm tra <strong class="font-medium text-slate-500">từng ngày trong cả khoảng nghỉ</strong>.
+                Quy định giới hạn nghỉ phép phòng ban: nhân viên <strong class="font-medium text-slate-500">30%</strong>, quản lý/kế toán <strong class="font-medium text-slate-500">20%</strong> (tính theo số đơn <em>đã duyệt</em> từng ngày trong khoảng nghỉ). Hạn mức của bạn: <strong class="font-medium text-slate-500">{{ $leaveCapacityPercent }}%</strong>.
             </p>
 
             <form id="leave-request-form" action="{{ route('employee.leave-requests.store') }}" method="POST" class="space-y-6">

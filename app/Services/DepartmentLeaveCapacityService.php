@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Employee;
 use App\Models\LeaveRequest;
+use App\Support\LeaveCapacityMessages;
 use App\Support\LeaveDateRange;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -40,6 +41,7 @@ class DepartmentLeaveCapacityService
         Carbon|string $startDate,
         Carbon|string $endDate,
     ): ?string {
+        $applicant->loadMissing('department');
         $departmentId = $applicant->department_id;
         if (! $departmentId) {
             return null;
@@ -58,7 +60,7 @@ class DepartmentLeaveCapacityService
     public function approvalBlockedMessage(
         LeaveRequest $leaveRequest,
     ): ?string {
-        $leaveRequest->loadMissing('employee.user.role');
+        $leaveRequest->loadMissing('employee.user.role', 'employee.department');
         $employee = $leaveRequest->employee;
         $departmentId = $employee?->department_id;
 
@@ -73,6 +75,7 @@ class DepartmentLeaveCapacityService
             $leaveRequest->end_date,
             $leaveRequest->id,
             forApproval: true,
+            applicantDisplayName: $employee->full_name,
         );
     }
 
@@ -83,23 +86,28 @@ class DepartmentLeaveCapacityService
         Carbon|string $endDate,
         ?int $ignoreLeaveRequestId,
         bool $forApproval,
+        ?string $applicantDisplayName = null,
     ): ?string {
+        $applicant->loadMissing('department');
+        $departmentName = $applicant->department?->department_name ?? 'Phòng ban';
+
         $ratio = $applicant->leaveCapacityRatio();
         $percent = $applicant->leaveCapacityPercent();
+        $roleLabel = $applicant->leaveCapacityRoleLabel();
         $maxSlots = $this->maxConcurrentLeaveSlots($departmentId, $ratio);
         $headcount = $this->activeHeadcount($departmentId);
 
         if ($headcount === 0) {
-            return $forApproval
-                ? 'Phòng ban chưa có nhân viên đang làm việc; không thể xác định hạn mức nghỉ phép để duyệt đơn.'
-                : 'Phòng ban chưa có nhân viên đang làm việc; không thể gửi đơn nghỉ phép.';
+            return LeaveCapacityMessages::noActiveStaff($forApproval);
         }
 
         if ($maxSlots === 0) {
-            return sprintf(
-                'Phòng ban có %d nhân viên đang làm việc; hạn mức %d%% tương đương 0 người nghỉ/ngày (quy mô hiện tại).',
+            return LeaveCapacityMessages::zeroSlots(
+                $departmentName,
                 $headcount,
                 $percent,
+                $roleLabel,
+                $forApproval,
             );
         }
 
@@ -125,30 +133,27 @@ class DepartmentLeaveCapacityService
             return null;
         }
 
-        $dayLabels = collect($fullDays)
-            ->map(fn (array $row) => $row['day']->format('d/m/Y'))
-            ->join(', ');
-
-        $sampleCount = $fullDays[0]['count'];
-
         if ($forApproval) {
-            return sprintf(
-                'Không thể duyệt đơn (khoảng %s): các ngày %s đã đủ hạn mức %d/%d nhân viên nghỉ phép (%d%% đối với vai trò của người nghỉ). Chỉ duyệt thêm được khi hết ngày nghỉ và nhân viên đi làm lại.',
+            return LeaveCapacityMessages::approvalBlocked(
+                $applicantDisplayName ?? $applicant->full_name ?? 'Nhân viên',
+                $departmentName,
                 $periodLabel,
-                $dayLabels,
-                $sampleCount,
+                $fullDays,
                 $maxSlots,
                 $percent,
+                $roleLabel,
+                $headcount,
             );
         }
 
-        return sprintf(
-            'Số lượng nghỉ phép đã giới hạn. Khoảng %s trùng các ngày %s (đã có %d/%d đơn được duyệt, hạn mức %d%% cho vai trò của bạn). Bạn không thể gửi đơn cho các ngày đã đủ hạn mức.',
+        return LeaveCapacityMessages::employeeSubmitBlocked(
+            $departmentName,
             $periodLabel,
-            $dayLabels,
-            $sampleCount,
+            $fullDays,
             $maxSlots,
             $percent,
+            $roleLabel,
+            $headcount,
         );
     }
 
