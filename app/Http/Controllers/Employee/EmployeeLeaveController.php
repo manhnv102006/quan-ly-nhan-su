@@ -120,6 +120,7 @@ class EmployeeLeaveController extends Controller
 
         return DB::transaction(function () use ($employee, $request, $totalDays) {
             Employee::query()->whereKey($employee->id)->lockForUpdate()->first();
+            $this->departmentLeaveCapacity->lockDepartment($employee->department_id);
 
             $duplicatePending = LeaveRequest::query()
                 ->where('employee_id', $employee->id)
@@ -146,17 +147,14 @@ class EmployeeLeaveController extends Controller
                 ])->withInput();
             }
 
-            $departmentId = $employee->department_id;
-            if ($departmentId) {
-                $capacityError = $this->departmentLeaveCapacity->submitBlockedMessage(
-                    $employee,
-                    $request->start_date,
-                    $request->end_date,
-                );
+            $capacityError = $this->departmentLeaveCapacity->submitBlockedMessage(
+                $employee,
+                $request->start_date,
+                $request->end_date,
+            );
 
-                if ($capacityError !== null) {
-                    return back()->withErrors(['leave_capacity' => $capacityError])->withInput();
-                }
+            if ($capacityError !== null) {
+                return back()->withErrors(['leave_capacity' => $capacityError])->withInput();
             }
 
             $leaveRequest = LeaveRequest::create([

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Services\DepartmentLeaveCapacityService;
+use App\Support\LeaveCapacityRules;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -143,33 +143,17 @@ class Employee extends Model
      */
     public function leaveCapacityRatio(): float
     {
-        $this->loadMissing('user.role');
-
-        if ($this->user?->isManager() || $this->user?->isAccountant()) {
-            return DepartmentLeaveCapacityService::RATIO_MANAGER_ACCOUNTANT;
-        }
-
-        return DepartmentLeaveCapacityService::RATIO_EMPLOYEE;
+        return LeaveCapacityRules::ratioFor($this);
     }
 
     public function leaveCapacityPercent(): int
     {
-        return (int) round($this->leaveCapacityRatio() * 100);
+        return LeaveCapacityRules::percentFor($this);
     }
 
     public function leaveCapacityRoleLabel(): string
     {
-        $this->loadMissing('user.role');
-
-        if ($this->user?->isManager()) {
-            return 'Quản lý';
-        }
-
-        if ($this->user?->isAccountant()) {
-            return 'Kế toán';
-        }
-
-        return 'Nhân viên';
+        return LeaveCapacityRules::roleLabelFor($this);
     }
 
     public function linkedUser(): BelongsTo

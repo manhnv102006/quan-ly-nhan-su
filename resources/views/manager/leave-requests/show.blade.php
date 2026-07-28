@@ -29,7 +29,7 @@
             </div>
         @endif
 
-        @include('leave-requests.partials.capacity-limit-alert', ['field' => 'capacity', 'class' => ''])
+        <x-leave-capacity-alert field="capacity" />
 
         @if ($errors->any() && ! $errors->has('capacity'))
             <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4">

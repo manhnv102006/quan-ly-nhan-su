@@ -54,7 +54,7 @@
             </div>
         @endif
 
-        @include('leave-requests.partials.capacity-limit-alert', ['field' => 'capacity'])
+        <x-leave-capacity-alert field="capacity" />
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 

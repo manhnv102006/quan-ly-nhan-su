@@ -37,7 +37,7 @@
                 — ví dụ 10 người → tối đa {{ $leaveCapacityExampleMax }} người/ngày đã duyệt.
             </p>
 
-            @include('leave-requests.partials.capacity-limit-alert', ['field' => 'leave_capacity', 'class' => 'mb-6'])
+            <x-leave-capacity-alert field="leave_capacity" class="mb-6" />
 
             <p class="text-xs text-slate-400 mb-6 leading-relaxed">
                 Quy định giới hạn nghỉ phép phòng ban: nhân viên <strong class="font-medium text-slate-500">30%</strong>, quản lý/kế toán <strong class="font-medium text-slate-500">20%</strong> (tính theo số đơn <em>đã duyệt</em> từng ngày trong khoảng nghỉ). Hạn mức của bạn: <strong class="font-medium text-slate-500">{{ $leaveCapacityPercent }}%</strong>.

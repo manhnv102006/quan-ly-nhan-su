@@ -64,28 +64,11 @@ final class LeaveCapacityMessages
             : 'Không thể gửi đơn: phòng ban chưa có nhân viên đang làm việc nên không xác định được hạn mức nghỉ phép.';
     }
 
-    public static function zeroSlots(
-        string $departmentName,
-        int $headcount,
-        int $percent,
-        string $roleLabel,
-        bool $forApproval,
-    ): string {
-        $action = $forApproval ? 'phê duyệt đơn nghỉ phép' : 'gửi đơn nghỉ phép';
-
-        return implode("\n", [
-            'Không thể '.$action.' theo quy định giới hạn nghỉ phép phòng ban.',
-            '',
-            '• Phòng ban: '.$departmentName.' ('.$headcount.' nhân viên đang làm việc)',
-            '• Hạn mức ('.$roleLabel.'): '.$percent.'% — tương đương 0 người nghỉ/ngày với quy mô hiện tại',
-            '',
-            'Vui lòng liên hệ quản trị nhân sự để được hỗ trợ.',
-        ]);
-    }
-
     public static function bulkApprovePartialFailure(int $failedCount): string
     {
-        return $failedCount.' đơn không được duyệt do đã đạt giới hạn nghỉ phép phòng ban (20% đối với quản lý/kế toán, 30% đối với nhân viên — tính theo từng ngày trong khoảng nghỉ).';
+        return $failedCount.' đơn không được duyệt do đã đạt giới hạn nghỉ phép phòng ban ('
+            .LeaveCapacityRules::toPercent(LeaveCapacityRules::RATIO_MANAGER_ACCOUNTANT).'% đối với quản lý/kế toán, '
+            .LeaveCapacityRules::toPercent(LeaveCapacityRules::RATIO_EMPLOYEE).'% đối với nhân viên — tính theo từng ngày làm việc trong khoảng nghỉ).';
     }
 
     /**

@@ -2,21 +2,18 @@
 
 namespace App\Services;
 
+use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Holiday;
 use App\Models\LeaveRequest;
 use App\Support\LeaveCapacityMessages;
+use App\Support\LeaveCapacityRules;
 use App\Support\LeaveDateRange;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class DepartmentLeaveCapacityService
 {
-    /** Nhân viên: tối đa 30% phòng ban nghỉ cùng lúc (theo ngày). */
-    public const RATIO_EMPLOYEE = 0.30;
-
-    /** Quản lý & kế toán: tối đa 20% phòng ban nghỉ cùng lúc (theo ngày). */
-    public const RATIO_MANAGER_ACCOUNTANT = 0.20;
-
     public function activeHeadcount(int $departmentId): int
     {
         return Employee::query()
@@ -27,28 +24,36 @@ class DepartmentLeaveCapacityService
 
     public function maxConcurrentLeaveSlots(int $departmentId, float $ratio): int
     {
-        $headcount = $this->activeHeadcount($departmentId);
-
-        if ($headcount === 0) {
-            return 0;
-        }
-
-        return (int) floor($headcount * $ratio);
+        return LeaveCapacityRules::slotsFor($this->activeHeadcount($departmentId), $ratio);
     }
 
+    /**
+     * Giữ khoá phòng ban để hai đơn cùng phòng không cùng lúc vượt hạn mức.
+     * Chỉ có hiệu lực khi gọi trong transaction.
+     */
+    public function lockDepartment(?int $departmentId): void
+    {
+        if (! $departmentId) {
+            return;
+        }
+
+        Department::query()->whereKey($departmentId)->lockForUpdate()->first();
+    }
+
+    /**
+     * Nhân viên chỉ bị chặn gửi đơn khi hạn mức đã kín bởi các đơn ĐÃ DUYỆT.
+     */
     public function submitBlockedMessage(
         Employee $applicant,
         Carbon|string $startDate,
         Carbon|string $endDate,
     ): ?string {
-        $applicant->loadMissing('department');
-        $departmentId = $applicant->department_id;
-        if (! $departmentId) {
+        if (! $applicant->department_id) {
             return null;
         }
 
         return $this->firstQuotaViolationMessage(
-            (int) $departmentId,
+            (int) $applicant->department_id,
             $applicant,
             $startDate,
             $endDate,
@@ -57,25 +62,22 @@ class DepartmentLeaveCapacityService
         );
     }
 
-    public function approvalBlockedMessage(
-        LeaveRequest $leaveRequest,
-    ): ?string {
-        $leaveRequest->loadMissing('employee.user.role', 'employee.department');
+    public function approvalBlockedMessage(LeaveRequest $leaveRequest): ?string
+    {
+        $leaveRequest->loadMissing(['employee.user.role', 'employee.department']);
         $employee = $leaveRequest->employee;
-        $departmentId = $employee?->department_id;
 
-        if (! $departmentId || ! $employee) {
+        if (! $employee || ! $employee->department_id) {
             return null;
         }
 
         return $this->firstQuotaViolationMessage(
-            (int) $departmentId,
+            (int) $employee->department_id,
             $employee,
             $leaveRequest->start_date,
             $leaveRequest->end_date,
             $leaveRequest->id,
             forApproval: true,
-            applicantDisplayName: $employee->full_name,
         );
     }
 
@@ -86,29 +88,19 @@ class DepartmentLeaveCapacityService
         Carbon|string $endDate,
         ?int $ignoreLeaveRequestId,
         bool $forApproval,
-        ?string $applicantDisplayName = null,
     ): ?string {
         $applicant->loadMissing('department');
         $departmentName = $applicant->department?->department_name ?? 'Phòng ban';
 
-        $ratio = $applicant->leaveCapacityRatio();
-        $percent = $applicant->leaveCapacityPercent();
-        $roleLabel = $applicant->leaveCapacityRoleLabel();
-        $maxSlots = $this->maxConcurrentLeaveSlots($departmentId, $ratio);
+        $ratio = LeaveCapacityRules::ratioFor($applicant);
+        $percent = LeaveCapacityRules::toPercent($ratio);
+        $roleLabel = LeaveCapacityRules::roleLabelFor($applicant);
+
         $headcount = $this->activeHeadcount($departmentId);
+        $maxSlots = LeaveCapacityRules::slotsFor($headcount, $ratio);
 
         if ($headcount === 0) {
             return LeaveCapacityMessages::noActiveStaff($forApproval);
-        }
-
-        if ($maxSlots === 0) {
-            return LeaveCapacityMessages::zeroSlots(
-                $departmentName,
-                $headcount,
-                $percent,
-                $roleLabel,
-                $forApproval,
-            );
         }
 
         $overlappingLeaves = $this->approvedOverlappingLeaves(
@@ -118,10 +110,14 @@ class DepartmentLeaveCapacityService
             $ignoreLeaveRequestId,
         );
 
-        $periodLabel = LeaveDateRange::formatPeriod($startDate, $endDate);
+        $holidays = $this->holidaysInRange($startDate, $endDate);
         $fullDays = [];
 
         foreach (LeaveDateRange::eachCalendarDay($startDate, $endDate) as $day) {
+            if ($this->isNonWorkingDay($day, $holidays)) {
+                continue;
+            }
+
             $approvedCount = $this->distinctApprovedEmployeesOnDay($overlappingLeaves, $day);
 
             if ($approvedCount >= $maxSlots) {
@@ -133,9 +129,11 @@ class DepartmentLeaveCapacityService
             return null;
         }
 
+        $periodLabel = LeaveDateRange::formatPeriod($startDate, $endDate);
+
         if ($forApproval) {
             return LeaveCapacityMessages::approvalBlocked(
-                $applicantDisplayName ?? $applicant->full_name ?? 'Nhân viên',
+                $applicant->full_name ?: 'Nhân viên',
                 $departmentName,
                 $periodLabel,
                 $fullDays,
@@ -172,6 +170,33 @@ class DepartmentLeaveCapacityService
             ->where('status', LeaveRequest::STATUS_APPROVED)
             ->overlappingPeriod($startDate, $endDate)
             ->get();
+    }
+
+    /**
+     * @return Collection<int, Holiday>
+     */
+    private function holidaysInRange(Carbon|string $startDate, Carbon|string $endDate): Collection
+    {
+        return Holiday::inRange(
+            Carbon::parse($startDate)->toDateString(),
+            Carbon::parse($endDate)->toDateString(),
+        )->get();
+    }
+
+    /**
+     * Chủ nhật và ngày Lễ không tính vào hạn mức (khớp cách tính total_days của đơn).
+     *
+     * @param  Collection<int, Holiday>  $holidays
+     */
+    private function isNonWorkingDay(Carbon $day, Collection $holidays): bool
+    {
+        if ($day->isSunday()) {
+            return true;
+        }
+
+        return $holidays->contains(
+            fn (Holiday $holiday) => $day->between($holiday->start_date, $holiday->end_date)
+        );
     }
 
     /**

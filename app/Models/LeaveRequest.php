@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\LeaveDateRange;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -148,10 +150,10 @@ class LeaveRequest extends Model
      *
      * @param  Builder<LeaveRequest>  $query
      */
-    public function scopeOverlappingPeriod(Builder $query, \Carbon\Carbon|string $periodStart, \Carbon\Carbon|string $periodEnd): Builder
+    public function scopeOverlappingPeriod(Builder $query, Carbon|string $periodStart, Carbon|string $periodEnd): Builder
     {
-        $start = \Carbon\Carbon::parse($periodStart)->toDateString();
-        $end = \Carbon\Carbon::parse($periodEnd)->toDateString();
+        $start = Carbon::parse($periodStart)->toDateString();
+        $end = Carbon::parse($periodEnd)->toDateString();
 
         return $query->whereDate('start_date', '<=', $end)
             ->whereDate('end_date', '>=', $start);
@@ -165,9 +167,9 @@ class LeaveRequest extends Model
         return $query->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->where('department_id', $departmentId));
     }
 
-    public function coversCalendarDay(\Carbon\Carbon|string $day): bool
+    public function coversCalendarDay(Carbon|string $day): bool
     {
-        return \App\Support\LeaveDateRange::dayWithinPeriod($day, $this->start_date, $this->end_date);
+        return LeaveDateRange::dayWithinPeriod($day, $this->start_date, $this->end_date);
     }
 
     /**

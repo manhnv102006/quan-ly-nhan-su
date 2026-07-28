@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Models\LeaveRequestHistory;
 use App\Models\User;
+use App\Support\LeaveDateRange;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -28,19 +29,50 @@ class LeaveApprovalService
         $this->assertActorAuthorized($leaveRequest, $actorId, $manager);
         $this->assertPending($leaveRequest);
 
-        if ($leaveRequest->leave_type === 'annual') {
-            $year = $leaveRequest->start_date?->year ?? now()->year;
-            $used = LeaveRequest::where('employee_id', $leaveRequest->employee_id)
-                ->where('leave_type', 'annual')
-                ->where('status', LeaveRequest::STATUS_APPROVED)
-                ->whereYear('start_date', $year)
-                ->sum('total_days');
+        $leaveRequest->loadMissing('employee');
 
-            if (($used + $leaveRequest->total_days) > self::ANNUAL_LEAVE_ALLOWANCE) {
-                throw ValidationException::withMessages(['total_days' => 'Số ngày phép năm không đủ để duyệt đơn này.']);
-            }
+        DB::transaction(function () use ($leaveRequest, $actorId) {
+            // Khoá phòng ban trước khi kiểm tra hạn mức để hai lượt duyệt song song không cùng vượt 30%/20%.
+            $this->departmentLeaveCapacity->lockDepartment($leaveRequest->employee?->department_id);
+
+            $leaveRequest->refresh();
+            $this->assertPending($leaveRequest);
+
+            $this->assertAnnualAllowance($leaveRequest);
+            $this->assertNoApprovedOverlap($leaveRequest);
+            $this->assertDepartmentCapacity($leaveRequest);
+
+            $this->processDecision(
+                leaveRequest: $leaveRequest,
+                actorId: $actorId,
+                status: LeaveRequest::STATUS_APPROVED,
+                action: 'approved',
+                title: 'Đơn nghỉ phép đã được phê duyệt',
+                content: 'Đơn nghỉ phép từ '.$leaveRequest->start_date?->format('d/m/Y').' đến '.$leaveRequest->end_date?->format('d/m/Y').' của bạn đã được phê duyệt.',
+            );
+        });
+    }
+
+    protected function assertAnnualAllowance(LeaveRequest $leaveRequest): void
+    {
+        if ($leaveRequest->leave_type !== 'annual') {
+            return;
         }
 
+        $year = $leaveRequest->start_date?->year ?? now()->year;
+        $used = LeaveRequest::where('employee_id', $leaveRequest->employee_id)
+            ->where('leave_type', 'annual')
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->whereYear('start_date', $year)
+            ->sum('total_days');
+
+        if (($used + $leaveRequest->total_days) > self::ANNUAL_LEAVE_ALLOWANCE) {
+            throw ValidationException::withMessages(['total_days' => 'Số ngày phép năm không đủ để duyệt đơn này.']);
+        }
+    }
+
+    protected function assertNoApprovedOverlap(LeaveRequest $leaveRequest): void
+    {
         $overlap = LeaveRequest::where('employee_id', $leaveRequest->employee_id)
             ->where('id', '!=', $leaveRequest->id)
             ->where('status', LeaveRequest::STATUS_APPROVED)
@@ -49,29 +81,18 @@ class LeaveApprovalService
 
         if ($overlap) {
             throw ValidationException::withMessages([
-                'start_date' => 'Khoảng nghỉ '.\App\Support\LeaveDateRange::formatPeriod($leaveRequest->start_date, $leaveRequest->end_date).' trùng với đơn nghỉ phép đã duyệt khác của nhân viên này.',
+                'start_date' => 'Khoảng nghỉ '.LeaveDateRange::formatPeriod($leaveRequest->start_date, $leaveRequest->end_date).' trùng với đơn nghỉ phép đã duyệt khác của nhân viên này.',
             ]);
         }
+    }
 
-        $leaveRequest->loadMissing('employee');
-        $departmentId = $leaveRequest->employee?->department_id;
+    protected function assertDepartmentCapacity(LeaveRequest $leaveRequest): void
+    {
+        $capacityError = $this->departmentLeaveCapacity->approvalBlockedMessage($leaveRequest);
 
-        if ($departmentId) {
-            $capacityError = $this->departmentLeaveCapacity->approvalBlockedMessage($leaveRequest);
-
-            if ($capacityError !== null) {
-                throw ValidationException::withMessages(['capacity' => $capacityError]);
-            }
+        if ($capacityError !== null) {
+            throw ValidationException::withMessages(['capacity' => $capacityError]);
         }
-
-        $this->processDecision(
-            leaveRequest: $leaveRequest,
-            actorId: $actorId,
-            status: LeaveRequest::STATUS_APPROVED,
-            action: 'approved',
-            title: 'Đơn nghỉ phép đã được phê duyệt',
-            content: 'Đơn nghỉ phép từ '.$leaveRequest->start_date?->format('d/m/Y').' đến '.$leaveRequest->end_date?->format('d/m/Y').' của bạn đã được phê duyệt.',
-        );
     }
 
     public function reject(LeaveRequest $leaveRequest, int $actorId, ?Employee $manager, string $reason): void
