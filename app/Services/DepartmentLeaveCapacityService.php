@@ -10,8 +10,11 @@ use Illuminate\Support\Collection;
 
 class DepartmentLeaveCapacityService
 {
-    /** Tỷ lệ tối đa nhân viên cùng nghỉ phép trong một phòng ban (theo ngày). */
-    public const MAX_LEAVE_RATIO = 0.30;
+    /** Nhân viên: tối đa 30% phòng ban nghỉ cùng lúc (theo ngày). */
+    public const RATIO_EMPLOYEE = 0.30;
+
+    /** Quản lý & kế toán: tối đa 20% phòng ban nghỉ cùng lúc (theo ngày). */
+    public const RATIO_MANAGER_ACCOUNTANT = 0.20;
 
     public function activeHeadcount(int $departmentId): int
     {
@@ -21,11 +24,7 @@ class DepartmentLeaveCapacityService
             ->count();
     }
 
-    /**
-     * Số người tối đa được nghỉ cùng lúc trong phòng ban (làm tròn xuống).
-     * Ví dụ: 10 nhân viên → tối đa 3 người/ngày.
-     */
-    public function maxConcurrentLeaveSlots(int $departmentId): int
+    public function maxConcurrentLeaveSlots(int $departmentId, float $ratio): int
     {
         $headcount = $this->activeHeadcount($departmentId);
 
@@ -33,20 +32,22 @@ class DepartmentLeaveCapacityService
             return 0;
         }
 
-        return (int) floor($headcount * self::MAX_LEAVE_RATIO);
+        return (int) floor($headcount * $ratio);
     }
 
-    /**
-     * Chặn gửi đơn mới khi số đơn đã duyệt đã đạt 30%/ngày.
-     * Đơn chờ duyệt không tính vào hạn mức — nhân viên vẫn gửi thêm đơn được.
-     */
     public function submitBlockedMessage(
-        int $departmentId,
+        Employee $applicant,
         Carbon|string $startDate,
         Carbon|string $endDate,
     ): ?string {
+        $departmentId = $applicant->department_id;
+        if (! $departmentId) {
+            return null;
+        }
+
         return $this->firstQuotaViolationMessage(
-            $departmentId,
+            (int) $departmentId,
+            $applicant,
             $startDate,
             $endDate,
             null,
@@ -54,32 +55,38 @@ class DepartmentLeaveCapacityService
         );
     }
 
-    /**
-     * Chặn duyệt thêm khi hạn mức 30%/ngày đã đủ (chỉ tính đơn đã duyệt).
-     */
     public function approvalBlockedMessage(
-        int $departmentId,
-        Carbon|string $startDate,
-        Carbon|string $endDate,
-        int $leaveRequestId,
+        LeaveRequest $leaveRequest,
     ): ?string {
+        $leaveRequest->loadMissing('employee.user.role');
+        $employee = $leaveRequest->employee;
+        $departmentId = $employee?->department_id;
+
+        if (! $departmentId || ! $employee) {
+            return null;
+        }
+
         return $this->firstQuotaViolationMessage(
-            $departmentId,
-            $startDate,
-            $endDate,
-            $leaveRequestId,
+            (int) $departmentId,
+            $employee,
+            $leaveRequest->start_date,
+            $leaveRequest->end_date,
+            $leaveRequest->id,
             forApproval: true,
         );
     }
 
     private function firstQuotaViolationMessage(
         int $departmentId,
+        Employee $applicant,
         Carbon|string $startDate,
         Carbon|string $endDate,
         ?int $ignoreLeaveRequestId,
         bool $forApproval,
     ): ?string {
-        $maxSlots = $this->maxConcurrentLeaveSlots($departmentId);
+        $ratio = $applicant->leaveCapacityRatio();
+        $percent = $applicant->leaveCapacityPercent();
+        $maxSlots = $this->maxConcurrentLeaveSlots($departmentId, $ratio);
         $headcount = $this->activeHeadcount($departmentId);
 
         if ($headcount === 0) {
@@ -90,8 +97,9 @@ class DepartmentLeaveCapacityService
 
         if ($maxSlots === 0) {
             return sprintf(
-                'Phòng ban có %d nhân viên đang làm việc; hạn mức 30%% tương đương 0 người nghỉ/ngày (quy mô hiện tại).',
+                'Phòng ban có %d nhân viên đang làm việc; hạn mức %d%% tương đương 0 người nghỉ/ngày (quy mô hiện tại).',
                 $headcount,
+                $percent,
             );
         }
 
@@ -125,20 +133,22 @@ class DepartmentLeaveCapacityService
 
         if ($forApproval) {
             return sprintf(
-                'Không thể duyệt đơn (khoảng %s): các ngày %s đã đủ hạn mức %d/%d nhân viên nghỉ phép (30%%). Các ngày này trùng khoảng với đơn đã duyệt khác — chỉ duyệt thêm được khi hết ngày nghỉ và nhân viên đi làm lại.',
+                'Không thể duyệt đơn (khoảng %s): các ngày %s đã đủ hạn mức %d/%d nhân viên nghỉ phép (%d%% đối với vai trò của người nghỉ). Chỉ duyệt thêm được khi hết ngày nghỉ và nhân viên đi làm lại.',
                 $periodLabel,
                 $dayLabels,
                 $sampleCount,
                 $maxSlots,
+                $percent,
             );
         }
 
         return sprintf(
-            'Số lượng nghỉ phép đã giới hạn. Khoảng %s trùng các ngày %s (đã có %d/%d đơn được duyệt). Bạn không thể gửi đơn cho các ngày đã đủ hạn mức; vui lòng chọn ngày khác hoặc sau khi nhân viên đi làm lại.',
+            'Số lượng nghỉ phép đã giới hạn. Khoảng %s trùng các ngày %s (đã có %d/%d đơn được duyệt, hạn mức %d%% cho vai trò của bạn). Bạn không thể gửi đơn cho các ngày đã đủ hạn mức.',
             $periodLabel,
             $dayLabels,
             $sampleCount,
             $maxSlots,
+            $percent,
         );
     }
 

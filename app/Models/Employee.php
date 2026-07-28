@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\DepartmentLeaveCapacityService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -135,6 +136,25 @@ class Employee extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Tỷ lệ nghỉ phép tối đa của phòng ban áp dụng cho người này (theo vai trò tài khoản).
+     */
+    public function leaveCapacityRatio(): float
+    {
+        $this->loadMissing('user.role');
+
+        if ($this->user?->isManager() || $this->user?->isAccountant()) {
+            return DepartmentLeaveCapacityService::RATIO_MANAGER_ACCOUNTANT;
+        }
+
+        return DepartmentLeaveCapacityService::RATIO_EMPLOYEE;
+    }
+
+    public function leaveCapacityPercent(): int
+    {
+        return (int) round($this->leaveCapacityRatio() * 100);
     }
 
     public function linkedUser(): BelongsTo

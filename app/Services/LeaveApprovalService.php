@@ -57,12 +57,7 @@ class LeaveApprovalService
         $departmentId = $leaveRequest->employee?->department_id;
 
         if ($departmentId) {
-            $capacityError = $this->departmentLeaveCapacity->approvalBlockedMessage(
-                (int) $departmentId,
-                $leaveRequest->start_date,
-                $leaveRequest->end_date,
-                $leaveRequest->id,
-            );
+            $capacityError = $this->departmentLeaveCapacity->approvalBlockedMessage($leaveRequest);
 
             if ($capacityError !== null) {
                 throw ValidationException::withMessages(['capacity' => $capacityError]);

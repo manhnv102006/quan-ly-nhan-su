@@ -3,6 +3,8 @@
     $roleName = $user->role?->name;
     $isAdmin = $roleName === 'admin';
     $isManager = $roleName === 'manager';
+    $leaveCapacityPercent = $leaveCapacityPercent ?? 30;
+    $leaveCapacityExampleMax = (int) floor(10 * $leaveCapacityPercent / 100);
 
     $navigation = \App\Support\SelfServiceLayout::navigation();
     $layout = \App\Support\SelfServiceLayout::component($roleName);
@@ -26,7 +28,13 @@
             <h2 class="text-lg font-bold text-slate-800 mb-6">Đơn xin nghỉ phép mới</h2>
 
             <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-                Quy định phòng ban: mỗi ngày tối đa <strong class="font-semibold text-slate-600">30%</strong> nhân viên đang làm việc được nghỉ cùng lúc (ví dụ 10 người → tối đa 3 người/ngày đã duyệt).
+                Quy định phòng ban (theo vai trò của bạn): mỗi ngày tối đa <strong class="font-semibold text-slate-600">{{ $leaveCapacityPercent }}%</strong> nhân viên đang làm việc được nghỉ cùng lúc
+                @if ($leaveCapacityPercent === 20)
+                    (quản lý / kế toán)
+                @else
+                    (nhân viên)
+                @endif
+                — ví dụ 10 người → tối đa {{ $leaveCapacityExampleMax }} người/ngày đã duyệt.
             </p>
 
             @error('leave_capacity')
@@ -37,7 +45,7 @@
             @enderror
 
             <p class="text-xs text-slate-400 mb-6 leading-relaxed">
-                Bạn có thể gửi nhiều đơn chờ duyệt khi phòng ban chưa đủ 30% đơn <em>đã duyệt</em>. Hệ thống kiểm tra <strong class="font-medium text-slate-500">từng ngày trong cả khoảng nghỉ</strong> (không chỉ ngày bắt đầu): nếu ngày nào trùng khoảng đơn đã duyệt khác và đủ hạn mức thì không gửi/duyệt thêm cho ngày đó.
+                Bạn có thể gửi nhiều đơn chờ duyệt khi phòng ban chưa đủ {{ $leaveCapacityPercent }}% đơn <em>đã duyệt</em> (theo hạn mức vai trò của bạn). Hệ thống kiểm tra <strong class="font-medium text-slate-500">từng ngày trong cả khoảng nghỉ</strong>.
             </p>
 
             <form id="leave-request-form" action="{{ route('employee.leave-requests.store') }}" method="POST" class="space-y-6">

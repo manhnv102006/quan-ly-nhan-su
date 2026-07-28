@@ -60,9 +60,11 @@ class EmployeeLeaveController extends Controller
     public function create()
     {
         $this->authorize('create', LeaveRequest::class);
-        $this->getEmployee();
+        $employee = $this->getEmployee();
 
-        return view('employee.leave-requests.create');
+        return view('employee.leave-requests.create', [
+            'leaveCapacityPercent' => $employee->leaveCapacityPercent(),
+        ]);
     }
 
     public function store(Request $request)
@@ -147,7 +149,7 @@ class EmployeeLeaveController extends Controller
             $departmentId = $employee->department_id;
             if ($departmentId) {
                 $capacityError = $this->departmentLeaveCapacity->submitBlockedMessage(
-                    (int) $departmentId,
+                    $employee,
                     $request->start_date,
                     $request->end_date,
                 );
