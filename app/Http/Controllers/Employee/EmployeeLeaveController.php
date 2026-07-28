@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Services\AutoNotificationService;
+use App\Services\DepartmentLeaveCapacityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,7 @@ class EmployeeLeaveController extends Controller
 {
     public function __construct(
         private AutoNotificationService $autoNotifications,
+        private DepartmentLeaveCapacityService $departmentLeaveCapacity,
     ) {}
 
     private function getEmployee()
@@ -143,34 +145,14 @@ class EmployeeLeaveController extends Controller
 
             $departmentId = $employee->department_id;
             if ($departmentId) {
-                $overlappingLeaves = LeaveRequest::whereHas('employee', function ($q) use ($departmentId) {
-                    $q->where('department_id', $departmentId);
-                })
-                ->where('status', 'approved')
-                ->whereDate('start_date', '<=', $request->end_date)
-                ->whereDate('end_date', '>=', $request->start_date)
-                ->get();
+                $capacityError = $this->departmentLeaveCapacity->capacityErrorForDateRange(
+                    (int) $departmentId,
+                    $request->start_date,
+                    $request->end_date,
+                );
 
-                if ($overlappingLeaves->isNotEmpty()) {
-                    $current = \Carbon\Carbon::parse($request->start_date)->copy();
-                    $end = \Carbon\Carbon::parse($request->end_date);
-                    
-                    while ($current->lte($end)) {
-                        $dateStr = $current->format('Y-m-d');
-                        
-                        $countOnDay = $overlappingLeaves->filter(function ($leave) use ($dateStr) {
-                            return $leave->start_date->format('Y-m-d') <= $dateStr 
-                                && $leave->end_date->format('Y-m-d') >= $dateStr;
-                        })->count();
-                        
-                        if ($countOnDay >= 5) {
-                            return back()->withErrors([
-                                'start_date' => 'Phòng ban đã có ' . $countOnDay . ' người nghỉ phép vào ngày ' . $current->format('d/m/Y') . '. Tối đa chỉ được nghỉ 5 người/ngày.'
-                            ])->withInput();
-                        }
-                        
-                        $current->addDay();
-                    }
+                if ($capacityError !== null) {
+                    return back()->withErrors(['start_date' => $capacityError])->withInput();
                 }
             }
 

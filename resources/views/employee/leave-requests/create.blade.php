@@ -25,6 +25,10 @@
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-8">
             <h2 class="text-lg font-bold text-slate-800 mb-6">Đơn xin nghỉ phép mới</h2>
 
+            <p class="text-xs text-slate-500 mb-6 leading-relaxed">
+                Quy định phòng ban: mỗi ngày chỉ tối đa <strong class="font-semibold text-slate-600">30%</strong> số nhân viên đang làm việc được nghỉ cùng lúc (ví dụ 10 người thì tối đa 3 người/ngày).
+            </p>
+
             <form id="leave-request-form" action="{{ route('employee.leave-requests.store') }}" method="POST" class="space-y-6">
                 @csrf
 

@@ -13,8 +13,10 @@ class LeaveApprovalService
 {
     private const ANNUAL_LEAVE_ALLOWANCE = 12;
 
-    public function __construct(private readonly NotificationService $notifications)
-    {
+    public function __construct(
+        private readonly NotificationService $notifications,
+        private readonly DepartmentLeaveCapacityService $departmentLeaveCapacity,
+    ) {
     }
 
     public function approve(LeaveRequest $leaveRequest, int $actorId, ?Employee $manager = null): void
@@ -54,35 +56,15 @@ class LeaveApprovalService
         $departmentId = $leaveRequest->employee?->department_id;
 
         if ($departmentId) {
-            $overlappingLeaves = LeaveRequest::whereHas('employee', function ($q) use ($departmentId) {
-                $q->where('department_id', $departmentId);
-            })
-            ->where('id', '!=', $leaveRequest->id)
-            ->where('status', LeaveRequest::STATUS_APPROVED)
-            ->whereDate('start_date', '<=', $leaveRequest->end_date)
-            ->whereDate('end_date', '>=', $leaveRequest->start_date)
-            ->get();
+            $capacityError = $this->departmentLeaveCapacity->capacityErrorForDateRange(
+                (int) $departmentId,
+                $leaveRequest->start_date,
+                $leaveRequest->end_date,
+                $leaveRequest->id,
+            );
 
-            if ($overlappingLeaves->isNotEmpty()) {
-                $current = \Carbon\Carbon::parse($leaveRequest->start_date)->copy();
-                $end = \Carbon\Carbon::parse($leaveRequest->end_date);
-                
-                while ($current->lte($end)) {
-                    $dateStr = $current->format('Y-m-d');
-                    
-                    $countOnDay = $overlappingLeaves->filter(function ($leave) use ($dateStr) {
-                        return $leave->start_date->format('Y-m-d') <= $dateStr 
-                            && $leave->end_date->format('Y-m-d') >= $dateStr;
-                    })->count();
-                    
-                    if ($countOnDay >= 5) {
-                        throw ValidationException::withMessages([
-                            'start_date' => 'Phòng ban đã có ' . $countOnDay . ' người nghỉ phép vào ngày ' . $current->format('d/m/Y') . '. Tối đa chỉ được nghỉ 5 người/ngày.'
-                        ]);
-                    }
-                    
-                    $current->addDay();
-                }
+            if ($capacityError !== null) {
+                throw ValidationException::withMessages(['start_date' => $capacityError]);
             }
         }
 
