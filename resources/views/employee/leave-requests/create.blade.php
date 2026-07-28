@@ -25,8 +25,19 @@
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-8">
             <h2 class="text-lg font-bold text-slate-800 mb-6">Đơn xin nghỉ phép mới</h2>
 
-            <p class="text-xs text-slate-500 mb-6 leading-relaxed">
-                Quy định phòng ban: mỗi ngày chỉ tối đa <strong class="font-semibold text-slate-600">30%</strong> số nhân viên đang làm việc được nghỉ cùng lúc (ví dụ 10 người thì tối đa 3 người/ngày).
+            <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                Quy định phòng ban: mỗi ngày tối đa <strong class="font-semibold text-slate-600">30%</strong> nhân viên đang làm việc được nghỉ cùng lúc (ví dụ 10 người → tối đa 3 người/ngày đã duyệt).
+            </p>
+
+            @error('leave_capacity')
+                <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <p class="font-semibold text-amber-950 mb-1">Đã đạt giới hạn nghỉ phép</p>
+                    <p class="text-xs leading-relaxed">{{ $message }}</p>
+                </div>
+            @enderror
+
+            <p class="text-xs text-slate-400 mb-6 leading-relaxed">
+                Bạn có thể gửi nhiều đơn chờ duyệt khi phòng ban chưa đủ 30% đơn <em>đã duyệt</em>. Hệ thống kiểm tra <strong class="font-medium text-slate-500">từng ngày trong cả khoảng nghỉ</strong> (không chỉ ngày bắt đầu): nếu ngày nào trùng khoảng đơn đã duyệt khác và đủ hạn mức thì không gửi/duyệt thêm cho ngày đó.
             </p>
 
             <form id="leave-request-form" action="{{ route('employee.leave-requests.store') }}" method="POST" class="space-y-6">

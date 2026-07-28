@@ -134,25 +134,26 @@ class EmployeeLeaveController extends Controller
             }
 
             $overlap = LeaveRequest::where('employee_id', $employee->id)
-                ->where('status', 'approved')
-                ->whereDate('start_date', '<=', $request->end_date)
-                ->whereDate('end_date', '>=', $request->start_date)
+                ->where('status', LeaveRequest::STATUS_APPROVED)
+                ->overlappingPeriod($request->start_date, $request->end_date)
                 ->exists();
 
             if ($overlap) {
-                return back()->withErrors(['start_date' => 'Đơn này trùng thời gian với đơn đã duyệt khác.'])->withInput();
+                return back()->withErrors([
+                    'start_date' => 'Khoảng nghỉ '.(\App\Support\LeaveDateRange::formatPeriod($request->start_date, $request->end_date)).' trùng với đơn nghỉ phép đã duyệt khác.',
+                ])->withInput();
             }
 
             $departmentId = $employee->department_id;
             if ($departmentId) {
-                $capacityError = $this->departmentLeaveCapacity->capacityErrorForDateRange(
+                $capacityError = $this->departmentLeaveCapacity->submitBlockedMessage(
                     (int) $departmentId,
                     $request->start_date,
                     $request->end_date,
                 );
 
                 if ($capacityError !== null) {
-                    return back()->withErrors(['start_date' => $capacityError])->withInput();
+                    return back()->withErrors(['leave_capacity' => $capacityError])->withInput();
                 }
             }
 

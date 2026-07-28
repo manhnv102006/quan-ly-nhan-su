@@ -159,7 +159,7 @@ class LeaveApprovalController extends Controller
         $message = 'Đã duyệt thành công '.$result['approved'].' đơn nghỉ phép.';
 
         if ($result['failed'] > 0) {
-            $message .= ' '.$result['failed'].' đơn không thể duyệt.';
+            $message .= ' '.$result['failed'].' đơn không thể duyệt (có thể do đã đạt giới hạn 30% nghỉ phép phòng ban/ngày).';
         }
 
         return back()->with('success', $message);

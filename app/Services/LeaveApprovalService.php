@@ -44,19 +44,20 @@ class LeaveApprovalService
         $overlap = LeaveRequest::where('employee_id', $leaveRequest->employee_id)
             ->where('id', '!=', $leaveRequest->id)
             ->where('status', LeaveRequest::STATUS_APPROVED)
-            ->whereDate('start_date', '<=', $leaveRequest->end_date)
-            ->whereDate('end_date', '>=', $leaveRequest->start_date)
+            ->overlappingPeriod($leaveRequest->start_date, $leaveRequest->end_date)
             ->exists();
 
         if ($overlap) {
-            throw ValidationException::withMessages(['start_date' => 'Đơn này trùng thời gian với đơn đã duyệt khác.']);
+            throw ValidationException::withMessages([
+                'start_date' => 'Khoảng nghỉ '.\App\Support\LeaveDateRange::formatPeriod($leaveRequest->start_date, $leaveRequest->end_date).' trùng với đơn nghỉ phép đã duyệt khác của nhân viên này.',
+            ]);
         }
 
         $leaveRequest->loadMissing('employee');
         $departmentId = $leaveRequest->employee?->department_id;
 
         if ($departmentId) {
-            $capacityError = $this->departmentLeaveCapacity->capacityErrorForDateRange(
+            $capacityError = $this->departmentLeaveCapacity->approvalBlockedMessage(
                 (int) $departmentId,
                 $leaveRequest->start_date,
                 $leaveRequest->end_date,
@@ -64,7 +65,7 @@ class LeaveApprovalService
             );
 
             if ($capacityError !== null) {
-                throw ValidationException::withMessages(['start_date' => $capacityError]);
+                throw ValidationException::withMessages(['capacity' => $capacityError]);
             }
         }
 

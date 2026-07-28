@@ -144,6 +144,33 @@ class LeaveRequest extends Model
     }
 
     /**
+     * Khoảng nghỉ trùng periodStart–periodEnd: start <= periodEnd AND end >= periodStart.
+     *
+     * @param  Builder<LeaveRequest>  $query
+     */
+    public function scopeOverlappingPeriod(Builder $query, \Carbon\Carbon|string $periodStart, \Carbon\Carbon|string $periodEnd): Builder
+    {
+        $start = \Carbon\Carbon::parse($periodStart)->toDateString();
+        $end = \Carbon\Carbon::parse($periodEnd)->toDateString();
+
+        return $query->whereDate('start_date', '<=', $end)
+            ->whereDate('end_date', '>=', $start);
+    }
+
+    /**
+     * @param  Builder<LeaveRequest>  $query
+     */
+    public function scopeForDepartment(Builder $query, int $departmentId): Builder
+    {
+        return $query->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->where('department_id', $departmentId));
+    }
+
+    public function coversCalendarDay(\Carbon\Carbon|string $day): bool
+    {
+        return \App\Support\LeaveDateRange::dayWithinPeriod($day, $this->start_date, $this->end_date);
+    }
+
+    /**
      * @param  Builder<LeaveRequest>  $query
      */
     public function scopeForManager(Builder $query, Employee $manager): Builder
