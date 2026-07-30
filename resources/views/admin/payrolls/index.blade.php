@@ -302,15 +302,15 @@
                     <div class="space-y-4 text-sm text-slate-600">
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Mã & Họ tên:</span>
-                            <span class="font-semibold text-slate-800" id="modalEmpName">NV000002 - Tùng Sơn</span>
+                            <span class="font-semibold text-slate-800" id="modalEmpName">—</span>
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Phòng ban:</span>
-                            <span class="font-semibold text-slate-800" id="modalEmpDept">Kế toán</span>
+                            <span class="font-semibold text-slate-800" id="modalEmpDept">—</span>
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Chức danh:</span>
-                            <span class="font-semibold text-slate-800" id="modalEmpPosition">Nhân viên</span>
+                            <span class="font-semibold text-slate-800" id="modalEmpPosition">—</span>
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Loại lương chính:</span>
@@ -318,15 +318,15 @@
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Trạng thái:</span>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-50 text-violet-600 border border-violet-100" id="modalStatus">Đã chốt lương</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-50 text-violet-600 border border-violet-100" id="modalStatus">—</span>
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Bảng lương:</span>
-                            <span class="font-semibold text-slate-800" id="modalPeriodName">Bảng lương tháng 12/2025</span>
+                            <span class="font-semibold text-slate-800" id="modalPeriodName">—</span>
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Kỳ làm việc:</span>
-                            <span class="font-semibold text-slate-800" id="modalPeriodRange">01/12/2025 - 31/12/2025</span>
+                            <span class="font-semibold text-slate-800" id="modalPeriodRange">—</span>
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Ngày công chuẩn:</span>
@@ -453,7 +453,7 @@
             document.getElementById('modalBasicSalary').innerText = data.basic_salary + ' ₫';
             document.getElementById('modalStandardDays').innerText = data.standard_working_days;
             document.getElementById('modalActualDays').innerText = data.actual_working_days;
-            document.getElementById('modalAllowance').innerText = data.allowance + ' ₫';
+            document.getElementById('modalAllowance').innerText = (data.allowance_total || data.allowance) + ' ₫';
 
             const breakdownEl = document.getElementById('modalAllowanceBreakdown');
             breakdownEl.innerHTML = '';
@@ -471,7 +471,7 @@
             
             // Tính tổng thu nhập
             let basic = parseFloat(data.basic_salary.replace(/\./g, ''));
-            let allowance = parseFloat(data.allowance.replace(/\./g, ''));
+            let allowance = parseFloat((data.allowance_total || data.allowance).replace(/\./g, ''));
             let bonus = parseFloat(data.bonus.replace(/\./g, ''));
             let overtime = parseFloat(data.overtime_pay.replace(/\./g, ''));
             let totalIncome = basic + allowance + bonus + overtime;

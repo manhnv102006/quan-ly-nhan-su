@@ -316,7 +316,7 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-right text-slate-600 text-sm">{{ number_format((float) $payroll->basic_salary, 0, ',', '.') }}đ</td>
-                                <td class="px-6 py-4 text-right text-slate-600 text-sm">{{ number_format((float) $payroll->allowance, 0, ',', '.') }}đ</td>
+                                <td class="px-6 py-4 text-right text-slate-600 text-sm">{{ number_format($payroll->totalAllowance(), 0, ',', '.') }}đ</td>
                                 <td class="px-6 py-4 text-right text-emerald-600 text-sm font-semibold">
                                     @if ($payroll->bonus > 0)+{{ number_format((float) $payroll->bonus, 0, ',', '.') }}đ@else <span class="text-slate-300">—</span>@endif
                                 </td>

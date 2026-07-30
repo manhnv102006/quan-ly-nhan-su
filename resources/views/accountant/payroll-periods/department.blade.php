@@ -135,7 +135,7 @@
                                     {{ number_format($payroll->basic_salary, 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4 text-slate-700">
-                                    {{ number_format($payroll->allowance, 0, ',', '.') }} ₫
+                                    {{ number_format($payroll->totalAllowance(), 0, ',', '.') }} ₫
                                 </td>
                                 <td class="px-6 py-4 font-medium text-slate-700">
                                     @if($payroll->bonus > 0)+@endif{{ number_format($payroll->bonus, 0, ',', '.') }} ₫
@@ -241,15 +241,15 @@
                     <div class="space-y-4 text-sm text-slate-600">
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Mã & Họ tên:</span>
-                            <span class="font-semibold text-slate-800" id="modalEmpName">NV000002 - Tùng Sơn</span>
+                            <span class="font-semibold text-slate-800" id="modalEmpName">—</span>
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Phòng ban:</span>
-                            <span class="font-semibold text-slate-800" id="modalEmpDept">Kế toán</span>
+                            <span class="font-semibold text-slate-800" id="modalEmpDept">—</span>
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Chức danh:</span>
-                            <span class="font-semibold text-slate-800" id="modalEmpPosition">Nhân viên</span>
+                            <span class="font-semibold text-slate-800" id="modalEmpPosition">—</span>
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Loại lương chính:</span>
@@ -257,15 +257,15 @@
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Trạng thái:</span>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-violet-100" id="modalStatus">Đã chốt lương</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-violet-100" id="modalStatus">—</span>
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Bảng lương:</span>
-                            <span class="font-semibold text-slate-800" id="modalPeriodName">Bảng lương tháng 12/2025</span>
+                            <span class="font-semibold text-slate-800" id="modalPeriodName">—</span>
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Kỳ làm việc:</span>
-                            <span class="font-semibold text-slate-800" id="modalPeriodRange">01/12/2025 - 31/12/2025</span>
+                            <span class="font-semibold text-slate-800" id="modalPeriodRange">—</span>
                         </div>
                         <div class="flex justify-between py-2 border-b border-slate-50">
                             <span class="font-medium text-slate-500">Ngày công chuẩn:</span>
@@ -285,26 +285,9 @@
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-slate-600 font-medium">Phụ cấp:</span>
-                            <span class="font-bold text-slate-800" id="modalAllowance">500,000 ₫</span>
+                            <span class="font-bold text-slate-800" id="modalAllowance">—</span>
                         </div>
-                        <div class="pl-4 space-y-1 text-xs text-slate-500 border-l border-slate-200">
-                            <div class="flex justify-between items-center">
-                                <span>+ Ăn trưa:</span>
-                                <span id="modalAllowanceMeal">0 ₫</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span>+ Điện thoại:</span>
-                                <span id="modalAllowancePhone">0 ₫</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span>+ Xăng xe:</span>
-                                <span id="modalAllowanceFuel">0 ₫</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span>+ Chức vụ:</span>
-                                <span id="modalAllowancePosition">0 ₫</span>
-                            </div>
-                        </div>
+                        <div id="modalAllowanceBreakdown" class="pl-4 space-y-1 text-xs text-slate-500 border-l border-slate-200"></div>
                         <div class="flex justify-between items-center">
                             <span class="text-slate-600 font-medium">Thưởng (KPI):</span>
                             <span class="font-bold text-slate-800 text-emerald-600" id="modalBonus">0 ₫</span>
@@ -467,15 +450,30 @@
 
         function openPayrollModal(data) {
             document.getElementById('modalPayrollCode').innerText = 'PL' + String(data.id).padStart(6, '0');
-             document.getElementById('modalBasicLabel').innerText = 'Lương chính (' + data.actual_working_days + '/' + data.standard_working_days + ' ngày):';
+            document.getElementById('modalEmpName').innerText = data.employee_code + ' - ' + data.full_name;
+            document.getElementById('modalEmpDept').innerText = data.department_name;
+            document.getElementById('modalEmpPosition').innerText = data.position_name;
+            document.getElementById('modalStatus').innerText = data.status_label;
+            document.getElementById('modalPeriodName').innerText = data.period_name;
+            document.getElementById('modalPeriodRange').innerText = data.period_range;
+
+            document.getElementById('modalBasicLabel').innerText = 'Lương chính (' + data.actual_working_days + '/' + data.standard_working_days + ' ngày):';
             document.getElementById('modalBasicSalary').innerText = data.basic_salary + ' ₫';
             document.getElementById('modalStandardDays').innerText = data.standard_working_days;
             document.getElementById('modalActualDays').innerText = data.actual_working_days;
-            document.getElementById('modalAllowance').innerText = data.allowance + ' ₫';
-            document.getElementById('modalAllowanceMeal').innerText = data.allowance_meal + ' ₫';
-            document.getElementById('modalAllowancePhone').innerText = data.allowance_phone + ' ₫';
-            document.getElementById('modalAllowanceFuel').innerText = data.allowance_fuel + ' ₫';
-            document.getElementById('modalAllowancePosition').innerText = data.allowance_position + ' ₫';
+            document.getElementById('modalAllowance').innerText = (data.allowance_total || data.allowance) + ' ₫';
+
+            const breakdownEl = document.getElementById('modalAllowanceBreakdown');
+            breakdownEl.innerHTML = '';
+            if (Array.isArray(data.allowances) && data.allowances.length > 0) {
+                data.allowances.forEach(function (row) {
+                    const line = document.createElement('div');
+                    line.className = 'flex justify-between items-center';
+                    line.innerHTML = '<span>+ ' + row.label + ':</span><span>' + row.amount + ' ₫</span>';
+                    breakdownEl.appendChild(line);
+                });
+            }
+
             document.getElementById('modalBonus').innerText = data.bonus + ' ₫';
             document.getElementById('modalOvertimeLabel').innerText = 'Tăng ca (' + data.overtime_hours + ' giờ):';
             document.getElementById('modalOvertime').innerText = data.overtime_pay + ' ₫';

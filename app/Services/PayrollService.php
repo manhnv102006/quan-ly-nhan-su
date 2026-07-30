@@ -167,8 +167,7 @@ class PayrollService
             // Đảm bảo không vượt quá ngày công chuẩn
             $actualWorkingDays = min($actualWorkingDays, $standardWorkingDays);
 
-            // B. Phụ cấp: tính động theo các khoản phụ cấp đã lưu trong hợp đồng.
-            // Không đi làm ngày nào hoặc HĐ thực tập => không được hưởng phụ cấp.
+            // B. Phụ cấp: lấy đúng số tiền đã ghi trong hợp đồng (không chia theo ngày công).
             $isInternship = $activeContract?->contractType?->isInternship() ?? false;
             $noAllowance = $presentDays == 0 || $isInternship;
 
@@ -372,17 +371,9 @@ class PayrollService
 
             $type = $item->allowanceType;
             $code = $item->allowance_code ?? $type?->code;
-            $calcType = $item->calculation_type ?? $type?->calculation_type ?? \App\Models\AllowanceType::CALC_PRORATA;
 
-            $amount = match ($calcType) {
-                \App\Models\AllowanceType::CALC_FIXED => $base,
-                \App\Models\AllowanceType::CALC_PER_PRESENT_DAY => $standardWorkingDays > 0
-                    ? round($base * ($presentDays / $standardWorkingDays), 0)
-                    : 0.0,
-                default => $standardWorkingDays > 0
-                    ? round($base * ($actualWorkingDays / $standardWorkingDays), 0)
-                    : $base,
-            };
+            // Phụ cấp trên phiếu lương = đúng số tiền đã ghi trong hợp đồng (không chia theo ngày công).
+            $amount = round($base, 0);
 
             if ($amount <= 0) {
                 continue;
