@@ -41,6 +41,26 @@ php artisan boost:install
 
 Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
 
+## Seed dữ liệu demo
+
+Bạn có thể tạo dữ liệu mẫu để chạy thử toàn bộ ứng dụng bằng cách sử dụng seeder có sẵn:
+
+```bash
+composer run seed-demo
+```
+
+Lệnh này sẽ chạy các migration và seed dữ liệu demo đầy đủ từ `FullTestDataSeeder`.
+
+Thông tin tài khoản mẫu:
+
+- Admin: `admin` / `password`
+- Manager IT: `manager` / `password`
+- Manager KD: `manager_sale` / `password`
+- Trưởng nhóm IT: `leader` / `password`
+- Nhân viên: `employee` / `password`
+- Nhân viên IT: `emp_it02` / `password`
+- Nhân viên KD: `emp_sale01` / `password`
+
 ## Contributing
 
 Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
