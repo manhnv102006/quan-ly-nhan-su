@@ -101,16 +101,16 @@ class TaxService
     public function insuranceEmployeeAmount(?Employee $employee, float $grossIncome): float
     {
         if (! $employee) {
-            return round($grossIncome * 0.105, 0);
+            return 0.0;
         }
 
         $profile = $employee->insurance;
 
-        if ($profile && $profile->isContributing()) {
-            return app(InsuranceService::class)->calculateContributions($profile)['total_employee'];
+        if ($profile?->isContributing()) {
+            return (float) app(InsuranceService::class)->calculateContributions($profile)['total_employee'];
         }
 
-        return round($grossIncome * 0.105, 0);
+        return 0.0;
     }
 
     /**

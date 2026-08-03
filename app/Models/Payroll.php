@@ -230,38 +230,6 @@ class Payroll extends Model
             : now());
 
         $taxService = app(TaxService::class);
-        $fromSnapshot = $taxService->breakdownFromSnapshot($this);
-
-        if ($fromSnapshot !== null) {
-            $pit = (float) $fromSnapshot['pit'];
-            $insurance = (float) $fromSnapshot['insurance'];
-            $totalDeductions = $penalty + $insurance + $pit;
-            $netSalary = max(0, $gross - $insurance - $pit);
-
-            $bhxh = $bhyt = $bhtn = 0.0;
-            $profile = $employee->insurance;
-            if ($profile?->isContributing()) {
-                $contributions = app(InsuranceService::class)->calculateContributions($profile);
-                $bhxh = (float) $contributions['bhxh_employee'];
-                $bhyt = (float) $contributions['bhyt_employee'];
-                $bhtn = (float) $contributions['bhtn_employee'];
-            }
-
-            return [
-                'gross_income' => $grossIncome,
-                'penalty' => $penalty,
-                'insurance' => $insurance,
-                'bhxh_employee' => $bhxh,
-                'bhyt_employee' => $bhyt,
-                'bhtn_employee' => $bhtn,
-                'pit' => $pit,
-                'total_deductions' => $totalDeductions,
-                'net_salary' => $netSalary,
-                'advance_deduction' => $advanceDeduction,
-                'advance_outstanding' => $advanceOutstanding,
-            ];
-        }
-
         $tax = $taxService->calculateEmployeeMonthly($employee, $gross, $periodDate);
 
         $bhxh = $bhyt = $bhtn = 0.0;
@@ -273,7 +241,7 @@ class Payroll extends Model
             $bhtn = (float) $contributions['bhtn_employee'];
         }
 
-        $insurance = (float) $tax['insurance'];
+        $insurance = $bhxh + $bhyt + $bhtn;
         $pit = (float) $tax['pit'];
         $totalDeductions = $penalty + $insurance + $pit;
 
@@ -286,7 +254,7 @@ class Payroll extends Model
             'bhtn_employee' => $bhtn,
             'pit' => $pit,
             'total_deductions' => $totalDeductions,
-            'net_salary' => (float) $tax['net_income'],
+            'net_salary' => max(0, $gross - $insurance - $pit),
             'advance_deduction' => $advanceDeduction,
             'advance_outstanding' => $advanceOutstanding,
         ];

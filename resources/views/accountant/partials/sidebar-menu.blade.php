@@ -61,20 +61,28 @@
                                         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}" />
                                         </svg>
+                                        @if (! empty($item['badge']) && $item['badge'] > 0)
+                                            <x-nav-badge :count="$item['badge']" :active="$parentHighlighted" dot-only active-ring="ring-amber-500" />
+                                        @endif
                                     </span>
                                     <span class="min-w-0 flex-1">
                                         <span class="flex items-center justify-between gap-2">
                                             <span class="block truncate">{{ $item['label'] }}</span>
-                                            <svg
-                                                class="h-3.5 w-3.5 shrink-0 transition-transform duration-200 {{ $parentHighlighted ? 'text-white/90' : 'text-slate-400' }}"
-                                                :class="openMenu === @js($menuKey) ? 'rotate-90' : ''"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke-width="2"
-                                                stroke="currentColor"
-                                            >
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                                            </svg>
+                                            <span class="flex shrink-0 items-center gap-2">
+                                                @if (! empty($item['badge']) && $item['badge'] > 0)
+                                                    <x-nav-badge :count="$item['badge']" :active="$parentHighlighted" active-ring="ring-amber-500" />
+                                                @endif
+                                                <svg
+                                                    class="h-3.5 w-3.5 shrink-0 transition-transform duration-200 {{ $parentHighlighted ? 'text-white/90' : 'text-slate-400' }}"
+                                                    :class="openMenu === @js($menuKey) ? 'rotate-90' : ''"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke-width="2"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                                                </svg>
+                                            </span>
                                         </span>
                                     </span>
                                 </button>

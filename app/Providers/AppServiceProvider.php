@@ -6,6 +6,7 @@ use App\Models\Candidate;
 use App\Models\Contract;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
+use App\Models\SalaryAdvance;
 use App\Observers\CandidateObserver;
 use App\Policies\ContractPolicy;
 use App\Policies\LeaveRequestPolicy;
@@ -46,10 +47,18 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $service = app(AdminNotificationService::class);
+            $headerUnreadCount = $service->unreadCount($user);
+
+            if ($user->isAccountant()) {
+                $pendingAdvances = SalaryAdvance::query()
+                    ->where('status', SalaryAdvance::STATUS_PENDING)
+                    ->count();
+                $headerUnreadCount = max($headerUnreadCount, $pendingAdvances);
+            }
 
             $view->with([
                 'headerNotifications' => $service->recentForUser($user, 5),
-                'headerUnreadCount' => $service->unreadCount($user),
+                'headerUnreadCount' => $headerUnreadCount,
             ]);
         });
     }

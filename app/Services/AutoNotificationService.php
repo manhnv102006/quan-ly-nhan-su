@@ -11,6 +11,7 @@ use App\Models\Notification;
 use App\Models\OvertimeRequest;
 use App\Models\PayrollPeriod;
 use App\Models\Role;
+use App\Models\SalaryAdvance;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -45,6 +46,31 @@ class AutoNotificationService
                 $leaveRequest->start_date->format('d/m/Y'),
                 $leaveRequest->end_date->format('d/m/Y'),
                 $leaveRequest->total_days,
+            ), $recipients, $employee->department_id);
+        });
+    }
+
+    public function advanceSubmitted(SalaryAdvance $advance): void
+    {
+        $this->afterCommit(function () use ($advance) {
+            $advance->loadMissing('employee.department');
+            $employee = $advance->employee;
+
+            if (! $employee) {
+                return;
+            }
+
+            $recipients = $this->resolveRecipients(
+                $this->accountantUserIds(),
+            );
+
+            $recipients = $this->excludeUserIds($recipients, [$employee->user_id]);
+
+            $this->send('finance', 'Yêu cầu tạm ứng mới', sprintf(
+                '%s gửi yêu cầu tạm ứng %s · %s, đang chờ kế toán duyệt.',
+                $employee->full_name,
+                $advance->advance_code,
+                number_format((float) $advance->amount, 0, ',', '.').'₫',
             ), $recipients, $employee->department_id);
         });
     }
@@ -439,6 +465,15 @@ class AutoNotificationService
         return User::query()
             ->where('status', 'active')
             ->whereHas('role', fn ($query) => $query->where('name', Role::ADMIN))
+            ->pluck('id')
+            ->all();
+    }
+
+    private function accountantUserIds(): array
+    {
+        return User::query()
+            ->where('status', 'active')
+            ->whereHas('role', fn ($query) => $query->where('name', Role::ACCOUNTANT))
             ->pluck('id')
             ->all();
     }

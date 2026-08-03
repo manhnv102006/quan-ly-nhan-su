@@ -309,6 +309,8 @@ class AdvanceService
 
         app(ModuleChangeLogService::class)->logAdvanceCreate($advance, $requestedBy);
 
+        app(AutoNotificationService::class)->advanceSubmitted($advance);
+
         return $advance;
     }
 

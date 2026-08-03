@@ -141,6 +141,7 @@ class AccountantNavigation
                         'href' => route('accountant.advances.index'),
                         'match' => 'accountant.advances.*',
                         'except' => ['accountant.advances.balances', 'accountant.advances.deduct'],
+                        'key' => 'advances-pending',
                     ],
                     [
                         'label' => 'Số dư',
