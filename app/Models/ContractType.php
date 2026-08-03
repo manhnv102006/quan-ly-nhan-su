@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ContractTypeValidationService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -60,6 +61,28 @@ class ContractType extends Model
     public function requiresEndDate(): bool
     {
         return ! $this->isIndefinite();
+    }
+
+    /**
+     * Dữ liệu để form tự tính ngày kết thúc theo thời hạn mặc định của loại HĐ.
+     *
+     * @return array{months: int, indefinite: bool, max_days: ?int, max_end_months: ?int, max_end_exclusive: bool}
+     */
+    public function durationHints(): array
+    {
+        return [
+            'months' => (int) $this->duration_month,
+            'indefinite' => $this->isIndefinite(),
+            'max_days' => $this->category === self::CATEGORY_PROBATION
+                ? ContractTypeValidationService::PROBATION_MAX_DAYS
+                : null,
+            'max_end_months' => match ($this->category) {
+                self::CATEGORY_FIXED => ContractTypeValidationService::FIXED_MAX_MONTHS,
+                self::CATEGORY_SEASONAL => ContractTypeValidationService::SEASONAL_MAX_MONTHS,
+                default => null,
+            },
+            'max_end_exclusive' => $this->category === self::CATEGORY_SEASONAL,
+        ];
     }
 
     public function getCategoryLabelAttribute(): string

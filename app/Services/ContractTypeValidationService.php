@@ -32,6 +32,42 @@ class ContractTypeValidationService
     }
 
     /**
+     * Ngày kết thúc gợi ý theo thời hạn mặc định của loại hợp đồng,
+     * đã cắt theo trần pháp lý của từng nhóm. Trả về null nếu loại HĐ
+     * không xác định thời hạn hoặc chưa khai báo thời hạn.
+     */
+    public function suggestEndDate(ContractType $type, string $startDate): ?string
+    {
+        if ($type->isIndefinite()) {
+            return null;
+        }
+
+        $months = (int) $type->duration_month;
+        if ($months <= 0) {
+            return null;
+        }
+
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end = $start->copy()->addMonthsNoOverflow($months)->subDay();
+
+        $hints = $type->durationHints();
+
+        if ($hints['max_days']) {
+            $end = $end->min($start->copy()->addDays($hints['max_days']));
+        }
+
+        if ($hints['max_end_months']) {
+            $cap = $start->copy()->addMonthsNoOverflow($hints['max_end_months']);
+            if ($hints['max_end_exclusive']) {
+                $cap->subDay();
+            }
+            $end = $end->min($cap);
+        }
+
+        return $end->toDateString();
+    }
+
+    /**
      * @return array{end_date: ?string}
      */
     private function validateProbation(Carbon $start, ?Carbon $end): array

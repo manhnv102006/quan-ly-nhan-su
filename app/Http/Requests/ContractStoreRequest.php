@@ -32,6 +32,63 @@ class ContractStoreRequest extends FormRequest
             }
             $this->merge(['allowances' => $normalized]);
         }
+
+        $this->fillFromEmployeeProfile();
+        $this->fillEndDateFromContractType();
+    }
+
+    /**
+     * Phòng ban và chức vụ luôn bám theo hồ sơ nhân viên, không nhập lại trên form.
+     */
+    protected function fillFromEmployeeProfile(): void
+    {
+        $employee = $this->employee_id ? Employee::find($this->employee_id) : null;
+
+        if (! $employee) {
+            return;
+        }
+
+        $this->merge([
+            'department_id' => $employee->department_id,
+            'position_id' => $employee->position_id,
+        ]);
+    }
+
+    /**
+     * Bỏ trống ngày kết thúc thì suy ra từ thời hạn mặc định của loại hợp đồng.
+     */
+    protected function fillEndDateFromContractType(): void
+    {
+        if (filled($this->input('end_date')) || ! $this->contract_type_id || ! filled($this->input('start_date'))) {
+            return;
+        }
+
+        $type = ContractType::find($this->contract_type_id);
+
+        if (! $type) {
+            return;
+        }
+
+        try {
+            $endDate = app(ContractTypeValidationService::class)->suggestEndDate($type, (string) $this->input('start_date'));
+        } catch (\Exception) {
+            return; // Ngày bắt đầu không hợp lệ, để rule 'date' báo lỗi.
+        }
+
+        if ($endDate) {
+            $this->merge(['end_date' => $endDate]);
+        }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'department_id.required' => 'Nhân viên chưa có phòng ban trong hồ sơ. Vui lòng cập nhật hồ sơ nhân viên trước.',
+            'position_id.required' => 'Nhân viên chưa có chức vụ trong hồ sơ. Vui lòng cập nhật hồ sơ nhân viên trước.',
+        ];
     }
 
     public function rules(): array
