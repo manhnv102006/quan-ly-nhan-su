@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
+use App\Models\Shift;
 use App\Services\EmployeeAttendanceService;
 use App\Services\FaceAttendanceService;
 use App\Services\FaceVerificationService;
@@ -38,30 +39,51 @@ class AttendanceController extends Controller
         $today = Carbon::today();
         $now = Carbon::now();
 
-        $attendance = Attendance::where('employee_id', $employee->id)
+        $todayAttendances = Attendance::where('employee_id', $employee->id)
             ->whereDate('attendance_date', $today)
-            ->first();
+            ->get();
 
         $isFullDayShift = $todayShift && $this->attendanceService->isFullDayShift($todayShift->shift);
 
-        $attendanceSessions = null;
-        $regularSession = null;
+        $attendance = $todayShift?->shift
+            ? $todayAttendances->first(fn (Attendance $row) => (int) $row->shift_id === (int) $todayShift->shift->id)
+            : null;
+        $attendance ??= $todayAttendances->first();
 
-        $attendanceStub = $attendance ?? new Attendance([
-            'employee_id' => $employee->id,
-            'attendance_date' => $today,
-            'shift_id' => $todayShift?->shift?->id,
-        ]);
+        $shiftSessions = collect();
 
-        if ($isFullDayShift && $todayShift?->shift) {
-            $attendanceSessions = $this->attendanceService->fullDaySessions($attendanceStub, $today, $now);
-        } elseif ($todayShift?->shift) {
-            $regularSession = $this->attendanceService->regularSession(
-                $attendanceStub,
-                $todayShift->shift,
+        foreach ($todayShifts as $assignedShift) {
+            if (! $assignedShift->shift) {
+                continue;
+            }
+
+            $shift = $assignedShift->shift;
+            $shiftAttendance = $this->attendanceService->attendanceForShift(
+                $todayAttendances,
+                $shift,
+                $employee->id,
                 $today,
-                $now,
             );
+            $isShiftFullDay = $this->attendanceService->isFullDayShift($shift);
+
+            if ($isShiftFullDay) {
+                $shiftSessions->push([
+                    'shift' => $shift,
+                    'isFullDay' => true,
+                    'sessions' => $this->attendanceService->fullDaySessions($shiftAttendance, $today, $now),
+                ]);
+            } else {
+                $shiftSessions->push([
+                    'shift' => $shift,
+                    'isFullDay' => false,
+                    'session' => $this->attendanceService->regularSession(
+                        $shiftAttendance,
+                        $shift,
+                        $today,
+                        $now,
+                    ),
+                ]);
+            }
         }
 
         $overtimeInfo = null;
@@ -104,14 +126,7 @@ class AttendanceController extends Controller
         $faceEnrolled = $employee->hasFaceEnrolled();
         $canFaceScan = $faceEnrolled
             && ! $isBlockedDayOff
-            && $todayShift?->shift
-            && $this->faceAttendance->canScanNow(
-                $employee,
-                $attendance,
-                $todayShift->shift,
-                (bool) $isFullDayShift,
-                $now,
-            );
+            && $this->faceAttendance->canScanNow($employee, $now);
 
         return view('employee.attendance.index', compact(
             'employee',
@@ -119,8 +134,7 @@ class AttendanceController extends Controller
             'todayShifts',
             'attendance',
             'isFullDayShift',
-            'attendanceSessions',
-            'regularSession',
+            'shiftSessions',
             'overtimeInfo',
             'overtimeSessions',
             'faceEnrolled',
@@ -205,15 +219,15 @@ class AttendanceController extends Controller
         $employee = Employee::where('user_id', Auth::id())->firstOrFail();
         $now = Carbon::now();
 
-        $todayShift = $employee->todayShift();
-        if (! $todayShift || ! $todayShift->shift) {
-            return back()->with('error', 'Bạn chưa được gán ca làm hôm nay.');
+        $assignedShift = $this->resolveTodayShift($employee, $shift);
+        if (! $assignedShift) {
+            return back()->with('error', 'Bạn chưa được gán ca làm này hôm nay.');
         }
 
-        $isFullDay = $this->attendanceService->isFullDayShift($todayShift->shift);
+        $isFullDay = $this->attendanceService->isFullDayShift($assignedShift);
 
         try {
-            $this->attendanceService->checkIn($employee, $todayShift->shift, $isFullDay, $now);
+            $this->attendanceService->checkIn($employee, $assignedShift, $isFullDay, $now);
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->with('error', $e->validator->errors()->first());
         }
@@ -227,15 +241,21 @@ class AttendanceController extends Controller
         $now = Carbon::now();
         $today = Carbon::today();
 
+        $assignedShift = $this->resolveTodayShift($employee, $shift);
+        if (! $assignedShift) {
+            return back()->with('error', 'Bạn chưa được gán ca làm này hôm nay.');
+        }
+
         $attendance = Attendance::where('employee_id', $employee->id)
             ->whereDate('attendance_date', $today)
+            ->where('shift_id', $assignedShift->id)
             ->first();
 
         if (! $attendance) {
-            return back()->with('error', 'Bạn chưa chấm công vào hôm nay.');
+            return back()->with('error', 'Bạn chưa chấm công vào ca này hôm nay.');
         }
 
-        $isFullDay = $this->attendanceService->isFullDayShift($attendance->shift);
+        $isFullDay = $this->attendanceService->isFullDayShift($assignedShift);
 
         try {
             $this->attendanceService->checkOut($employee, $attendance, $isFullDay, $now);
@@ -244,5 +264,16 @@ class AttendanceController extends Controller
         }
 
         return back()->with('success', 'Chấm công ra giờ thành công.');
+    }
+
+    private function resolveTodayShift(Employee $employee, $shiftId): ?Shift
+    {
+        foreach ($employee->todayShifts() as $employeeShift) {
+            if ($employeeShift->shift && (int) $employeeShift->shift->id === (int) $shiftId) {
+                return $employeeShift->shift;
+            }
+        }
+
+        return null;
     }
 }

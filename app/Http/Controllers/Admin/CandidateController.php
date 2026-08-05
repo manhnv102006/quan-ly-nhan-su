@@ -9,7 +9,6 @@ use App\Models\Employee;
 use App\Models\Interview;
 use App\Models\JobPost;
 use App\Models\Position;
-use App\Rules\DepartmentEmployeeCapacity;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -129,6 +128,7 @@ class CandidateController extends Controller
     {
         $candidate->load([
             'jobPost.department.manager',
+            'jobPost.position',
             'employee',
         ]);
 
@@ -141,6 +141,7 @@ class CandidateController extends Controller
             'departments' => $this->activeDepartments(),
             'positions' => $this->activePositions(),
             'suggestedEmployeeCode' => $this->suggestEmployeeCode($candidate),
+            'conversionPlacement' => $this->resolveConversionPlacement($candidate),
             'canScheduleInterview' => $canScheduleInterview,
         ], $cvData));
     }
@@ -213,12 +214,36 @@ class CandidateController extends Controller
                 ->with('error', 'Email của ứng viên đã tồn tại trong danh sách nhân viên.');
         }
 
+        $placement = $this->resolveConversionPlacement($candidate);
+
+        if (! $candidate->jobPost) {
+            return redirect()
+                ->route('admin.recruitment.candidates.show', $candidate)
+                ->with('error', 'Ứng viên chưa gắn tin tuyển dụng nên không thể xác định phòng ban và chức vụ.');
+        }
+
+        if (! $placement['department_id']) {
+            return redirect()
+                ->route('admin.recruitment.candidates.show', $candidate)
+                ->with('error', 'Tin tuyển dụng chưa gắn phòng ban. Vui lòng cập nhật tin tuyển dụng trước khi chuyển nhân viên.');
+        }
+
+        if (! $placement['position_id']) {
+            return redirect()
+                ->route('admin.recruitment.candidates.show', $candidate)
+                ->with('error', 'Tin tuyển dụng chưa gắn chức vụ. Vui lòng cập nhật tin tuyển dụng trước khi chuyển nhân viên.');
+        }
+
+        if ($placement['department_full'] ?? false) {
+            return redirect()
+                ->route('admin.recruitment.candidates.show', $candidate)
+                ->with('error', $placement['department_full_message']);
+        }
+
         $validated = $request->validate([
             'employee_code' => ['required', 'string', 'max:20', 'unique:employees,employee_code'],
             'gender' => ['required', 'in:male,female,other'],
             'date_of_birth' => ['required', 'date'],
-            'department_id' => ['nullable', 'exists:departments,id', new DepartmentEmployeeCapacity()],
-            'position_id' => ['nullable', 'exists:positions,id'],
             'hire_date' => ['required', 'date'],
             'status' => ['required', 'in:active,inactive,resigned'],
         ], [
@@ -228,7 +253,7 @@ class CandidateController extends Controller
             'hire_date.required' => 'Ngày vào làm là bắt buộc.',
         ]);
 
-        $employee = DB::transaction(function () use ($candidate, $validated) {
+        $employee = DB::transaction(function () use ($candidate, $validated, $placement) {
             $employee = Employee::create([
                 'employee_code' => strtoupper($validated['employee_code']),
                 'full_name' => $candidate->full_name,
@@ -237,8 +262,8 @@ class CandidateController extends Controller
                 'phone' => $candidate->phone,
                 'email' => $candidate->email,
                 'address' => $candidate->address,
-                'department_id' => ($validated['department_id'] ?? null) ?: null,
-                'position_id' => ($validated['position_id'] ?? null) ?: null,
+                'department_id' => $placement['department_id'],
+                'position_id' => $placement['position_id'],
                 'hire_date' => $validated['hire_date'],
                 'status' => $validated['status'],
             ]);
@@ -300,6 +325,58 @@ class CandidateController extends Controller
             ->where('status', 'active')
             ->orderBy('position_name')
             ->get(['id', 'position_name']);
+    }
+
+    /**
+     * @return array{
+     *     department_id: ?int,
+     *     position_id: ?int,
+     *     department_name: ?string,
+     *     position_name: ?string,
+     *     department_full: bool,
+     *     department_full_message: ?string,
+     *     can_convert: bool
+     * }
+     */
+    private function resolveConversionPlacement(Candidate $candidate): array
+    {
+        $candidate->loadMissing(['jobPost.department', 'jobPost.position']);
+
+        $jobPost = $candidate->jobPost;
+        $department = $jobPost?->department;
+        $position = $jobPost?->position;
+
+        $departmentId = $jobPost?->department_id;
+        $positionId = $jobPost?->position_id;
+        $departmentFull = false;
+        $departmentFullMessage = null;
+
+        if ($department && $departmentId) {
+            if (! $department->hasEmployeeCapacity()) {
+                $departmentFull = true;
+                $departmentFullMessage = sprintf(
+                    'Phòng ban "%s" đã đủ tối đa %d nhân viên.',
+                    $department->department_name,
+                    $department->maxEmployeesLimit(),
+                );
+            }
+        }
+
+        $canConvert = $jobPost !== null
+            && $departmentId !== null
+            && $positionId !== null
+            && ! $departmentFull;
+
+        return [
+            'department_id' => $departmentId,
+            'position_id' => $positionId,
+            'department_name' => $department?->department_name,
+            'position_name' => $position?->position_name,
+            'job_post_title' => $jobPost?->title,
+            'department_full' => $departmentFull,
+            'department_full_message' => $departmentFullMessage,
+            'can_convert' => $canConvert,
+        ];
     }
 
     private function candidateCvData(Candidate $candidate): array

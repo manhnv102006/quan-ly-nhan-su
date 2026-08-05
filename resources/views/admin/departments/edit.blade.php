@@ -29,7 +29,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('admin.departments.update', $department->id) }}" method="POST" class="space-y-5">
+            <form action="{{ route('admin.departments.update', $department->id) }}" method="POST" class="space-y-5" id="department-edit-form" novalidate>
                 @csrf
                 @method('PUT')
 
@@ -143,5 +143,90 @@
         </div>
 
     </div>
+
+    @php
+        $minMaxEmployees = max(\App\Models\Department::MIN_MAX_EMPLOYEES, (int) ($department->employees_count ?? 0));
+    @endphp
+
+    <script>
+        (function () {
+            const form = document.getElementById('department-edit-form');
+            if (!form) return;
+
+            const minMaxEmployees = {{ $minMaxEmployees }};
+            const maxMaxEmployees = {{ \App\Models\Department::MAX_MAX_EMPLOYEES }};
+            const departmentCodePattern = /^[A-Z0-9_-]+$/;
+
+            function setFieldError(input, message) {
+                input.classList.add('border-red-400');
+                let hint = input.parentElement.querySelector('[data-client-error]');
+                if (!hint) {
+                    hint = document.createElement('p');
+                    hint.dataset.clientError = '1';
+                    hint.className = 'mt-1.5 text-sm text-red-600';
+                    input.parentElement.appendChild(hint);
+                }
+                hint.textContent = message;
+            }
+
+            function clearClientErrors() {
+                form.querySelectorAll('[data-client-error]').forEach(el => el.remove());
+                form.querySelectorAll('.border-red-400').forEach(el => el.classList.remove('border-red-400'));
+            }
+
+            form.addEventListener('submit', function (event) {
+                clearClientErrors();
+                let valid = true;
+
+                const departmentCode = form.querySelector('#department_code');
+                const departmentName = form.querySelector('#department_name');
+                const maxEmployees = form.querySelector('#max_employees');
+                const status = form.querySelector('#status');
+
+                const codeValue = departmentCode.value.trim().toUpperCase();
+                if (!codeValue) {
+                    setFieldError(departmentCode, 'Vui lòng nhập mã phòng ban.');
+                    valid = false;
+                } else if (codeValue.length < 2 || codeValue.length > 20) {
+                    setFieldError(departmentCode, 'Mã phòng ban phải từ 2 đến 20 ký tự.');
+                    valid = false;
+                } else if (!departmentCodePattern.test(codeValue)) {
+                    setFieldError(departmentCode, 'Mã phòng ban chỉ được chứa chữ in hoa, số, gạch ngang và gạch dưới.');
+                    valid = false;
+                }
+
+                const nameValue = departmentName.value.trim();
+                if (!nameValue) {
+                    setFieldError(departmentName, 'Vui lòng nhập tên phòng ban.');
+                    valid = false;
+                } else if (nameValue.length < 2) {
+                    setFieldError(departmentName, 'Tên phòng ban phải có ít nhất 2 ký tự.');
+                    valid = false;
+                }
+
+                const maxEmployeesValue = Number(maxEmployees.value);
+                if (maxEmployees.value.trim() === '') {
+                    setFieldError(maxEmployees, 'Vui lòng nhập giới hạn nhân viên.');
+                    valid = false;
+                } else if (!Number.isInteger(maxEmployeesValue) || maxEmployeesValue < minMaxEmployees || maxEmployeesValue > maxMaxEmployees) {
+                    const minMessage = minMaxEmployees > {{ \App\Models\Department::MIN_MAX_EMPLOYEES }}
+                        ? 'Giới hạn không được nhỏ hơn số nhân viên hiện tại (' + minMaxEmployees + ') và tối đa là ' + maxMaxEmployees + '.'
+                        : 'Giới hạn nhân viên phải từ ' + minMaxEmployees + ' đến ' + maxMaxEmployees + '.';
+                    setFieldError(maxEmployees, minMessage);
+                    valid = false;
+                }
+
+                if (!status.value) {
+                    setFieldError(status, 'Vui lòng chọn trạng thái.');
+                    valid = false;
+                }
+
+                if (!valid) {
+                    event.preventDefault();
+                    form.querySelector('.border-red-400')?.focus();
+                }
+            });
+        })();
+    </script>
 
 </x-admin-layout>

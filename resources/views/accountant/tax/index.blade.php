@@ -15,7 +15,8 @@
                 @else
                     Chính sách thuế theo ngày hiệu lực (cấu hình trong hệ thống)
                 @endif
-                · Kỳ đã tính lương hiển thị theo <strong>snapshot đã chốt</strong>
+                · BH NLĐ chỉ tính khi nhân viên đã đăng ký bảo hiểm (trạng thái đang đóng)
+                · Thuế TNCN tính theo biểu lũy tiến 5 bậc (Luật TNCN 2025, kỳ thuế 2026)
             </p>
         </div>
 
@@ -59,6 +60,39 @@
         </form>
 
         @if($period)
+            @if(($periodTaxPolicy ?? null)?->code === 'pit_2026')
+                <div class="accountant-card p-5">
+                    <h3 class="text-sm font-bold text-slate-800 mb-3">Biểu thuế lũy tiến 5 bậc (2026)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[640px] text-sm">
+                            <thead>
+                                <tr class="bg-violet-50 text-left text-xs font-bold uppercase text-slate-500">
+                                    <th class="px-3 py-2">Bậc</th>
+                                    <th class="px-3 py-2">Thu nhập tính thuế/tháng</th>
+                                    <th class="px-3 py-2 text-right">Thuế suất</th>
+                                    <th class="px-3 py-2">Công thức rút gọn</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @foreach($taxBrackets2026 ?? [] as $index => $bracket)
+                                    <tr>
+                                        <td class="px-3 py-2 font-semibold text-slate-700">Bậc {{ $index + 1 }}</td>
+                                        <td class="px-3 py-2 text-slate-600">{{ $bracket['label'] }}</td>
+                                        <td class="px-3 py-2 text-right font-semibold text-violet-700">{{ number_format($bracket['rate'] * 100, 0) }}%</td>
+                                        <td class="px-3 py-2 text-xs text-slate-500">
+                                            {{ number_format($bracket['rate'] * 100, 0) }}% × TN tính thuế
+                                            @if($bracket['quick_deduction'] > 0)
+                                                − {{ number_format($bracket['quick_deduction'], 0, ',', '.') }}₫
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
+
             <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 @include('accountant.partials.stat-card', ['label' => 'Tổng thu nhập', 'value' => $formatMoney($totalGross)])
                 @include('accountant.partials.stat-card', ['label' => 'Tổng thuế TNCN', 'value' => $formatMoney($totalPit), 'tone' => 'text-violet-700'])
@@ -110,7 +144,17 @@
                                     <td class="px-4 py-3 text-right">{{ $formatMoney($row['personal_deduction']) }}</td>
                                     <td class="px-4 py-3 text-right">{{ $formatMoney($row['dependent_deduction']) }}</td>
                                     <td class="px-4 py-3 text-right">{{ $formatMoney($row['taxable_income']) }}</td>
-                                    <td class="px-4 py-3 text-right font-bold text-violet-700">{{ $formatMoney($row['pit']) }}</td>
+                                    <td class="px-4 py-3 text-right font-bold text-violet-700">
+                                        {{ $formatMoney($row['pit']) }}
+                                        @if (! empty($row['pit_breakdown']))
+                                            <p class="mt-1 text-[10px] font-normal text-slate-500 leading-relaxed">
+                                                @foreach ($row['pit_breakdown'] as $part)
+                                                    B{{ $part['level'] }}: {{ number_format($part['amount'], 0, ',', '.') }} × {{ number_format($part['rate'] * 100, 0) }}% = {{ number_format($part['tax'], 0, ',', '.') }}₫
+                                                    @if (! $loop->last)<br>@endif
+                                                @endforeach
+                                            </p>
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-3 text-right text-emerald-700">{{ $formatMoney($row['net_income']) }}</td>
                                 </tr>
                             @empty

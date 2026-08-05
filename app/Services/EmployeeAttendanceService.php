@@ -9,6 +9,7 @@ use App\Models\OvertimeRequest;
 use App\Models\Shift;
 use App\Services\OvertimeSettlementService;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class EmployeeAttendanceService
@@ -73,6 +74,69 @@ class EmployeeAttendanceService
         );
     }
 
+    /**
+     * Bản ghi chấm công của đúng ca (nếu chưa có thì trả về bản nháp chưa lưu).
+     *
+     * @param  \Illuminate\Support\Collection<int, Attendance>  $attendances
+     */
+    public function attendanceForShift(Collection $attendances, Shift $shift, int $employeeId, Carbon $date): Attendance
+    {
+        $existing = $attendances->first(
+            fn (Attendance $row) => (int) $row->shift_id === (int) $shift->id
+        );
+
+        if ($existing) {
+            return $existing;
+        }
+
+        return new Attendance([
+            'employee_id' => $employeeId,
+            'attendance_date' => $date,
+            'shift_id' => $shift->id,
+        ]);
+    }
+
+    /**
+     * Ca đang tới lượt chấm công tại thời điểm hiện tại (check-in hoặc check-out).
+     *
+     * @return array{shift: Shift, attendance: Attendance, is_full_day: bool}|null
+     */
+    public function actionableShift(Employee $employee, Carbon $now): ?array
+    {
+        $date = $now->copy()->startOfDay();
+        $attendances = Attendance::query()
+            ->where('employee_id', $employee->id)
+            ->whereDate('attendance_date', $date)
+            ->get();
+
+        foreach ($employee->todayShifts() as $employeeShift) {
+            $shift = $employeeShift->shift;
+
+            if (! $shift) {
+                continue;
+            }
+
+            $attendance = $this->attendanceForShift($attendances, $shift, $employee->id, $date);
+            $isFullDay = $this->isFullDayShift($shift);
+
+            $sessions = $isFullDay
+                ? array_values($this->fullDaySessions($attendance, $date, $now))
+                : [$this->regularSession($attendance, $shift, $date, $now)];
+
+            foreach ($sessions as $session) {
+                if (($session['can_check_in'] ?? false) || ($session['can_check_out'] ?? false)) {
+                    return [
+                        'shift' => $shift,
+                        'attendance' => $attendance,
+                        'is_full_day' => $isFullDay,
+                    ];
+                }
+            }
+        }
+
+        return null;
+    }
+
     public function checkIn(Employee $employee, Shift $shift, bool $isFullDay, Carbon $now): Attendance
     {
         $today = $now->copy()->startOfDay();
@@ -82,8 +146,8 @@ class EmployeeAttendanceService
         $attendance = Attendance::firstOrNew([
             'employee_id' => $employee->id,
             'attendance_date' => $today,
+            'shift_id' => $shift->id,
         ]);
-        $attendance->shift_id = $shift->id;
 
         if ($isFullDay) {
             $this->performFullDayCheckIn($attendance, $today, $now);

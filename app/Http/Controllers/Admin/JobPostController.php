@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\JobPost;
+use App\Models\Position;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ class JobPostController extends Controller
 
         return view('admin.recruitment.job-posts.index', array_merge($data, [
             'departments' => $this->activeDepartments(),
+            'positions' => $this->activePositions(),
             'showCreateForm' => true,
             'showEditForm' => false,
         ]));
@@ -31,6 +33,7 @@ class JobPostController extends Controller
 
         return view('admin.recruitment.job-posts.index', array_merge($data, [
             'departments' => $this->activeDepartments(),
+            'positions' => $this->activePositions(),
             'showCreateForm' => false,
             'showEditForm' => false,
         ]));
@@ -51,7 +54,7 @@ class JobPostController extends Controller
 
     public function show(JobPost $jobPost): View
     {
-        $jobPost->load(['department.manager', 'recruiter', 'submittedBy']);
+        $jobPost->load(['department.manager', 'recruiter', 'submittedBy', 'position']);
         $jobPost->loadCount([
             'candidates',
             'candidates as candidates_new_count' => fn ($query) => $query->where('status', 'new'),
@@ -74,9 +77,10 @@ class JobPostController extends Controller
 
         return view('admin.recruitment.job-posts.index', array_merge($data, [
             'departments' => $this->activeDepartments(),
+            'positions' => $this->activePositions(),
             'showCreateForm' => false,
             'showEditForm' => true,
-            'editingJobPost' => $jobPost->load(['department.manager', 'recruiter']),
+            'editingJobPost' => $jobPost->load(['department.manager', 'recruiter', 'position']),
         ]));
     }
 
@@ -173,7 +177,7 @@ class JobPostController extends Controller
         $search = $filters['search'];
 
         $jobPosts = JobPost::query()
-            ->with(['department', 'recruiter', 'submittedBy'])
+            ->with(['department', 'position', 'recruiter', 'submittedBy'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('title', 'like', "%{$search}%")
@@ -253,10 +257,19 @@ class JobPostController extends Controller
         return $validated;
     }
 
+    private function activePositions()
+    {
+        return Position::query()
+            ->where('status', 'active')
+            ->orderBy('position_name')
+            ->get(['id', 'position_name']);
+    }
+
     private function validateJobPost(Request $request): array
     {
         return $request->validate([
             'department_id' => ['nullable', 'exists:departments,id'],
+            'position_id' => ['nullable', 'exists:positions,id'],
             'title' => ['required', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:0'],
             'salary_min' => ['nullable', 'numeric', 'min:0'],
@@ -270,6 +283,7 @@ class JobPostController extends Controller
             'status' => ['required', 'in:open,closed'],
         ], [
             'department_id.exists' => 'Phòng ban được chọn không hợp lệ.',
+            'position_id.exists' => 'Chức vụ được chọn không hợp lệ.',
             'title.required' => 'Tiêu đề tin tuyển dụng là bắt buộc.',
             'title.max' => 'Tiêu đề tin tuyển dụng không được vượt quá 255 ký tự.',
             'quantity.required' => 'Số lượng tuyển là bắt buộc.',

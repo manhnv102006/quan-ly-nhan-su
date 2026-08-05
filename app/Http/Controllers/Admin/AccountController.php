@@ -58,18 +58,32 @@ class AccountController extends Controller
         return view('admin.accounts.index', compact('users', 'stats', 'filters', 'roles'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $roles = Role::query()->orderBy('id')->get();
+        $employee = null;
+        $prefill = [];
 
-        return view('admin.accounts.create', compact('roles'));
+        if ($request->filled('employee_id')) {
+            $employee = Employee::query()
+                ->with('position')
+                ->withoutLinkedAccount()
+                ->find($request->integer('employee_id'));
+
+            if ($employee) {
+                $prefill = $this->accountDefaultsFromEmployee($employee);
+            }
+        }
+
+        return view('admin.accounts.create', compact('roles', 'employee', 'prefill'));
     }
 
     public function store(StoreAccountRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $employeeId = $request->integer('employee_id') ?: null;
 
-        User::create([
+        $user = User::create([
             'username' => $validated['username'],
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -78,6 +92,19 @@ class AccountController extends Controller
             'password' => Hash::make($validated['password']),
             'email_verified_at' => now(),
         ]);
+
+        if ($employeeId) {
+            $employee = Employee::query()->withoutLinkedAccount()->find($employeeId);
+
+            if ($employee) {
+                $employee->update(['user_id' => $user->id]);
+                app(ManagerDepartmentSyncService::class)->syncAfterEmployeeSaved($employee->fresh());
+
+                return redirect()
+                    ->route('admin.employees.show', $employee)
+                    ->with('success', "Đã tạo tài khoản {$user->username} và liên kết với nhân viên {$employee->full_name}.");
+            }
+        }
 
         return redirect()
             ->route('admin.accounts')
@@ -401,5 +428,64 @@ class AccountController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * @return array{role_id: ?int, username: string, name: string, email: ?string, status: string}
+     */
+    private function accountDefaultsFromEmployee(Employee $employee): array
+    {
+        $positionName = mb_strtolower($employee->position?->position_name ?? '');
+
+        $roleName = match (true) {
+            str_contains($positionName, 'giám đốc') => Role::ADMIN,
+            str_contains($positionName, 'trưởng phòng'), str_contains($positionName, 'phó phòng') => Role::MANAGER,
+            str_contains($positionName, 'kế toán') => Role::ACCOUNTANT,
+            default => Role::EMPLOYEE,
+        };
+
+        $roleId = Role::query()->where('name', $roleName)->value('id')
+            ?? Role::query()->where('name', Role::EMPLOYEE)->value('id');
+
+        return [
+            'role_id' => $roleId ? (int) $roleId : null,
+            'username' => $this->suggestUniqueUsername($employee),
+            'name' => $employee->full_name,
+            'email' => $employee->email,
+            'status' => 'active',
+        ];
+    }
+
+    private function suggestUniqueUsername(Employee $employee): string
+    {
+        $bases = array_values(array_filter([
+            Str::before((string) ($employee->email ?? ''), '@'),
+            Str::lower((string) ($employee->employee_code ?? '')),
+            Str::slug(Str::ascii((string) ($employee->full_name ?? '')), '_'),
+        ]));
+
+        foreach ($bases as $base) {
+            $base = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $base) ?? '';
+
+            if (strlen($base) < 3) {
+                continue;
+            }
+
+            $base = Str::limit($base, 50, '');
+
+            if (! User::query()->where('username', $base)->exists()) {
+                return $base;
+            }
+
+            for ($suffix = 2; $suffix <= 99; $suffix++) {
+                $candidate = Str::limit($base, 50 - strlen((string) $suffix), '').$suffix;
+
+                if (! User::query()->where('username', $candidate)->exists()) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return 'nv'.$employee->id;
     }
 }

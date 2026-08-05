@@ -133,7 +133,11 @@ class TaxService
 
         $assessable = max(0, $grossIncome - $insurance);
         $taxable = max(0, $assessable - $personal - $dependentDeduction);
-        $pit = $this->progressivePit($taxable, $policy->progressiveBrackets());
+
+        $pitResult = $policy->code === 'pit_2026'
+            ? $this->progressivePitWithBreakdown2026($taxable)
+            : ['pit' => $this->progressivePit($taxable, $policy), 'breakdown' => []];
+        $pit = (float) $pitResult['pit'];
 
         return [
             'gross' => $grossIncome,
@@ -144,23 +148,95 @@ class TaxService
             'assessable_income' => $assessable,
             'taxable_income' => $taxable,
             'pit' => $pit,
+            'pit_breakdown' => $pitResult['breakdown'],
             'net_income' => max(0, $grossIncome - $insurance - $pit),
             'tax_policy' => $policy,
         ];
     }
 
     /**
+     * Thu nhập gộp chịu thuế từ phiếu lương (cộng lại khoản phạt đã trừ khỏi thực lĩnh).
+     */
+    public function payrollGrossIncome(Payroll $payroll): float
+    {
+        return max(0, (float) $payroll->total_salary + (float) $payroll->deduction);
+    }
+
+    /**
+     * Tính thuế lũy tiến từng phần theo 5 bậc 2026.
+     *
+     * @return array{pit: float, breakdown: list<array{level: int, label: string, amount: float, rate: float, tax: float}>}
+     */
+    public function progressivePitWithBreakdown2026(float $taxableIncome): array
+    {
+        if ($taxableIncome <= 0) {
+            return ['pit' => 0.0, 'breakdown' => []];
+        }
+
+        $definitions = TaxPolicy::bracketDefinitions2026();
+        $remaining = $taxableIncome;
+        $previousLimit = 0.0;
+        $tax = 0.0;
+        $breakdown = [];
+
+        foreach ($definitions as $index => $definition) {
+            if ($remaining <= 0) {
+                break;
+            }
+
+            $upperLimit = (float) $definition['limit'];
+            $chunk = min($remaining, $upperLimit - $previousLimit);
+
+            if ($chunk <= 0) {
+                break;
+            }
+
+            $rate = (float) $definition['rate'];
+            $partTax = round($chunk * $rate, 0);
+            $tax += $partTax;
+
+            $breakdown[] = [
+                'level' => $index + 1,
+                'label' => $definition['label'],
+                'amount' => $chunk,
+                'rate' => $rate,
+                'tax' => $partTax,
+            ];
+
+            $remaining -= $chunk;
+            $previousLimit = $upperLimit;
+        }
+
+        return [
+            'pit' => round($tax, 0),
+            'breakdown' => $breakdown,
+        ];
+    }
+
+    /**
+     * Thuế TNCN theo biểu lũy tiến 5 bậc 2026.
+     */
+    public function progressivePitFiveBrackets2026(float $taxableIncome): float
+    {
+        return $this->progressivePitWithBreakdown2026($taxableIncome)['pit'];
+    }
+
+    /**
      * @param  array<int, array{0: float, 1: float}>|null  $brackets
      */
-    public function progressivePit(float $taxableIncome, ?array $brackets = null): float
+    public function progressivePit(float $taxableIncome, ?TaxPolicy $policy = null, ?array $brackets = null): float
     {
         if ($taxableIncome <= 0) {
             return 0;
         }
 
-        if ($brackets === null) {
-            $brackets = $this->policyForDate(now())->progressiveBrackets();
+        $policy ??= $this->policyForDate(now());
+
+        if ($policy->code === 'pit_2026') {
+            return $this->progressivePitFiveBrackets2026($taxableIncome);
         }
+
+        $brackets ??= $policy->progressiveBrackets();
 
         $tax = 0.0;
         $remaining = $taxableIncome;
@@ -199,7 +275,7 @@ class TaxService
             ? Carbon::create((int) $period->year, (int) $period->month, 15)
             : now();
 
-        $calc = $this->calculateEmployeeMonthly($employee, (float) $payroll->total_salary, $periodDate);
+        $calc = $this->calculateEmployeeMonthly($employee, $this->payrollGrossIncome($payroll), $periodDate);
         /** @var TaxPolicy $policy */
         $policy = $calc['tax_policy'];
 
@@ -276,17 +352,13 @@ class TaxService
                 return null;
             }
 
-            if ($payroll->payrollTaxSnapshot) {
-                return $payroll->payrollTaxSnapshot->toTaxRow($employee, $payroll);
-            }
-
-            $calc = $this->calculateEmployeeMonthly($employee, (float) $payroll->total_salary, $periodDate);
+            $calc = $this->calculateEmployeeMonthly($employee, $this->payrollGrossIncome($payroll), $periodDate);
             unset($calc['tax_policy']);
 
             return array_merge($calc, [
                 'payroll' => $payroll,
                 'employee' => $employee,
-                'from_snapshot' => false,
+                'from_snapshot' => (bool) $payroll->payrollTaxSnapshot,
             ]);
         })->filter()->values();
     }
@@ -458,7 +530,7 @@ class TaxService
             $assessable = max(0, $data['total_gross'] - $data['total_insurance']);
             $taxableAnnual = max(0, $assessable - $data['total_personal_deduction'] - $data['total_dependent_deduction']);
             $avgMonthlyTaxable = $taxableAnnual / max(1, $data['months_count']);
-            $pitLiability = $this->progressivePit($avgMonthlyTaxable, $yearEndPolicy->progressiveBrackets()) * $data['months_count'];
+            $pitLiability = $this->progressivePit($avgMonthlyTaxable, $yearEndPolicy) * $data['months_count'];
 
             $difference = $data['total_pit_withheld'] - $pitLiability;
 

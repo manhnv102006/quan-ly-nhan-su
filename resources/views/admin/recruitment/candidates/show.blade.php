@@ -128,6 +128,10 @@
                                     <p class="mt-2 text-sm font-semibold text-slate-800">{{ $candidate->jobPost->department?->department_name ?? 'Chưa gắn' }}</p>
                                 </div>
                                 <div class="rounded-2xl bg-slate-50 p-4">
+                                    <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Chức vụ</p>
+                                    <p class="mt-2 text-sm font-semibold text-slate-800">{{ $candidate->jobPost->position?->position_name ?? 'Chưa gắn' }}</p>
+                                </div>
+                                <div class="rounded-2xl bg-slate-50 p-4">
                                     <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Trạng thái tin</p>
                                     <p class="mt-2 text-sm font-semibold text-slate-800">{{ $candidate->jobPost->status === 'open' ? 'Đang mở' : 'Đã đóng' }}</p>
                                 </div>
@@ -280,26 +284,39 @@
                                 <label class="mb-2 block text-sm font-bold text-slate-700">Ngày vào làm</label>
                                 <input type="date" name="hire_date" value="{{ old('hire_date', now()->format('Y-m-d')) }}" class="{{ $fieldClass }}">
                             </div>
-                            <div>
-                                <label class="mb-2 block text-sm font-bold text-slate-700">Phòng ban</label>
-                                @include('admin.partials.department-select', [
-                                    'departments' => $departments,
-                                    'selected' => old('department_id'),
-                                    'required' => false,
-                                    'placeholder' => 'Chưa gắn',
-                                ])
-                            </div>
-                            <div>
-                                <label class="mb-2 block text-sm font-bold text-slate-700">Chức vụ</label>
-                                <select name="position_id" class="{{ $fieldClass }}">
-                                    <option value="">Chưa gắn</option>
-                                    @foreach ($positions as $position)
-                                        <option value="{{ $position->id }}" @selected(old('position_id') == $position->id)>{{ $position->position_name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+
+                            @if ($conversionPlacement['job_post_title'] ?? null)
+                                <div class="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 text-sm text-emerald-950">
+                                    <p class="font-bold">Theo tin tuyển dụng</p>
+                                    <p class="mt-2 break-words font-semibold">{{ $conversionPlacement['job_post_title'] }}</p>
+                                    <dl class="mt-3 space-y-2">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <dt class="text-emerald-800">Phòng ban</dt>
+                                            <dd class="text-right font-bold">{{ $conversionPlacement['department_name'] ?? 'Chưa gắn' }}</dd>
+                                        </div>
+                                        <div class="flex items-start justify-between gap-3">
+                                            <dt class="text-emerald-800">Chức vụ</dt>
+                                            <dd class="text-right font-bold">{{ $conversionPlacement['position_name'] ?? 'Chưa gắn' }}</dd>
+                                        </div>
+                                    </dl>
+                                    <p class="mt-3 text-xs leading-relaxed text-emerald-800">Phòng ban và chức vụ được lấy tự động từ tin tuyển dụng, không cần chọn lại.</p>
+                                </div>
+                            @endif
+
+                            @if (($conversionPlacement['department_full'] ?? false) && ($conversionPlacement['department_full_message'] ?? null))
+                                <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                                    {{ $conversionPlacement['department_full_message'] }}
+                                </div>
+                            @endif
+
+                            @if (! ($conversionPlacement['can_convert'] ?? false))
+                                <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+                                    Cập nhật tin tuyển dụng (phòng ban + chức vụ) trước khi tạo hồ sơ nhân viên.
+                                </div>
+                            @endif
+
                             <input type="hidden" name="status" value="active">
-                            <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700">
+                            <button type="submit" @disabled(! ($conversionPlacement['can_convert'] ?? false)) class="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300">
                                 Tạo hồ sơ nhân viên
                             </button>
                         </form>

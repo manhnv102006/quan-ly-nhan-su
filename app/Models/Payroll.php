@@ -230,6 +230,7 @@ class Payroll extends Model
             : now());
 
         $taxService = app(TaxService::class);
+        $gross = $taxService->payrollGrossIncome($this);
         $tax = $taxService->calculateEmployeeMonthly($employee, $gross, $periodDate);
 
         $bhxh = $bhyt = $bhtn = 0.0;

@@ -143,6 +143,20 @@
                     </div>
 
                     <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">Chức vụ</label>
+                        <select name="position_id" class="{{ $inputClass }}">
+                            <option value="">Chưa gắn chức vụ</option>
+                            @foreach (($positions ?? collect()) as $position)
+                                <option value="{{ $position->id }}" @selected((string) old('position_id', $formJobPost?->position_id) === (string) $position->id)>
+                                    {{ $position->position_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('position_id')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
+                        <p class="mt-2 text-xs text-slate-500">Khi chuyển ứng viên thành nhân viên, chức vụ sẽ lấy từ tin tuyển dụng này.</p>
+                    </div>
+
+                    <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Người phụ trách</label>
                         <div id="job-post-recruiter-display"
                              class="{{ $inputClass }} bg-slate-50 text-slate-600"

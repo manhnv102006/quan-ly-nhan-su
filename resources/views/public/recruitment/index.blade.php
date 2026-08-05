@@ -28,54 +28,61 @@
 
     <div class="bg-white text-slate-900">
         {{-- Hero --}}
-        <section class="relative overflow-hidden border-b border-slate-100 bg-gradient-to-b from-slate-50 via-white to-white">
-            <div class="pointer-events-none absolute -right-24 top-0 h-80 w-80 rounded-full bg-cyan-100/60 blur-3xl"></div>
-            <div class="pointer-events-none absolute -left-16 bottom-0 h-64 w-64 rounded-full bg-orange-100/50 blur-3xl"></div>
+        <section class="relative min-h-[32rem] overflow-hidden border-b border-slate-200 lg:min-h-[36rem]">
+            <div class="pointer-events-none absolute inset-0">
+                <img
+                    src="{{ asset('images/banners/recruitment-hero-it.jpg') }}"
+                    alt="Môi trường làm việc công nghệ thông tin"
+                    class="h-full w-full object-cover"
+                >
+                <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/75 to-slate-900/55"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-slate-900/20"></div>
+            </div>
 
             <div class="relative mx-auto w-[83%] py-14 lg:py-20">
                 <div class="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
-                    <div class="reveal-up min-w-0">
-                        <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-800">
-                            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                    <div class="reveal-up min-w-0 text-white">
+                        <span class="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-200">
+                            <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
                             Đang mở tuyển dụng
                         </span>
 
-                        <h1 class="mt-6 text-4xl font-black leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem]">
+                        <h1 class="mt-6 text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-[3.25rem]">
                             Phát triển sự nghiệp cùng hệ sinh thái nhân sự HRM
                         </h1>
 
-                        <p class="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
+                        <p class="mt-5 max-w-xl text-base leading-relaxed text-slate-200 sm:text-lg">
                             Tìm vị trí phù hợp, xem thông tin rõ ràng và gửi hồ sơ trực tiếp — không cần đăng nhập.
                         </p>
 
                         <div class="mt-8 flex flex-col gap-3 sm:flex-row">
                             <a href="{{ route('public.recruitment.jobs') }}"
-                               class="inline-flex items-center justify-center rounded-xl bg-cyan-600 px-6 py-3.5 text-sm font-bold text-white shadow-md shadow-cyan-600/20 transition hover:bg-cyan-700">
+                               class="inline-flex items-center justify-center rounded-xl bg-cyan-500 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-cyan-900/30 transition hover:bg-cyan-400">
                                 Xem vị trí đang tuyển
                             </a>
                             <a href="{{ route('public.recruitment.about') }}"
-                               class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-bold text-slate-800 transition hover:border-cyan-300 hover:text-cyan-800">
+                               class="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/10 px-6 py-3.5 text-sm font-bold text-white backdrop-blur-sm transition hover:border-white/40 hover:bg-white/15">
                                 Khám phá văn hóa
                             </a>
                         </div>
 
                         <div class="mt-10 grid grid-cols-3 gap-4 max-w-lg">
-                            <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                                <p class="text-2xl font-black text-cyan-700">{{ $stats['open_jobs'] ?? 0 }}</p>
-                                <p class="mt-1 text-xs font-semibold text-slate-500">Tin tuyển dụng</p>
+                            <div class="rounded-2xl border border-white/15 bg-white/10 p-4 shadow-lg backdrop-blur-sm">
+                                <p class="text-2xl font-black text-cyan-300">{{ $stats['open_jobs'] ?? 0 }}</p>
+                                <p class="mt-1 text-xs font-semibold text-slate-300">Tin tuyển dụng</p>
                             </div>
-                            <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                                <p class="text-2xl font-black text-cyan-700">{{ $stats['applications'] ?? 0 }}</p>
-                                <p class="mt-1 text-xs font-semibold text-slate-500">Hồ sơ đã nhận</p>
+                            <div class="rounded-2xl border border-white/15 bg-white/10 p-4 shadow-lg backdrop-blur-sm">
+                                <p class="text-2xl font-black text-cyan-300">{{ $stats['applications'] ?? 0 }}</p>
+                                <p class="mt-1 text-xs font-semibold text-slate-300">Hồ sơ đã nhận</p>
                             </div>
-                            <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                                <p class="text-2xl font-black text-cyan-700">{{ $stats['departments'] ?? 0 }}</p>
-                                <p class="mt-1 text-xs font-semibold text-slate-500">Phòng ban</p>
+                            <div class="rounded-2xl border border-white/15 bg-white/10 p-4 shadow-lg backdrop-blur-sm">
+                                <p class="text-2xl font-black text-cyan-300">{{ $stats['departments'] ?? 0 }}</p>
+                                <p class="mt-1 text-xs font-semibold text-slate-300">Phòng ban</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="reveal-up rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-200/50 sm:p-8">
+                    <div class="reveal-up rounded-3xl border border-white/20 bg-white/95 p-6 shadow-2xl shadow-black/30 backdrop-blur-md sm:p-8">
                         <div class="flex items-start justify-between gap-4">
                             <div class="flex items-center gap-3">
                                 <div class="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50">

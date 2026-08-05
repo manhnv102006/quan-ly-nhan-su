@@ -8,13 +8,23 @@
                 <p class="text-sm text-slate-500 mt-1">Tạo tài khoản đăng nhập mới cho hệ thống</p>
             </div>
 
-            <a href="{{ route('admin.accounts') }}"
+            <a href="{{ isset($employee) ? route('admin.employees.show', $employee) : route('admin.accounts') }}"
                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition">
                 ← Quay lại
             </a>
         </div>
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8 max-w-3xl">
+
+            @if ($employee ?? null)
+                <div class="mb-6 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900">
+                    <p class="font-semibold">Tạo tài khoản cho nhân viên</p>
+                    <p class="mt-1">
+                        <span class="font-medium">{{ $employee->full_name }}</span>
+                        ({{ $employee->employee_code }}) — thông tin vai trò, tên đăng nhập, họ tên và email đã được điền sẵn.
+                    </p>
+                </div>
+            @endif
 
             @if ($errors->any())
                 <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -29,6 +39,9 @@
 
             <form action="{{ route('admin.accounts.store') }}" method="POST" class="space-y-5" id="account-create-form" novalidate>
                 @csrf
+                @if ($employee ?? null)
+                    <input type="hidden" name="employee_id" value="{{ $employee->id }}">
+                @endif
 
                 <div>
                     <label for="role_id" class="block text-sm font-semibold text-slate-700 mb-2">
@@ -38,7 +51,7 @@
                             class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('role_id') border-red-400 @enderror">
                         <option value="">-- Chọn vai trò --</option>
                         @foreach ($roles as $role)
-                            <option value="{{ $role->id }}" @selected(old('role_id') == $role->id)>
+                            <option value="{{ $role->id }}" @selected(old('role_id', $prefill['role_id'] ?? '') == $role->id)>
                                 {{ $role->label() }}
                             </option>
                         @endforeach
@@ -53,7 +66,7 @@
                         Tên đăng nhập <span class="text-red-500">*</span>
                     </label>
                     <input type="text" id="username" name="username"
-                           value="{{ old('username') }}"
+                           value="{{ old('username', $prefill['username'] ?? '') }}"
                            placeholder="VD: nguyenvana" minlength="3" maxlength="50"
                            pattern="[A-Za-z0-9_-]+" required autocomplete="username"
                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('username') border-red-400 @enderror">
@@ -67,7 +80,7 @@
                         Họ và tên <span class="text-red-500">*</span>
                     </label>
                     <input type="text" id="name" name="name"
-                           value="{{ old('name') }}"
+                           value="{{ old('name', $prefill['name'] ?? '') }}"
                            placeholder="Nhập họ và tên đầy đủ" minlength="2" maxlength="255" required autocomplete="name"
                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('name') border-red-400 @enderror">
                     @error('name')
@@ -80,7 +93,7 @@
                         Email <span class="text-red-500">*</span>
                     </label>
                     <input type="email" id="email" name="email"
-                           value="{{ old('email') }}"
+                           value="{{ old('email', $prefill['email'] ?? '') }}"
                            placeholder="email@example.com" maxlength="255" required autocomplete="email"
                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('email') border-red-400 @enderror">
                     @error('email')
@@ -95,7 +108,7 @@
                     <select id="status" name="status" required
                             class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition @error('status') border-red-400 @enderror">
                         <option value="">-- Chọn trạng thái --</option>
-                        <option value="active" @selected(old('status', 'active') === 'active')>Hoạt động</option>
+                        <option value="active" @selected(old('status', $prefill['status'] ?? 'active') === 'active')>Hoạt động</option>
                         <option value="inactive" @selected(old('status') === 'inactive')>Không hoạt động</option>
                     </select>
                     @error('status')
@@ -130,7 +143,7 @@
                             class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 text-white font-medium shadow-lg shadow-violet-500/20 hover:bg-violet-700 transition">
                         + Thêm tài khoản
                     </button>
-                    <a href="{{ route('admin.accounts') }}"
+                    <a href="{{ isset($employee) ? route('admin.employees.show', $employee) : route('admin.accounts') }}"
                        class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition">
                         Hủy
                     </a>

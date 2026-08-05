@@ -5,7 +5,9 @@ return [
         'switch' => 'Chọn ngôn ngữ',
     ],
     'layout' => [
-        'careers' => 'Careers',
+        'brand_name' => 'HRM',
+        'brand_title' => 'Neco',
+        'careers' => 'Neco',
         'search' => 'Tìm kiếm',
         'login' => 'Đăng nhập',
         'footer_tagline' => 'Kết nối nhân tài với các cơ hội phù hợp.',

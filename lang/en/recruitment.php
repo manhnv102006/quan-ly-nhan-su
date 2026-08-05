@@ -5,7 +5,9 @@ return [
         'switch' => 'Choose language',
     ],
     'layout' => [
-        'careers' => 'Careers',
+        'brand_name' => 'HRM',
+        'brand_title' => 'Neco',
+        'careers' => 'Neco',
         'search' => 'Search',
         'login' => 'Sign in',
         'footer_tagline' => 'Connecting talent with the right opportunities.',

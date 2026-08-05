@@ -433,7 +433,7 @@
                             </button>
                         @else
                             <p class="mt-4 text-sm text-amber-600">Không còn tài khoản trống để liên kết.</p>
-                            <a href="{{ route('admin.accounts.create') }}"
+                            <a href="{{ route('admin.accounts.create', ['employee_id' => $employee->id]) }}"
                                class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-100 text-violet-700 text-sm font-medium hover:bg-violet-200 transition">
                                 Tạo tài khoản mới
                             </a>
@@ -444,9 +444,17 @@
         </div>
 
         <div id="hop-dong" class="bg-white rounded-3xl shadow-sm border border-slate-100">
-            <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+            <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <h3 class="text-lg font-semibold text-slate-800">Hợp đồng lao động</h3>
-                <span class="text-sm text-slate-500">{{ $contracts->count() }} hợp đồng gần đây</span>
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="text-sm text-slate-500">{{ $contracts->count() }} hợp đồng gần đây</span>
+                    @if ($employee->status === 'active')
+                        <a href="{{ route('admin.contracts.create', ['employee_id' => $employee->id]) }}"
+                           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition">
+                            + Tạo hợp đồng
+                        </a>
+                    @endif
+                </div>
             </div>
 
             <div class="p-6 overflow-x-auto">
@@ -481,7 +489,15 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="py-8 text-center text-slate-400">Chưa có hợp đồng nào</td>
+                                <td colspan="6" class="py-8 text-center">
+                                    <p class="text-slate-400">Chưa có hợp đồng nào</p>
+                                    @if ($employee->status === 'active')
+                                        <a href="{{ route('admin.contracts.create', ['employee_id' => $employee->id]) }}"
+                                           class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-100 text-violet-700 text-sm font-medium hover:bg-violet-200 transition">
+                                            Tạo hợp đồng cho nhân viên này
+                                        </a>
+                                    @endif
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

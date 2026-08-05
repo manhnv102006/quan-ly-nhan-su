@@ -41,6 +41,7 @@
                     </div>
                     <p class="mt-2 text-sm text-slate-500">
                         {{ $jobPost->department?->department_name ?? 'Chưa gắn phòng ban' }}
+                        · {{ $jobPost->position?->position_name ?? 'Chưa gắn chức vụ' }}
                         @if ($jobPost->work_location)
                             · {{ $jobPost->work_location }}
                         @endif

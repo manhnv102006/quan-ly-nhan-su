@@ -14,6 +14,7 @@ class JobPost extends Model
 
     protected $fillable = [
         'department_id',
+        'position_id',
         'recruiter_id',
         'submitted_by_employee_id',
         'title',
@@ -42,6 +43,11 @@ class JobPost extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class)->withTrashed();
+    }
+
+    public function position(): BelongsTo
+    {
+        return $this->belongsTo(Position::class)->withTrashed();
     }
 
     public function recruiter(): BelongsTo

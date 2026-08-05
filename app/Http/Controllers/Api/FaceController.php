@@ -141,11 +141,21 @@ class FaceController extends Controller
             ], 422);
         }
 
-        $shift = $todayShift->shift;
-        $isFullDay = $this->attendanceService->isFullDayShift($shift);
+        $actionable = $this->attendanceService->actionableShift($employee, $now);
+
+        if (! $actionable) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hiện không trong khung giờ chấm công của ca nào.',
+            ], 422);
+        }
+
+        $shift = $actionable['shift'];
+        $isFullDay = $actionable['is_full_day'];
 
         $attendance = Attendance::where('employee_id', $employee->id)
             ->whereDate('attendance_date', $today)
+            ->where('shift_id', $shift->id)
             ->first();
 
         $requested = $data['action'] ?? 'auto';

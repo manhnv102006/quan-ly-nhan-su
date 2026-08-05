@@ -296,8 +296,6 @@ class AccountantStatsService
         }
         $income = max(0, $taxableIncome - $deduction);
 
-        $brackets = $policy?->progressiveBrackets();
-
-        return app(TaxService::class)->progressivePit($income, $brackets);
+        return app(TaxService::class)->progressivePit($income, $policy);
     }
 }

@@ -29,8 +29,8 @@
                             <x-application-logo class="h-14 w-14 object-contain" />
                         </div>
                         <div class="hidden min-w-0 sm:block">
-                            <p class="truncate text-sm font-bold {{ $isDarkHeader ? 'text-white/55' : 'text-slate-500' }}">{{ config('app.name', 'Laravel') }}</p>
-                            <p class="truncate text-xl font-black {{ $isDarkHeader ? 'text-white' : 'text-slate-950' }}">{{ __('recruitment.layout.careers') }}</p>
+                            <p class="truncate text-sm font-bold {{ $isDarkHeader ? 'text-white/55' : 'text-slate-500' }}">{{ __('recruitment.layout.brand_name') }}</p>
+                            <p class="truncate text-xl font-black {{ $isDarkHeader ? 'text-white' : 'text-slate-950' }}">{{ __('recruitment.layout.brand_title') }}</p>
                         </div>
                     </a>
 
@@ -70,7 +70,7 @@
             <footer class="border-t {{ $isDarkHeader ? 'border-white/10 bg-[#030712] text-slate-400' : 'border-slate-200 bg-white text-slate-500' }}">
                 <div class="mx-auto flex w-[83%] flex-col gap-4 py-8 text-sm lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                        <p class="font-black {{ $isDarkHeader ? 'text-white' : 'text-slate-900' }}">{{ config('app.name', 'Laravel') }}</p>
+                        <p class="font-black {{ $isDarkHeader ? 'text-white' : 'text-slate-900' }}">{{ __('recruitment.layout.brand_name') }} {{ __('recruitment.layout.brand_title') }}</p>
                         <p class="mt-1">{{ __('recruitment.layout.footer_tagline') }}</p>
                     </div>
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">

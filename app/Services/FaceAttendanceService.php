@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Attendance;
 use App\Models\Employee;
-use App\Models\Shift;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
 
@@ -24,10 +23,8 @@ class FaceAttendanceService
     public function recordAuto(Employee $employee, float $confidence): array
     {
         $now = Carbon::now();
-        $today = Carbon::today();
 
-        $todayShift = $employee->todayShift();
-        if (! $todayShift || ! $todayShift->shift) {
+        if (! $employee->todayShifts()->contains(fn ($employeeShift) => $employeeShift->shift !== null)) {
             return [
                 'success' => false,
                 'action' => null,
@@ -36,12 +33,20 @@ class FaceAttendanceService
             ];
         }
 
-        $shift = $todayShift->shift;
-        $isFullDay = $this->attendanceService->isFullDayShift($shift);
+        $actionable = $this->attendanceService->actionableShift($employee, $now);
 
-        $attendance = Attendance::where('employee_id', $employee->id)
-            ->whereDate('attendance_date', $today)
-            ->first();
+        if (! $actionable) {
+            return [
+                'success' => false,
+                'action' => null,
+                'message' => 'Hiện không trong khung giờ chấm công của ca nào.',
+                'confidence' => $confidence,
+            ];
+        }
+
+        $shift = $actionable['shift'];
+        $isFullDay = $actionable['is_full_day'];
+        $attendance = $actionable['attendance']->exists ? $actionable['attendance'] : null;
 
         $action = $this->decideAction($attendance, $isFullDay);
 
@@ -49,7 +54,7 @@ class FaceAttendanceService
             return [
                 'success' => false,
                 'action' => 'done',
-                'message' => 'Bạn đã hoàn tất chấm công hôm nay.',
+                'message' => 'Bạn đã hoàn tất chấm công ca '.$shift->shift_name.'.',
                 'confidence' => $confidence,
             ];
         }
@@ -97,32 +102,11 @@ class FaceAttendanceService
     }
 
     /**
-     * Kiểm tra nhân viên có thể quét mặt chấm công ngay bây giờ không.
+     * Kiểm tra nhân viên có ca nào đang tới lượt chấm công ngay bây giờ không.
      */
-    public function canScanNow(Employee $employee, ?Attendance $attendance, ?Shift $shift, bool $isFullDay, Carbon $now): bool
+    public function canScanNow(Employee $employee, Carbon $now): bool
     {
-        if (! $shift) {
-            return false;
-        }
-
-        $stub = $attendance ?? new Attendance([
-            'employee_id' => $employee->id,
-            'attendance_date' => $now->copy()->startOfDay(),
-            'shift_id' => $shift->id,
-        ]);
-
-        if ($isFullDay) {
-            $sessions = $this->attendanceService->fullDaySessions($stub, $now->copy()->startOfDay(), $now);
-
-            return ($sessions['morning']['can_check_in'] ?? false)
-                || ($sessions['morning']['can_check_out'] ?? false)
-                || ($sessions['afternoon']['can_check_in'] ?? false)
-                || ($sessions['afternoon']['can_check_out'] ?? false);
-        }
-
-        $session = $this->attendanceService->regularSession($stub, $shift, $now->copy()->startOfDay(), $now);
-
-        return ($session['can_check_in'] ?? false) || ($session['can_check_out'] ?? false);
+        return $this->attendanceService->actionableShift($employee, $now) !== null;
     }
 
     private function decideAction(?Attendance $attendance, bool $isFullDay): string

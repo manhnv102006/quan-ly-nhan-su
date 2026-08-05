@@ -88,32 +88,44 @@
                 <p class="text-sm text-amber-700 font-medium">
                     Hôm nay là {{ $dayOffReason }}. Không thể chấm công ca thường khi không có đơn tăng ca được duyệt.
                 </p>
-            @elseif ($isFullDayShift && $attendanceSessions)
-                @include('employee.attendance.partials.session-block', [
-                    'title' => 'Buổi sáng (08:00 - 12:00)',
-                    'session' => $attendanceSessions['morning'],
-                    'checkInRoute' => $todayShift ? route('attendance.check-in', $todayShift->shift->id) : null,
-                    'checkOutRoute' => $todayShift ? route('attendance.check-out', $todayShift->shift->id) : null,
-                    'checkInLabel' => 'Check-in sáng',
-                    'checkOutLabel' => 'Check-out sáng',
-                    'class' => 'mb-5 pb-5 border-b border-slate-100',
-                ])
+            @elseif ($shiftSessions->isNotEmpty())
+                @foreach ($shiftSessions as $index => $shiftSession)
+                    @php
+                        $shift = $shiftSession['shift'];
+                        $shiftTitle = $shift->shift_name . ' (' . \Carbon\Carbon::parse($shift->start_time)->format('H:i') . ' - ' . \Carbon\Carbon::parse($shift->end_time)->format('H:i') . ')';
+                        $blockClass = $index < $shiftSessions->count() - 1 ? 'mb-5 pb-5 border-b border-slate-100' : '';
+                    @endphp
 
-                @include('employee.attendance.partials.session-block', [
-                    'title' => 'Buổi chiều (13:00 - 17:00)',
-                    'session' => $attendanceSessions['afternoon'],
-                    'checkInRoute' => $todayShift ? route('attendance.check-in', $todayShift->shift->id) : null,
-                    'checkOutRoute' => $todayShift ? route('attendance.check-out', $todayShift->shift->id) : null,
-                    'checkInLabel' => 'Check-in chiều',
-                    'checkOutLabel' => 'Check-out chiều',
-                ])
-            @elseif ($regularSession && $todayShift?->shift)
-                @include('employee.attendance.partials.session-block', [
-                    'title' => $todayShift->shift->shift_name . ' (' . \Carbon\Carbon::parse($todayShift->shift->start_time)->format('H:i') . ' - ' . \Carbon\Carbon::parse($todayShift->shift->end_time)->format('H:i') . ')',
-                    'session' => $regularSession,
-                    'checkInRoute' => route('attendance.check-in', $todayShift->shift->id),
-                    'checkOutRoute' => route('attendance.check-out', $todayShift->shift->id),
-                ])
+                    @if ($shiftSession['isFullDay'])
+                        @include('employee.attendance.partials.session-block', [
+                            'title' => $shiftTitle . ' — Buổi sáng (08:00 - 12:00)',
+                            'session' => $shiftSession['sessions']['morning'],
+                            'checkInRoute' => route('attendance.check-in', $shift->id),
+                            'checkOutRoute' => route('attendance.check-out', $shift->id),
+                            'checkInLabel' => 'Check-in sáng',
+                            'checkOutLabel' => 'Check-out sáng',
+                            'class' => $blockClass !== '' ? $blockClass : 'mb-5 pb-5 border-b border-slate-100',
+                        ])
+
+                        @include('employee.attendance.partials.session-block', [
+                            'title' => $shiftTitle . ' — Buổi chiều (13:00 - 17:00)',
+                            'session' => $shiftSession['sessions']['afternoon'],
+                            'checkInRoute' => route('attendance.check-in', $shift->id),
+                            'checkOutRoute' => route('attendance.check-out', $shift->id),
+                            'checkInLabel' => 'Check-in chiều',
+                            'checkOutLabel' => 'Check-out chiều',
+                            'class' => $blockClass,
+                        ])
+                    @else
+                        @include('employee.attendance.partials.session-block', [
+                            'title' => $shiftTitle,
+                            'session' => $shiftSession['session'],
+                            'checkInRoute' => route('attendance.check-in', $shift->id),
+                            'checkOutRoute' => route('attendance.check-out', $shift->id),
+                            'class' => $blockClass,
+                        ])
+                    @endif
+                @endforeach
             @elseif (! $todayShift?->shift)
                 <p class="text-sm text-rose-600 font-medium">Bạn chưa được gán ca làm hôm nay.</p>
             @endif

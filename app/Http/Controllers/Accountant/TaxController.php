@@ -68,6 +68,7 @@ class TaxController extends Controller
             'totalGross' => (float) $rows->sum('gross'),
             'periodTaxPolicy' => $periodTaxPolicy,
             'currentTaxPolicy' => TaxPolicy::current(),
+            'taxBrackets2026' => TaxPolicy::bracketDefinitions2026(),
         ]);
     }
 

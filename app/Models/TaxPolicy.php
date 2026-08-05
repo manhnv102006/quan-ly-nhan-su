@@ -95,17 +95,28 @@ class TaxPolicy extends Model
     }
 
     /**
+     * @return list<array{limit: float, span: float, rate: float, label: string, quick_deduction: float}>
+     */
+    public static function bracketDefinitions2026(): array
+    {
+        return [
+            ['limit' => 10_000_000, 'span' => 10_000_000, 'rate' => 0.05, 'label' => 'Bậc 1: Đến 10 triệu/tháng', 'quick_deduction' => 0],
+            ['limit' => 30_000_000, 'span' => 20_000_000, 'rate' => 0.10, 'label' => 'Bậc 2: Trên 10 – 30 triệu/tháng', 'quick_deduction' => 500_000],
+            ['limit' => 60_000_000, 'span' => 30_000_000, 'rate' => 0.20, 'label' => 'Bậc 3: Trên 30 – 60 triệu/tháng', 'quick_deduction' => 3_500_000],
+            ['limit' => 100_000_000, 'span' => 40_000_000, 'rate' => 0.30, 'label' => 'Bậc 4: Trên 60 – 100 triệu/tháng', 'quick_deduction' => 9_500_000],
+            ['limit' => PHP_FLOAT_MAX, 'span' => PHP_FLOAT_MAX, 'rate' => 0.35, 'label' => 'Bậc 5: Trên 100 triệu/tháng', 'quick_deduction' => 14_500_000],
+        ];
+    }
+
+    /**
      * @return list<array{limit: float, rate: float}>
      */
     public static function defaultBrackets2026(): array
     {
-        return [
-            ['limit' => 10_000_000, 'rate' => 0.05],
-            ['limit' => 30_000_000, 'rate' => 0.10],
-            ['limit' => 60_000_000, 'rate' => 0.20],
-            ['limit' => 100_000_000, 'rate' => 0.30],
-            ['limit' => PHP_FLOAT_MAX, 'rate' => 0.35],
-        ];
+        return array_map(
+            fn (array $row) => ['limit' => $row['limit'], 'rate' => $row['rate']],
+            self::bracketDefinitions2026(),
+        );
     }
 
     /**

@@ -37,6 +37,7 @@ class StoreAccountRequest extends FormRequest
             'role_id' => ['required', 'integer', 'exists:roles,id'],
             'status' => ['required', 'in:active,inactive'],
             'password' => ['required', 'confirmed', Password::min(8)->max(255)],
+            'employee_id' => ['nullable', 'integer', 'exists:employees,id'],
         ];
     }
 
