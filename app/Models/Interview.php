@@ -54,12 +54,44 @@ class Interview extends Model
         return $this->belongsTo(Employee::class, 'interviewer_id');
     }
 
+    public static function statusSkipsEvaluation(?string $status): bool
+    {
+        return $status === 'no_show';
+    }
+
     public static function evaluationScoresRequired(?string $status, ?string $result): bool
     {
+        if (self::statusSkipsEvaluation($status)) {
+            return false;
+        }
+
         if ($status === 'completed') {
             return true;
         }
 
         return in_array($result, ['passed', 'failed'], true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    public static function normalizedEvaluationPayload(array $validated): array
+    {
+        if (! self::statusSkipsEvaluation($validated['status'] ?? null)) {
+            return $validated;
+        }
+
+        return array_merge($validated, [
+            'result' => 'pending',
+            'recommendation' => null,
+            'technical_score' => null,
+            'attitude_score' => null,
+            'culture_score' => null,
+            'overall_score' => null,
+            'strengths' => null,
+            'weaknesses' => null,
+            'note' => null,
+        ]);
     }
 }

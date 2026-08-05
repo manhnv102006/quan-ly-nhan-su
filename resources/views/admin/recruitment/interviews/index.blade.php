@@ -167,61 +167,73 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div>
-                                        <label class="{{ $labelClass }}">Kết quả</label>
-                                        <select name="result" required class="{{ $inputClass }}">
-                                            @foreach ($resultLabels as $value => $resultText)
-                                                <option value="{{ $value }}" @selected($interview->result === $value)>{{ $resultText }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="{{ $labelClass }}">Đề xuất</label>
-                                        <select name="recommendation" class="{{ $inputClass }}">
-                                            @foreach ($recommendationLabels as $value => $recText)
-                                                <option value="{{ $value }}" @selected((string) $interview->recommendation === (string) $value)>{{ $recText }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
                                 </div>
 
-                                <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                    <p class="col-span-full text-xs text-slate-500">
-                                        Bắt buộc nhập đủ 4 tiêu chí khi trạng thái <strong>Đã phỏng vấn</strong> hoặc kết quả <strong>Đạt / Không đạt</strong>.
-                                    </p>
-                                    @foreach ($scoreFields as $field => $scoreLabel)
-                                        <div>
-                                            <label class="{{ $labelClass }}">Điểm {{ $scoreLabel }} (0–10) <span class="text-red-600">*</span></label>
-                                            <input type="number" min="0" max="10" step="1" name="{{ $field }}" value="{{ old($field, $interview->{$field}) }}" class="{{ $inputClass }} @error($field) border-red-400 @enderror">
-                                            @error($field)
-                                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-                                    @endforeach
-                                </div>
+                                <p data-interview-no-show-hint
+                                   @class(['mt-3 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-800', 'hidden' => $interview->status !== 'no_show'])>
+                                    Ứng viên không tham dự — chỉ cần lưu trạng thái, không cần chấm điểm hay nhập kết quả.
+                                </p>
 
-                                <div class="mt-3 space-y-3 border-t border-slate-200 pt-3">
-                                    <p class="text-xs font-semibold text-slate-500">Ghi chú chi tiết</p>
-                                    <div>
-                                        <label class="{{ $labelClass }}">Ghi chú</label>
-                                        <textarea name="note" rows="2" class="{{ $inputClass }} resize-y">{{ $interview->note }}</textarea>
-                                    </div>
-                                    <div class="grid gap-3 sm:grid-cols-2">
+                                <div data-interview-evaluation-panel @class(['mt-3 space-y-3', 'hidden' => $interview->status === 'no_show'])>
+                                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                         <div>
-                                            <label class="{{ $labelClass }}">Điểm mạnh</label>
-                                            <textarea name="strengths" rows="2" class="{{ $inputClass }} resize-y">{{ $interview->strengths }}</textarea>
+                                            <label class="{{ $labelClass }}">Kết quả</label>
+                                            <select name="result" required class="{{ $inputClass }}">
+                                                @foreach ($resultLabels as $value => $resultText)
+                                                    <option value="{{ $value }}" @selected($interview->result === $value)>{{ $resultText }}</option>
+                                                @endforeach
+                                            </select>
                                         </div>
                                         <div>
-                                            <label class="{{ $labelClass }}">Cần cải thiện</label>
-                                            <textarea name="weaknesses" rows="2" class="{{ $inputClass }} resize-y">{{ $interview->weaknesses }}</textarea>
+                                            <label class="{{ $labelClass }}">Đề xuất</label>
+                                            <select name="recommendation" class="{{ $inputClass }}">
+                                                @foreach ($recommendationLabels as $value => $recText)
+                                                    <option value="{{ $value }}" @selected((string) $interview->recommendation === (string) $value)>{{ $recText }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                        <p class="col-span-full text-xs text-slate-500">
+                                            Bắt buộc nhập đủ 4 tiêu chí khi trạng thái <strong>Đã phỏng vấn</strong> hoặc kết quả <strong>Đạt / Không đạt</strong>.
+                                        </p>
+                                        @foreach ($scoreFields as $field => $scoreLabel)
+                                            <div>
+                                                <label class="{{ $labelClass }}">Điểm {{ $scoreLabel }} (0–10) <span class="text-red-600">*</span></label>
+                                                <input type="number" min="0" max="10" step="1" name="{{ $field }}" value="{{ old($field, $interview->{$field}) }}" class="{{ $inputClass }} @error($field) border-red-400 @enderror">
+                                                @error($field)
+                                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                    <div class="space-y-3 border-t border-slate-200 pt-3">
+                                        <p class="text-xs font-semibold text-slate-500">Ghi chú chi tiết</p>
+                                        <div>
+                                            <label class="{{ $labelClass }}">Ghi chú</label>
+                                            <textarea name="note" rows="2" class="{{ $inputClass }} resize-y">{{ $interview->note }}</textarea>
+                                        </div>
+                                        <div class="grid gap-3 sm:grid-cols-2">
+                                            <div>
+                                                <label class="{{ $labelClass }}">Điểm mạnh</label>
+                                                <textarea name="strengths" rows="2" class="{{ $inputClass }} resize-y">{{ $interview->strengths }}</textarea>
+                                            </div>
+                                            <div>
+                                                <label class="{{ $labelClass }}">Cần cải thiện</label>
+                                                <textarea name="weaknesses" rows="2" class="{{ $inputClass }} resize-y">{{ $interview->weaknesses }}</textarea>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
                                     <p class="text-xs text-slate-500">Kết quả Đạt / Không đạt sẽ cập nhật trạng thái ứng viên.</p>
-                                    <button type="submit" class="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700">
-                                        Lưu kết quả
+                                    <button type="submit"
+                                            data-interview-submit
+                                            class="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700">
+                                        {{ $interview->status === 'no_show' ? 'Lưu trạng thái' : 'Lưu kết quả' }}
                                     </button>
                                 </div>
                             </form>

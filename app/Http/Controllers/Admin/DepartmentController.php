@@ -22,14 +22,17 @@ class DepartmentController extends Controller
      */
     private function departmentValidationRules(?Department $department = null): array
     {
-        $minMax = Department::MIN_MAX_EMPLOYEES;
-        $maxMax = Department::MAX_MAX_EMPLOYEES;
+        $minMaxEmployees = Department::MIN_MAX_EMPLOYEES;
+        $maxMaxEmployees = Department::MAX_MAX_EMPLOYEES;
+        $minMaxManagers = Department::MIN_MAX_MANAGERS;
+        $maxMaxManagers = Department::MAX_MAX_MANAGERS;
 
         return [
             'department_code' => 'required|string|max:20|unique:departments,department_code'.($department ? ','.$department->id : ''),
             'department_name' => 'required|string|max:100',
             'description' => 'nullable|string',
-            'max_employees' => "required|integer|min:{$minMax}|max:{$maxMax}",
+            'max_employees' => "required|integer|min:{$minMaxEmployees}|max:{$maxMaxEmployees}",
+            'max_managers' => "required|integer|min:{$minMaxManagers}|max:{$maxMaxManagers}",
             'manager_id' => 'nullable|exists:employees,id',
             'status' => 'required|in:active,inactive',
         ];
@@ -50,6 +53,10 @@ class DepartmentController extends Controller
             'max_employees.integer' => 'Giới hạn nhân viên phải là số nguyên',
             'max_employees.min' => 'Giới hạn nhân viên tối thiểu là '.Department::MIN_MAX_EMPLOYEES,
             'max_employees.max' => 'Giới hạn nhân viên tối đa là '.Department::MAX_MAX_EMPLOYEES,
+            'max_managers.required' => 'Giới hạn quản lý là bắt buộc',
+            'max_managers.integer' => 'Giới hạn quản lý phải là số nguyên',
+            'max_managers.min' => 'Giới hạn quản lý tối thiểu là '.Department::MIN_MAX_MANAGERS,
+            'max_managers.max' => 'Giới hạn quản lý tối đa là '.Department::MAX_MAX_MANAGERS,
             'manager_id.exists' => 'Quản lý được chọn không hợp lệ',
             'status.required' => 'Trạng thái là bắt buộc',
             'status.in' => 'Trạng thái không hợp lệ',
@@ -86,6 +93,15 @@ class DepartmentController extends Controller
 
         $validated['manager_id'] = $validated['manager_id'] ?: null;
         $validated['max_employees'] = (int) $validated['max_employees'];
+        $validated['max_managers'] = (int) $validated['max_managers'];
+
+        if ($validated['manager_id'] && $validated['max_managers'] < 1) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'manager_id' => 'Cần tăng giới hạn quản lý trước khi chỉ định quản lý phòng ban.',
+                ]);
+        }
 
         Department::create($validated);
 
@@ -131,9 +147,32 @@ class DepartmentController extends Controller
                 ]);
         }
 
+        $currentManagerCount = $department->managerCount();
+
+        if ((int) $validated['max_managers'] < $currentManagerCount) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'max_managers' => "Giới hạn không được nhỏ hơn số quản lý hiện tại ({$currentManagerCount}).",
+                ]);
+        }
+
+        $newManagerId = $validated['manager_id'] ?: null;
+        if ($newManagerId && ! $department->hasManagerCapacity(null, (int) $newManagerId)) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'manager_id' => sprintf(
+                        'Phòng ban đã đủ tối đa %d quản lý.',
+                        (int) $validated['max_managers'],
+                    ),
+                ]);
+        }
+
         $validated['department_code'] = strtoupper($validated['department_code']);
-        $validated['manager_id'] = $validated['manager_id'] ?: null;
+        $validated['manager_id'] = $newManagerId;
         $validated['max_employees'] = (int) $validated['max_employees'];
+        $validated['max_managers'] = (int) $validated['max_managers'];
 
         $department->update($validated);
 

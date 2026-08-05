@@ -157,7 +157,7 @@ class RecruitmentController extends Controller
         $manager = $this->managerScope->resolveManagerEmployeeOrFail(Auth::user());
         $this->ensureManagerCanAccessInterview($interview, $manager);
 
-        $validated = $request->validated();
+        $validated = Interview::normalizedEvaluationPayload($request->validated());
 
         DB::transaction(function () use ($interview, $validated) {
             $interview->update([

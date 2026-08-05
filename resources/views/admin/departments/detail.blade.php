@@ -87,7 +87,17 @@
                                 </label>
 
                                 <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
-                                    {{ $department->maxEmployeesLimit() }} người
+                                    {{ $department->employeeCount() }}/{{ $department->maxEmployeesLimit() }} người
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-500 mb-2">
+                                    Giới hạn quản lý
+                                </label>
+
+                                <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    {{ $department->managerCount() }}/{{ $department->maxManagersLimit() }} người
                                 </div>
                             </div>
 

@@ -71,7 +71,7 @@
                     @enderror
                 </div>
 
-                @include('admin.departments.partials.max-employees-field')
+                @include('admin.departments.partials.department-limits-fields')
 
                 <div>
                     <label for="manager_id" class="block text-sm font-semibold text-slate-700 mb-2">
@@ -151,6 +151,8 @@
 
             const minMaxEmployees = {{ \App\Models\Department::MIN_MAX_EMPLOYEES }};
             const maxMaxEmployees = {{ \App\Models\Department::MAX_MAX_EMPLOYEES }};
+            const minMaxManagers = {{ \App\Models\Department::MIN_MAX_MANAGERS }};
+            const maxMaxManagers = {{ \App\Models\Department::MAX_MAX_MANAGERS }};
             const departmentCodePattern = /^[A-Z0-9_-]+$/;
 
             function setFieldError(input, message) {
@@ -177,6 +179,7 @@
                 const departmentCode = form.querySelector('#department_code');
                 const departmentName = form.querySelector('#department_name');
                 const maxEmployees = form.querySelector('#max_employees');
+                const maxManagers = form.querySelector('#max_managers');
                 const status = form.querySelector('#status');
 
                 const codeValue = departmentCode.value.trim().toUpperCase();
@@ -192,6 +195,13 @@
                 if (maxEmployees.value.trim() === '') { setFieldError(maxEmployees, 'Vui lòng nhập giới hạn nhân viên.'); valid = false; }
                 else if (!Number.isInteger(maxEmployeesValue) || maxEmployeesValue < minMaxEmployees || maxEmployeesValue > maxMaxEmployees) {
                     setFieldError(maxEmployees, 'Giới hạn nhân viên phải từ ' + minMaxEmployees + ' đến ' + maxMaxEmployees + '.');
+                    valid = false;
+                }
+
+                const maxManagersValue = Number(maxManagers.value);
+                if (maxManagers.value.trim() === '') { setFieldError(maxManagers, 'Vui lòng nhập giới hạn quản lý.'); valid = false; }
+                else if (!Number.isInteger(maxManagersValue) || maxManagersValue < minMaxManagers || maxManagersValue > maxMaxManagers) {
+                    setFieldError(maxManagers, 'Giới hạn quản lý phải từ ' + minMaxManagers + ' đến ' + maxMaxManagers + '.');
                     valid = false;
                 }
 

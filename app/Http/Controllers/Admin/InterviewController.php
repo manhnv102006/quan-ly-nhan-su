@@ -151,7 +151,7 @@ class InterviewController extends Controller
 
     public function update(UpdateInterviewEvaluationRequest $request, Interview $interview): RedirectResponse
     {
-        $validated = $request->validated();
+        $validated = Interview::normalizedEvaluationPayload($request->validated());
 
         DB::transaction(function () use ($interview, $validated) {
             $interview->update([

@@ -71,7 +71,7 @@
                     @enderror
                 </div>
 
-                @include('admin.departments.partials.max-employees-field', ['department' => $department])
+                @include('admin.departments.partials.department-limits-fields', ['department' => $department])
 
                 <div>
                     <label for="manager_id" class="block text-sm font-semibold text-slate-700 mb-2">
@@ -146,6 +146,7 @@
 
     @php
         $minMaxEmployees = max(\App\Models\Department::MIN_MAX_EMPLOYEES, (int) ($department->employees_count ?? 0));
+        $minMaxManagers = max(\App\Models\Department::MIN_MAX_MANAGERS, (int) $department->managerCount());
     @endphp
 
     <script>
@@ -155,6 +156,8 @@
 
             const minMaxEmployees = {{ $minMaxEmployees }};
             const maxMaxEmployees = {{ \App\Models\Department::MAX_MAX_EMPLOYEES }};
+            const minMaxManagers = {{ $minMaxManagers }};
+            const maxMaxManagers = {{ \App\Models\Department::MAX_MAX_MANAGERS }};
             const departmentCodePattern = /^[A-Z0-9_-]+$/;
 
             function setFieldError(input, message) {
@@ -181,6 +184,7 @@
                 const departmentCode = form.querySelector('#department_code');
                 const departmentName = form.querySelector('#department_name');
                 const maxEmployees = form.querySelector('#max_employees');
+                const maxManagers = form.querySelector('#max_managers');
                 const status = form.querySelector('#status');
 
                 const codeValue = departmentCode.value.trim().toUpperCase();
@@ -213,6 +217,18 @@
                         ? 'Giới hạn không được nhỏ hơn số nhân viên hiện tại (' + minMaxEmployees + ') và tối đa là ' + maxMaxEmployees + '.'
                         : 'Giới hạn nhân viên phải từ ' + minMaxEmployees + ' đến ' + maxMaxEmployees + '.';
                     setFieldError(maxEmployees, minMessage);
+                    valid = false;
+                }
+
+                const maxManagersValue = Number(maxManagers.value);
+                if (maxManagers.value.trim() === '') {
+                    setFieldError(maxManagers, 'Vui lòng nhập giới hạn quản lý.');
+                    valid = false;
+                } else if (!Number.isInteger(maxManagersValue) || maxManagersValue < minMaxManagers || maxManagersValue > maxMaxManagers) {
+                    const minManagerMessage = minMaxManagers > {{ \App\Models\Department::MIN_MAX_MANAGERS }}
+                        ? 'Giới hạn không được nhỏ hơn số quản lý hiện tại (' + minMaxManagers + ') và tối đa là ' + maxMaxManagers + '.'
+                        : 'Giới hạn quản lý phải từ ' + minMaxManagers + ' đến ' + maxMaxManagers + '.';
+                    setFieldError(maxManagers, minManagerMessage);
                     valid = false;
                 }
 

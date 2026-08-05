@@ -111,6 +111,10 @@
                             </th>
 
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">
+                                Giới hạn QL
+                            </th>
+
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">
                                 Quản lý
                             </th>
 
@@ -165,6 +169,18 @@
                                     'bg-amber-100 text-amber-700' => $count >= $limit,
                                 ])>
                                     {{ $count }}/{{ $limit }}
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                @php($managerCount = $dept->managerCount())
+                                @php($managerLimit = $dept->maxManagersLimit())
+                                <span @class([
+                                    'inline-flex px-3 py-1 rounded-full text-xs font-semibold',
+                                    'bg-emerald-100 text-emerald-700' => $managerCount < $managerLimit,
+                                    'bg-amber-100 text-amber-700' => $managerCount >= $managerLimit,
+                                ])>
+                                    {{ $managerCount }}/{{ $managerLimit }}
                                 </span>
                             </td>
 
@@ -237,7 +253,7 @@
 
                         <tr>
 
-                            <td colspan="9"
+                            <td colspan="10"
                                 class="text-center py-12 text-slate-400">
 
                                 Chưa có phòng ban nào

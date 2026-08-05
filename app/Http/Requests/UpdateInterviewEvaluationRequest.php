@@ -12,8 +12,21 @@ class UpdateInterviewEvaluationRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (! Interview::statusSkipsEvaluation($this->input('status'))) {
+            return;
+        }
+
+        $this->merge(Interview::normalizedEvaluationPayload([
+            'status' => $this->input('status'),
+        ]));
+    }
+
     public function rules(): array
     {
+        $skipsEvaluation = Interview::statusSkipsEvaluation($this->input('status'));
+
         $requiresScores = Interview::evaluationScoresRequired(
             $this->input('status'),
             $this->input('result'),
@@ -25,7 +38,9 @@ class UpdateInterviewEvaluationRequest extends FormRequest
 
         return [
             'status' => ['required', 'in:scheduled,completed,cancelled,no_show'],
-            'result' => ['required', 'in:pending,passed,failed'],
+            'result' => $skipsEvaluation
+                ? ['nullable', 'in:pending,passed,failed']
+                : ['required', 'in:pending,passed,failed'],
             'technical_score' => $scoreRules,
             'attitude_score' => $scoreRules,
             'culture_score' => $scoreRules,
