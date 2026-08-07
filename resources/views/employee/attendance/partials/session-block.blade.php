@@ -42,7 +42,18 @@
 
     @if (($session['pending_late_minutes'] ?? 0) > 0 && ! $session['check_in'])
         <p class="mt-2 text-xs font-semibold text-rose-600">
-            Đang trễ {{ $session['pending_late_minutes'] }} phút (sau {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút miễn trừ)
+            Đang trễ {{ $session['pending_late_minutes'] }} phút (sau {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút miễn trừ) — sẽ bị trừ lương theo số phút muộn
+        </p>
+    @endif
+
+    @if (($session['late_minutes'] ?? 0) > 0 && $session['check_in'])
+        <p class="mt-2 text-xs font-semibold text-amber-700">
+            Đã ghi nhận muộn {{ $session['late_minutes'] }} phút
+            @if ($session['late_minutes'] > \App\Services\PayrollService::LATE_FULL_DAY_THRESHOLD_MINUTES)
+                — vượt {{ \App\Services\PayrollService::LATE_FULL_DAY_THRESHOLD_MINUTES / 60 }} giờ, trừ nguyên 1 ngày công
+            @else
+                — trừ lương tương ứng {{ $session['late_minutes'] }} phút
+            @endif
         </p>
     @endif
 

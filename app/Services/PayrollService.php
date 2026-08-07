@@ -26,6 +26,11 @@ class PayrollService
 
     private const OVERTIME_RATE_MULTIPLIER = 1.5;
 
+    public const WORK_HOURS_PER_DAY = 8;
+
+    /** Muộn quá số phút này trong ngày → trừ nguyên 1 ngày công. */
+    public const LATE_FULL_DAY_THRESHOLD_MINUTES = 180;
+
     /**
      * Tự động tính lương cho toàn bộ nhân viên hoạt động trong một kỳ lương.
      *
@@ -108,11 +113,6 @@ class PayrollService
                 ->whereIn('status', ['present', 'late'])
                 ->sum('work_ratio');
 
-            $lateDays = $employee->attendances()
-                ->whereBetween('attendance_date', [$startDate, $endDate])
-                ->where('status', 'late')
-                ->count();
-
             // D. Nghỉ phép: Tính số ngày nghỉ có lương và không lương
             $absentRecords = $employee->attendances()
                 ->whereBetween('attendance_date', [$startDate, $endDate])
@@ -192,8 +192,15 @@ class PayrollService
                 ? round(($contractSalary / $standardWorkingDays) * $actualWorkingDays, 0)
                 : $contractSalary;
 
-            // G. Khấu trừ: Phạt đi trễ (50.000 VND / lần) + Phạt nghỉ không phép (300.000 VND / ngày)
-            $deduction = ($lateDays * 50000) + ($unpaidLeaveDays * 300000);
+            // G. Khấu trừ: Phạt đi muộn theo lương giờ + Phạt nghỉ không phép (300.000 VND / ngày)
+            $latePenalty = $this->calculateLatePenaltyForPeriod(
+                $employee,
+                $startDate,
+                $endDate,
+                $contractSalary,
+                $standardWorkingDays
+            );
+            $deduction = $latePenalty['amount'] + ($unpaidLeaveDays * 300000);
 
             // H. Thưởng KPI: Tính điểm KPI trung bình và quy đổi thưởng
             $averageKpiScore = $employee->employeeKpis()
@@ -235,10 +242,7 @@ class PayrollService
                 ->whereBetween('work_date', [$startDate, $endDate])
                 ->get(['total_hours', 'rate_multiplier']);
 
-            $standardMonthlyHours = $standardWorkingDays * 8;
-            $hourlyRate = ($contractSalary > 0 && $standardMonthlyHours > 0)
-                ? ($contractSalary / $standardMonthlyHours)
-                : 0;
+            $hourlyRate = self::hourlyRate($contractSalary, $standardWorkingDays);
             
             $overtimeHours = 0;
             $overtimePay = 0;
@@ -455,10 +459,7 @@ class PayrollService
         }
 
         $standardWorkingDays = $payroll->standard_working_days;
-        $standardMonthlyHours = $standardWorkingDays * 8;
-        $hourlyRate = ($contractSalary > 0 && $standardMonthlyHours > 0)
-            ? ($contractSalary / $standardMonthlyHours)
-            : 0;
+        $hourlyRate = self::hourlyRate($contractSalary, $standardWorkingDays);
 
         $overtimeHours = 0;
         $overtimePay = 0;
@@ -485,5 +486,132 @@ class PayrollService
             'overtime_pay' => $overtimePay,
             'total_salary' => max(0, $totalSalary)
         ]);
+    }
+
+    public static function hourlyRate(float $contractSalary, int $standardWorkingDays): float
+    {
+        $standardMonthlyHours = $standardWorkingDays * self::WORK_HOURS_PER_DAY;
+
+        return ($contractSalary > 0 && $standardMonthlyHours > 0)
+            ? ($contractSalary / $standardMonthlyHours)
+            : 0;
+    }
+
+    public static function dailyRate(float $contractSalary, int $standardWorkingDays): float
+    {
+        return ($contractSalary > 0 && $standardWorkingDays > 0)
+            ? ($contractSalary / $standardWorkingDays)
+            : 0;
+    }
+
+    public static function latePenaltyForMinutes(int $lateMinutes, float $contractSalary, int $standardWorkingDays): float
+    {
+        if ($lateMinutes <= 0) {
+            return 0;
+        }
+
+        if ($lateMinutes > self::LATE_FULL_DAY_THRESHOLD_MINUTES) {
+            return round(self::dailyRate($contractSalary, $standardWorkingDays), 0);
+        }
+
+        return round(($lateMinutes / 60) * self::hourlyRate($contractSalary, $standardWorkingDays), 0);
+    }
+
+    /**
+     * @return array{amount: float, late_days: int, total_late_minutes: int, full_day_count: int}
+     */
+    public function calculateLatePenaltyForPeriod(
+        Employee $employee,
+        $startDate,
+        $endDate,
+        float $contractSalary,
+        int $standardWorkingDays
+    ): array {
+        $lateAttendances = $employee->attendances()
+            ->whereBetween('attendance_date', [$startDate, $endDate])
+            ->where('status', 'late')
+            ->get(['late_minutes']);
+
+        $amount = 0.0;
+        $totalLateMinutes = 0;
+        $fullDayCount = 0;
+
+        foreach ($lateAttendances as $attendance) {
+            $minutes = (int) $attendance->late_minutes;
+            $totalLateMinutes += $minutes;
+
+            if ($minutes > self::LATE_FULL_DAY_THRESHOLD_MINUTES) {
+                $fullDayCount++;
+            }
+
+            $amount += self::latePenaltyForMinutes($minutes, $contractSalary, $standardWorkingDays);
+        }
+
+        return [
+            'amount' => $amount,
+            'late_days' => $lateAttendances->count(),
+            'total_late_minutes' => $totalLateMinutes,
+            'full_day_count' => $fullDayCount,
+        ];
+    }
+
+    /**
+     * @return array{amount: float, late_days: int, total_late_minutes: int, full_day_count: int}
+     */
+    public function latePenaltyForPayroll(Payroll $payroll): array
+    {
+        $period = $payroll->payrollPeriod;
+        $employee = $payroll->employee;
+
+        if (! $period || ! $employee) {
+            return [
+                'amount' => 0,
+                'late_days' => 0,
+                'total_late_minutes' => 0,
+                'full_day_count' => 0,
+            ];
+        }
+
+        $employee->loadMissing(['contracts.contractType', 'position']);
+
+        $contractSalary = $this->resolveContractSalary(
+            $employee,
+            $period->start_date,
+            $period->end_date
+        );
+
+        return $this->calculateLatePenaltyForPeriod(
+            $employee,
+            $period->start_date,
+            $period->end_date,
+            $contractSalary,
+            (int) $payroll->standard_working_days
+        );
+    }
+
+    private function resolveContractSalary(Employee $employee, $startDate, $endDate): float
+    {
+        $activeContract = $employee->contracts
+            ->filter(function ($contract) use ($startDate, $endDate) {
+                $contractStart = $contract->start_date;
+                $contractEnd = $contract->end_date;
+
+                $startsBeforePeriodEnds = ! $contractStart || $contractStart <= $endDate;
+                $endsAfterPeriodStarts = ! $contractEnd || $contractEnd >= $startDate;
+
+                return $startsBeforePeriodEnds && $endsAfterPeriodStarts;
+            })
+            ->sortByDesc('start_date')
+            ->first();
+
+        if ($activeContract) {
+            return (float) $activeContract->salary;
+        }
+
+        if ($employee->position) {
+            return (float) $employee->position->base_salary;
+        }
+
+        return 0;
     }
 }

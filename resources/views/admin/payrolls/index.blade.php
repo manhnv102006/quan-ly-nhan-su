@@ -107,13 +107,7 @@
                     <tbody>
                         @forelse ($payrolls as $payroll)
                             @php
-                                $lateDays = $payroll->employee?->attendances()
-                                    ->whereBetween('attendance_date', [
-                                        $payroll->payrollPeriod?->start_date,
-                                        $payroll->payrollPeriod?->end_date
-                                    ])
-                                    ->where('status', 'late')
-                                    ->count() ?? 0;
+                                $latePenalty = $payroll->latePenaltyBreakdown();
                             @endphp
                             <tr class="border-t border-slate-100 hover:bg-slate-50 transition">
                                 <td class="px-6 py-4 font-medium text-slate-700">
@@ -186,8 +180,9 @@
                                                     'overtime_hours' => $payroll->overtime_hours,
                                                     'overtime_pay' => number_format($payroll->overtime_pay, 0, ',', '.'),
                                                     'deduction' => number_format($payroll->deduction, 0, ',', '.'),
-                                                    'late_days' => $lateDays,
-                                                    'late_fine' => number_format($lateDays * 50000, 0, ',', '.'),
+                                                    'late_days' => $latePenalty['late_days'],
+                                                    'total_late_minutes' => $latePenalty['total_late_minutes'],
+                                                    'late_fine' => number_format($latePenalty['amount'], 0, ',', '.'),
                                                     'unpaid_leave_fine' => number_format($payroll->unpaid_leave_days * 300000, 0, ',', '.'),
                                                     'standard_working_days' => $payroll->standard_working_days,
                                                     'actual_working_days' => $payroll->actual_working_days,
@@ -477,7 +472,7 @@
             let totalIncome = basic + allowance + bonus + overtime;
             
             document.getElementById('modalTotalIncome').innerText = totalIncome.toLocaleString('vi-VN') + ' ₫';
-            document.getElementById('modalLateLabel').innerText = 'Phạt đi muộn (' + data.late_days + ' lần):';
+            document.getElementById('modalLateLabel').innerText = 'Phạt đi muộn (' + data.late_days + ' lần, ' + data.total_late_minutes + ' phút):';
             document.getElementById('modalLateFine').innerText = '-' + data.late_fine + ' ₫';
             document.getElementById('modalLeaveLabel').innerText = 'Phạt nghỉ quá phép (' + data.unpaid_leave_days + ' ngày):';
             document.getElementById('modalLeaveFine').innerText = '-' + data.unpaid_leave_fine + ' ₫';

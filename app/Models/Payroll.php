@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\InsuranceService;
+use App\Services\PayrollService;
 use App\Services\TaxService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -262,11 +263,20 @@ class Payroll extends Model
     }
 
     /**
+     * @return array{amount: float, late_days: int, total_late_minutes: int, full_day_count: int}
+     */
+    public function latePenaltyBreakdown(): array
+    {
+        return app(PayrollService::class)->latePenaltyForPayroll($this);
+    }
+
+    /**
      * @return array<string, mixed>
      */
-    public function toModalPayload(int $lateDays, string $pdfUrl): array
+    public function toModalPayload(string $pdfUrl): array
     {
         $breakdown = $this->payslipBreakdown();
+        $latePenalty = $this->latePenaltyBreakdown();
         $fmt = fn (float $n) => number_format($n, 0, ',', '.');
         $netSalary = $breakdown['net_salary'];
         $isPaid = in_array($this->status, ['paid', 'closed']);
@@ -297,8 +307,9 @@ class Payroll extends Model
             'overtime_hours' => (float) $this->overtime_hours,
             'overtime_pay' => $fmt((float) $this->overtime_pay),
             'deduction' => $fmt((float) $this->deduction),
-            'late_days' => $lateDays,
-            'late_fine' => $fmt($lateDays * 50000),
+            'late_days' => $latePenalty['late_days'],
+            'total_late_minutes' => $latePenalty['total_late_minutes'],
+            'late_fine' => $fmt($latePenalty['amount']),
             'unpaid_leave_fine' => $fmt($this->unpaid_leave_days * 300000),
             'standard_working_days' => $this->standard_working_days,
             'actual_working_days' => $this->actual_working_days,

@@ -77,11 +77,24 @@
             @endif
         </div>
 
+        {{-- Quy định phạt đi muộn --}}
+        <div class="bg-amber-50 border border-amber-200 rounded-3xl p-5 sm:p-6">
+            <h2 class="text-sm font-bold text-amber-900 mb-2">Quy định phạt đi muộn</h2>
+            <ul class="text-xs text-amber-800 space-y-1.5 list-disc list-inside">
+                <li>Miễn trừ <strong>{{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút</strong> đầu sau giờ bắt đầu ca — sau đó ghi nhận phút đi muộn.</li>
+                <li>
+                    <strong>Lương/giờ</strong> = Lương hợp đồng ÷ (Ngày công chuẩn trong kỳ × {{ \App\Services\PayrollService::WORK_HOURS_PER_DAY }}).
+                </li>
+                <li>Đi muộn <strong>30 phút</strong> → trừ lương tương ứng <strong>30 phút</strong>; muộn <strong>1 giờ</strong> → trừ lương <strong>1 giờ</strong>.</li>
+                <li>Đi muộn quá <strong>{{ \App\Services\PayrollService::LATE_FULL_DAY_THRESHOLD_MINUTES / 60 }} giờ</strong> trong ngày → trừ nguyên <strong>1 ngày công</strong>.</li>
+            </ul>
+        </div>
+
         {{-- Trạng thái + nút chấm công --}}
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
             <h2 class="text-base font-semibold text-slate-800 mb-1">Trạng thái hôm nay</h2>
             <p class="text-xs text-slate-500 mb-4">
-                Check-in đúng giờ ca · Miễn trừ {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút đi muộn · Bắt buộc check-out thủ công khi hết giờ ca
+                Check-in đúng giờ ca · Miễn trừ {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút đi muộn · Phạt theo lương giờ (xem quy định bên trên) · Bắt buộc check-out thủ công khi hết giờ ca
             </p>
 
             @if (($isBlockedDayOff ?? false))

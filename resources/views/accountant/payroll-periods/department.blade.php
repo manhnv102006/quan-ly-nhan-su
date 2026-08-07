@@ -115,13 +115,6 @@
                     <tbody>
                         @forelse ($payrolls as $payroll)
                             @php
-                                $lateDays = $payroll->employee?->attendances()
-                                    ->whereBetween('attendance_date', [
-                                        $payroll->payrollPeriod?->start_date,
-                                        $payroll->payrollPeriod?->end_date
-                                    ])
-                                    ->where('status', 'late')
-                                    ->count() ?? 0;
                                 $payslip = $payroll->payslipBreakdown();
                             @endphp
                             <tr class="border-t border-slate-100 hover:bg-slate-50 transition">
@@ -160,7 +153,7 @@
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex justify-center items-center gap-2">
                                         <button type="button"
-                                                onclick="openPayrollModal({{ json_encode($payroll->toModalPayload($lateDays, route('accountant.payrolls.pdf', $payroll))) }})"
+                                                onclick="openPayrollModal({{ json_encode($payroll->toModalPayload(route('accountant.payrolls.pdf', $payroll))) }})"
                                                 class="px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-semibold transition flex items-center gap-1"
                                                 title="Xem chi tiết">
                                             👁️ Xem chi tiết
@@ -483,7 +476,7 @@
             let totalIncome = num(data.gross_income);
             
             document.getElementById('modalTotalIncome').innerText = totalIncome.toLocaleString('vi-VN') + ' ₫';
-            document.getElementById('modalLateLabel').innerText = 'Phạt đi muộn (' + data.late_days + ' lần):';
+            document.getElementById('modalLateLabel').innerText = 'Phạt đi muộn (' + data.late_days + ' lần, ' + data.total_late_minutes + ' phút):';
             document.getElementById('modalLateFine').innerText = '-' + data.late_fine + ' ₫';
             document.getElementById('modalLeaveLabel').innerText = 'Phạt nghỉ quá phép (' + data.unpaid_leave_days + ' ngày):';
             document.getElementById('modalLeaveFine').innerText = '-' + data.unpaid_leave_fine + ' ₫';

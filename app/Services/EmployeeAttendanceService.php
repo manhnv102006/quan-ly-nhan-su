@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class EmployeeAttendanceService
 {
-    public const GRACE_MINUTES = 5;
+    public const GRACE_MINUTES = 15;
 
     public const EARLY_CHECK_IN_MINUTES = 60;
 
