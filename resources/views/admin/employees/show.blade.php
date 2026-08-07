@@ -328,6 +328,10 @@
                             <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-xs">↔</span>
                             Lịch sử điều chuyển
                         </a>
+                        <a href="#lich-ca-lam" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700 transition">
+                            <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">🕐</span>
+                            Lịch ca làm
+                        </a>
                     </nav>
                 </div>
 
@@ -342,6 +346,8 @@
             </div>
 
         </div>
+
+        @include('admin.employees.partials.shift-schedule')
 
         <div id="tai-khoan-lien-ket" class="bg-white rounded-3xl shadow-sm border border-slate-100">
             <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">

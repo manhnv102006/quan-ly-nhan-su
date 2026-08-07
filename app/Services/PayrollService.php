@@ -200,7 +200,14 @@ class PayrollService
                 $contractSalary,
                 $standardWorkingDays
             );
-            $deduction = $latePenalty['amount'] + ($unpaidLeaveDays * 300000);
+            $earlyPenalty = $this->calculateEarlyPenaltyForPeriod(
+                $employee,
+                $startDate,
+                $endDate,
+                $contractSalary,
+                $standardWorkingDays
+            );
+            $deduction = $latePenalty['amount'] + $earlyPenalty['amount'] + ($unpaidLeaveDays * 300000);
 
             // H. Thưởng KPI: Tính điểm KPI trung bình và quy đổi thưởng
             $averageKpiScore = $employee->employeeKpis()
@@ -515,6 +522,79 @@ class PayrollService
         }
 
         return round(($lateMinutes / 60) * self::hourlyRate($contractSalary, $standardWorkingDays), 0);
+    }
+
+    public static function earlyPenaltyForMinutes(int $earlyMinutes, float $contractSalary, int $standardWorkingDays): float
+    {
+        if ($earlyMinutes <= 0) {
+            return 0;
+        }
+
+        return round(($earlyMinutes / 60) * self::hourlyRate($contractSalary, $standardWorkingDays), 0);
+    }
+
+    /**
+     * @return array{amount: float, early_days: int, total_early_minutes: int}
+     */
+    public function calculateEarlyPenaltyForPeriod(
+        Employee $employee,
+        $startDate,
+        $endDate,
+        float $contractSalary,
+        int $standardWorkingDays
+    ): array {
+        $earlyAttendances = $employee->attendances()
+            ->whereBetween('attendance_date', [$startDate, $endDate])
+            ->where('early_minutes', '>', 0)
+            ->get(['early_minutes']);
+
+        $amount = 0.0;
+        $totalEarlyMinutes = 0;
+
+        foreach ($earlyAttendances as $attendance) {
+            $minutes = (int) $attendance->early_minutes;
+            $totalEarlyMinutes += $minutes;
+            $amount += self::earlyPenaltyForMinutes($minutes, $contractSalary, $standardWorkingDays);
+        }
+
+        return [
+            'amount' => $amount,
+            'early_days' => $earlyAttendances->count(),
+            'total_early_minutes' => $totalEarlyMinutes,
+        ];
+    }
+
+    /**
+     * @return array{amount: float, early_days: int, total_early_minutes: int}
+     */
+    public function earlyPenaltyForPayroll(Payroll $payroll): array
+    {
+        $period = $payroll->payrollPeriod;
+        $employee = $payroll->employee;
+
+        if (! $period || ! $employee) {
+            return [
+                'amount' => 0,
+                'early_days' => 0,
+                'total_early_minutes' => 0,
+            ];
+        }
+
+        $employee->loadMissing(['contracts.contractType', 'position']);
+
+        $contractSalary = $this->resolveContractSalary(
+            $employee,
+            $period->start_date,
+            $period->end_date
+        );
+
+        return $this->calculateEarlyPenaltyForPeriod(
+            $employee,
+            $period->start_date,
+            $period->end_date,
+            $contractSalary,
+            (int) $payroll->standard_working_days
+        );
     }
 
     /**

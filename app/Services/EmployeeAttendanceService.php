@@ -16,6 +16,9 @@ class EmployeeAttendanceService
 {
     public const GRACE_MINUTES = 15;
 
+    /** Miễn trừ về sớm trước giờ tan ca — sau mốc này mới tính phút về sớm. */
+    public const EARLY_LEAVE_GRACE_MINUTES = 20;
+
     public const EARLY_CHECK_IN_MINUTES = 60;
 
     public function __construct(
@@ -165,6 +168,7 @@ class EmployeeAttendanceService
     {
         if ($isFullDay) {
             $this->performFullDayCheckOut($employee, $attendance, $now);
+            $attendance->early_minutes = (int) $attendance->morning_early_minutes + (int) $attendance->afternoon_early_minutes;
         } else {
             if (! $attendance->check_in) {
                 throw ValidationException::withMessages([
@@ -191,6 +195,17 @@ class EmployeeAttendanceService
         $this->overtimeSettlement->settleAfterCheckout($employee, $attendance->fresh(), $isFullDay);
 
         return $attendance->fresh();
+    }
+
+    public function calculateEarlyMinutes(Carbon $checkOut, Carbon $sessionEnd): int
+    {
+        $graceStart = $sessionEnd->copy()->subMinutes(self::EARLY_LEAVE_GRACE_MINUTES);
+
+        if ($checkOut->gte($graceStart)) {
+            return 0;
+        }
+
+        return (int) $checkOut->diffInMinutes($graceStart);
     }
 
     public function calculateLateMinutes(Carbon $checkIn, Carbon $sessionStart): int
@@ -281,12 +296,12 @@ class EmployeeAttendanceService
         if ($attendance->morning_check_in && ! $attendance->morning_check_out) {
             $sessionEnd = Carbon::parse($date)->setTime(12, 0);
             $this->assertCheckOutAfterCheckIn($now, Carbon::parse($attendance->morning_check_in));
-            $this->assertCanCheckOut($employee, $attendance, $now, $sessionEnd);
+            $this->assertCanCheckOut($employee, $attendance, $now, $sessionEnd, 'morning_early_minutes');
             $attendance->morning_check_out = $now;
         } elseif ($attendance->afternoon_check_in && ! $attendance->afternoon_check_out) {
             $sessionEnd = Carbon::parse($date)->setTime(17, 0);
             $this->assertCheckOutAfterCheckIn($now, Carbon::parse($attendance->afternoon_check_in));
-            $this->assertCanCheckOut($employee, $attendance, $now, $sessionEnd);
+            $this->assertCanCheckOut($employee, $attendance, $now, $sessionEnd, 'afternoon_early_minutes');
             $attendance->afternoon_check_out = $now;
         } else {
             throw ValidationException::withMessages([
@@ -312,22 +327,27 @@ class EmployeeAttendanceService
         }
     }
 
-    private function assertCanCheckOut(Employee $employee, Attendance $attendance, Carbon $now, Carbon $sessionEnd): void
-    {
-        if ($now->lt($sessionEnd)) {
-            $earlyLeave = \App\Models\EarlyLeaveRequest::where('employee_id', $employee->id)
-                ->whereDate('request_date', $attendance->attendance_date)
-                ->where('status', \App\Models\EarlyLeaveRequest::STATUS_APPROVED)
-                ->first();
-
-            if ($earlyLeave) {
-                // Được duyệt về sớm -> Không bị phạt
-                return;
-            }
-
-            // Về sớm không phép -> Phạt 0.5 công
-            $attendance->work_ratio = 0.5;
+    private function assertCanCheckOut(
+        Employee $employee,
+        Attendance $attendance,
+        Carbon $now,
+        Carbon $sessionEnd,
+        string $earlyField = 'early_minutes',
+    ): void {
+        if ($now->gte($sessionEnd)) {
+            return;
         }
+
+        $earlyLeave = \App\Models\EarlyLeaveRequest::where('employee_id', $employee->id)
+            ->whereDate('request_date', $attendance->attendance_date)
+            ->where('status', \App\Models\EarlyLeaveRequest::STATUS_APPROVED)
+            ->first();
+
+        if ($earlyLeave) {
+            return;
+        }
+
+        $attendance->{$earlyField} = $this->calculateEarlyMinutes($now, $sessionEnd);
     }
 
     private function assertCheckOutAfterCheckIn(Carbon $checkOutTime, Carbon $checkInTime): void

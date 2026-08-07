@@ -110,7 +110,7 @@ class EmployeePayrollController extends Controller
 
     /**
      * Tổng hợp dữ liệu chấm công trong kỳ lương để nhân viên xem chi tiết:
-     * tổng giờ làm, tổng ca, và từng ngày đi làm / đi muộn / nghỉ.
+     * tổng giờ làm, ngày đi làm, và từng ngày đi muộn / nghỉ.
      *
      * @return array{0: Collection, 1: array<string, mixed>}
      */
@@ -121,7 +121,6 @@ class EmployeePayrollController extends Controller
         $emptyStats = [
             'total_work_hours' => 0.0,
             'total_overtime_hours' => 0.0,
-            'total_shifts' => 0,
             'present_days' => 0,
             'late_days' => 0,
             'absent_days' => 0,
@@ -145,8 +144,7 @@ class EmployeePayrollController extends Controller
         $stats = [
             'total_work_hours' => (float) $attendances->sum('work_hours'),
             'total_overtime_hours' => (float) $attendances->sum('overtime_hours'),
-            'total_shifts' => $attendances->whereIn('status', $workedStatuses)->count(),
-            'present_days' => $attendances->where('status', 'present')->count(),
+            'present_days' => $attendances->whereIn('status', $workedStatuses)->count(),
             'late_days' => $attendances->where('status', 'late')->count(),
             'absent_days' => $attendances->where('status', 'absent')->count(),
             'leave_days' => $attendances->where('status', 'leave')->count(),

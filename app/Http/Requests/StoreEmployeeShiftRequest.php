@@ -20,7 +20,7 @@ class StoreEmployeeShiftRequest extends FormRequest
 
         return [
             'assignment_scope' => ['required', Rule::in(['employee', 'department', 'company'])],
-            'period_mode' => ['required', Rule::in(['single', 'month', 'year', 'range'])],
+            'period_mode' => ['required', Rule::in(['single', 'month', 'year', 'range', 'mon_wed_fri', 'tue_thu_sat'])],
             'shift_id' => ['required', 'exists:shifts,id'],
             'work_date' => [
                 Rule::excludeIf(fn () => $periodMode !== 'single'),
@@ -28,7 +28,7 @@ class StoreEmployeeShiftRequest extends FormRequest
                 'date',
             ],
             'work_month' => [
-                Rule::excludeIf(fn () => $periodMode !== 'month'),
+                Rule::excludeIf(fn () => ! in_array($periodMode, ['month', 'mon_wed_fri', 'tue_thu_sat'], true)),
                 'required',
                 'date_format:Y-m',
             ],

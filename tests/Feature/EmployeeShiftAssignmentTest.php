@@ -184,3 +184,63 @@ test('admin cannot assign shift overlapping evening shift with cross midnight en
 
     $response->assertSessionHasErrors('shift_id');
 });
+
+test('admin can assign shift for mon wed fri days in a month', function () {
+    $response = $this->actingAs($this->admin)
+        ->post(route('admin.employee-shifts.store'), [
+            'assignment_scope' => 'employee',
+            'period_mode' => 'mon_wed_fri',
+            'employee_id' => $this->employee->id,
+            'shift_id' => $this->morningShift->id,
+            'work_month' => '2026-08',
+        ]);
+
+    $response->assertRedirect(route('admin.employee-shifts.index'));
+
+    $assignedDates = EmployeeShift::query()
+        ->where('employee_id', $this->employee->id)
+        ->where('shift_id', $this->morningShift->id)
+        ->whereBetween('work_date', ['2026-08-01', '2026-08-31'])
+        ->pluck('work_date')
+        ->map(fn ($date) => \Carbon\Carbon::parse($date)->dayOfWeek)
+        ->unique()
+        ->sort()
+        ->values()
+        ->all();
+
+    expect($assignedDates)->toBe([1, 3, 5])
+        ->and(EmployeeShift::query()
+            ->where('employee_id', $this->employee->id)
+            ->whereBetween('work_date', ['2026-08-01', '2026-08-31'])
+            ->count())->toBe(13);
+});
+
+test('admin can assign shift for tue thu sat days in a month', function () {
+    $response = $this->actingAs($this->admin)
+        ->post(route('admin.employee-shifts.store'), [
+            'assignment_scope' => 'employee',
+            'period_mode' => 'tue_thu_sat',
+            'employee_id' => $this->employee->id,
+            'shift_id' => $this->morningShift->id,
+            'work_month' => '2026-08',
+        ]);
+
+    $response->assertRedirect(route('admin.employee-shifts.index'));
+
+    $assignedDates = EmployeeShift::query()
+        ->where('employee_id', $this->employee->id)
+        ->where('shift_id', $this->morningShift->id)
+        ->whereBetween('work_date', ['2026-08-01', '2026-08-31'])
+        ->pluck('work_date')
+        ->map(fn ($date) => \Carbon\Carbon::parse($date)->dayOfWeek)
+        ->unique()
+        ->sort()
+        ->values()
+        ->all();
+
+    expect($assignedDates)->toBe([2, 4, 6])
+        ->and(EmployeeShift::query()
+            ->where('employee_id', $this->employee->id)
+            ->whereBetween('work_date', ['2026-08-01', '2026-08-31'])
+            ->count())->toBe(13);
+});

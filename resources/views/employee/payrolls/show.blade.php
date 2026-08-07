@@ -389,19 +389,15 @@
             </div>
             <div>
                 <h3 class="text-base font-bold text-slate-800">Chi tiết chấm công kỳ này</h3>
-                <p class="text-xs text-slate-400 mt-0.5">Tổng giờ làm, số ca và từng ngày đi làm / đi muộn / nghỉ</p>
+                <p class="text-xs text-slate-400 mt-0.5">Tổng giờ làm, ngày đi làm và từng ngày đi muộn / nghỉ</p>
             </div>
         </div>
 
         {{-- Thống kê nhanh --}}
-        <div class="p-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div class="p-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <div class="rounded-2xl bg-sky-50 px-4 py-3">
                 <p class="text-[10px] font-bold uppercase tracking-wider text-sky-500">Tổng giờ làm</p>
                 <p class="mt-1 text-lg font-black text-sky-700">{{ number_format($attendanceStats['total_work_hours'], 1, ',', '.') }} <span class="text-xs font-semibold">giờ</span></p>
-            </div>
-            <div class="rounded-2xl bg-indigo-50 px-4 py-3">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-indigo-500">Tổng ca làm</p>
-                <p class="mt-1 text-lg font-black text-indigo-700">{{ $attendanceStats['total_shifts'] }} <span class="text-xs font-semibold">ca</span></p>
             </div>
             <div class="rounded-2xl bg-emerald-50 px-4 py-3">
                 <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-500">Ngày đi làm</p>

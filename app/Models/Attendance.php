@@ -51,6 +51,9 @@ class Attendance extends Model
         'late_minutes',
         'morning_late_minutes',
         'afternoon_late_minutes',
+        'early_minutes',
+        'morning_early_minutes',
+        'afternoon_early_minutes',
 
         'is_overtime',
         'overtime_hours',

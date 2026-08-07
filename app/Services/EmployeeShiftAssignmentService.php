@@ -11,6 +11,11 @@ use InvalidArgumentException;
 
 class EmployeeShiftAssignmentService
 {
+    /** Thứ 2, 4, 6 (Carbon: Monday, Wednesday, Friday). */
+    private const WEEKDAYS_MON_WED_FRI = [Carbon::MONDAY, Carbon::WEDNESDAY, Carbon::FRIDAY];
+
+    /** Thứ 3, 5, 7 (Carbon: Tuesday, Thursday, Saturday). */
+    private const WEEKDAYS_TUE_THU_SAT = [Carbon::TUESDAY, Carbon::THURSDAY, Carbon::SATURDAY];
     /**
      * @param  list<int>  $employeeIds
      * @return list<string>
@@ -131,6 +136,14 @@ class EmployeeShiftAssignmentService
                 (string) $validated['start_date'],
                 (string) $validated['end_date'],
             ),
+            'mon_wed_fri' => $this->datesInMonthByWeekdays(
+                (string) $validated['work_month'],
+                self::WEEKDAYS_MON_WED_FRI,
+            ),
+            'tue_thu_sat' => $this->datesInMonthByWeekdays(
+                (string) $validated['work_month'],
+                self::WEEKDAYS_TUE_THU_SAT,
+            ),
             default => throw new InvalidArgumentException('Invalid period mode.'),
         };
     }
@@ -138,6 +151,25 @@ class EmployeeShiftAssignmentService
     public function countDates(array $validated): int
     {
         return count($this->resolveDates($validated));
+    }
+
+    /**
+     * @param  list<int>  $weekdays  Carbon day-of-week constants (1=Mon … 6=Sat)
+     * @return list<string>
+     */
+    private function datesInMonthByWeekdays(string $workMonth, array $weekdays): array
+    {
+        $start = Carbon::createFromFormat('Y-m', $workMonth)->startOfMonth();
+        $end = $start->copy()->endOfMonth();
+        $dates = [];
+
+        foreach (CarbonPeriod::create($start, $end) as $date) {
+            if (in_array($date->dayOfWeek, $weekdays, true)) {
+                $dates[] = $date->toDateString();
+            }
+        }
+
+        return $dates;
     }
 
     /**

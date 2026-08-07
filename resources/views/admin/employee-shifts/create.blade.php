@@ -8,7 +8,7 @@
                     @if ($selectedShift)
                         Gán ca <strong>{{ $selectedShift->shift_name }}</strong> cho nhân viên, phòng ban hoặc toàn công ty.
                     @else
-                        Gán ca theo ngày, tháng, năm hoặc khoảng thời gian — cho nhân viên, phòng ban hoặc toàn công ty.
+                        Gán ca theo ngày, tháng, thứ 2-4-6, thứ 3-5-7, năm hoặc khoảng thời gian — cho nhân viên, phòng ban hoặc toàn công ty.
                     @endif
                 </p>
             </div>
@@ -96,7 +96,7 @@
                 <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-5 space-y-4">
                     <p class="text-sm font-semibold text-slate-800">2. Thời gian gán ca</p>
 
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
                         <label class="cursor-pointer rounded-2xl border px-4 py-3 transition"
                                :class="period === 'single' ? 'border-violet-400 bg-violet-50' : 'border-slate-200 bg-white hover:border-violet-200'">
                             <input type="radio" name="period_mode" value="single" x-model="period" class="sr-only">
@@ -108,6 +108,18 @@
                             <input type="radio" name="period_mode" value="month" x-model="period" class="sr-only">
                             <span class="block text-sm font-semibold text-slate-800">Cả tháng</span>
                             <span class="block text-xs text-slate-500 mt-0.5">Tất cả ngày trong tháng</span>
+                        </label>
+                        <label class="cursor-pointer rounded-2xl border px-4 py-3 transition"
+                               :class="period === 'mon_wed_fri' ? 'border-violet-400 bg-violet-50' : 'border-slate-200 bg-white hover:border-violet-200'">
+                            <input type="radio" name="period_mode" value="mon_wed_fri" x-model="period" class="sr-only">
+                            <span class="block text-sm font-semibold text-slate-800">Thứ 2, 4, 6</span>
+                            <span class="block text-xs text-slate-500 mt-0.5">Các ngày thứ Hai, Tư, Sáu trong tháng</span>
+                        </label>
+                        <label class="cursor-pointer rounded-2xl border px-4 py-3 transition"
+                               :class="period === 'tue_thu_sat' ? 'border-violet-400 bg-violet-50' : 'border-slate-200 bg-white hover:border-violet-200'">
+                            <input type="radio" name="period_mode" value="tue_thu_sat" x-model="period" class="sr-only">
+                            <span class="block text-sm font-semibold text-slate-800">Thứ 3, 5, 7</span>
+                            <span class="block text-xs text-slate-500 mt-0.5">Các ngày thứ Ba, Năm, Bảy trong tháng</span>
                         </label>
                         <label class="cursor-pointer rounded-2xl border px-4 py-3 transition"
                                :class="period === 'year' ? 'border-violet-400 bg-violet-50' : 'border-slate-200 bg-white hover:border-violet-200'">
@@ -138,6 +150,24 @@
                                :disabled="period !== 'month'"
                                class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:outline-none disabled:bg-slate-100">
                         <p class="text-xs text-slate-500">Hệ thống tự gán ca cho mọi ngày trong tháng đã chọn.</p>
+                    </div>
+
+                    <div x-show="period === 'mon_wed_fri'" x-cloak class="space-y-2">
+                        <label for="work_month_mon_wed_fri" class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Tháng gán ca</label>
+                        <input id="work_month_mon_wed_fri" type="month" name="work_month"
+                               value="{{ old('work_month', now()->format('Y-m')) }}"
+                               :disabled="period !== 'mon_wed_fri'"
+                               class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:outline-none disabled:bg-slate-100">
+                        <p class="text-xs text-slate-500">Chỉ gán ca cho các ngày <strong>Thứ 2, Thứ 4, Thứ 6</strong> trong tháng đã chọn.</p>
+                    </div>
+
+                    <div x-show="period === 'tue_thu_sat'" x-cloak class="space-y-2">
+                        <label for="work_month_tue_thu_sat" class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Tháng gán ca</label>
+                        <input id="work_month_tue_thu_sat" type="month" name="work_month"
+                               value="{{ old('work_month', now()->format('Y-m')) }}"
+                               :disabled="period !== 'tue_thu_sat'"
+                               class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:outline-none disabled:bg-slate-100">
+                        <p class="text-xs text-slate-500">Chỉ gán ca cho các ngày <strong>Thứ 3, Thứ 5, Thứ 7</strong> trong tháng đã chọn.</p>
                     </div>
 
                     <div x-show="period === 'year'" x-cloak class="space-y-2">

@@ -19,8 +19,9 @@
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-8">
             <h2 class="text-lg font-bold text-slate-800 mb-2">Đơn xin về sớm</h2>
             <p class="text-xs text-slate-400 mb-6">
-                Nếu đơn được duyệt, bạn sẽ được check-out sớm và vẫn tính đủ công.<br>
-                Nếu không có đơn duyệt, check-out sớm sẽ chỉ tính <strong class="text-rose-500">0.5 công</strong>.
+                Nếu đơn được duyệt, bạn có thể check-out sớm và <strong>không bị trừ lương</strong>.<br>
+                Không có đơn duyệt: miễn trừ <strong>{{ \App\Services\EmployeeAttendanceService::EARLY_LEAVE_GRACE_MINUTES }} phút</strong> trước giờ tan ca;
+                về sớm hơn sẽ bị <strong class="text-rose-500">trừ lương theo số phút</strong> (sau {{ \App\Services\EmployeeAttendanceService::EARLY_LEAVE_GRACE_MINUTES }} phút miễn trừ).
             </p>
 
             <form action="{{ route('employee.early-leave.store') }}" method="POST" class="space-y-5">

@@ -10,6 +10,7 @@ use App\Models\EmployeeDocument;
 use App\Models\Position;
 use App\Models\User;
 use App\Rules\DepartmentEmployeeCapacity;
+use App\Services\EmployeeShiftScheduleService;
 use App\Services\ManagerDepartmentSyncService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -28,6 +29,7 @@ class EmployeeController extends Controller
 
     public function __construct(
         private readonly ManagerDepartmentSyncService $managerDepartmentSync,
+        private readonly EmployeeShiftScheduleService $shiftScheduleService,
     ) {}
 
     private const DOCUMENT_RULES = [
@@ -87,13 +89,24 @@ class EmployeeController extends Controller
         return redirect()->route('admin.employees.show', $employee)->with('success', 'Thêm nhân viên thành công.');
     }
 
-    public function show(Employee $employee): View
+    public function show(Request $request, Employee $employee): View
     {
         if ($employee->clearStaleUserLink()) {
             $employee->refresh();
         }
 
         $employee->load(['department', 'position', 'user.role']);
+
+        $shiftMonth = $request->input('shift_month', now()->format('Y-m'));
+        if (! preg_match('/^\d{4}-\d{2}$/', $shiftMonth)) {
+            $shiftMonth = now()->format('Y-m');
+        }
+
+        $shiftMonthSummary = $this->shiftScheduleService->summarizeMonth($shiftMonth, $employee->id);
+        $employeeShiftsInMonth = $this->shiftScheduleService
+            ->filteredQuery($employee->id, $shiftMonth, null)
+            ->orderBy('work_date')
+            ->get();
 
         $contracts = $employee->contracts()
             ->with('contractType')
@@ -157,6 +170,9 @@ class EmployeeController extends Controller
             'transferHistory',
             'contractHistories',
             'availableAccounts',
+            'shiftMonth',
+            'shiftMonthSummary',
+            'employeeShiftsInMonth',
         ));
     }
 

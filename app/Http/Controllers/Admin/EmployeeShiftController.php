@@ -9,6 +9,7 @@ use App\Models\Employee;
 use App\Models\EmployeeShift;
 use App\Models\Shift;
 use App\Services\EmployeeShiftAssignmentService;
+use App\Services\EmployeeShiftScheduleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,22 +18,45 @@ class EmployeeShiftController extends Controller
 {
     public function __construct(
         private readonly EmployeeShiftAssignmentService $assignmentService,
+        private readonly EmployeeShiftScheduleService $scheduleService,
     ) {
     }
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $employeeShifts = EmployeeShift::query()
-            ->with([
-                'employee.department',
-                'shift',
-            ])
-            ->whereHas('employee')
-            ->whereHas('shift')
-            ->latest()
-            ->paginate(10);
+        $filters = [
+            'employee_id' => $request->integer('employee_id') ?: null,
+            'work_month' => $request->input('work_month', now()->format('Y-m')),
+            'shift_id' => $request->integer('shift_id') ?: null,
+        ];
 
-        return view('admin.employee-shifts.index', compact('employeeShifts'));
+        $employeeShifts = $this->scheduleService
+            ->filteredQuery($filters['employee_id'], $filters['work_month'], $filters['shift_id'])
+            ->orderByDesc('work_date')
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->withQueryString();
+
+        $monthSummary = $this->scheduleService->summarizeMonth(
+            $filters['work_month'],
+            $filters['employee_id'],
+            $filters['shift_id'],
+        );
+
+        $employees = Employee::query()
+            ->where('status', 'active')
+            ->orderBy('full_name')
+            ->get(['id', 'full_name', 'employee_code']);
+
+        $shifts = Shift::orderBy('start_time')->get(['id', 'shift_name', 'start_time', 'end_time']);
+
+        return view('admin.employee-shifts.index', compact(
+            'employeeShifts',
+            'filters',
+            'monthSummary',
+            'employees',
+            'shifts',
+        ));
     }
 
     public function create(Request $request): View
@@ -105,6 +129,8 @@ class EmployeeShiftController extends Controller
             'month' => 'cả tháng ('.$dayCount.' ngày)',
             'year' => 'cả năm ('.$dayCount.' ngày)',
             'range' => $dayCount.' ngày',
+            'mon_wed_fri' => 'thứ 2, 4, 6 trong tháng ('.$dayCount.' ngày)',
+            'tue_thu_sat' => 'thứ 3, 5, 7 trong tháng ('.$dayCount.' ngày)',
             default => $dayCount.' ngày',
         };
 
