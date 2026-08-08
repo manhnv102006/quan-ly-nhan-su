@@ -53,9 +53,10 @@
             </div>
 
             <div>
-                <label for="note" class="block text-sm font-medium text-slate-700 mb-2">Ghi chú</label>
-                <textarea name="note" id="note" rows="3" placeholder="Lý do điều chuyển (tuỳ chọn)"
-                          class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm">{{ old('note') }}</textarea>
+                <label for="note" class="block text-sm font-medium text-slate-700 mb-2">Lý do <span class="text-red-500">*</span></label>
+                <textarea name="note" id="note" rows="3" required minlength="5" maxlength="500"
+                          placeholder="Nhập lý do điều chuyển phòng ban..."
+                          class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 text-sm @error('note') border-red-400 @enderror">{{ old('note') }}</textarea>
                 @error('note') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 

@@ -222,13 +222,9 @@
                         <div>
                             <label class="block text-sm font-medium text-slate-500 mb-2">Trạng thái nhân viên</label>
                             <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
-                                @if ($user->employee->status === 'active')
-                                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Đang làm</span>
-                                @elseif ($user->employee->status === 'resigned')
-                                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Đã nghỉ</span>
-                                @else
-                                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Không hoạt động</span>
-                                @endif
+                                <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $user->employee->statusBadgeClass() }}">
+                                    {{ $user->employee->statusLabel() }}
+                                </span>
                             </div>
                         </div>
                     </div>

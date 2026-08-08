@@ -48,7 +48,7 @@ class ChangeLogController extends Controller
         $logs = $query->paginate(25)->withQueryString();
 
         $employees = Employee::query()
-            ->whereIn('status', ['active', 'inactive', 'resigned'])
+            ->whereIn('status', Employee::selectableStatuses())
             ->orderBy('full_name')
             ->get(['id', 'full_name', 'employee_code']);
 

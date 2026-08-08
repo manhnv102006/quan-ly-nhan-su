@@ -3,8 +3,9 @@
         $employeeTotal = max(1, array_sum($employeeStatus));
         $statusSegments = [
             ['key' => 'active', 'label' => 'Đang làm việc', 'color' => 'bg-violet-500', 'text' => 'text-violet-700', 'bg' => 'bg-violet-50'],
-            ['key' => 'inactive', 'label' => 'Tạm ngưng', 'color' => 'bg-amber-400', 'text' => 'text-amber-700', 'bg' => 'bg-amber-50'],
-            ['key' => 'resigned', 'label' => 'Đã nghỉ', 'color' => 'bg-rose-400', 'text' => 'text-rose-700', 'bg' => 'bg-rose-50'],
+            ['key' => 'inactive', 'label' => 'Tạm khóa', 'color' => 'bg-amber-400', 'text' => 'text-amber-700', 'bg' => 'bg-amber-50'],
+            ['key' => 'on_leave', 'label' => 'Nghỉ có lý do việc', 'color' => 'bg-sky-400', 'text' => 'text-sky-700', 'bg' => 'bg-sky-50'],
+            ['key' => 'resigned', 'label' => 'Nghỉ hẳn', 'color' => 'bg-rose-400', 'text' => 'text-rose-700', 'bg' => 'bg-rose-50'],
         ];
         $queueIcons = [
             'leave' => ['emoji' => '🏖️', 'tone' => 'from-amber-400 to-orange-500'],
@@ -172,7 +173,7 @@
                 @endforeach
             </div>
 
-            <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 @foreach ($statusSegments as $segment)
                     <div class="rounded-2xl {{ $segment['bg'] }} px-3 py-3">
                         <p class="text-[10px] font-bold uppercase tracking-wider {{ $segment['text'] }}">{{ $segment['label'] }}</p>

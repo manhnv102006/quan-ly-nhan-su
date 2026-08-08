@@ -245,7 +245,7 @@ class CandidateController extends Controller
             'gender' => ['required', 'in:male,female,other'],
             'date_of_birth' => ['required', 'date'],
             'hire_date' => ['required', 'date'],
-            'status' => ['required', 'in:active,inactive,resigned'],
+            'status' => ['required', Rule::in(Employee::selectableStatuses())],
         ], [
             'employee_code.required' => 'Mã nhân viên là bắt buộc.',
             'employee_code.unique' => 'Mã nhân viên đã tồn tại.',

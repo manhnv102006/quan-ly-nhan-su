@@ -6,17 +6,15 @@
         'active' => 'bg-blue-50 text-blue-700 border-blue-100',
         'inactive' => 'bg-slate-100 text-slate-600 border-slate-200',
         'resigned' => 'bg-rose-50 text-rose-700 border-rose-100',
+        'on_leave' => 'bg-sky-50 text-sky-700 border-sky-100',
         'pending' => 'bg-amber-50 text-amber-700 border-amber-100',
         'approved' => 'bg-blue-50 text-blue-700 border-blue-100',
         'rejected' => 'bg-rose-50 text-rose-700 border-rose-100',
         'open' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
         'closed' => 'bg-slate-100 text-slate-600 border-slate-200',
     ];
-    $employeeStatusLabels = [
-        'active' => 'Đang làm việc',
-        'inactive' => 'Tạm ngưng',
-        'resigned' => 'Đã nghỉ',
-    ];
+    $employeeStatusLabels = \App\Models\Employee::STATUS_LABELS;
+    $employeeStatusClasses = \App\Models\Employee::STATUS_BADGE_CLASSES;
     $leaveTypeLabels = [
         'annual' => 'Nghỉ phép',
         'sick' => 'Nghỉ ốm',
@@ -245,7 +243,7 @@
                                         </div>
                                     </div>
                                     <div class="flex flex-wrap items-center gap-2 sm:justify-end">
-                                        <span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $statusClasses[$member->status] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">
+                                        <span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $employeeStatusClasses[$member->status] ?? ($statusClasses[$member->status] ?? 'border-slate-200 bg-slate-100 text-slate-600') }}">
                                             {{ $employeeStatusLabels[$member->status] ?? ucfirst($member->status) }}
                                         </span>
                                         <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">

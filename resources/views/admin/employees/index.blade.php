@@ -49,7 +49,7 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <p class="text-sm text-slate-500">Tổng nhân viên</p>
                 <h3 class="text-3xl font-bold mt-2 text-slate-900">{{ $stats['total'] }}</h3>
@@ -61,6 +61,14 @@
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <p class="text-sm text-slate-500">Tạm khóa</p>
                 <h3 class="text-3xl font-bold mt-2 text-amber-600">{{ $stats['inactive'] }}</h3>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p class="text-sm text-slate-500">Nghỉ có lý do việc</p>
+                <h3 class="text-3xl font-bold mt-2 text-sky-600">{{ $stats['on_leave'] ?? 0 }}</h3>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p class="text-sm text-slate-500">Nghỉ hẳn</p>
+                <h3 class="text-3xl font-bold mt-2 text-rose-600">{{ $stats['resigned'] }}</h3>
             </div>
         </div>
 
@@ -117,9 +125,9 @@
                         <select name="status"
                                 class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
                             <option value="">Tất cả trạng thái</option>
-                            <option value="active" @selected(($filters['status'] ?? '') === 'active')>Hoạt động</option>
-                            <option value="inactive" @selected(($filters['status'] ?? '') === 'inactive')>Tạm khóa</option>
-                            <option value="resigned" @selected(($filters['status'] ?? '') === 'resigned')>Đã nghỉ</option>
+                            @foreach (\App\Models\Employee::STATUS_LABELS as $value => $label)
+                                <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -184,13 +192,9 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    @if ($employee->status === 'active')
-                                        <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Hoạt động</span>
-                                    @elseif ($employee->status === 'inactive')
-                                        <span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Tạm khóa</span>
-                                    @else
-                                        <span class="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">Đã nghỉ</span>
-                                    @endif
+                                    <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $employee->statusBadgeClass() }}">
+                                        {{ $employee->statusLabel() }}
+                                    </span>
                                 </td>
                                 <td class="px-6 py-4 text-center text-slate-600">{{ $employee->created_at?->format('d/m/Y') ?? '-' }}</td>
                                 <td class="px-6 py-4 text-center">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Employee;
 use App\Rules\DepartmentEmployeeCapacity;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -54,7 +55,7 @@ class EmployeeRequest extends FormRequest
             ],
             'position_id' => ['required', 'exists:positions,id'],
             'hire_date' => ['required', 'date', 'after_or_equal:date_of_birth'],
-            'status' => ['required', Rule::in(['active', 'inactive', 'resigned'])],
+            'status' => ['required', Rule::in(Employee::selectableStatuses())],
             'user_id' => [
                 'nullable',
                 'integer',

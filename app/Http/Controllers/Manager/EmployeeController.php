@@ -34,17 +34,18 @@ class EmployeeController extends Controller
                         ->orWhere('phone', 'like', "%{$search}%");
                 });
             })
-            ->when(in_array($status, ['active', 'inactive', 'resigned'], true), fn ($query) => $query->where('status', $status))
-            ->orderByRaw("CASE status WHEN 'active' THEN 0 WHEN 'inactive' THEN 1 ELSE 2 END")
+            ->when(in_array($status, Employee::selectableStatuses(), true), fn ($query) => $query->where('status', $status))
+            ->orderByRaw("CASE status WHEN 'active' THEN 0 WHEN 'inactive' THEN 1 WHEN 'on_leave' THEN 2 ELSE 3 END")
             ->orderBy('full_name')
             ->paginate(12)
             ->withQueryString();
 
         $stats = [
             'total' => $department ? Employee::where('department_id', $department->id)->count() : 0,
-            'active' => $department ? Employee::where('department_id', $department->id)->where('status', 'active')->count() : 0,
-            'inactive' => $department ? Employee::where('department_id', $department->id)->where('status', 'inactive')->count() : 0,
-            'resigned' => $department ? Employee::where('department_id', $department->id)->where('status', 'resigned')->count() : 0,
+            'active' => $department ? Employee::where('department_id', $department->id)->where('status', Employee::STATUS_ACTIVE)->count() : 0,
+            'inactive' => $department ? Employee::where('department_id', $department->id)->where('status', Employee::STATUS_INACTIVE)->count() : 0,
+            'on_leave' => $department ? Employee::where('department_id', $department->id)->where('status', Employee::STATUS_ON_LEAVE)->count() : 0,
+            'resigned' => $department ? Employee::where('department_id', $department->id)->where('status', Employee::STATUS_RESIGNED)->count() : 0,
         ];
 
         return view('manager.employees.index', compact(

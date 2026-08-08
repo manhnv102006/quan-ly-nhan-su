@@ -13,6 +13,28 @@ class Employee extends Model
 {
     use SoftDeletes;
 
+    public const STATUS_ACTIVE = 'active';
+
+    public const STATUS_INACTIVE = 'inactive';
+
+    public const STATUS_ON_LEAVE = 'on_leave';
+
+    public const STATUS_RESIGNED = 'resigned';
+
+    public const STATUS_LABELS = [
+        self::STATUS_ACTIVE => 'Đang làm việc',
+        self::STATUS_INACTIVE => 'Tạm khóa',
+        self::STATUS_ON_LEAVE => 'Nghỉ có lý do việc',
+        self::STATUS_RESIGNED => 'Nghỉ hẳn',
+    ];
+
+    public const STATUS_BADGE_CLASSES = [
+        self::STATUS_ACTIVE => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+        self::STATUS_INACTIVE => 'bg-amber-50 text-amber-700 border-amber-100',
+        self::STATUS_ON_LEAVE => 'bg-sky-50 text-sky-700 border-sky-100',
+        self::STATUS_RESIGNED => 'bg-rose-50 text-rose-700 border-rose-100',
+    ];
+
     protected $fillable = [
         'user_id',
         'department_id',
@@ -136,6 +158,52 @@ class Employee extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** @return list<string> */
+    public static function selectableStatuses(): array
+    {
+        return array_keys(self::STATUS_LABELS);
+    }
+
+    /** @return array<string, array{label: string, class: string}> */
+    public static function statusBadgeMap(): array
+    {
+        $map = [];
+
+        foreach (self::STATUS_LABELS as $key => $label) {
+            $map[$key] = [
+                'label' => $label,
+                'class' => self::STATUS_BADGE_CLASSES[$key] ?? 'bg-slate-100 text-slate-600 border-slate-200',
+            ];
+        }
+
+        return $map;
+    }
+
+    public function statusLabel(): string
+    {
+        return self::STATUS_LABELS[$this->status] ?? ucfirst((string) $this->status);
+    }
+
+    public function statusBadgeClass(): string
+    {
+        return self::STATUS_BADGE_CLASSES[$this->status] ?? 'bg-slate-100 text-slate-600 border-slate-200';
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+
+    public function isOnLeaveWithReason(): bool
+    {
+        return $this->status === self::STATUS_ON_LEAVE;
+    }
+
+    public function hasPermanentlyLeft(): bool
+    {
+        return $this->status === self::STATUS_RESIGNED;
     }
 
     /**

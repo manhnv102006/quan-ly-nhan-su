@@ -73,7 +73,7 @@ class EmployeeController extends Controller
             'department_id' => ['nullable', 'exists:departments,id', new DepartmentEmployeeCapacity()],
             'position_id' => ['nullable', 'exists:positions,id'],
             'hire_date' => ['required', 'date'],
-            'status' => ['required', 'in:active,inactive,resigned'],
+            'status' => ['required', Rule::in(Employee::selectableStatuses())],
             'user_id' => ['nullable', 'exists:users,id', Rule::unique('employees', 'user_id')],
         ], self::DOCUMENT_RULES));
 
@@ -143,9 +143,9 @@ class EmployeeController extends Controller
             ->get(['id', 'department_name', 'max_employees']);
 
         $transferHistory = $employee->departmentTransfers()
-            ->with(['fromDepartment', 'toDepartment', 'transferredBy'])
-            ->latest()
-            ->limit(10)
+            ->with(['fromDepartment', 'toDepartment', 'transferredBy.employee'])
+            ->latest('effective_date')
+            ->latest('created_at')
             ->get();
 
         $contractHistories = $employee->contractHistories()
@@ -208,7 +208,7 @@ class EmployeeController extends Controller
             'department_id' => ['nullable', 'exists:departments,id', new DepartmentEmployeeCapacity($employee->id)],
             'position_id' => ['nullable', 'exists:positions,id'],
             'hire_date' => ['required', 'date'],
-            'status' => ['required', 'in:active,inactive,resigned'],
+            'status' => ['required', Rule::in(Employee::selectableStatuses())],
             'user_id' => ['nullable', 'exists:users,id', Rule::unique('employees', 'user_id')->ignore($employee->id)],
         ], self::DOCUMENT_RULES));
 
@@ -230,12 +230,15 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'to_department_id' => ['required', 'exists:departments,id', new DepartmentEmployeeCapacity()],
             'effective_date' => ['required', 'date'],
-            'note' => ['nullable', 'string', 'max:500'],
+            'note' => ['required', 'string', 'min:5', 'max:500'],
         ], [
             'to_department_id.required' => 'Vui lòng chọn phòng ban đích.',
             'to_department_id.exists' => 'Phòng ban không hợp lệ.',
             'effective_date.required' => 'Vui lòng chọn ngày hiệu lực.',
             'effective_date.date' => 'Ngày hiệu lực không hợp lệ.',
+            'note.required' => 'Vui lòng nhập lý do điều chuyển.',
+            'note.min' => 'Lý do điều chuyển phải có ít nhất 5 ký tự.',
+            'note.max' => 'Lý do điều chuyển không được vượt quá 500 ký tự.',
         ]);
 
         $toDepartment = Department::query()
@@ -262,7 +265,7 @@ class EmployeeController extends Controller
             'to_department_id' => $validated['to_department_id'],
             'transferred_by' => $request->user()->id,
             'effective_date' => $validated['effective_date'],
-            'note' => $validated['note'] ?? null,
+            'note' => trim($validated['note']),
         ]);
 
         Department::where('manager_id', $employee->id)->update(['manager_id' => null]);

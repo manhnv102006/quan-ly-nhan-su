@@ -42,4 +42,31 @@ class DepartmentTransfer extends Model
     {
         return $this->belongsTo(User::class, 'transferred_by');
     }
+
+    public function fromDepartmentName(): string
+    {
+        return $this->fromDepartment?->department_name ?? 'Chưa gán phòng ban';
+    }
+
+    public function toDepartmentName(): string
+    {
+        return $this->toDepartment?->department_name ?? '—';
+    }
+
+    public function performerDisplayName(): string
+    {
+        $user = $this->transferredBy;
+
+        if (! $user) {
+            return 'Hệ thống';
+        }
+
+        $user->loadMissing('employee');
+
+        if ($user->isAdmin()) {
+            return $user->name ?: 'Quản trị viên';
+        }
+
+        return $user->employee?->full_name ?: $user->name;
+    }
 }

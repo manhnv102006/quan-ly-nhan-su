@@ -65,13 +65,9 @@
                                 <td class="px-6 py-4 text-slate-600">{{ $employee->position?->position_name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-slate-600">{{ $employee->email }}</td>
                                 <td class="px-6 py-4">
-                                    @if ($employee->status === 'active')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Hoạt động</span>
-                                    @elseif ($employee->status === 'inactive')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Tạm khóa</span>
-                                    @else
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">Đã nghỉ</span>
-                                    @endif
+                                    <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $employee->statusBadgeClass() }}">
+                                        {{ $employee->statusLabel() }}
+                                    </span>
                                 </td>
                                 <td class="px-6 py-4 text-slate-500">{{ $employee->deleted_at?->format('d/m/Y H:i') ?? '—' }}</td>
                                 <td class="px-6 py-4">

@@ -218,8 +218,8 @@
                                 <td class="py-3 px-4 text-slate-700">{{ $employee->phone }}</td>
                                 <td class="py-3 px-4 text-slate-700">{{ $employee->hire_date?->format('d/m/Y') }}</td>
                                 <td class="py-3 px-4">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
-                                        {{ $employee->status }}
+                                    <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold {{ $employee->statusBadgeClass() }}">
+                                        {{ $employee->statusLabel() }}
                                     </span>
                                 </td>
                             </tr>

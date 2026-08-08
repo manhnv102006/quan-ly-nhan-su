@@ -26,13 +26,17 @@
                         <h2 class="mt-1 text-2xl sm:text-3xl font-bold truncate">{{ $employee->full_name }}</h2>
                         <p class="mt-1 text-violet-100 font-mono text-sm">{{ $employee->employee_code }}</p>
                         <div class="mt-4 flex flex-wrap items-center gap-2">
-                            @if ($employee->status === 'active')
-                                <span class="inline-flex px-3 py-1 rounded-full bg-emerald-400/20 border border-emerald-300/40 text-emerald-50 text-xs font-semibold">Đang làm việc</span>
-                            @elseif ($employee->status === 'inactive')
-                                <span class="inline-flex px-3 py-1 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-50 text-xs font-semibold">Tạm khóa</span>
-                            @else
-                                <span class="inline-flex px-3 py-1 rounded-full bg-rose-400/20 border border-rose-300/40 text-rose-50 text-xs font-semibold">Đã nghỉ</span>
-                            @endif
+                            @php
+                                $heroStatusClasses = [
+                                    'active' => 'bg-emerald-400/20 border-emerald-300/40 text-emerald-50',
+                                    'inactive' => 'bg-amber-400/20 border-amber-300/40 text-amber-50',
+                                    'on_leave' => 'bg-sky-400/20 border-sky-300/40 text-sky-50',
+                                    'resigned' => 'bg-rose-400/20 border-rose-300/40 text-rose-50',
+                                ];
+                            @endphp
+                            <span class="inline-flex px-3 py-1 rounded-full border text-xs font-semibold {{ $heroStatusClasses[$employee->status] ?? 'bg-white/15 border-white/25 text-white' }}">
+                                {{ $employee->statusLabel() }}
+                            </span>
                             @if ($employee->department)
                                 <span class="inline-flex px-3 py-1 rounded-full bg-white/15 border border-white/25 text-white text-xs font-medium">
                                     {{ $employee->department->department_name }}
@@ -243,13 +247,9 @@
                             <div>
                                 <label class="block text-sm font-medium text-slate-500 mb-2">Trạng thái</label>
                                 <div class="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
-                                    @if ($employee->status === 'active')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Đang làm việc</span>
-                                    @elseif ($employee->status === 'inactive')
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Tạm khóa</span>
-                                    @else
-                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">Đã nghỉ</span>
-                                    @endif
+                                    <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $employee->statusBadgeClass() }}">
+                                        {{ $employee->statusLabel() }}
+                                    </span>
                                 </div>
                             </div>
 
@@ -271,38 +271,22 @@
                 </div>
 
                 <div id="lich-su-dieu-chuyen" class="bg-white rounded-3xl shadow-sm border border-slate-100">
-                    <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-slate-800">Lịch sử điều chuyển phòng ban</h3>
-                        <span class="text-sm text-slate-500">{{ $transferHistory->count() }} bản ghi</span>
+                    <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-600">Hồ sơ nhân sự</p>
+                            <h3 class="mt-1 text-lg font-semibold text-slate-800">Lịch sử điều chuyển phòng ban</h3>
+                            <p class="mt-1 text-sm text-slate-500">Theo dõi từng lần chuyển phòng ban của nhân viên theo thời gian.</p>
+                        </div>
+                        <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                            {{ $transferHistory->count() }} bản ghi
+                        </span>
                     </div>
 
-                    <div class="p-6 overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead>
-                                <tr class="text-sm text-slate-500 border-b border-slate-100">
-                                    <th class="py-3 px-4 font-medium">Từ phòng ban</th>
-                                    <th class="py-3 px-4 font-medium">Đến phòng ban</th>
-                                    <th class="py-3 px-4 font-medium">Ngày hiệu lực</th>
-                                    <th class="py-3 px-4 font-medium">Người thực hiện</th>
-                                    <th class="py-3 px-4 font-medium">Ghi chú</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($transferHistory as $transfer)
-                                    <tr class="border-b border-slate-50 hover:bg-slate-50">
-                                        <td class="py-3 px-4 text-slate-700">{{ $transfer->fromDepartment?->department_name ?? 'Chưa gán' }}</td>
-                                        <td class="py-3 px-4 font-medium text-slate-800">{{ $transfer->toDepartment?->department_name ?? '—' }}</td>
-                                        <td class="py-3 px-4 text-slate-700">{{ $transfer->effective_date?->format('d/m/Y') ?? '—' }}</td>
-                                        <td class="py-3 px-4 text-slate-700">{{ $transfer->transferredBy?->name ?? '—' }}</td>
-                                        <td class="py-3 px-4 text-slate-600">{{ $transfer->note ?: '—' }}</td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="py-8 text-center text-slate-400">Chưa có lịch sử điều chuyển</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                    <div class="p-6">
+                        @include('admin.employees.partials.transfer-history-timeline', [
+                            'employee' => $employee,
+                            'transferHistory' => $transferHistory,
+                        ])
                     </div>
                 </div>
 

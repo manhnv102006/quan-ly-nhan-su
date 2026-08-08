@@ -1,6 +1,5 @@
 @php
-    $statusClasses = ['active' => 'bg-blue-50 text-blue-700 border-blue-100', 'inactive' => 'bg-slate-100 text-slate-600 border-slate-200', 'resigned' => 'bg-rose-50 text-rose-700 border-rose-100'];
-    $statusLabels = ['active' => 'Đang làm việc', 'inactive' => 'Tạm ngưng', 'resigned' => 'Đã nghỉ'];
+    $statusBadges = \App\Models\Employee::statusBadgeMap();
     $attendanceLabels = ['present' => 'Đúng giờ', 'late' => 'Đi muộn', 'absent' => 'Vắng mặt', 'leave' => 'Nghỉ phép'];
     $leaveLabels = ['pending' => 'Chờ duyệt', 'approved' => 'Đã duyệt', 'rejected' => 'Từ chối'];
     $kpiLabels = ['pending' => 'Chờ bắt đầu', 'in_progress' => 'Đang thực hiện', 'completed' => 'Hoàn thành'];
@@ -37,7 +36,7 @@
                 </div>
                 <div class="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
                     <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Mã nhân viên</p><p class="mt-2 font-bold text-slate-800">{{ $employee->employee_code }}</p></div>
-                    <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Trạng thái</p><span class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $statusClasses[$employee->status] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">{{ $statusLabels[$employee->status] ?? ucfirst($employee->status) }}</span></div>
+                    <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Trạng thái</p><span class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $statusBadges[$employee->status]['class'] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">{{ $employee->statusLabel() }}</span></div>
                     <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Phòng ban</p><p class="mt-2 font-bold text-slate-800">{{ $employee->department?->department_name ?? '—' }}</p></div>
                     <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Chức vụ</p><p class="mt-2 font-bold text-slate-800">{{ $employee->position?->position_name ?? '—' }}</p></div>
                     <div class="rounded-2xl bg-slate-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Email</p><p class="mt-2 font-semibold text-slate-700">{{ $employee->email }}</p></div>

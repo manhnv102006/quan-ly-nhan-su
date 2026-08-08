@@ -138,13 +138,9 @@
                                 <td class="py-3 px-4 text-slate-700">{{ $employee->phone }}</td>
                                 <td class="py-3 px-4 text-slate-700">{{ $employee->hire_date ? \Illuminate\Support\Carbon::parse($employee->hire_date)->format('d/m/Y') : '-' }}</td>
                                 <td class="py-3 px-4">
-                                    @if ($employee->status === 'active')
-                                        <span class="inline-flex px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">Đang làm</span>
-                                    @elseif ($employee->status === 'resigned')
-                                        <span class="inline-flex px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">Đã nghỉ</span>
-                                    @else
-                                        <span class="inline-flex px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">Không hoạt động</span>
-                                    @endif
+                                    <span class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold {{ $employee->statusBadgeClass() }}">
+                                        {{ $employee->statusLabel() }}
+                                    </span>
                                 </td>
                             </tr>
                         @empty

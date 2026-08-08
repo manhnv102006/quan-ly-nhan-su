@@ -32,7 +32,7 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <p class="text-sm text-slate-500">Tổng nhân viên</p>
                 <h3 class="text-3xl font-bold mt-2 text-slate-900">{{ $stats['total'] }}</h3>
@@ -44,6 +44,14 @@
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <p class="text-sm text-slate-500">Tạm khóa</p>
                 <h3 class="text-3xl font-bold mt-2 text-amber-600">{{ $stats['inactive'] }}</h3>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p class="text-sm text-slate-500">Nghỉ có lý do việc</p>
+                <h3 class="text-3xl font-bold mt-2 text-sky-600">{{ $stats['on_leave'] ?? 0 }}</h3>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p class="text-sm text-slate-500">Nghỉ hẳn</p>
+                <h3 class="text-3xl font-bold mt-2 text-rose-600">{{ $stats['resigned'] }}</h3>
             </div>
         </div>
 

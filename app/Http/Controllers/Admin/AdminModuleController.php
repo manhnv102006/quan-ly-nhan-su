@@ -34,9 +34,10 @@ class AdminModuleController extends Controller
     {
         return [
             'total' => Employee::count(),
-            'active' => Employee::where('status', 'active')->count(),
-            'inactive' => Employee::where('status', 'inactive')->count(),
-            'resigned' => Employee::where('status', 'resigned')->count(),
+            'active' => Employee::where('status', Employee::STATUS_ACTIVE)->count(),
+            'inactive' => Employee::where('status', Employee::STATUS_INACTIVE)->count(),
+            'on_leave' => Employee::where('status', Employee::STATUS_ON_LEAVE)->count(),
+            'resigned' => Employee::where('status', Employee::STATUS_RESIGNED)->count(),
         ];
     }
 
@@ -63,7 +64,7 @@ class AdminModuleController extends Controller
         $positionId = $request->integer('position_id') ?: null;
         $status = $request->string('status')->trim()->value();
 
-        $allowedStatuses = ['active', 'inactive', 'resigned'];
+        $allowedStatuses = Employee::selectableStatuses();
         if (! in_array($status, $allowedStatuses, true)) {
             $status = '';
         }

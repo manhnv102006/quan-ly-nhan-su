@@ -1,14 +1,5 @@
 @php
-    $statusClasses = [
-        'active' => 'bg-blue-50 text-blue-700 border-blue-100',
-        'inactive' => 'bg-slate-100 text-slate-600 border-slate-200',
-        'resigned' => 'bg-rose-50 text-rose-700 border-rose-100',
-    ];
-    $statusLabels = [
-        'active' => 'Đang làm việc',
-        'inactive' => 'Tạm ngưng',
-        'resigned' => 'Đã nghỉ',
-    ];
+    $statusBadges = \App\Models\Employee::statusBadgeMap();
 @endphp
 
 <x-manager-layout title="Nhân viên phòng ban" subtitle="Xem danh sách nhân viên thuộc phòng ban bạn quản lý.">
@@ -35,21 +26,25 @@
                 <p class="mt-1 text-sm text-amber-700">Vui lòng liên hệ admin để gắn tài khoản manager với hồ sơ nhân viên hoặc phân công làm quản lý phòng ban.</p>
             </div>
         @else
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <div class="manager-stat-card">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-5">
+                <div class="manager-stat-card">
                     <p class="text-sm font-medium text-slate-500">Tổng nhân viên</p>
                     <p class="mt-3 text-3xl font-extrabold text-slate-800">{{ number_format($stats['total']) }}</p>
                 </div>
-            <div class="manager-stat-card border border-teal-100">
+                <div class="manager-stat-card border border-teal-100">
                     <p class="text-sm font-medium text-slate-500">Đang làm việc</p>
                     <p class="mt-3 text-3xl font-extrabold text-teal-600">{{ number_format($stats['active']) }}</p>
                 </div>
-            <div class="manager-stat-card">
+                <div class="manager-stat-card">
                     <p class="text-sm font-medium text-slate-500">Tạm ngưng</p>
                     <p class="mt-3 text-3xl font-extrabold text-slate-600">{{ number_format($stats['inactive']) }}</p>
                 </div>
-            <div class="manager-stat-card border border-rose-100">
-                    <p class="text-sm font-medium text-slate-500">Đã nghỉ</p>
+                <div class="manager-stat-card border border-sky-100">
+                    <p class="text-sm font-medium text-slate-500">Nghỉ có lý do việc</p>
+                    <p class="mt-3 text-3xl font-extrabold text-sky-600">{{ number_format($stats['on_leave'] ?? 0) }}</p>
+                </div>
+                <div class="manager-stat-card border border-rose-100">
+                    <p class="text-sm font-medium text-slate-500">Nghỉ hẳn</p>
                     <p class="mt-3 text-3xl font-extrabold text-rose-600">{{ number_format($stats['resigned']) }}</p>
                 </div>
             </div>
@@ -65,9 +60,9 @@
                         <div class="flex gap-2">
                             <select name="status" class="manager-field">
                                 <option value="">Tất cả</option>
-                                <option value="active" @selected($status === 'active')>Đang làm việc</option>
-                                <option value="inactive" @selected($status === 'inactive')>Tạm ngưng</option>
-                                <option value="resigned" @selected($status === 'resigned')>Đã nghỉ</option>
+                                @foreach (\App\Models\Employee::STATUS_LABELS as $value => $label)
+                                    <option value="{{ $value }}" @selected($status === $value)>{{ $label }}</option>
+                                @endforeach
                             </select>
                             <button type="submit" class="manager-btn-primary shrink-0">Lọc</button>
                         </div>
@@ -122,8 +117,8 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $statusClasses[$employee->status] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">
-                                            {{ $statusLabels[$employee->status] ?? ucfirst($employee->status) }}
+                                        <span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $statusBadges[$employee->status]['class'] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">
+                                            {{ $employee->statusLabel() }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
