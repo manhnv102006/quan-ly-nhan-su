@@ -25,6 +25,7 @@ class Attendance extends Model
 
             'recognition_confidence' => 'float',
             'liveness_score' => 'float',
+            'work_ratio' => 'float',
         ];
     }
     protected $fillable = [
@@ -57,6 +58,7 @@ class Attendance extends Model
 
         'is_overtime',
         'overtime_hours',
+        'work_ratio',
     ];
     public function employee(): BelongsTo
     {

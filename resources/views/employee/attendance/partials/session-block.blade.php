@@ -40,6 +40,12 @@
         </div>
     </div>
 
+    @if ($session['check_in'] && ! $session['check_out'] && now()->gt($session['session_end']))
+        <p class="mt-2 text-xs font-semibold text-rose-600">
+            Bạn đã check-in nhưng chưa check-out — sẽ bị <strong>trừ nửa ngày lương</strong> nếu không check-out.
+        </p>
+    @endif
+
     @if (($session['pending_late_minutes'] ?? 0) > 0 && ! $session['check_in'])
         <p class="mt-2 text-xs font-semibold text-rose-600">
             Đang trễ {{ $session['pending_late_minutes'] }} phút (sau {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút miễn trừ) — sẽ bị trừ lương theo số phút muộn

@@ -16,6 +16,7 @@ class PayrollService
     public function __construct(
         private AutoNotificationService $notifications,
         private TaxService $tax,
+        private EmployeeAttendanceService $attendanceService,
     ) {}
 
     // Cấu hình số buổi nghỉ phép hưởng lương tối đa trong 1 tháng
@@ -207,7 +208,17 @@ class PayrollService
                 $contractSalary,
                 $standardWorkingDays
             );
-            $deduction = $latePenalty['amount'] + $earlyPenalty['amount'] + ($unpaidLeaveDays * 300000);
+            $missingCheckoutPenalty = $this->calculateMissingCheckoutPenaltyForPeriod(
+                $employee,
+                $startDate,
+                $endDate,
+                $contractSalary,
+                $standardWorkingDays
+            );
+            $deduction = $latePenalty['amount']
+                + $earlyPenalty['amount']
+                + $missingCheckoutPenalty['amount']
+                + ($unpaidLeaveDays * 300000);
 
             // H. Thưởng KPI: Tính điểm KPI trung bình và quy đổi thưởng
             $averageKpiScore = $employee->employeeKpis()
@@ -531,6 +542,42 @@ class PayrollService
         }
 
         return round(($earlyMinutes / 60) * self::hourlyRate($contractSalary, $standardWorkingDays), 0);
+    }
+
+    public static function halfDayPenalty(float $contractSalary, int $standardWorkingDays): float
+    {
+        return round(self::dailyRate($contractSalary, $standardWorkingDays) / 2, 0);
+    }
+
+    /**
+     * @return array{amount: float, session_count: int}
+     */
+    public function calculateMissingCheckoutPenaltyForPeriod(
+        Employee $employee,
+        $startDate,
+        $endDate,
+        float $contractSalary,
+        int $standardWorkingDays
+    ): array {
+        $attendances = $employee->attendances()
+            ->with('shift')
+            ->whereBetween('attendance_date', [$startDate, $endDate])
+            ->get();
+
+        $sessionCount = 0;
+        $amount = 0.0;
+        $halfDayAmount = self::halfDayPenalty($contractSalary, $standardWorkingDays);
+
+        foreach ($attendances as $attendance) {
+            $missing = $this->attendanceService->countMissingCheckoutSessions($attendance);
+            $sessionCount += $missing;
+            $amount += $missing * $halfDayAmount;
+        }
+
+        return [
+            'amount' => $amount,
+            'session_count' => $sessionCount,
+        ];
     }
 
     /**

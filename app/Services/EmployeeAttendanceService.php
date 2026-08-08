@@ -159,6 +159,7 @@ class EmployeeAttendanceService
         }
 
         $attendance->status = $attendance->late_minutes > 0 ? 'late' : 'present';
+        $this->syncWorkRatioAndStatus($attendance, $shift);
         $attendance->save();
 
         return $attendance;
@@ -190,6 +191,7 @@ class EmployeeAttendanceService
         }
 
         $attendance->work_hours = $this->calculateWorkHours($attendance, $isFullDay);
+        $this->syncWorkRatioAndStatus($attendance, $attendance->shift);
         $attendance->save();
 
         $this->overtimeSettlement->settleAfterCheckout($employee, $attendance->fresh(), $isFullDay);
@@ -418,7 +420,7 @@ class EmployeeAttendanceService
                 $statusTone = 'active';
             } else {
                 $canCheckOut = true;
-                $statusMessage = 'Đã hết giờ ca — vui lòng check-out';
+                $statusMessage = 'Đã hết giờ ca — vui lòng check-out (thiếu check-out trừ nửa ngày lương)';
                 $statusTone = 'warning';
             }
         } else {
@@ -497,5 +499,62 @@ class EmployeeAttendanceService
                 OvertimeRequest::STATUS_COMPLETED,
             ])
             ->exists();
+    }
+
+    /**
+     * Số buổi đã check-in nhưng chưa check-out (mỗi buổi bị trừ nửa ngày lương).
+     */
+    public function countMissingCheckoutSessions(Attendance $attendance, ?Shift $shift = null): int
+    {
+        $shift ??= $attendance->shift;
+        $count = 0;
+
+        if ($this->isFullDayShift($shift)) {
+            if ($attendance->morning_check_in && ! $attendance->morning_check_out) {
+                $count++;
+            }
+            if ($attendance->afternoon_check_in && ! $attendance->afternoon_check_out) {
+                $count++;
+            }
+
+            return $count;
+        }
+
+        return ($attendance->check_in && ! $attendance->check_out) ? 1 : 0;
+    }
+
+    /**
+     * Ngày công ghi nhận theo check-in: không check-in = 0 công; ca hành chính mỗi buổi = 0.5.
+     */
+    public function resolveWorkRatio(Attendance $attendance, ?Shift $shift = null): float
+    {
+        $shift ??= $attendance->shift;
+
+        if ($this->isFullDayShift($shift)) {
+            $ratio = 0.0;
+
+            if ($attendance->morning_check_in) {
+                $ratio += 0.5;
+            }
+
+            if ($attendance->afternoon_check_in) {
+                $ratio += 0.5;
+            }
+
+            return $ratio;
+        }
+
+        return $attendance->check_in ? 1.0 : 0.0;
+    }
+
+    public function syncWorkRatioAndStatus(Attendance $attendance, ?Shift $shift = null): void
+    {
+        $shift ??= $attendance->shift;
+        $ratio = $this->resolveWorkRatio($attendance, $shift);
+        $attendance->work_ratio = $ratio;
+
+        if ($ratio <= 0) {
+            $attendance->status = 'absent';
+        }
     }
 }
