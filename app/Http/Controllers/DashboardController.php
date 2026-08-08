@@ -209,7 +209,7 @@ class DashboardController extends Controller
 
         return view('dashboard.admin', [
             'user' => $user,
-            'firstName' => collect(explode(' ', trim($user->name)))->filter()->first() ?? $user->name,
+            'displayName' => $user->displayName(),
             'pending' => $pending,
             'heroMetrics' => $heroMetrics,
             'moduleStats' => $moduleStats,

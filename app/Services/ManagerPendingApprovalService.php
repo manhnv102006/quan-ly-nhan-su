@@ -7,6 +7,7 @@ use App\Models\EmployeeKPI;
 use App\Models\KPIAssignment;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
+use App\Models\PayrollComplaint;
 use App\Models\Role;
 use App\Models\User;
 
@@ -17,7 +18,7 @@ class ManagerPendingApprovalService
     ) {}
 
     /**
-     * @return array{leave: int, overtime: int, kpi: int, total: int}
+     * @return array{leave: int, overtime: int, kpi: int, payroll_complaints: int, total: int}
      */
     public function countsForUser(?User $user): array
     {
@@ -35,7 +36,7 @@ class ManagerPendingApprovalService
     }
 
     /**
-     * @return array{leave: int, overtime: int, kpi: int, total: int}
+     * @return array{leave: int, overtime: int, kpi: int, payroll_complaints: int, total: int}
      */
     public function countsForManager(Employee $manager): array
     {
@@ -52,11 +53,20 @@ class ManagerPendingApprovalService
 
         $kpiActions = $this->kpiActionCountForManager($manager);
 
+        $pendingPayrollComplaints = 0;
+        if ($manager->department_id) {
+            $pendingPayrollComplaints = PayrollComplaint::query()
+                ->where('status', PayrollComplaint::STATUS_PENDING)
+                ->whereHas('employee', fn ($query) => $query->where('department_id', $manager->department_id))
+                ->count();
+        }
+
         return [
             'leave' => $pendingLeaves,
             'overtime' => $pendingOvertimes,
             'kpi' => $kpiActions,
-            'total' => $pendingLeaves + $pendingOvertimes + $kpiActions,
+            'payroll_complaints' => $pendingPayrollComplaints,
+            'total' => $pendingLeaves + $pendingOvertimes + $kpiActions + $pendingPayrollComplaints,
         ];
     }
 
@@ -86,7 +96,7 @@ class ManagerPendingApprovalService
 
     /**
      * @param  array<string, mixed>  $item
-     * @param  array{leave: int, overtime: int, kpi: int, total: int}  $counts
+     * @param  array{leave: int, overtime: int, kpi: int, payroll_complaints: int, total: int}  $counts
      * @return array<string, mixed>
      */
     private function applyBadgeToItem(array $item, array $counts): array
@@ -99,6 +109,8 @@ class ManagerPendingApprovalService
             $item['badge'] = $counts['overtime'];
         } elseif ($route === 'manager.kpis*') {
             $item['badge'] = $counts['kpi'];
+        } elseif ($route === 'manager.payroll-complaints*') {
+            $item['badge'] = $counts['payroll_complaints'];
         } elseif (str_contains((string) ($item['href'] ?? ''), 'manager/kpis') || str_contains((string) ($item['href'] ?? ''), '#kpi')) {
             $item['badge'] = $counts['kpi'];
         } elseif (str_contains((string) ($item['href'] ?? ''), '#approvals')) {
@@ -116,7 +128,7 @@ class ManagerPendingApprovalService
     }
 
     /**
-     * @return array{leave: int, overtime: int, kpi: int, total: int}
+     * @return array{leave: int, overtime: int, kpi: int, payroll_complaints: int, total: int}
      */
     private function emptyCounts(): array
     {
@@ -124,6 +136,7 @@ class ManagerPendingApprovalService
             'leave' => 0,
             'overtime' => 0,
             'kpi' => 0,
+            'payroll_complaints' => 0,
             'total' => 0,
         ];
     }

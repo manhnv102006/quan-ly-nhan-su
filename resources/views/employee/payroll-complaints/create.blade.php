@@ -13,7 +13,8 @@
             <ol class="mt-2 list-decimal list-inside space-y-1 text-xs">
                 <li>Bạn gửi khiếu nại kèm mô tả và kỳ lương liên quan.</li>
                 <li>Quản lý phòng ban xem xét và chuyển kế toán.</li>
-                <li>Kế toán kiểm tra, điều chỉnh lương (nếu cần) và phản hồi kết quả.</li>
+                <li>Kế toán kiểm tra — nếu xác nhận công ty tính sai, số tiền thiếu sẽ <strong>được cộng vào bảng lương tháng liền sau</strong> khi kế toán tính lương kỳ đó.</li>
+                <li>Nếu khiếu nại không hợp lệ, kế toán từ chối và ghi rõ lý do.</li>
             </ol>
         </div>
 
@@ -58,8 +59,17 @@
                 </div>
                 <div>
                     <label class="mb-2 block text-xs font-bold uppercase text-slate-500">Số tiền chênh lệch (nếu có)</label>
-                    <input type="number" name="disputed_amount" min="0" value="{{ old('disputed_amount') }}"
-                           class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm" placeholder="VD: 500000">
+                    @php
+                        $disputedRaw = old('disputed_amount');
+                        $disputedDisplay = filled($disputedRaw)
+                            ? number_format((float) $disputedRaw, 0, ',', '.')
+                            : '';
+                    @endphp
+                    <input type="text" name="disputed_amount"
+                           inputmode="numeric" autocomplete="off"
+                           value="{{ $disputedDisplay }}"
+                           class="money-input w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
+                           placeholder="VD: 500.000">
                 </div>
                 <div>
                     <label class="mb-2 block text-xs font-bold uppercase text-slate-500">Mô tả chi tiết <span class="text-rose-500">*</span></label>
@@ -71,4 +81,6 @@
             </form>
         </div>
     </div>
+
+    @include('partials.money-input-script')
 </x-dynamic-component>

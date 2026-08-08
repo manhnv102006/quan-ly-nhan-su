@@ -7,6 +7,8 @@
 
 <x-accountant-layout title="Bảo hiểm" subtitle="Phòng ban → Nhân viên → Hồ sơ BH">
 <div class="accountant-page">
+        @include('accountant.insurance.partials.sub-nav', ['active' => 'profiles'])
+
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-900">Hồ sơ bảo hiểm</h2>

@@ -44,10 +44,10 @@
             'eyebrow' => 'Không gian cá nhân',
             'helper' => 'Chấm công, KPI, bảng lương và thông báo mới đều tập trung tại đây.',
         ];
-    $firstName = collect(explode(' ', trim($user?->name ?? 'User')))->filter()->first() ?? ($user?->name ?? 'User');
+    $displayName = $user?->displayName() ?? 'User';
     $initial = strtoupper(mb_substr($user?->name ?? 'U', 0, 1));
 
-    $managerPendingApprovals = ['leave' => 0, 'overtime' => 0, 'kpi' => 0, 'total' => 0];
+    $managerPendingApprovals = ['leave' => 0, 'overtime' => 0, 'kpi' => 0, 'payroll_complaints' => 0, 'total' => 0];
     $employeePendingActions = ['kpis' => 0, 'total' => 0];
 
     if ($isManager) {
@@ -157,7 +157,7 @@
             </nav>
 
             <div class="m-3 rounded-3xl bg-gradient-to-br {{ $theme['support'] }} p-4 text-white">
-                <p class="text-xs font-semibold opacity-90">Xin chào, {{ $firstName }}</p>
+                <p class="text-xs font-semibold opacity-90">Xin chào, {{ $displayName }}</p>
                 <p class="mt-1 text-[11px] leading-relaxed text-white/80">{{ $theme['helper'] }}</p>
                 <div class="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-semibold backdrop-blur">
                     <span class="h-1.5 w-1.5 rounded-full bg-white"></span>

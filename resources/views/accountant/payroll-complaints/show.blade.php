@@ -15,10 +15,43 @@
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <form method="POST" action="{{ route('accountant.payroll-complaints.resolve', $payrollComplaint) }}" class="accountant-card p-5 space-y-3">
                 @csrf @method('PATCH')
-                <h3 class="text-sm font-bold text-emerald-800">Đánh dấu đã xử lý</h3>
-                <p class="text-xs text-slate-500">Ghi rõ đã kiểm tra, điều chỉnh lương hoặc giải thích cho nhân viên.</p>
-                <textarea name="resolution_note" rows="4" required maxlength="2000" class="accountant-field">{{ old('resolution_note') }}</textarea>
-                <button type="submit" class="accountant-btn-primary">Hoàn tất xử lý</button>
+                <h3 class="text-sm font-bold text-emerald-800">Xác nhận công ty tính sai — chuyển bổ sung tháng sau</h3>
+                <p class="text-xs text-slate-500">
+                    Nhập số tiền công ty đã tính thiếu cho nhân viên. Khoản này sẽ tự động cộng vào bảng lương
+                    @if($nextPeriod ?? null)
+                        <strong>tháng {{ str_pad((string) $nextPeriod['month'], 2, '0', STR_PAD_LEFT) }}/{{ $nextPeriod['year'] }}</strong>
+                    @else
+                        <strong>tháng liền sau</strong>
+                    @endif
+                    khi kế toán tính lương kỳ đó.
+                </p>
+                <div>
+                    <label class="accountant-label">Số tiền bổ sung (₫) <span class="text-rose-500">*</span></label>
+                    @php
+                        $adjustmentRaw = old('confirmed_adjustment_amount', $payrollComplaint->disputed_amount);
+                        $adjustmentDisplay = filled($adjustmentRaw)
+                            ? number_format((float) $adjustmentRaw, 0, ',', '.')
+                            : '';
+                    @endphp
+                    <input type="text" name="confirmed_adjustment_amount" required
+                           inputmode="numeric" autocomplete="off"
+                           value="{{ $adjustmentDisplay }}"
+                           class="accountant-field money-input" placeholder="VD: 500.000">
+                    @error('confirmed_adjustment_amount')
+                        <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
+                    @enderror
+                    @if($payrollComplaint->disputed_amount)
+                        <p class="mt-1 text-xs text-slate-400">Nhân viên khai báo chênh lệch: {{ number_format((float) $payrollComplaint->disputed_amount, 0, ',', '.') }} ₫</p>
+                    @endif
+                </div>
+                <div>
+                    <label class="accountant-label">Ghi chú xử lý <span class="text-rose-500">*</span></label>
+                    <textarea name="resolution_note" rows="4" required maxlength="2000" class="accountant-field" placeholder="Mô tả sai sót và cách bổ sung...">{{ old('resolution_note') }}</textarea>
+                    @error('resolution_note')
+                        <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
+                    @enderror
+                </div>
+                <button type="submit" class="accountant-btn-primary">Xác nhận &amp; chuyển sang tháng sau</button>
             </form>
             <form method="POST" action="{{ route('accountant.payroll-complaints.reject', $payrollComplaint) }}" class="accountant-card p-5 space-y-3 border-rose-100">
                 @csrf @method('PATCH')
@@ -33,4 +66,6 @@
         </div>
     @endif
 </div>
+
+@include('partials.money-input-script')
 </x-accountant-layout>

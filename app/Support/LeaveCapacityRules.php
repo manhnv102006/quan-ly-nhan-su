@@ -15,6 +15,14 @@ final class LeaveCapacityRules
     /** Quản lý và kế toán: tối đa 20%. */
     public const RATIO_MANAGER_ACCOUNTANT = 0.20;
 
+    /** Đơn nghỉ trên mức này (ngày công) không tính vào giới hạn phòng ban. */
+    public const CAPACITY_EXEMPT_ABOVE_DAYS = 12;
+
+    public static function countsTowardDepartmentCapacity(float $totalDays): bool
+    {
+        return $totalDays <= self::CAPACITY_EXEMPT_ABOVE_DAYS;
+    }
+
     public static function ratioFor(Employee $employee): float
     {
         $employee->loadMissing('user.role');

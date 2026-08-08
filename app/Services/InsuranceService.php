@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Contract;
 use App\Models\Employee;
 use App\Models\EmployeeInsurance;
+use App\Models\InsuranceRateSetting;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -15,14 +16,15 @@ class InsuranceService
      */
     public function defaultRates(): array
     {
-        return [
-            'bhxh_employee_rate' => 0.08,
-            'bhxh_employer_rate' => 0.175,
-            'bhyt_employee_rate' => 0.015,
-            'bhyt_employer_rate' => 0.03,
-            'bhtn_employee_rate' => 0.01,
-            'bhtn_employer_rate' => 0.01,
-        ];
+        return InsuranceRateSetting::current()->toRatesArray();
+    }
+
+    /**
+     * @return array<string, float>
+     */
+    public function hardcodedDefaultRates(): array
+    {
+        return InsuranceRateSetting::systemDefaults();
     }
 
     /**

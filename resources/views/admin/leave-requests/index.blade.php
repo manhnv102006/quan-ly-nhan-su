@@ -30,6 +30,7 @@
             </div>
         </div>
 
+        @include('shared.leave-request-rules-summary')
 
         @include('admin.partials.department-cards', [
             'departmentSummaries' => $departmentSummaries,

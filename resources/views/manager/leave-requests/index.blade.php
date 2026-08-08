@@ -32,6 +32,8 @@
             </div>
         </div>
 
+        @include('shared.leave-request-rules-summary')
+
         @if(!($managerLinked ?? true))
             <div class="manager-card border border-amber-100 bg-amber-50/90 p-5">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

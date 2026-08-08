@@ -96,6 +96,8 @@
             </ul>
         </div>
 
+        @include('employee.partials.early-leave-rules')
+
         @include('employee.partials.attendance-checkin-checkout-rules')
 
         {{-- Trạng thái + nút chấm công --}}

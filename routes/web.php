@@ -39,6 +39,7 @@ use App\Http\Controllers\Accountant\ChangeLogController as AccountantChangeLogCo
 use App\Http\Controllers\Accountant\ContractController as AccountantContractController;
 use App\Http\Controllers\Accountant\DashboardController as AccountantDashboardController;
 use App\Http\Controllers\Accountant\InsuranceController as AccountantInsuranceController;
+use App\Http\Controllers\Accountant\InsuranceRateSettingController as AccountantInsuranceRateSettingController;
 use App\Http\Controllers\Accountant\PayrollController as AccountantPayrollController;
 use App\Http\Controllers\Accountant\PayrollPeriodController as AccountantPayrollPeriodController;
 use App\Http\Controllers\Accountant\ReportController as AccountantReportController;
@@ -335,6 +336,8 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
     Route::get('/insurance', [AccountantInsuranceController::class, 'index'])->name('insurance.index');
     Route::get('/insurance/create', [AccountantInsuranceController::class, 'create'])->name('insurance.create');
     Route::post('/insurance', [AccountantInsuranceController::class, 'store'])->name('insurance.store');
+    Route::get('/insurance/rates', [AccountantInsuranceRateSettingController::class, 'index'])->name('insurance.rates.index');
+    Route::put('/insurance/rates', [AccountantInsuranceRateSettingController::class, 'update'])->name('insurance.rates.update');
     Route::get('/insurance/reports', [AccountantInsuranceController::class, 'reports'])->name('insurance.reports');
     Route::get('/insurance/reports/export', [AccountantInsuranceController::class, 'exportReport'])->name('insurance.reports.export');
     Route::get('/insurance/suggest-salary/{employee}', [AccountantInsuranceController::class, 'suggestSalary'])->name('insurance.suggest-salary');

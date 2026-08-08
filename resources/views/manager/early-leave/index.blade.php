@@ -8,10 +8,12 @@
                 <p class="manager-kicker">Về sớm</p>
                 <h2 class="manager-title">Đơn xin về sớm</h2>
                 <p class="manager-subtitle">
-                    Duyệt đơn để nhân viên check-out sớm và vẫn tính đủ công.
+                    Duyệt đơn để nhân viên check-out sớm có phép — không bị trừ lương vì về sớm.
                 </p>
             </div>
         </div>
+
+        @include('shared.early-leave-rules-summary')
 
         @if (session('success'))
             <div class="mb-4 flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4">

@@ -1,7 +1,7 @@
 <x-manager-layout title="Khiếu nại lương" subtitle="Xem xét và chuyển kế toán xử lý khiếu nại của nhân viên.">
-    <div class="manager-page space-y-6">
-        @if (session('success'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">{{ session('success') }}</div>@endif
-        @if (session('error'))<div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800">{{ session('error') }}</div>@endif
+    <div class="manager-page w-full">
+        @if (session('success'))<div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
+        @if (session('error'))<div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{{ session('error') }}</div>@endif
 
         <div class="manager-page-header">
             <div>
@@ -14,11 +14,11 @@
         <div class="flex flex-wrap gap-2">
             @foreach (['' => 'Tất cả', 'pending' => 'Chờ duyệt', 'processing' => 'Chờ kế toán', 'resolved' => 'Đã xử lý', 'rejected' => 'Từ chối'] as $val => $label)
                 <a href="{{ request()->fullUrlWithQuery(['status' => $val]) }}"
-                   class="rounded-full border px-4 py-1.5 text-xs font-semibold {{ request('status', '') == $val ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-600 border-slate-200' }}">{{ $label }}</a>
+                   class="rounded-full border px-4 py-1.5 text-xs font-semibold transition {{ request('status', '') == $val ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-600 border-slate-200 hover:border-teal-200' }}">{{ $label }}</a>
             @endforeach
         </div>
 
-        <div class="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+        <div class="manager-panel overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead><tr class="border-b bg-slate-50 text-left text-xs font-bold uppercase text-slate-400">

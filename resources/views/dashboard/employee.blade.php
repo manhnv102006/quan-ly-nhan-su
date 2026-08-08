@@ -1,170 +1,213 @@
 @php
-    $firstName = collect(explode(' ', trim(Auth::user()->name)))->filter()->first() ?? Auth::user()->name;
-    $employeeName = $employeeProfile?->full_name ?? Auth::user()->name;
-    $attendanceLabels = ['present' => 'Đúng giờ', 'late' => 'Đi muộn', 'absent' => 'Vắng mặt', 'leave' => 'Nghỉ phép'];
-    $attendanceClasses = ['present' => 'bg-emerald-50 text-emerald-700 border-emerald-100', 'late' => 'bg-amber-50 text-amber-700 border-amber-100', 'absent' => 'bg-rose-50 text-rose-700 border-rose-100', 'leave' => 'bg-sky-50 text-sky-700 border-sky-100'];
-    $payrollLabels = [
-        'open' => 'Đang mở',
-        'calculated' => 'Đã tính lương',
-        'approved' => 'Đã duyệt',
-        'paid' => 'Đã thanh toán',
-        'closed' => 'Đã đóng',
-        'draft' => 'Nháp',
-        'pending' => 'Chờ duyệt',
+    $displayName = Auth::user()->displayName();
+    $attendanceLabels = ['present' => 'Đúng giờ', 'late' => 'Đi muộn', 'absent' => 'Vắng', 'leave' => 'Nghỉ phép'];
+    $attendanceBadge = [
+        'present' => 'bg-emerald-50 text-emerald-700 ring-emerald-600/10',
+        'late' => 'bg-amber-50 text-amber-700 ring-amber-600/10',
+        'absent' => 'bg-rose-50 text-rose-700 ring-rose-600/10',
+        'leave' => 'bg-sky-50 text-sky-700 ring-sky-600/10',
     ];
-    $payrollClasses = [
-        'open' => 'bg-slate-50 text-slate-700 border-slate-200',
-        'calculated' => 'bg-amber-50 text-amber-700 border-amber-100',
-        'approved' => 'bg-cyan-50 text-cyan-700 border-cyan-100',
-        'paid' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
-        'closed' => 'bg-slate-50 text-slate-600 border-slate-200',
-        'draft' => 'bg-amber-50 text-amber-700 border-amber-100',
-        'pending' => 'bg-amber-50 text-amber-700 border-amber-100',
-    ];
-    $kpiLabels = ['pending' => 'Chờ bắt đầu', 'in_progress' => 'Đang thực hiện', 'completed' => 'Hoàn thành', 'not_completed' => 'Không hoàn thành'];
-    $kpiClasses = ['pending' => 'bg-amber-50 text-amber-700 border-amber-100', 'in_progress' => 'bg-cyan-50 text-cyan-700 border-cyan-100', 'completed' => 'bg-emerald-50 text-emerald-700 border-emerald-100', 'not_completed' => 'bg-rose-50 text-rose-700 border-rose-100'];
-    $noticeLabels = ['system' => 'Hệ thống', 'leave' => 'Nghỉ phép', 'payroll' => 'Lương', 'kpi' => 'KPI'];
-    $noticeClasses = ['system' => 'bg-slate-100 text-slate-700', 'leave' => 'bg-amber-100 text-amber-700', 'payroll' => 'bg-emerald-100 text-emerald-700', 'kpi' => 'bg-sky-100 text-sky-700'];
+    $payrollLabels = ['open' => 'Đang mở', 'calculated' => 'Đã tính', 'approved' => 'Đã duyệt', 'paid' => 'Đã trả', 'closed' => 'Đóng', 'draft' => 'Nháp', 'pending' => 'Chờ duyệt'];
+    $kpiLabels = ['pending' => 'Chờ', 'in_progress' => 'Đang làm', 'completed' => 'Hoàn thành', 'not_completed' => 'Chưa xong'];
     $completionRate = ($kpiSummary->total ?? 0) > 0 ? round((($kpiSummary->completed ?? 0) / max($kpiSummary->total, 1)) * 100) : 0;
+    $pendingLeave = (int) ($leaveSummary->pending ?? 0);
+
+    $stats = [
+        ['value' => number_format((int) ($attendanceSummary->shifts_completed ?? 0)), 'label' => 'Ca làm tháng này', 'tone' => 'from-emerald-500 to-teal-500', 'bg' => 'bg-emerald-50'],
+        ['value' => number_format((float) ($attendanceSummary->work_hours ?? 0), 1), 'label' => 'Giờ công', 'tone' => 'from-sky-500 to-blue-500', 'bg' => 'bg-sky-50'],
+        ['value' => $pendingLeave, 'label' => 'Đơn nghỉ chờ duyệt', 'tone' => 'from-amber-500 to-orange-500', 'bg' => 'bg-amber-50'],
+        ['value' => $completionRate . '%', 'label' => 'KPI hoàn thành', 'tone' => 'from-indigo-500 to-violet-500', 'bg' => 'bg-indigo-50'],
+        ['value' => number_format($unreadNotifications), 'label' => 'Thông báo chưa đọc', 'tone' => 'from-rose-500 to-pink-500', 'bg' => 'bg-rose-50'],
+    ];
 @endphp
 
-<x-employee-layout title="Bảng điều khiển nhân viên" subtitle="Chấm công, KPI, lương và thông báo đều được gom về một nơi.">
-    <div class="employee-page">
-    <section class="employee-hero">
-        <div class="absolute -right-16 top-0 h-48 w-48 rounded-full bg-white/10 blur-3xl"></div>
-        <div class="absolute bottom-0 left-0 h-40 w-40 -translate-x-1/4 translate-y-1/4 rounded-full bg-sky-300/20 blur-3xl"></div>
-        <div class="relative flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
-            <div class="max-w-3xl">
-                <span class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur"><span class="h-2 w-2 rounded-full bg-white"></span> Không gian làm việc cá nhân</span>
-                <h2 class="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">Chào {{ $firstName }}, mọi cập nhật công việc của bạn đều có mặt tại đây.</h2>
-                <p class="mt-3 max-w-2xl text-sm leading-6 text-sky-50/90 sm:text-base">Dashboard này ưu tiên tốc độ theo dõi hằng ngày: bạn có thể xem lịch sử chấm công, tiến độ KPI, bảng lương và tin nội bộ mà không phải chuyển nhiều màn hình.</p>
-                <div class="mt-6 flex flex-wrap gap-3">
-                    <a href="{{ route('attendance.index') }}" class="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-sky-700 shadow-lg shadow-sky-900/10 transition hover:-translate-y-0.5">Xem chấm công</a>
-                    <a href="{{ route('employee.payrolls.index') }}" class="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15">Mở bảng lương</a>
+<x-employee-layout title="Trang chủ" :subtitle="null">
+    <div class="employee-page w-full">
+        {{-- Banner chào --}}
+        <section class="employee-welcome relative overflow-hidden rounded-2xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 px-5 py-5 text-white shadow-lg shadow-sky-500/20 sm:px-6 sm:py-6">
+            <div class="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10 blur-2xl"></div>
+            <div class="relative flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-medium text-sky-100">Xin chào,</p>
+                    <h2 class="text-2xl font-bold tracking-tight">{{ $displayName }}</h2>
+                    <p class="mt-1 text-sm text-sky-100/90">
+                        {{ $employeeProfile?->employee_code ?? '—' }}
+                        · {{ $employeeProfile?->position_name ?? 'Nhân viên' }}
+                        · {{ $employeeProfile?->department_name ?? 'Chưa gán phòng ban' }}
+                    </p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('attendance.index') }}" class="inline-flex items-center rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold backdrop-blur transition hover:bg-white/25">Chấm công</a>
+                    <a href="{{ route('employee.payrolls.index') }}" class="inline-flex items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 shadow-sm transition hover:bg-sky-50">Bảng lương</a>
                 </div>
             </div>
-            <div class="grid gap-3 sm:grid-cols-3 xl:w-[440px] xl:grid-cols-1">
-                <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur"><p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-100">Mã nhân viên</p><p class="mt-2 text-lg font-bold">{{ $employeeProfile?->employee_code ?? 'Chưa cập nhật' }}</p><p class="mt-1 text-sm text-sky-50/85">{{ $employeeProfile?->position_name ?? 'Nhân viên' }}</p></div>
-                <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur"><p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-100">Phòng ban</p><p class="mt-2 text-lg font-bold">{{ $employeeProfile?->department_name ?? 'Chưa gán phòng ban' }}</p><p class="mt-1 text-sm text-sky-50/85">{{ $employeeProfile?->email ?? Auth::user()->email }}</p></div>
-                <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur"><p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-100">Thông báo mới</p><p class="mt-2 text-lg font-bold">{{ number_format($unreadNotifications) }}</p><p class="mt-1 text-sm text-sky-50/85">Việc cần đọc trong ngày</p></div>
+        </section>
+
+        @if (! $employeeProfile)
+            <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Tài khoản chưa liên kết hồ sơ nhân sự.
+                <a href="{{ route('profile.edit') }}" class="font-semibold text-amber-900 underline">Cập nhật hồ sơ</a>
             </div>
-        </div>
-    </section>
+        @endif
 
-    @if (! $employeeProfile)
-        <div class="employee-card mb-8 border border-amber-100 bg-amber-50/90 p-5">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div><h3 class="text-base font-bold text-amber-800">Tài khoản employee chưa liên kết hồ sơ nhân sự</h3><p class="mt-1 text-sm text-amber-700">Để dashboard hiển thị đầy đủ chấm công, KPI và lương, tài khoản này cần được gắn với bản ghi trong bảng `employees`.</p></div>
-                <a href="{{ route('profile.edit') }}" class="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-700">Cập nhật hồ sơ</a>
-            </div>
-        </div>
-    @endif
-
-    <section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <div class="employee-stat-card border border-emerald-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-700">Month</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format((int) ($attendanceSummary->shifts_completed ?? 0)) }}</p><p class="mt-1 text-sm font-medium text-slate-500">Ca làm tháng này</p></div>
-        <div class="employee-stat-card border border-cyan-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-600 text-white shadow-lg shadow-cyan-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0l3-3m-3 3L9 9m12 3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><span class="rounded-full bg-cyan-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-700">Hours</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format((float) ($attendanceSummary->work_hours ?? 0), 1) }}</p><p class="mt-1 text-sm font-medium text-slate-500">Tổng giờ công</p></div>
-        <div class="employee-stat-card border border-amber-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zM12 16.5h.008v.008H12V16.5z" /></svg></div><span class="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-amber-700">Leave</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format((int) ($leaveSummary->pending ?? 0)) }}</p><p class="mt-1 text-sm font-medium text-slate-500">Đơn nghỉ chờ phản hồi</p></div>
-        <div class="employee-stat-card border border-sky-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-500 text-white shadow-lg shadow-sky-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg></div><span class="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-sky-700">KPI</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ $completionRate }}%</p><p class="mt-1 text-sm font-medium text-slate-500">KPI đã hoàn thành</p></div>
-        <div class="employee-stat-card border border-indigo-100/80 bg-white/90"><div class="flex items-start justify-between"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-200"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg></div><span class="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-indigo-700">Inbox</span></div><p class="mt-5 text-3xl font-extrabold tracking-tight text-slate-800">{{ number_format($unreadNotifications) }}</p><p class="mt-1 text-sm font-medium text-slate-500">Thông báo chưa đọc</p></div>
-    </section>
-
-    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div class="space-y-6 xl:col-span-2">
-            <section id="attendance" class="employee-panel overflow-hidden">
-                <div class="border-b border-slate-100 px-6 py-5 sm:px-7"><p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-600">Attendance</p><h3 class="mt-2 text-2xl font-bold tracking-tight text-slate-800">Lịch sử chấm công gần đây</h3><p class="mt-1 text-sm text-slate-500">Theo dõi ca làm, thời gian vào ra và trạng thái công gần nhất.</p></div>
-                <div class="px-6 py-5 sm:px-7">
-                    @if ($attendanceHistory->isEmpty())
-                        <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center"><p class="text-sm font-semibold text-slate-700">Chưa có dữ liệu chấm công cho tài khoản này.</p><p class="mt-1 text-sm text-slate-500">Khi có lịch sử ca làm, thông tin sẽ hiển thị tại đây.</p></div>
-                    @else
-                        <div class="space-y-3">
-                            @foreach ($attendanceHistory as $attendance)
-                                <div class="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm shadow-slate-100">
-                                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                                        <div><p class="font-semibold text-slate-800">{{ $attendance->shift_name ?? 'Ca làm việc' }} <span class="ml-2 text-sm font-medium text-slate-400">{{ \Illuminate\Support\Carbon::parse($attendance->attendance_date)->format('d/m/Y') }}</span></p><p class="mt-1 text-sm text-slate-500">Check-in: {{ $attendance->check_in ? \Illuminate\Support\Carbon::parse($attendance->check_in)->format('H:i') : '--:--' }} · Check-out: {{ $attendance->check_out ? \Illuminate\Support\Carbon::parse($attendance->check_out)->format('H:i') : '--:--' }}</p></div>
-                                        <div class="flex flex-wrap items-center gap-2"><span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $attendanceClasses[$attendance->status] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">{{ $attendanceLabels[$attendance->status] ?? ucfirst($attendance->status) }}</span><span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">{{ number_format((float) ($attendance->work_hours ?? 0), 1) }} giờ</span></div>
-                                    </div>
-                                </div>
-                            @endforeach
+        {{-- Stats full width --}}
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+            @foreach ($stats as $stat)
+                <div class="employee-stat-card group">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br {{ $stat['tone'] }} text-sm font-bold text-white shadow-sm">
+                            {{ mb_substr($stat['label'], 0, 1) }}
                         </div>
-                    @endif
+                    </div>
+                    <p class="mt-3 text-2xl font-bold tabular-nums tracking-tight text-slate-900">{{ $stat['value'] }}</p>
+                    <p class="mt-0.5 text-xs font-medium text-slate-500">{{ $stat['label'] }}</p>
                 </div>
-            </section>
-
-            <section id="kpi" class="employee-panel overflow-hidden">
-                <div class="border-b border-slate-100 px-6 py-5 sm:px-7"><div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-600">KPI tracker</p><h3 class="mt-2 text-2xl font-bold tracking-tight text-slate-800">Tiến độ mục tiêu cá nhân</h3><p class="mt-1 text-sm text-slate-500">Xem mức độ hoàn thành và điểm số mới nhất cho từng KPI.</p></div><div class="rounded-3xl bg-slate-50 px-4 py-3 text-right"><p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Tiến độ trung bình</p><p class="text-2xl font-bold text-slate-800">{{ round($kpiSummary->average_progress ?? 0) }}%</p></div></div></div>
-                <div class="px-6 py-5 sm:px-7">
-                    @if ($kpiItems->isEmpty())
-                        <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center"><p class="text-sm font-semibold text-slate-700">Bạn chưa được giao KPI nào trong hệ thống.</p><p class="mt-1 text-sm text-slate-500">Khi có KPI mới, progress bar sẽ xuất hiện ngay tại đây.</p></div>
-                    @else
-                        <div class="space-y-4">
-                            @foreach ($kpiItems as $item)
-                                @php
-                                    $progressWidth = min(100, max(4, (int) ($item->progress ?? 0)));
-                                @endphp
-                                <div class="rounded-3xl border border-slate-100 p-4">
-                                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                                        <div><p class="font-semibold text-slate-800">{{ $item->title }}</p><p class="mt-1 text-sm text-slate-500">Cập nhật {{ \Illuminate\Support\Carbon::parse($item->updated_at)->format('d/m/Y H:i') }}</p></div>
-                                        <div class="flex flex-wrap items-center gap-2"><span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $kpiClasses[$item->status] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">{{ $kpiLabels[$item->status] ?? ucfirst($item->status) }}</span>@if (! is_null($item->score))<span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Điểm {{ number_format((float) $item->score, 1) }}</span>@endif</div>
-                                    </div>
-                                    <div class="mt-4 h-2.5 rounded-full bg-slate-100">
-                                        <div class="h-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" @style(['width: ' . $progressWidth . '%'])></div>
-                                    </div>
-                                    <p class="mt-2 text-sm font-semibold text-sky-700">{{ (int) $item->progress }}% hoàn thành</p>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
-            </section>
+            @endforeach
         </div>
 
-        <div class="space-y-6">
-            <section id="payroll" class="employee-panel overflow-hidden">
-                <div class="bg-gradient-to-br from-sky-600 via-blue-600 to-indigo-600 px-6 py-6 text-white"><p class="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-100">Payroll snapshot</p><h3 class="mt-2 text-2xl font-bold">Bảng lương gần nhất</h3>@if ($latestPayroll)<p class="mt-3 text-4xl font-extrabold tracking-tight">{{ number_format((float) $latestPayroll->total_salary, 0, ',', '.') }}đ</p><p class="mt-2 text-sm text-sky-50/85">Kỳ lương {{ str_pad((string) $latestPayroll->month, 2, '0', STR_PAD_LEFT) }}/{{ $latestPayroll->year }}</p>@else<p class="mt-3 text-lg font-semibold text-sky-50">Chưa có dữ liệu lương</p><p class="mt-2 text-sm text-sky-50/85">Phiếu lương sẽ xuất hiện tại đây sau khi hệ thống tính lương.</p>@endif</div>
-                <div class="px-6 py-5">
-                    @if ($latestPayroll)
-                        <div class="mb-4"><span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $payrollClasses[$latestPayroll->status] ?? 'border-slate-200 bg-slate-100 text-slate-600' }}">{{ $payrollLabels[$latestPayroll->status] ?? ucfirst($latestPayroll->status) }}</span></div>
-                        <div class="space-y-3 text-sm">
-                            <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"><span class="text-slate-500">Lương cơ bản</span><span class="font-semibold text-slate-800">{{ number_format((float) $latestPayroll->basic_salary, 0, ',', '.') }}đ</span></div>
-                            <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"><span class="text-slate-500">Phụ cấp</span><span class="font-semibold text-slate-800">{{ number_format((float) $latestPayroll->allowance, 0, ',', '.') }}đ</span></div>
-                            <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3"><span class="text-slate-500">Thưởng / khấu trừ</span><span class="font-semibold text-slate-800">{{ number_format((float) $latestPayroll->bonus, 0, ',', '.') }}đ / {{ number_format((float) $latestPayroll->deduction, 0, ',', '.') }}đ</span></div>
-                        </div>
-                        <div class="mt-5 flex flex-wrap gap-3">
-                            <a href="{{ route('employee.payrolls.index') }}" class="inline-flex items-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">Xem tất cả phiếu lương</a>
-                            <a href="{{ route('employee.payrolls.pdf', ['payroll' => $latestPayroll->id ?? 0]) }}" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Tải phiếu hiện tại</a>
-                        </div>
-                    @else
-                        <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center"><p class="text-sm font-semibold text-slate-700">Chưa có phiếu lương để hiển thị.</p></div>
-                    @endif
+        {{-- Nội dung chính full width --}}
+        <div class="grid grid-cols-1 gap-5 xl:grid-cols-12">
+            {{-- Chấm công --}}
+            <section class="employee-panel xl:col-span-7">
+                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Chấm công gần đây</h3>
+                        <p class="text-xs text-slate-500">Lịch sử ca làm 7 ngày gần nhất</p>
+                    </div>
+                    <a href="{{ route('attendance.index') }}" class="text-xs font-semibold text-sky-600 hover:text-sky-800">Xem tất cả →</a>
                 </div>
-            </section>
-
-            <section class="employee-panel p-6">
-                <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Hồ sơ cá nhân</p><h3 class="mt-2 text-xl font-bold text-slate-800">Thông tin nhanh</h3>
-                <div class="mt-6 space-y-4">
-                    <div class="rounded-3xl bg-slate-50 p-4"><p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Họ tên</p><p class="mt-2 text-base font-bold text-slate-800">{{ $employeeName }}</p></div>
-                    <div class="rounded-3xl bg-slate-50 p-4"><p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Vai trò & phòng ban</p><p class="mt-2 text-base font-bold text-slate-800">{{ $employeeProfile?->position_name ?? 'Nhân viên' }}</p><p class="mt-1 text-sm text-slate-500">{{ $employeeProfile?->department_name ?? 'Chưa gán phòng ban' }}</p></div>
-                    <div class="rounded-3xl bg-slate-50 p-4"><p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Liên hệ</p><p class="mt-2 text-sm font-semibold text-slate-700">{{ $employeeProfile?->email ?? Auth::user()->email }}</p><p class="mt-1 text-sm text-slate-500">{{ $employeeProfile?->phone ?? 'Chưa cập nhật số điện thoại' }}</p></div>
-                    <div class="rounded-3xl bg-slate-50 p-4"><p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Hợp đồng / ngày vào làm</p><p class="mt-2 text-sm font-semibold text-slate-700">{{ $contract?->contract_code ?? 'Chưa có hợp đồng' }}</p><p class="mt-1 text-sm text-slate-500">{{ $employeeProfile?->hire_date ? \Illuminate\Support\Carbon::parse($employeeProfile->hire_date)->format('d/m/Y') : 'Chưa cập nhật ngày vào làm' }}</p></div>
-                </div>
-            </section>
-
-            <section id="notices" class="employee-panel p-6">
-                <div class="flex items-start justify-between gap-3"><div><p class="text-[11px] font-bold uppercase tracking-[0.24em] text-indigo-600">Notifications</p><h3 class="mt-2 text-xl font-bold text-slate-800">Thông báo mới</h3><p class="mt-1 text-sm text-slate-500">Những cập nhật gần nhất dành cho bạn.</p></div><span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">{{ number_format($unreadNotifications) }} chưa đọc</span></div>
-                @if ($notifications->isEmpty())
-                    <div class="mt-6 rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center"><p class="text-sm font-semibold text-slate-700">Hiện chưa có thông báo nào.</p></div>
+                @if ($attendanceHistory->isEmpty())
+                    <p class="px-5 py-12 text-center text-sm text-slate-400">Chưa có dữ liệu chấm công.</p>
                 @else
-                    <div class="mt-6 space-y-3">
-                        @foreach ($notifications as $notification)
-                            <div class="rounded-3xl border border-slate-100 bg-slate-50/80 p-4">
-                                <div class="flex items-start justify-between gap-3">
-                                    <div><p class="font-semibold text-slate-800">{{ $notification->title }}</p><p class="mt-1 text-xs text-slate-400">{{ \Illuminate\Support\Carbon::parse($notification->created_at)->format('d/m/Y H:i') }}</p></div>
-                                    <div class="flex items-center gap-2"><span class="rounded-full px-3 py-1 text-xs font-semibold {{ $noticeClasses[$notification->type] ?? 'bg-slate-100 text-slate-700' }}">{{ $noticeLabels[$notification->type] ?? ucfirst($notification->type) }}</span>@if (! $notification->is_read)<span class="mt-1 h-2.5 w-2.5 rounded-full bg-rose-500"></span>@endif</div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[480px] text-sm">
+                            <thead>
+                                <tr class="border-b border-slate-100 bg-slate-50/80 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                    <th class="px-5 py-3">Ngày</th>
+                                    <th class="px-5 py-3">Check-in</th>
+                                    <th class="px-5 py-3">Check-out</th>
+                                    <th class="px-5 py-3">Giờ</th>
+                                    <th class="px-5 py-3 text-right">Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @foreach ($attendanceHistory as $attendance)
+                                    <tr class="hover:bg-slate-50/60">
+                                        <td class="px-5 py-3 font-medium text-slate-800">{{ \Illuminate\Support\Carbon::parse($attendance->attendance_date)->format('d/m/Y') }}</td>
+                                        <td class="px-5 py-3 text-slate-600">{{ $attendance->check_in ? \Illuminate\Support\Carbon::parse($attendance->check_in)->format('H:i') : '—' }}</td>
+                                        <td class="px-5 py-3 text-slate-600">{{ $attendance->check_out ? \Illuminate\Support\Carbon::parse($attendance->check_out)->format('H:i') : '—' }}</td>
+                                        <td class="px-5 py-3 text-slate-600">{{ number_format((float) ($attendance->work_hours ?? 0), 1) }}h</td>
+                                        <td class="px-5 py-3 text-right">
+                                            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset {{ $attendanceBadge[$attendance->status] ?? 'bg-slate-100 text-slate-600 ring-slate-500/10' }}">
+                                                {{ $attendanceLabels[$attendance->status] ?? $attendance->status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </section>
+
+            {{-- Cột phải --}}
+            <div class="space-y-5 xl:col-span-5">
+                <section class="employee-panel overflow-hidden">
+                    <div class="bg-gradient-to-br from-sky-500 to-indigo-600 px-5 py-5 text-white">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-sky-100">Lương gần nhất</p>
+                        @if ($latestPayroll)
+                            <p class="mt-2 text-3xl font-bold tabular-nums">{{ number_format((float) $latestPayroll->total_salary, 0, ',', '.') }}₫</p>
+                            <p class="mt-1 text-sm text-sky-100">Kỳ {{ str_pad((string) $latestPayroll->month, 2, '0', STR_PAD_LEFT) }}/{{ $latestPayroll->year }} · {{ $payrollLabels[$latestPayroll->status] ?? $latestPayroll->status }}</p>
+                        @else
+                            <p class="mt-3 text-lg font-semibold">Chưa có phiếu lương</p>
+                        @endif
+                    </div>
+                    @if ($latestPayroll)
+                        <div class="space-y-2 px-5 py-4 text-sm">
+                            <div class="flex justify-between rounded-lg bg-slate-50 px-3 py-2"><span class="text-slate-500">Lương CB</span><span class="font-semibold text-slate-800">{{ number_format((float) $latestPayroll->basic_salary, 0, ',', '.') }}₫</span></div>
+                            <div class="flex justify-between rounded-lg bg-slate-50 px-3 py-2"><span class="text-slate-500">Phụ cấp</span><span class="font-semibold text-slate-800">{{ number_format((float) $latestPayroll->allowance, 0, ',', '.') }}₫</span></div>
+                            <a href="{{ route('employee.payrolls.index') }}" class="mt-2 block text-center text-xs font-semibold text-sky-600 hover:text-sky-800">Xem chi tiết phiếu lương →</a>
+                        </div>
+                    @endif
+                </section>
+
+                <section class="employee-panel">
+                    <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                        <h3 class="text-base font-bold text-slate-900">Thông báo</h3>
+                        <a href="{{ route('employee.notifications.index') }}" class="text-xs font-semibold text-sky-600 hover:text-sky-800">Tất cả</a>
+                    </div>
+                    <div class="max-h-64 divide-y divide-slate-100 overflow-y-auto">
+                        @forelse ($notifications as $notification)
+                            <div class="flex gap-3 px-5 py-3 {{ $notification->is_read ? '' : 'bg-sky-50/50' }}">
+                                @if (! $notification->is_read)
+                                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sky-500"></span>
+                                @else
+                                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-transparent"></span>
+                                @endif
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-medium text-slate-800">{{ $notification->title }}</p>
+                                    <p class="text-xs text-slate-400">{{ \Illuminate\Support\Carbon::parse($notification->created_at)->format('d/m/Y H:i') }}</p>
                                 </div>
+                            </div>
+                        @empty
+                            <p class="px-5 py-8 text-center text-sm text-slate-400">Không có thông báo.</p>
+                        @endforelse
+                    </div>
+                </section>
+            </div>
+
+            {{-- KPI full row bottom on wide screens spans 7+5 --}}
+            <section class="employee-panel xl:col-span-7">
+                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Tiến độ KPI</h3>
+                        <p class="text-xs text-slate-500">Trung bình {{ round($kpiSummary->average_progress ?? 0) }}% hoàn thành</p>
+                    </div>
+                    <a href="{{ route('employee.kpis.index') }}" class="text-xs font-semibold text-sky-600 hover:text-sky-800">Quản lý KPI →</a>
+                </div>
+                @if ($kpiItems->isEmpty())
+                    <p class="px-5 py-12 text-center text-sm text-slate-400">Chưa có KPI được giao.</p>
+                @else
+                    <div class="grid gap-0 divide-y divide-slate-100 sm:grid-cols-2 sm:divide-y-0 xl:grid-cols-1 xl:divide-y">
+                        @foreach ($kpiItems as $item)
+                            @php $progress = min(100, max(0, (int) ($item->progress ?? 0))); @endphp
+                            <div class="px-5 py-4">
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="text-sm font-semibold text-slate-800">{{ $item->title }}</p>
+                                    <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{{ $kpiLabels[$item->status] ?? $item->status }}</span>
+                                </div>
+                                <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                                    <div class="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" style="width: {{ $progress }}%"></div>
+                                </div>
+                                <p class="mt-1.5 text-xs font-medium text-sky-700">{{ $progress }}% hoàn thành</p>
                             </div>
                         @endforeach
                     </div>
                 @endif
+            </section>
+
+            {{-- Quick links fill right bottom --}}
+            <section class="employee-panel xl:col-span-5">
+                <div class="border-b border-slate-100 px-5 py-4">
+                    <h3 class="text-base font-bold text-slate-900">Truy cập nhanh</h3>
+                </div>
+                <div class="grid grid-cols-2 gap-2 p-4">
+                    @foreach([
+                        ['Nghỉ phép', route('employee.leave-requests'), 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
+                        ['Tăng ca', route('employee.overtime-requests'), 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z'],
+                        ['Về sớm', route('employee.early-leave.index'), 'M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15'],
+                        ['Khiếu nại lương', route('employee.payroll-complaints.index'), 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
+                        ['Hợp đồng', route('employee.contracts.index'), 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z'],
+                        ['Hồ sơ cá nhân', route('profile.edit'), 'M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z'],
+                    ] as [$label, $href, $icon])
+                        <a href="{{ $href }}" class="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-3 text-sm font-medium text-slate-700 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-800">
+                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-sky-600 shadow-sm">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icon }}" /></svg>
+                            </span>
+                            <span class="truncate">{{ $label }}</span>
+                        </a>
+                    @endforeach
+                </div>
             </section>
         </div>
     </div>

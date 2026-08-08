@@ -28,60 +28,29 @@
         ];
     @endphp
 
-    {{-- Hero --}}
-    <section class="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 via-violet-900 to-indigo-800 p-6 text-white shadow-2xl shadow-violet-900/20 sm:p-8">
-        <div class="absolute -right-16 top-0 h-56 w-56 rounded-full bg-violet-500/20 blur-3xl"></div>
-        <div class="absolute bottom-0 left-0 h-44 w-44 -translate-x-1/4 translate-y-1/4 rounded-full bg-cyan-400/10 blur-3xl"></div>
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.08),transparent_45%)]"></div>
-
-        <div class="relative flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
-            <div class="max-w-3xl">
-                <span class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur">
-                    <span class="h-2 w-2 animate-pulse rounded-full bg-emerald-300"></span>
-                    Trung tâm điều hành nhân sự
-                </span>
-                <h2 class="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-                    Xin chào {{ $firstName }}, hôm nay có {{ number_format($pending['total']) }} việc cần ưu tiên.
-                </h2>
-                <p class="mt-3 max-w-2xl text-sm leading-6 text-violet-100/90 sm:text-base">
-                    Tổng quan nhân sự, chấm công, phê duyệt và vận hành lương — mọi chỉ số quan trọng được gom về một màn hình.
+    <div class="admin-page w-full">
+    <section class="admin-welcome">
+        <div class="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10 blur-2xl"></div>
+        <div class="relative flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <p class="text-sm font-medium text-violet-100">Xin chào,</p>
+                <h2 class="text-2xl font-bold tracking-tight">{{ $displayName }}</h2>
+                <p class="mt-1 text-sm text-violet-100/90">
+                    {{ number_format($pending['total']) }} việc cần ưu tiên · {{ number_format($employeeStatus['active']) }} NV đang làm việc · {{ now()->translatedFormat('l, d/m/Y') }}
                 </p>
-
-                <div class="mt-6 flex flex-wrap gap-3">
-                    <a href="#approvals" class="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-violet-700 shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-violet-50">
-                        Xử lý phê duyệt
-                        @if ($pending['total'] > 0)
-                            <span class="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white">{{ $pending['total'] }}</span>
-                        @endif
-                    </a>
-                    <a href="{{ route('admin.payroll-periods.index') }}" class="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15">
-                        Quản lý kỳ lương
-                    </a>
-                </div>
             </div>
-
-            <div class="grid gap-3 sm:grid-cols-3 xl:w-[420px] xl:grid-cols-1">
-                <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-200">Hôm nay</p>
-                    <p class="mt-2 text-lg font-bold">{{ now()->translatedFormat('l, d/m/Y') }}</p>
-                    <p class="mt-1 text-sm text-violet-100/85">{{ number_format($todayAttendance) }} lượt chấm công</p>
-                </div>
-                <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-200">Thông báo chưa đọc</p>
-                    <p class="mt-2 text-lg font-bold">{{ number_format($unreadNotifications) }}</p>
-                    <p class="mt-1 text-sm text-violet-100/85">Cập nhật nội bộ mới</p>
-                </div>
-                <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-200">Tổng nhân sự</p>
-                    <p class="mt-2 text-lg font-bold">{{ number_format($employeeStatus['active']) }} / {{ number_format($employeeTotal) }}</p>
-                    <p class="mt-1 text-sm text-violet-100/85">Đang hoạt động</p>
-                </div>
+            <div class="flex flex-wrap gap-2">
+                <a href="#approvals" class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-violet-700 shadow-sm hover:bg-violet-50">
+                    Phê duyệt
+                    @if ($pending['total'] > 0)<span class="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white">{{ $pending['total'] }}</span>@endif
+                </a>
+                <a href="{{ route('admin.payroll-periods.index') }}" class="inline-flex items-center rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur hover:bg-white/25">Kỳ lương</a>
             </div>
         </div>
     </section>
 
     {{-- Hero metrics --}}
-    <section class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ($heroMetrics as $metric)
             @php
                 $href = ! empty($metric['is_url']) ? $metric['route'] : route($metric['route']);
@@ -102,7 +71,7 @@
         @endforeach
     </section>
 
-    <div class="grid grid-cols-1 gap-6 xl:grid-cols-12">
+    <div class="grid grid-cols-1 gap-5 xl:grid-cols-12">
         {{-- Approval queue --}}
         <section id="approvals" class="admin-card p-6 sm:p-7 xl:col-span-7">
             <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -398,4 +367,5 @@
             </div>
         </section>
     @endif
+    </div>
 </x-admin-layout>

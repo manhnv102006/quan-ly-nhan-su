@@ -47,9 +47,30 @@
         @if($complaint->resolution_note)
             <div class="rounded-xl bg-emerald-50 border border-emerald-100 p-3 text-sm">
                 <p class="text-xs font-bold text-emerald-700">Kết quả xử lý (kế toán)</p>
+                @if($complaint->confirmed_adjustment_amount)
+                    <p class="mt-2 text-sm font-bold text-emerald-800">
+                        Bổ sung chuyển tháng sau: {{ $fmt($complaint->confirmed_adjustment_amount) }} ₫
+                    </p>
+                @endif
                 <p class="mt-1 text-emerald-900 whitespace-pre-line">{{ $complaint->resolution_note }}</p>
                 @if($complaint->resolved_at)
                     <p class="mt-1 text-xs text-emerald-600">{{ $complaint->resolved_at->format('d/m/Y H:i') }}</p>
+                @endif
+                @if($complaint->isCarried() && $complaint->carriedToPayroll?->payrollPeriod)
+                    <p class="mt-2 text-xs font-semibold text-emerald-700">
+                        ✓ Đã cộng vào bảng lương {{ $complaint->carriedToPayroll->payrollPeriod->name }}
+                        ({{ str_pad((string) $complaint->carriedToPayroll->payrollPeriod->month, 2, '0', STR_PAD_LEFT) }}/{{ $complaint->carriedToPayroll->payrollPeriod->year }})
+                        @if($complaint->carried_at)
+                            · {{ $complaint->carried_at->format('d/m/Y H:i') }}
+                        @endif
+                    </p>
+                @elseif($complaint->awaitsCarryForward())
+                    @php
+                        $next = app(\App\Services\PayrollComplaintService::class)->nextPeriodAfter($complaint->payroll->payrollPeriod);
+                    @endphp
+                    <p class="mt-2 text-xs font-semibold text-amber-700">
+                        Chờ cộng vào bảng lương tháng {{ str_pad((string) $next['month'], 2, '0', STR_PAD_LEFT) }}/{{ $next['year'] }} khi kế toán tính lương.
+                    </p>
                 @endif
             </div>
         @endif

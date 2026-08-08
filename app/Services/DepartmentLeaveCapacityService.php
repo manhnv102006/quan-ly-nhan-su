@@ -47,7 +47,12 @@ class DepartmentLeaveCapacityService
         Employee $applicant,
         Carbon|string $startDate,
         Carbon|string $endDate,
+        ?float $totalDays = null,
     ): ?string {
+        if ($totalDays !== null && ! LeaveCapacityRules::countsTowardDepartmentCapacity($totalDays)) {
+            return null;
+        }
+
         if (! $applicant->department_id) {
             return null;
         }
@@ -68,6 +73,10 @@ class DepartmentLeaveCapacityService
         $employee = $leaveRequest->employee;
 
         if (! $employee || ! $employee->department_id) {
+            return null;
+        }
+
+        if (! LeaveCapacityRules::countsTowardDepartmentCapacity((float) $leaveRequest->total_days)) {
             return null;
         }
 
@@ -168,6 +177,7 @@ class DepartmentLeaveCapacityService
             ->forDepartment($departmentId)
             ->when($ignoreLeaveRequestId, fn ($q) => $q->where('id', '!=', $ignoreLeaveRequestId))
             ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->where('total_days', '<=', LeaveCapacityRules::CAPACITY_EXEMPT_ABOVE_DAYS)
             ->overlappingPeriod($startDate, $endDate)
             ->get();
     }

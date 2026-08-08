@@ -18,12 +18,13 @@
             </div>
         @endif
 
+        @include('employee.partials.early-leave-rules')
+
         <div class="flex items-center justify-between flex-wrap gap-4">
             <div>
                 <h1 class="text-xl font-bold text-slate-800">Đơn xin về sớm của tôi</h1>
                 <p class="text-xs text-slate-500 mt-1">
-                    Có đơn được duyệt → check-out sớm, không bị trừ lương.<br>
-                    Không có đơn → miễn trừ {{ \App\Services\EmployeeAttendanceService::EARLY_LEAVE_GRACE_MINUTES }} phút; về sớm hơn sẽ trừ lương theo số phút.
+                    Gửi đơn trước khi về sớm có lý do — đơn được duyệt sẽ miễn phạt khi check-out sớm.
                 </p>
             </div>
             <a href="{{ route('employee.early-leave.create') }}"

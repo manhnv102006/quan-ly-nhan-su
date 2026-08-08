@@ -89,6 +89,17 @@ class User extends Authenticatable
         return $this->status === 'active';
     }
 
+    public function displayName(): string
+    {
+        $employeeName = trim((string) ($this->employee?->full_name ?? ''));
+
+        if ($employeeName !== '') {
+            return $employeeName;
+        }
+
+        return trim((string) ($this->name ?? '')) ?: 'User';
+    }
+
     /**
      * Tài khoản chưa liên kết nhân viên (trừ nhân viên đang chỉnh sửa).
      *

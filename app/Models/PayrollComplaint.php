@@ -39,6 +39,7 @@ class PayrollComplaint extends Model
         'subject',
         'description',
         'disputed_amount',
+        'confirmed_adjustment_amount',
         'status',
         'manager_note',
         'manager_confirmed_by',
@@ -46,6 +47,8 @@ class PayrollComplaint extends Model
         'resolution_note',
         'resolved_by',
         'resolved_at',
+        'carried_to_payroll_id',
+        'carried_at',
         'rejected_by',
         'rejected_at',
         'reject_reason',
@@ -55,8 +58,10 @@ class PayrollComplaint extends Model
     {
         return [
             'disputed_amount' => 'decimal:0',
+            'confirmed_adjustment_amount' => 'decimal:0',
             'manager_confirmed_at' => 'datetime',
             'resolved_at' => 'datetime',
+            'carried_at' => 'datetime',
             'rejected_at' => 'datetime',
         ];
     }
@@ -90,6 +95,11 @@ class PayrollComplaint extends Model
         return $this->belongsTo(Payroll::class);
     }
 
+    public function carriedToPayroll(): BelongsTo
+    {
+        return $this->belongsTo(Payroll::class, 'carried_to_payroll_id');
+    }
+
     public function managerConfirmer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'manager_confirmed_by');
@@ -118,6 +128,18 @@ class PayrollComplaint extends Model
     public function isOpen(): bool
     {
         return in_array($this->status, [self::STATUS_PENDING, self::STATUS_PROCESSING], true);
+    }
+
+    public function isCarried(): bool
+    {
+        return $this->carried_to_payroll_id !== null;
+    }
+
+    public function awaitsCarryForward(): bool
+    {
+        return $this->status === self::STATUS_RESOLVED
+            && $this->confirmed_adjustment_amount > 0
+            && ! $this->isCarried();
     }
 
     public function statusLabel(): string

@@ -159,7 +159,7 @@ class InsuranceController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateProfile($request);
-        $validated = $this->normalizeRates($validated);
+        $validated = array_merge($validated, $this->insurance->defaultRates());
 
         $employee = Employee::findOrFail($validated['employee_id']);
         if ($employee->insurance) {
@@ -189,7 +189,6 @@ class InsuranceController extends Controller
     public function update(Request $request, EmployeeInsurance $insurance): RedirectResponse
     {
         $validated = $this->validateProfile($request, $insurance->id);
-        $validated = $this->normalizeRates($validated);
 
         unset($validated['employee_id']);
 
@@ -327,18 +326,11 @@ class InsuranceController extends Controller
      */
     private function validateProfile(Request $request, ?int $ignoreId = null): array
     {
-        $limits = EmployeeInsurance::rateLimitsPercent();
-
         $rules = [
             'employee_id' => 'required|exists:employees,id|unique:employee_insurances,employee_id'.($ignoreId ? ",{$ignoreId}" : ''),
             'social_insurance_number' => 'nullable|string|max:50',
             'health_insurance_code' => 'nullable|string|max:50',
             'contribution_salary' => 'required|numeric|min:0',
-            'bhxh_employee_rate' => 'required|numeric|min:0|max:'.$limits['bhxh_employee_rate']['max'],
-            'bhxh_employer_rate' => 'required|numeric|min:0|max:'.$limits['bhxh_employer_rate']['max'],
-            'bhyt_employee_rate' => 'required|numeric|min:0|max:'.$limits['bhyt_employee_rate']['max'],
-            'bhyt_employer_rate' => 'required|numeric|min:0|max:'.$limits['bhyt_employer_rate']['max'],
-            'bhtn_rate' => 'required|numeric|min:0|max:'.$limits['bhtn_rate']['max'],
             'start_date' => 'required|date',
             'note' => 'nullable|string|max:2000',
         ];
@@ -354,38 +346,6 @@ class InsuranceController extends Controller
             'contribution_salary.required' => 'Mức lương đóng BH là bắt buộc.',
         ];
 
-        foreach ($limits as $field => $config) {
-            $messages["{$field}.max"] = "{$config['label']} không được vượt quá {$config['max']}%.";
-            $messages["{$field}.required"] = "Tỷ lệ {$config['label']} là bắt buộc.";
-        }
-
         return $request->validate($rules, $messages);
-    }
-
-    /**
-     * Form luôn nhập tỷ lệ theo % (vd: 1 = 1%, 8 = 8%) — chuyển sang thập phân lưu DB.
-     *
-     * @param  array<string, mixed>  $validated
-     * @return array<string, mixed>
-     */
-    private function normalizeRates(array $validated): array
-    {
-        foreach ([
-            'bhxh_employee_rate', 'bhxh_employer_rate',
-            'bhyt_employee_rate', 'bhyt_employer_rate',
-            'bhtn_rate',
-        ] as $field) {
-            if (isset($validated[$field])) {
-                $validated[$field] = round((float) $validated[$field] / 100, 4);
-            }
-        }
-
-        if (isset($validated['bhtn_rate'])) {
-            $validated['bhtn_employee_rate'] = $validated['bhtn_rate'];
-            $validated['bhtn_employer_rate'] = $validated['bhtn_rate'];
-            unset($validated['bhtn_rate']);
-        }
-
-        return $validated;
     }
 }

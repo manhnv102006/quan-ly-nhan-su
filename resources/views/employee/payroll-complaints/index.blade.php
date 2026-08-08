@@ -15,7 +15,7 @@
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h1 class="text-xl font-bold text-slate-800">Khiếu nại lương của tôi</h1>
-                <p class="text-xs text-slate-500 mt-1">Gửi khiếu nại nếu phát hiện lương, ngày công hoặc thưởng tính sai.</p>
+                <p class="text-xs text-slate-500 mt-1">Gửi khiếu nại nếu phát hiện lương, ngày công hoặc thưởng tính sai. Nếu được xác nhận, số tiền thiếu sẽ cộng vào bảng lương tháng sau.</p>
             </div>
             <a href="{{ route('employee.payroll-complaints.create') }}"
                class="inline-flex items-center rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700">

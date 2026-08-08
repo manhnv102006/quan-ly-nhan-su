@@ -2,6 +2,8 @@
 
 <x-accountant-layout title="Báo cáo nộp BH" subtitle="Theo tháng hoặc quý">
 <div class="accountant-page">
+        @include('accountant.insurance.partials.sub-nav', ['active' => 'reports'])
+
         <div class="flex flex-wrap items-end justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-900">Báo cáo nộp bảo hiểm</h2>

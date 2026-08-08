@@ -30,7 +30,7 @@
     }
 @endphp
 
-<div x-data="{ openMenu: @js($defaultOpenMenu) }">
+<div x-data="{ openMenu: @js($defaultOpenMenu) }" class="space-y-1">
     @foreach ($navigation as $item)
         @php
             $hasChildren = ! empty($item['children']);

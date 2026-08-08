@@ -18,6 +18,7 @@ class PayrollService
         private AutoNotificationService $notifications,
         private TaxService $tax,
         private EmployeeAttendanceService $attendanceService,
+        private PayrollComplaintService $complaintService,
     ) {}
 
     // Cấu hình số buổi nghỉ phép hưởng lương tối đa trong 1 tháng
@@ -274,8 +275,12 @@ class PayrollService
             }
             $overtimePay = round($overtimePay, 0);
 
-            // J. Thực lĩnh = Lương cơ bản (pro-rata) + Tổng phụ cấp + Thưởng KPI + Lương tăng ca - Khấu trừ
-            $totalSalary = $basicSalary + $totalAllowance + $bonus + $overtimePay - $deduction;
+            // I-bis. Bổ sung từ khiếu nại lương tháng trước (công ty tính sai → chuyển sang tháng này)
+            $carryForward = $this->complaintService->carryForwardSummary($employee, $period);
+            $complaintAdjustment = round($carryForward['amount'], 0);
+
+            // J. Thực lĩnh = Lương cơ bản (pro-rata) + Tổng phụ cấp + Thưởng KPI + Lương tăng ca + Bổ sung khiếu nại - Khấu trừ
+            $totalSalary = $basicSalary + $totalAllowance + $bonus + $overtimePay + $complaintAdjustment - $deduction;
 
             // Kiểm tra cảnh báo (nếu nhân viên nghỉ không phép dẫn đến không đủ 23 công HOẶC lương bị âm)
             if (($actualWorkingDays < 23 && $unpaidLeaveDays > 0) || $totalSalary < 0) {
@@ -298,6 +303,7 @@ class PayrollService
                 'allowance_fuel' => $allowanceFuel,
                 'allowance_position' => $allowancePosition,
                 'bonus' => $bonus,
+                'complaint_adjustment' => $complaintAdjustment,
                 'overtime_hours' => $overtimeHours,
                 'overtime_pay' => $overtimePay,
                 'standard_working_days' => $standardWorkingDays,
@@ -316,6 +322,8 @@ class PayrollService
             }
 
             $this->tax->snapshotForPayroll($payroll);
+
+            $this->complaintService->markCarriedToPayroll($carryForward['complaints'], $payroll);
 
         }
 

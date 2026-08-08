@@ -31,6 +31,8 @@
 
     <div class="space-y-6">
 
+        @include('employee.partials.leave-request-rules')
+
         @if (session('success'))
             <div id="success-toast" class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 shadow-sm rounded-2xl px-5 py-4">
                 <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">

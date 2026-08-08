@@ -9,7 +9,7 @@
     $period = $payroll->payrollPeriod;
     $allowanceBreakdown = $payroll->allowanceBreakdown();
     $totalAllowance = (float) $allowanceBreakdown->sum('amount');
-    $income = (float) $payroll->basic_salary + $totalAllowance + (float) $payroll->bonus + (float) ($payroll->overtime_pay ?? 0);
+    $income = (float) $payroll->basic_salary + $totalAllowance + (float) $payroll->bonus + (float) ($payroll->complaint_adjustment ?? 0) + (float) ($payroll->overtime_pay ?? 0);
     $payslip = $payroll->payslipBreakdown();
 
     $layoutParams = [
@@ -195,6 +195,23 @@
                     </div>
                     <span class="text-sm font-bold text-emerald-600">+{{ number_format((float) $payroll->bonus, 0, ',', '.') }}đ</span>
                 </div>
+
+                @if ((float) ($payroll->complaint_adjustment ?? 0) > 0)
+                <div class="flex items-center justify-between rounded-2xl bg-violet-50 px-5 py-4 hover:bg-violet-100 transition">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0">
+                            <svg class="text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:18px;height:18px">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-violet-700">Bổ sung khiếu nại lương</p>
+                            <p class="text-xs text-violet-500">Chuyển từ khiếu nại tháng trước (công ty tính sai)</p>
+                        </div>
+                    </div>
+                    <span class="text-sm font-bold text-violet-600">+{{ number_format((float) $payroll->complaint_adjustment, 0, ',', '.') }}đ</span>
+                </div>
+                @endif
 
                 @if ((float) ($payroll->overtime_pay ?? 0) > 0)
                 <div class="flex items-center justify-between rounded-2xl bg-amber-50 px-5 py-4 hover:bg-amber-100 transition">

@@ -1,5 +1,5 @@
 @php
-    $firstName = collect(explode(' ', trim(Auth::user()->name)))->filter()->first() ?? Auth::user()->name;
+    $displayName = Auth::user()->displayName();
 @endphp
 @inject('statsService', 'App\Services\AccountantStatsService')
 
@@ -27,52 +27,26 @@
 @endphp
 
 <x-accountant-layout title="Dashboard Kế toán" subtitle="Tổng quan lương · Chi phí NS · Hợp đồng sắp hết hạn">
-    <div class="accountant-page">
-        {{-- Hero --}}
-        <section class="accountant-hero">
-            <div class="absolute -right-20 top-0 h-64 w-64 rounded-full bg-amber-400/20 blur-3xl"></div>
-            <div class="absolute bottom-0 left-1/4 h-48 w-48 rounded-full bg-indigo-500/20 blur-3xl"></div>
-            <div class="relative flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
-                <div class="max-w-3xl">
-                    <span class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur">
-                        <span class="h-2 w-2 animate-pulse rounded-full bg-emerald-300"></span>
-                        Dashboard tài chính nhân sự
-                    </span>
-                    <h2 class="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-                        Xin chào {{ $firstName }}, tổng quan lương toàn công ty tháng {{ now()->format('m/Y') }}.
-                    </h2>
-                    <p class="mt-3 max-w-2xl text-sm leading-6 text-amber-100/90">
-                        Theo dõi thống kê lương, chi phí nhân sự theo tháng/quý và cảnh báo hợp đồng sắp hết hạn ảnh hưởng đến mức lương.
+    <div class="accountant-page w-full">
+        <section class="accountant-welcome">
+            <div class="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10 blur-2xl"></div>
+            <div class="relative flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-medium text-amber-100">Xin chào,</p>
+                    <h2 class="text-2xl font-bold tracking-tight">{{ $displayName }}</h2>
+                    <p class="mt-1 text-sm text-amber-100/90">
+                        {{ $periodLabel }} · {{ $activeEmployees }} nhân viên · {{ $formatShort($fin['employer_cost'] ?? 0) }} chi phí DN (ước)
                     </p>
-                    <div class="mt-6 flex flex-wrap gap-3">
-                        <a href="{{ route('accountant.payroll-periods.index') }}" class="accountant-btn-primary !shadow-black/10">Quản lý kỳ lương</a>
-                        <a href="{{ route('accountant.reports.financial') }}" class="inline-flex items-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15">
-                            Báo cáo tài chính
-                        </a>
-                        <a href="{{ route('accountant.contracts.expiring') }}" class="inline-flex items-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15">
-                            HĐ sắp hết hạn
-                            @if($expiring['stats']['within_30'] > 0)
-                                <span class="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold">{{ $expiring['stats']['within_30'] }}</span>
-                            @endif
-                        </a>
-                    </div>
                 </div>
-
-                <div class="grid gap-3 sm:grid-cols-2 xl:w-[420px]">
-                    <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                        <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200">Kỳ đang xem</p>
-                        <p class="mt-2 text-lg font-bold">{{ $currentPeriod?->name ?? 'Chưa tạo kỳ' }}</p>
-                        <p class="mt-1 text-sm text-amber-100/85">
-                            <span class="accountant-badge {{ $statsService->periodStatusBadge($currentPeriod?->status) }}">
-                                {{ $statsService->periodStatusLabel($currentPeriod?->status) }}
-                            </span>
-                        </p>
-                    </div>
-                    <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                        <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200">Chi phí DN (ước)</p>
-                        <p class="mt-2 text-lg font-bold">{{ $formatShort($fin['employer_cost'] ?? 0) }}</p>
-                        <p class="mt-1 text-sm text-amber-100/85">{{ $activeEmployees }} NV · {{ $departmentCount }} phòng ban</p>
-                    </div>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('accountant.payroll-periods.index') }}" class="inline-flex items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-amber-800 shadow-sm hover:bg-amber-50">Kỳ lương</a>
+                    <a href="{{ route('accountant.reports.financial') }}" class="inline-flex items-center rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur hover:bg-white/25">Báo cáo</a>
+                    @if(($expiring['stats']['within_30'] ?? 0) > 0)
+                        <a href="{{ route('accountant.contracts.expiring') }}" class="inline-flex items-center gap-1.5 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur hover:bg-white/25">
+                            HĐ hết hạn
+                            <span class="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold">{{ $expiring['stats']['within_30'] }}</span>
+                        </a>
+                    @endif
                 </div>
             </div>
         </section>

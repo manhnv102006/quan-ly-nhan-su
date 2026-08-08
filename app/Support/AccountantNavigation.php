@@ -80,6 +80,7 @@ class AccountantNavigation
                         'label' => 'Khiếu nại lương',
                         'href' => route('accountant.payroll-complaints.index'),
                         'match' => 'accountant.payroll-complaints.*',
+                        'key' => 'payroll-complaints-pending',
                     ],
                 ],
             ],
@@ -94,7 +95,12 @@ class AccountantNavigation
                         'label' => 'Hồ sơ',
                         'href' => route('accountant.insurance.index'),
                         'match' => 'accountant.insurance.*',
-                        'except' => 'accountant.insurance.reports*',
+                        'except' => ['accountant.insurance.reports*', 'accountant.insurance.rates*'],
+                    ],
+                    [
+                        'label' => 'Tỷ lệ BH',
+                        'href' => route('accountant.insurance.rates.index'),
+                        'match' => 'accountant.insurance.rates*',
                     ],
                     [
                         'label' => 'Báo cáo',

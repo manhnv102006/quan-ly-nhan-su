@@ -25,6 +25,7 @@ class Payroll extends Model
         'allowance_fuel',
         'allowance_position',
         'bonus',
+        'complaint_adjustment',
         'overtime_hours',
         'overtime_pay',
         'standard_working_days',
@@ -304,6 +305,7 @@ class Payroll extends Model
                 ->values()
                 ->all(),
             'bonus' => $fmt((float) $this->bonus),
+            'complaint_adjustment' => $fmt((float) ($this->complaint_adjustment ?? 0)),
             'overtime_hours' => (float) $this->overtime_hours,
             'overtime_pay' => $fmt((float) $this->overtime_pay),
             'deduction' => $fmt((float) $this->deduction),

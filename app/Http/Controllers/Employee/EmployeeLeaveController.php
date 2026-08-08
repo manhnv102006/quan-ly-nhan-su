@@ -172,6 +172,7 @@ class EmployeeLeaveController extends Controller
                 $employee,
                 $request->start_date,
                 $request->end_date,
+                $totalDays,
             );
 
             if ($capacityError !== null) {

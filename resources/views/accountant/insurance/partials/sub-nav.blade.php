@@ -1,6 +1,7 @@
 @php
     $items = [
         ['label' => 'Hồ sơ BH', 'route' => 'accountant.insurance.index', 'key' => 'profiles'],
+        ['label' => 'Tỷ lệ BH', 'route' => 'accountant.insurance.rates.index', 'key' => 'rates'],
         ['label' => 'Báo cáo nộp BH', 'route' => 'accountant.insurance.reports', 'key' => 'reports'],
     ];
 @endphp

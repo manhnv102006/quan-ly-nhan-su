@@ -10,18 +10,18 @@
 
 <x-dynamic-component :component="$layout" :attributes="new \Illuminate\View\ComponentAttributeBag($layoutParams)">
 
-    <div class="max-w-xl">
+    <div class="max-w-xl space-y-6">
         <a href="{{ route('employee.early-leave.index') }}"
-           class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition mb-6 font-semibold">
+           class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition font-semibold">
             <span>←</span> Quay lại danh sách
         </a>
 
+        @include('employee.partials.early-leave-rules')
+
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-8">
             <h2 class="text-lg font-bold text-slate-800 mb-2">Đơn xin về sớm</h2>
-            <p class="text-xs text-slate-400 mb-6">
-                Nếu đơn được duyệt, bạn có thể check-out sớm và <strong>không bị trừ lương</strong>.<br>
-                Không có đơn duyệt: miễn trừ <strong>{{ \App\Services\EmployeeAttendanceService::EARLY_LEAVE_GRACE_MINUTES }} phút</strong> trước giờ tan ca;
-                về sớm hơn sẽ bị <strong class="text-rose-500">trừ lương theo số phút</strong> (sau {{ \App\Services\EmployeeAttendanceService::EARLY_LEAVE_GRACE_MINUTES }} phút miễn trừ).
+            <p class="text-xs text-slate-500 mb-6">
+                Điền ngày, giờ muốn về và lý do. Sau khi quản lý duyệt, bạn check-out sớm trong ngày đó sẽ không bị trừ lương.
             </p>
 
             <form action="{{ route('employee.early-leave.store') }}" method="POST" class="space-y-5">

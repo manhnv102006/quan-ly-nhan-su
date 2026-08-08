@@ -4,7 +4,6 @@
     $isAdmin = $roleName === 'admin';
     $isManager = $roleName === 'manager';
     $leaveCapacityPercent = $leaveCapacityPercent ?? 30;
-    $leaveCapacityExampleMax = (int) floor(10 * $leaveCapacityPercent / 100);
 
     $navigation = \App\Support\SelfServiceLayout::navigation();
     $layout = \App\Support\SelfServiceLayout::component($roleName);
@@ -18,30 +17,18 @@
 
 <x-dynamic-component :component="$layout" :attributes="new \Illuminate\View\ComponentAttributeBag($layoutParams)">
 
-    <div class="max-w-2xl">
+    <div class="max-w-2xl space-y-6">
         <a href="{{ $isManager ? route('manager.leave-requests.index') : route('employee.leave-requests') }}"
-           class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition mb-6 font-semibold">
+           class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition font-semibold">
             <span>←</span> {{ $isManager ? 'Quay lại quản lý nghỉ phép' : 'Quay lại danh sách' }}
         </a>
+
+        @include('employee.partials.leave-request-rules', ['leaveCapacityPercent' => $leaveCapacityPercent])
 
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-8">
             <h2 class="text-lg font-bold text-slate-800 mb-6">Đơn xin nghỉ phép mới</h2>
 
-            <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-                Quy định phòng ban (theo vai trò của bạn): mỗi ngày tối đa <strong class="font-semibold text-slate-600">{{ $leaveCapacityPercent }}%</strong> nhân viên đang làm việc được nghỉ cùng lúc
-                @if ($leaveCapacityPercent === 20)
-                    (quản lý / kế toán)
-                @else
-                    (nhân viên)
-                @endif
-                — ví dụ 10 người → tối đa {{ $leaveCapacityExampleMax }} người/ngày đã duyệt.
-            </p>
-
             <x-leave-capacity-alert field="leave_capacity" class="mb-6" />
-
-            <p class="text-xs text-slate-400 mb-6 leading-relaxed">
-                Quy định giới hạn nghỉ phép phòng ban: nhân viên <strong class="font-medium text-slate-500">30%</strong>, quản lý/kế toán <strong class="font-medium text-slate-500">20%</strong> (tính theo số đơn <em>đã duyệt</em> từng ngày trong khoảng nghỉ). Hạn mức của bạn: <strong class="font-medium text-slate-500">{{ $leaveCapacityPercent }}%</strong>.
-            </p>
 
             <form id="leave-request-form" action="{{ route('employee.leave-requests.store') }}" method="POST" class="space-y-6">
                 @csrf
