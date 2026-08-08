@@ -519,11 +519,6 @@ class AutoNotificationService
 
     private function leaveTypeLabel(string $type): string
     {
-        return match ($type) {
-            'annual' => 'nghỉ phép năm',
-            'sick' => 'nghỉ ốm',
-            'unpaid' => 'nghỉ không lương',
-            default => 'nghỉ phép',
-        };
+        return LeaveRequest::LEAVE_TYPE_LABELS[$type] ?? 'nghỉ phép';
     }
 }

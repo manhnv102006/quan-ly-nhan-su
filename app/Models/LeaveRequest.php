@@ -33,6 +33,7 @@ class LeaveRequest extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'total_days' => 'float',
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
     ];
@@ -98,9 +99,58 @@ class LeaveRequest extends Model
     public const LEAVE_TYPE_LABELS = [
         'annual' => 'Nghỉ phép',
         'sick' => 'Nghỉ ốm',
+        'maternity' => 'Nghỉ thai sản',
+        'compensatory' => 'Nghỉ bù',
+        'holiday' => 'Nghỉ lễ, Tết',
+        'business_trip' => 'Nghỉ công tác',
+        'half_day' => 'Nghỉ nửa ngày',
         'unpaid' => 'Nghỉ không lương',
         'other' => 'Lý do khác',
     ];
+
+    public const LEAVE_TYPE_BADGE_CLASSES = [
+        'annual' => 'bg-sky-50 text-sky-700 border-sky-100',
+        'sick' => 'bg-amber-50 text-amber-700 border-amber-100',
+        'maternity' => 'bg-pink-50 text-pink-700 border-pink-100',
+        'compensatory' => 'bg-indigo-50 text-indigo-700 border-indigo-100',
+        'holiday' => 'bg-red-50 text-red-700 border-red-100',
+        'business_trip' => 'bg-teal-50 text-teal-700 border-teal-100',
+        'half_day' => 'bg-violet-50 text-violet-700 border-violet-100',
+        'unpaid' => 'bg-slate-100 text-slate-700 border-slate-200',
+        'other' => 'bg-slate-50 text-slate-600 border-slate-200',
+    ];
+
+    /** @return list<string> */
+    public static function selectableLeaveTypes(): array
+    {
+        return array_keys(self::LEAVE_TYPE_LABELS);
+    }
+
+    /** @return list<string> */
+    public static function paidLeaveTypes(): array
+    {
+        return ['annual', 'sick', 'maternity', 'compensatory', 'holiday', 'business_trip', 'half_day'];
+    }
+
+    /** @return array<string, array{label: string, class: string}> */
+    public static function leaveTypeBadgeMap(): array
+    {
+        $map = [];
+
+        foreach (self::LEAVE_TYPE_LABELS as $key => $label) {
+            $map[$key] = [
+                'label' => $label,
+                'class' => self::LEAVE_TYPE_BADGE_CLASSES[$key] ?? 'bg-slate-100 text-slate-600 border-slate-200',
+            ];
+        }
+
+        return $map;
+    }
+
+    public function leaveTypeLabel(): string
+    {
+        return self::LEAVE_TYPE_LABELS[$this->leave_type] ?? ucfirst((string) $this->leave_type);
+    }
 
     public function isPending(): bool
     {

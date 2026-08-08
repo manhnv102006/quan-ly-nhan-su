@@ -9,11 +9,7 @@
         'approved' => 'Đã duyệt',
         'rejected' => 'Từ chối',
     ];
-    $leaveTypes = [
-        'annual' => ['label' => 'Nghỉ phép', 'class' => 'bg-sky-50 text-sky-700 border-sky-100'],
-        'sick' => ['label' => 'Nghỉ ốm', 'class' => 'bg-amber-50 text-amber-700 border-amber-100'],
-        'unpaid' => ['label' => 'Không lương', 'class' => 'bg-slate-100 text-slate-700 border-slate-200'],
-    ];
+    $leaveTypes = \App\Models\LeaveRequest::leaveTypeBadgeMap();
 @endphp
 
 <x-manager-layout

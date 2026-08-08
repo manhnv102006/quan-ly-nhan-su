@@ -7,6 +7,8 @@ use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
 use App\Models\Shift;
+use App\Services\AccountantAttendanceService;
+use App\Services\AttendanceHistoryService;
 use App\Services\EmployeeAttendanceService;
 use App\Services\FaceAttendanceService;
 use App\Services\FaceVerificationService;
@@ -142,6 +144,34 @@ class AttendanceController extends Controller
             'dayOffReason',
             'hasApprovedOvertimeToday',
             'isBlockedDayOff',
+        ));
+    }
+
+    public function history(
+        Request $request,
+        AccountantAttendanceService $accountantAttendance,
+        AttendanceHistoryService $historyService,
+    ): View {
+        $employee = Employee::where('user_id', Auth::id())->firstOrFail();
+
+        $filters = [
+            'month'  => (int) $request->input('month', now()->month),
+            'year'   => (int) $request->input('year', now()->year),
+            'status' => $request->input('status', ''),
+        ];
+
+        $attendances = $accountantAttendance->attendancesForEmployee(
+            $employee,
+            $filters['year'],
+            $filters['month'],
+            $filters['status'] ?: null,
+        );
+
+        $sessionRows = $historyService->sessionRows($attendances);
+        $summary = $historyService->summaryFromRows($sessionRows, $attendances);
+
+        return view('employee.attendance.history', compact(
+            'employee', 'attendances', 'sessionRows', 'summary', 'filters'
         ));
     }
 

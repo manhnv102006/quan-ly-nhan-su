@@ -21,7 +21,12 @@ class EmployeeNavigation
                     [
                         'label' => 'Chấm công',
                         'href' => route('attendance.index'),
-                        'route' => 'attendance.*',
+                        'route' => 'attendance.index',
+                    ],
+                    [
+                        'label' => 'Lịch sử check-in/out',
+                        'href' => route('attendance.history'),
+                        'route' => 'attendance.history',
                     ],
                     [
                         'label' => 'Nghỉ phép',
@@ -55,6 +60,11 @@ class EmployeeNavigation
                         'label' => 'Bảng lương',
                         'href' => route('employee.payrolls.index'),
                         'route' => 'employee.payrolls.*',
+                    ],
+                    [
+                        'label' => 'Khiếu nại lương',
+                        'href' => route('employee.payroll-complaints.index'),
+                        'route' => 'employee.payroll-complaints.*',
                     ],
                     [
                         'label' => 'Ứng lương',

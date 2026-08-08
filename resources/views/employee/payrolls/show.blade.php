@@ -51,6 +51,10 @@
                 </svg>
                 Danh sách
             </a>
+            <a href="{{ route('employee.payroll-complaints.create', ['payroll_id' => $payroll->id]) }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-semibold hover:bg-rose-100 transition">
+                Khiếu nại lương
+            </a>
             <a href="{{ route('employee.payrolls.pdf', $payroll) }}"
                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700 shadow-sm shadow-sky-500/30 transition">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

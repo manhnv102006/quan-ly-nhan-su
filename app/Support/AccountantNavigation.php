@@ -76,6 +76,11 @@ class AccountantNavigation
                         'href' => route('accountant.payrolls.salary-history'),
                         'match' => 'accountant.payrolls.salary-history',
                     ],
+                    [
+                        'label' => 'Khiếu nại lương',
+                        'href' => route('accountant.payroll-complaints.index'),
+                        'match' => 'accountant.payroll-complaints.*',
+                    ],
                 ],
             ],
             [
@@ -242,6 +247,7 @@ class AccountantNavigation
                 'match' => [
                     'attendance.*',
                     'employee.payrolls.*',
+                    'employee.payroll-complaints.*',
                     'employee.advances.*',
                     'employee.tax-dependents.*',
                     'employee.contracts.*',
@@ -262,6 +268,11 @@ class AccountantNavigation
                         'label' => 'Phiếu lương',
                         'href' => route('employee.payrolls.index'),
                         'match' => 'employee.payrolls.*',
+                    ],
+                    [
+                        'label' => 'Khiếu nại lương',
+                        'href' => route('employee.payroll-complaints.index'),
+                        'match' => 'employee.payroll-complaints.*',
                     ],
                     [
                         'label' => 'Ứng lương',

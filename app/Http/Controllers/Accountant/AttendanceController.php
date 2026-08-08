@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Services\AccountantAttendanceService;
+use App\Services\AttendanceHistoryService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -14,6 +15,7 @@ class AttendanceController extends Controller
 {
     public function __construct(
         protected AccountantAttendanceService $attendanceService,
+        protected AttendanceHistoryService $historyService,
     ) {}
 
     public function index(Request $request): View
@@ -174,12 +176,14 @@ class AttendanceController extends Controller
             $filters['status'] ?: null,
         );
 
-        $summary = $this->attendanceService->summaryFromCollection($attendances);
+        $sessionRows = $this->historyService->sessionRows($attendances);
+        $summary = $this->historyService->summaryFromRows($sessionRows, $attendances);
 
         return view('accountant.attendance.employee', [
             'employee' => $employee,
             'department' => $employee->department,
             'attendances' => $attendances,
+            'sessionRows' => $sessionRows,
             'summary' => $summary,
             'filters' => $filters,
             'month' => $month,

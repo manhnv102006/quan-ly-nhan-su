@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Employee;
+use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\Payroll;
 use App\Models\PayrollPeriod;
@@ -141,16 +142,16 @@ class PayrollService
                     continue;
                 }
 
-                // Kiểm tra xem ngày vắng mặt này có đơn nghỉ phép có lương (annual, sick) được duyệt không
-                $hasLeave = $employee->leaveRequests()
+                // Kiểm tra xem ngày vắng mặt này có đơn nghỉ phép có lương được duyệt không
+                $approvedLeave = $employee->leaveRequests()
                     ->where('status', 'approved')
-                    ->whereIn('leave_type', ['annual', 'sick'])
+                    ->whereIn('leave_type', LeaveRequest::paidLeaveTypes())
                     ->whereDate('start_date', '<=', $record->attendance_date)
                     ->whereDate('end_date', '>=', $record->attendance_date)
-                    ->exists();
+                    ->first();
 
-                if ($hasLeave) {
-                    $approvedPaidLeavesCount++;
+                if ($approvedLeave) {
+                    $approvedPaidLeavesCount += $approvedLeave->leave_type === 'half_day' ? 0.5 : 1;
                 } else {
                     $unapprovedAbsences++;
                 }

@@ -23,9 +23,15 @@
         @endif
 
         {{-- Header --}}
-        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
-            <h1 class="text-xl font-bold text-slate-800">Chấm công hôm nay</h1>
-            <p class="text-sm text-slate-500 mt-1">{{ now()->format('d/m/Y') }}</p>
+        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-slate-800">Chấm công hôm nay</h1>
+                <p class="text-sm text-slate-500 mt-1">{{ now()->format('d/m/Y') }}</p>
+            </div>
+            <a href="{{ route('attendance.history') }}"
+               class="inline-flex items-center rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-semibold text-sky-700 hover:bg-sky-100 transition">
+                Lịch sử check-in/out →
+            </a>
         </div>
 
         @if (($isBlockedDayOff ?? false))

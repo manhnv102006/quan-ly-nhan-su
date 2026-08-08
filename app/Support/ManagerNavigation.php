@@ -39,6 +39,11 @@ class ManagerNavigation
                         'route' => 'manager.overtime-requests*',
                     ],
                     [
+                        'label' => 'Khiếu nại lương',
+                        'href' => route('manager.payroll-complaints.index'),
+                        'route' => 'manager.payroll-complaints*',
+                    ],
+                    [
                         'label' => 'Thông báo',
                         'href' => route('manager.notifications.index'),
                         'route' => 'manager.notifications*',
@@ -74,6 +79,11 @@ class ManagerNavigation
                         'label' => 'Ứng lương',
                         'href' => route('employee.advances.index'),
                         'route' => 'employee.advances.*',
+                    ],
+                    [
+                        'label' => 'Khiếu nại lương',
+                        'href' => route('employee.payroll-complaints.index'),
+                        'route' => 'employee.payroll-complaints.*',
                     ],
                     [
                         'label' => 'Đăng ký NPT',

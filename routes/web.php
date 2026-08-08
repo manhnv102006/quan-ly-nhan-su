@@ -33,6 +33,7 @@ use App\Http\Controllers\Admin\RecruitmentController;
 use App\Http\Controllers\Admin\ShiftController;
 
 use App\Http\Controllers\Accountant\AdvanceController as AccountantAdvanceController;
+use App\Http\Controllers\Accountant\PayrollComplaintController as AccountantPayrollComplaintController;
 use App\Http\Controllers\Accountant\AttendanceController as AccountantAttendanceController;
 use App\Http\Controllers\Accountant\ChangeLogController as AccountantChangeLogController;
 use App\Http\Controllers\Accountant\ContractController as AccountantContractController;
@@ -45,10 +46,12 @@ use App\Http\Controllers\Accountant\TaxController as AccountantTaxController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Employee\NotificationController as EmployeeNotificationController;
 use App\Http\Controllers\Manager\EmployeeController as ManagerEmployeeController;
+use App\Http\Controllers\Manager\PayrollComplaintController as ManagerPayrollComplaintController;
 use App\Http\Controllers\Manager\KPIController as ManagerKPIController;
 use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Employee\EarlyLeaveController as EmployeeEarlyLeaveController;
+use App\Http\Controllers\Employee\PayrollComplaintController as EmployeePayrollComplaintController;
 use App\Http\Controllers\Employee\EmployeeLeaveController;
 use App\Http\Controllers\Employee\EmployeeAdvanceController;
 use App\Http\Controllers\Employee\EmployeeTaxDependentController;
@@ -260,6 +263,7 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
 
     Route::get('/employees', [ManagerEmployeeController::class, 'index'])->name('employees.index');
     Route::get('/employees/{employee}', [ManagerEmployeeController::class, 'show'])->name('employees.show');
+    Route::get('/employees/{employee}/attendance', [ManagerEmployeeController::class, 'attendance'])->name('employees.attendance');
 
     Route::get('/notifications', [ManagerNotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/create', [ManagerNotificationController::class, 'create'])->name('notifications.create');
@@ -286,6 +290,11 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::get('/early-leave/{earlyLeaveRequest}', [EarlyLeaveApprovalController::class, 'show'])->name('early-leave.show');
     Route::patch('/early-leave/{earlyLeaveRequest}/approve', [EarlyLeaveApprovalController::class, 'approve'])->name('early-leave.approve');
     Route::patch('/early-leave/{earlyLeaveRequest}/reject', [EarlyLeaveApprovalController::class, 'reject'])->name('early-leave.reject');
+
+    Route::get('/payroll-complaints', [ManagerPayrollComplaintController::class, 'index'])->name('payroll-complaints.index');
+    Route::get('/payroll-complaints/{payrollComplaint}', [ManagerPayrollComplaintController::class, 'show'])->name('payroll-complaints.show');
+    Route::patch('/payroll-complaints/{payrollComplaint}/confirm', [ManagerPayrollComplaintController::class, 'confirm'])->name('payroll-complaints.confirm');
+    Route::patch('/payroll-complaints/{payrollComplaint}/reject', [ManagerPayrollComplaintController::class, 'reject'])->name('payroll-complaints.reject');
 
     Route::get('/recruitment', [ManagerRecruitmentController::class, 'index'])->name('recruitment.index');
     Route::get('/recruitment/job-posts/create', [ManagerRecruitmentController::class, 'createJobPost'])->name('recruitment.job-posts.create');
@@ -352,6 +361,10 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
     Route::post('/advances/{advance}/apply', [AccountantAdvanceController::class, 'applyDeduction'])->name('advances.apply');
     Route::post('/advances/period/{payrollPeriod}/apply-all', [AccountantAdvanceController::class, 'applyAll'])->name('advances.apply-all');
     Route::get('/advances/{advance}', [AccountantAdvanceController::class, 'show'])->name('advances.show');
+    Route::get('/payroll-complaints', [AccountantPayrollComplaintController::class, 'index'])->name('payroll-complaints.index');
+    Route::get('/payroll-complaints/{payrollComplaint}', [AccountantPayrollComplaintController::class, 'show'])->name('payroll-complaints.show');
+    Route::patch('/payroll-complaints/{payrollComplaint}/resolve', [AccountantPayrollComplaintController::class, 'resolve'])->name('payroll-complaints.resolve');
+    Route::patch('/payroll-complaints/{payrollComplaint}/reject', [AccountantPayrollComplaintController::class, 'reject'])->name('payroll-complaints.reject');
     Route::get('/contracts', [AccountantContractController::class, 'index'])->name('contracts.index');
     Route::get('/contracts/salary-overview', [AccountantContractController::class, 'salaryOverview'])->name('contracts.salary-overview');
     Route::get('/contracts/expiring', [AccountantContractController::class, 'expiring'])->name('contracts.expiring');
@@ -391,10 +404,15 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,admin,accountant']
     Route::get('/employee/payrolls', [EmployeePayrollController::class, 'index'])->name('employee.payrolls.index');
     Route::get('/employee/payrolls/{payroll}/pdf', [EmployeePayrollController::class, 'exportPdf'])->name('employee.payrolls.pdf');
     Route::get('/employee/payrolls/{payroll}', [EmployeePayrollController::class, 'show'])->name('employee.payrolls.show');
+    Route::get('/employee/payroll-complaints', [EmployeePayrollComplaintController::class, 'index'])->name('employee.payroll-complaints.index');
+    Route::get('/employee/payroll-complaints/create', [EmployeePayrollComplaintController::class, 'create'])->name('employee.payroll-complaints.create');
+    Route::post('/employee/payroll-complaints', [EmployeePayrollComplaintController::class, 'store'])->name('employee.payroll-complaints.store');
+    Route::get('/employee/payroll-complaints/{payrollComplaint}', [EmployeePayrollComplaintController::class, 'show'])->name('employee.payroll-complaints.show');
     Route::get('/employee/contracts', [EmployeeContractController::class, 'index'])->name('employee.contracts.index');
     Route::get('/employee/contracts/{contract}', [EmployeeContractController::class, 'show'])->name('employee.contracts.show');
     Route::get('/employee/contracts/{contract}/download', [EmployeeContractController::class, 'download'])->name('employee.contracts.download');
     Route::get('/employee/attendance', [EmployeeAttendanceController::class, 'index'])->name('attendance.index');
+    Route::get('/employee/attendance/history', [EmployeeAttendanceController::class, 'history'])->name('attendance.history');
     Route::post('/attendance/face-scan', [EmployeeAttendanceController::class, 'faceScan'])->name('attendance.face-scan');
     Route::post('/attendance/check-in/{shift}', [EmployeeAttendanceController::class, 'checkIn'])->name('attendance.check-in');
     Route::post('/attendance/check-out/{shift}', [EmployeeAttendanceController::class, 'checkOut'])->name('attendance.check-out');

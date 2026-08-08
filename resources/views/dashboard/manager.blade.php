@@ -15,11 +15,7 @@
     ];
     $employeeStatusLabels = \App\Models\Employee::STATUS_LABELS;
     $employeeStatusClasses = \App\Models\Employee::STATUS_BADGE_CLASSES;
-    $leaveTypeLabels = [
-        'annual' => 'Nghỉ phép',
-        'sick' => 'Nghỉ ốm',
-        'unpaid' => 'Không lương',
-    ];
+    $leaveTypeLabels = \App\Models\LeaveRequest::LEAVE_TYPE_LABELS;
     $leaveStatusLabels = [
         'pending' => 'Chờ duyệt',
         'approved' => 'Đã duyệt',

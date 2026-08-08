@@ -1,6 +1,5 @@
 @php
     $statusBadges = \App\Models\Employee::statusBadgeMap();
-    $attendanceLabels = ['present' => 'Đúng giờ', 'late' => 'Đi muộn', 'absent' => 'Vắng mặt', 'leave' => 'Nghỉ phép'];
     $leaveLabels = ['pending' => 'Chờ duyệt', 'approved' => 'Đã duyệt', 'rejected' => 'Từ chối'];
     $kpiLabels = ['pending' => 'Chờ bắt đầu', 'in_progress' => 'Đang thực hiện', 'completed' => 'Hoàn thành'];
 @endphp
@@ -61,16 +60,21 @@
 
         <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <section class="manager-panel">
-                <div class="border-b border-slate-100 px-6 py-5"><h3 class="text-xl font-bold text-slate-800">Chấm công gần đây</h3></div>
-                <div class="p-6">
-                    @forelse ($attendances as $attendance)
-                        <div class="mb-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                            <p class="font-semibold text-slate-800">{{ $attendance->attendance_date?->format('d/m/Y') }} · {{ $attendance->shift?->shift_name ?? 'Ca làm' }}</p>
-                            <p class="mt-1 text-sm text-slate-500">Vào: {{ $attendance->check_in?->format('H:i') ?? '--:--' }} · Ra: {{ $attendance->check_out?->format('H:i') ?? '--:--' }} · {{ $attendanceLabels[$attendance->status] ?? ucfirst($attendance->status) }}</p>
-                        </div>
-                    @empty
+                <div class="border-b border-slate-100 px-6 py-5 flex flex-wrap items-center justify-between gap-3">
+                    <h3 class="text-xl font-bold text-slate-800">Chấm công gần đây</h3>
+                    <a href="{{ route('manager.employees.attendance', $employee) }}"
+                       class="text-sm font-semibold text-teal-700 hover:underline">Xem toàn bộ →</a>
+                </div>
+                <div class="p-6 overflow-x-auto">
+                    @if ($recentSessionRows->isNotEmpty())
+                        @include('shared.attendance.session-history-table', [
+                            'sessionRows' => $recentSessionRows,
+                            'showActions' => false,
+                            'emptyMessage' => 'Chưa có dữ liệu chấm công.',
+                        ])
+                    @else
                         <p class="text-sm text-slate-400">Chưa có dữ liệu chấm công.</p>
-                    @endforelse
+                    @endif
                 </div>
             </section>
 

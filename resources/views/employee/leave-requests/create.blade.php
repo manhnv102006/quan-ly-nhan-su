@@ -51,8 +51,9 @@
                     <select id="leave_type" name="leave_type" required
                             class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition text-sm">
                         <option value="">-- Chọn loại nghỉ phép --</option>
-                        <option value="annual" @selected(old('leave_type') == 'annual')>Nghỉ phép</option>
-                        <option value="other" @selected(old('leave_type') == 'other')>Lý do khác</option>
+                        @foreach (\App\Models\LeaveRequest::LEAVE_TYPE_LABELS as $value => $label)
+                            <option value="{{ $value }}" @selected(old('leave_type') == $value)>{{ $label }}</option>
+                        @endforeach
                     </select>
                     @error('leave_type')
                         <p class="text-rose-500 text-xs mt-1.5 font-medium">{{ $message }}</p>
@@ -103,13 +104,35 @@
     </div>
 
     <script>
-        document.getElementById('leave-request-form')?.addEventListener('submit', function () {
-            const btn = document.getElementById('leave-request-submit');
-            if (btn && !btn.disabled) {
-                btn.disabled = true;
-                btn.textContent = 'Đang gửi...';
+        (function () {
+            const form = document.getElementById('leave-request-form');
+            const leaveType = document.getElementById('leave_type');
+            const startDate = document.getElementById('start_date');
+            const endDate = document.getElementById('end_date');
+
+            function syncHalfDayEndDate() {
+                if (leaveType?.value === 'half_day' && startDate?.value) {
+                    endDate.value = startDate.value;
+                    endDate.readOnly = true;
+                    endDate.classList.add('bg-slate-50');
+                } else if (endDate) {
+                    endDate.readOnly = false;
+                    endDate.classList.remove('bg-slate-50');
+                }
             }
-        });
+
+            leaveType?.addEventListener('change', syncHalfDayEndDate);
+            startDate?.addEventListener('change', syncHalfDayEndDate);
+            syncHalfDayEndDate();
+
+            form?.addEventListener('submit', function () {
+                const btn = document.getElementById('leave-request-submit');
+                if (btn && !btn.disabled) {
+                    btn.disabled = true;
+                    btn.textContent = 'Đang gửi...';
+                }
+            });
+        })();
     </script>
 
 </x-dynamic-component>

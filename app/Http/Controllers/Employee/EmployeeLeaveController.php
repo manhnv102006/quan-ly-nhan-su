@@ -10,6 +10,7 @@ use App\Services\DepartmentLeaveCapacityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class EmployeeLeaveController extends Controller
@@ -74,7 +75,7 @@ class EmployeeLeaveController extends Controller
         $employee = $this->getEmployee();
 
         $request->validate([
-            'leave_type' => 'required|in:annual,other',
+            'leave_type' => ['required', Rule::in(LeaveRequest::selectableLeaveTypes())],
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'required|string|max:1000',
@@ -92,30 +93,50 @@ class EmployeeLeaveController extends Controller
 
         $start = Carbon::parse($request->start_date);
         $end = Carbon::parse($request->end_date);
-        
-        // Lấy danh sách ngày Lễ trong khoảng thời gian xin nghỉ
-        $holidays = \App\Models\Holiday::inRange($start->format('Y-m-d'), $end->format('Y-m-d'))->get();
-        
-        $totalDays = 0;
-        for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
-            if ($date->isSunday()) {
-                continue;
-            }
-            
-            $isHoliday = $holidays->contains(function ($holiday) use ($date) {
-                return $date->between($holiday->start_date, $holiday->end_date);
-            });
-            
-            if ($isHoliday) {
-                continue;
-            }
-            
-            $totalDays++;
-        }
 
-        // Nếu tất cả các ngày đều là ngày nghỉ/lễ thì báo lỗi
-        if ($totalDays === 0) {
-            return back()->withErrors(['start_date' => 'Khoảng thời gian bạn chọn toàn bộ là ngày nghỉ/ngày Lễ. Vui lòng chọn lại.'])->withInput();
+        $holidays = \App\Models\Holiday::inRange($start->format('Y-m-d'), $end->format('Y-m-d'))->get();
+
+        if ($request->leave_type === 'half_day') {
+            if (! $start->isSameDay($end)) {
+                return back()->withErrors([
+                    'end_date' => 'Nghỉ nửa ngày chỉ áp dụng trong một ngày. Ngày bắt đầu và kết thúc phải trùng nhau.',
+                ])->withInput();
+            }
+
+            if ($start->isSunday()) {
+                return back()->withErrors(['start_date' => 'Không thể xin nghỉ nửa ngày vào Chủ nhật.'])->withInput();
+            }
+
+            $isHoliday = $holidays->contains(function ($holiday) use ($start) {
+                return $start->between($holiday->start_date, $holiday->end_date);
+            });
+
+            if ($isHoliday) {
+                return back()->withErrors(['start_date' => 'Không thể xin nghỉ nửa ngày vào ngày Lễ.'])->withInput();
+            }
+
+            $totalDays = 0.5;
+        } else {
+            $totalDays = 0;
+            for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+                if ($date->isSunday()) {
+                    continue;
+                }
+
+                $isHoliday = $holidays->contains(function ($holiday) use ($date) {
+                    return $date->between($holiday->start_date, $holiday->end_date);
+                });
+
+                if ($isHoliday) {
+                    continue;
+                }
+
+                $totalDays++;
+            }
+
+            if ($totalDays === 0) {
+                return back()->withErrors(['start_date' => 'Khoảng thời gian bạn chọn toàn bộ là ngày nghỉ/ngày Lễ. Vui lòng chọn lại.'])->withInput();
+            }
         }
 
         return DB::transaction(function () use ($employee, $request, $totalDays) {

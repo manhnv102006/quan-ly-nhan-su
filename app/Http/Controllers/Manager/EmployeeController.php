@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Services\AccountantAttendanceService;
+use App\Services\AttendanceHistoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -79,6 +81,8 @@ class EmployeeController extends Controller
             ->limit(8)
             ->get();
 
+        $recentSessionRows = app(AttendanceHistoryService::class)->sessionRows($attendances);
+
         $leaveRequests = $employee->leaveRequests()
             ->latest()
             ->limit(6)
@@ -95,8 +99,55 @@ class EmployeeController extends Controller
             'department',
             'employee',
             'attendances',
+            'recentSessionRows',
             'leaveRequests',
             'kpis',
+        ));
+    }
+
+    public function attendance(
+        Request $request,
+        Employee $employee,
+        AccountantAttendanceService $accountantAttendance,
+        AttendanceHistoryService $historyService,
+    ): View {
+        $managerProfile = Employee::query()
+            ->with(['department', 'position'])
+            ->where('user_id', Auth::id())
+            ->first();
+
+        $department = $this->managedDepartment($managerProfile);
+
+        if (! $department || (int) $employee->department_id !== (int) $department->id) {
+            abort(403, 'Bạn chỉ được xem nhân viên thuộc phòng ban mình quản lý.');
+        }
+
+        $filters = [
+            'month'  => (int) $request->input('month', now()->month),
+            'year'   => (int) $request->input('year', now()->year),
+            'status' => $request->input('status', ''),
+        ];
+
+        $attendances = $accountantAttendance->attendancesForEmployee(
+            $employee,
+            $filters['year'],
+            $filters['month'],
+            $filters['status'] ?: null,
+        );
+
+        $sessionRows = $historyService->sessionRows($attendances);
+        $summary = $historyService->summaryFromRows($sessionRows, $attendances);
+
+        $employee->load(['department', 'position']);
+
+        return view('manager.employees.attendance', compact(
+            'managerProfile',
+            'department',
+            'employee',
+            'attendances',
+            'sessionRows',
+            'summary',
+            'filters',
         ));
     }
 

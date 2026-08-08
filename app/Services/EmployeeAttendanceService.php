@@ -244,6 +244,22 @@ class EmployeeAttendanceService
         return $shift && str_contains(mb_strtolower($shift->shift_name), 'hành chính');
     }
 
+    public function isFullDayAttendance(Attendance $attendance): bool
+    {
+        if ($attendance->morning_check_in || $attendance->afternoon_check_in) {
+            return true;
+        }
+
+        $shift = $attendance->relationLoaded('shift') ? $attendance->shift : null;
+        if ($shift && $this->isFullDayShift($shift)) {
+            return true;
+        }
+
+        $employeeShift = $attendance->relationLoaded('employeeShift') ? $attendance->employeeShift : null;
+
+        return $this->isFullDayShift($employeeShift?->shift);
+    }
+
     private function performRegularCheckIn(Attendance $attendance, Shift $shift, Carbon $today, Carbon $now): void
     {
         if ($attendance->check_in) {
