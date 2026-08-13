@@ -65,10 +65,10 @@
 
     @if (! $session['check_in'] && ! $session['check_out'])
         <p class="mt-2 text-[11px] text-slate-500">
-            Check-in từ {{ $session['session_start']->copy()->subMinutes(\App\Services\EmployeeAttendanceService::EARLY_CHECK_IN_MINUTES)->format('H:i') }}
-            (trước ca {{ \App\Services\EmployeeAttendanceService::EARLY_CHECK_IN_MINUTES }} phút)
+            Check-in từ {{ ($session['earliest_check_in'] ?? $session['session_start']->copy()->subHour())->format('H:i') }}
+            (sớm tối đa 1 tiếng)
             · Ca {{ $session['session_start']->format('H:i') }}–{{ $session['session_end']->format('H:i') }}
-            · Miễn trừ {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút
+            · Miễn trừ {{ \App\Services\EmployeeAttendanceService::GRACE_MINUTES }} phút đi muộn
         </p>
     @endif
 
@@ -99,6 +99,8 @@
                     Đã qua giờ check-in
                 @elseif (($session['status_tone'] ?? '') === 'waiting')
                     Chưa thể check-in
+                @elseif (($session['status_tone'] ?? '') === 'upcoming')
+                    Mở lúc {{ ($session['earliest_check_in'] ?? $session['session_start']->copy()->subHour())->format('H:i') }}
                 @else
                     Chưa đến giờ check-in
                 @endif

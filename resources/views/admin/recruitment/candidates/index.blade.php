@@ -8,6 +8,7 @@
     $statusConfig = [
         'new'       => ['label' => 'Mới',        'dot' => 'bg-sky-500',     'badge' => 'bg-sky-100 text-sky-700'],
         'interview' => ['label' => 'Phỏng vấn',  'dot' => 'bg-amber-500',   'badge' => 'bg-amber-100 text-amber-700'],
+        'pending_hire_approval' => ['label' => 'Chờ duyệt', 'dot' => 'bg-violet-500', 'badge' => 'bg-violet-100 text-violet-700'],
         'passed'    => ['label' => 'Đạt',         'dot' => 'bg-emerald-500', 'badge' => 'bg-emerald-100 text-emerald-700'],
         'failed'    => ['label' => 'Không đạt',  'dot' => 'bg-rose-500',    'badge' => 'bg-rose-100 text-rose-700'],
     ];
@@ -26,7 +27,7 @@
                 <span class="font-semibold text-slate-700">Ứng viên</span>
             </nav>
             <h1 class="text-2xl font-bold text-slate-800">Quản lý ứng viên</h1>
-            <p class="mt-1 text-sm text-slate-500">Theo dõi hồ sơ, trạng thái phỏng vấn và chuyển đổi nhân viên</p>
+            <p class="mt-1 text-sm text-slate-500">Admin chỉ xem hồ sơ. Quản lý tạo lịch phỏng vấn; Admin duyệt tuyển dụng và tạo nhân viên.</p>
         </div>
     </div>
 
@@ -44,11 +45,12 @@
     @endif
 
     {{-- Thống kê --}}
-    <div class="grid grid-cols-3 gap-3 lg:grid-cols-6">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
         @foreach ([
             ['Tổng ứng viên', $stats['total'] ?? 0,     'text-slate-800',   'bg-white',        ''],
             ['Mới',           $stats['new'] ?? 0,        'text-sky-700',     'bg-sky-50',       'new'],
             ['Phỏng vấn',     $stats['interview'] ?? 0,  'text-amber-700',   'bg-amber-50',     'interview'],
+            ['Chờ duyệt',     $stats['pending_hire_approval'] ?? 0, 'text-violet-700', 'bg-violet-50', 'pending_hire_approval'],
             ['Đạt',           $stats['passed'] ?? 0,     'text-emerald-700', 'bg-emerald-50',   'passed'],
             ['Không đạt',     $stats['failed'] ?? 0,     'text-rose-700',    'bg-rose-50',      'failed'],
             ['Đã nhận việc',  $stats['converted'] ?? 0,  'text-violet-700',  'bg-violet-50',    ''],
@@ -246,28 +248,8 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
                             </svg>
-                            Hồ sơ
+                            Xem hồ sơ
                         </a>
-
-                        @if($candidate->status !== 'failed')
-                            <form action="{{ route('admin.recruitment.candidates.update', $candidate) }}" method="POST"
-                                  onsubmit="return confirm('Từ chối ứng viên {{ addslashes($candidate->full_name) }}?')">
-                                @csrf @method('PUT')
-                                @foreach(['job_post_id','full_name','phone','email','address'] as $f)
-                                    <input type="hidden" name="{{ $f }}" value="{{ $candidate->$f }}">
-                                @endforeach
-                                <input type="hidden" name="birth_date" value="{{ $candidate->birth_date?->format('Y-m-d') }}">
-                                <input type="hidden" name="status" value="failed">
-                                <button type="submit"
-                                        class="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3.5 py-2
-                                               text-xs font-semibold text-rose-600 shadow-sm transition hover:bg-rose-50">
-                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-                                    </svg>
-                                    Từ chối
-                                </button>
-                            </form>
-                        @endif
                     </div>
                 </div>
             </div>

@@ -7,7 +7,6 @@ use App\Models\EmployeeKPI;
 use App\Models\KPIAssignment;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
-use App\Models\PayrollComplaint;
 use App\Models\Role;
 use App\Models\User;
 
@@ -53,20 +52,12 @@ class ManagerPendingApprovalService
 
         $kpiActions = $this->kpiActionCountForManager($manager);
 
-        $pendingPayrollComplaints = 0;
-        if ($manager->department_id) {
-            $pendingPayrollComplaints = PayrollComplaint::query()
-                ->where('status', PayrollComplaint::STATUS_PENDING)
-                ->whereHas('employee', fn ($query) => $query->where('department_id', $manager->department_id))
-                ->count();
-        }
-
         return [
             'leave' => $pendingLeaves,
             'overtime' => $pendingOvertimes,
             'kpi' => $kpiActions,
-            'payroll_complaints' => $pendingPayrollComplaints,
-            'total' => $pendingLeaves + $pendingOvertimes + $kpiActions + $pendingPayrollComplaints,
+            'payroll_complaints' => 0,
+            'total' => $pendingLeaves + $pendingOvertimes + $kpiActions,
         ];
     }
 
@@ -109,8 +100,6 @@ class ManagerPendingApprovalService
             $item['badge'] = $counts['overtime'];
         } elseif ($route === 'manager.kpis*') {
             $item['badge'] = $counts['kpi'];
-        } elseif ($route === 'manager.payroll-complaints*') {
-            $item['badge'] = $counts['payroll_complaints'];
         } elseif (str_contains((string) ($item['href'] ?? ''), 'manager/kpis') || str_contains((string) ($item['href'] ?? ''), '#kpi')) {
             $item['badge'] = $counts['kpi'];
         } elseif (str_contains((string) ($item['href'] ?? ''), '#approvals')) {

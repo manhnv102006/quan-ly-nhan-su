@@ -39,11 +39,6 @@ class ManagerNavigation
                         'route' => 'manager.overtime-requests*',
                     ],
                     [
-                        'label' => 'Khiếu nại lương',
-                        'href' => route('manager.payroll-complaints.index'),
-                        'route' => 'manager.payroll-complaints*',
-                    ],
-                    [
                         'label' => 'Thông báo',
                         'href' => route('manager.notifications.index'),
                         'route' => 'manager.notifications*',

@@ -17,11 +17,12 @@ class RecruitmentController extends Controller
             'open_job_posts' => JobPost::where('status', 'open')->count(),
             'closed_job_posts' => JobPost::where('status', 'closed')->count(),
             'candidates' => Candidate::count(),
-            'pending_candidates' => Candidate::where('status', 'new')->count(),
-            'interview_candidates' => Candidate::where('status', 'interview')->count(),
+            'pending_candidates' => Candidate::where('status', Candidate::STATUS_NEW)->count(),
+            'interview_candidates' => Candidate::where('status', Candidate::STATUS_INTERVIEW)->count(),
+            'pending_hire_approval_candidates' => Candidate::where('status', Candidate::STATUS_PENDING_HIRE_APPROVAL)->count(),
             'interviews' => Interview::count(),
-            'passed_candidates' => Candidate::where('status', 'passed')->count(),
-            'failed_candidates' => Candidate::where('status', 'failed')->count(),
+            'passed_candidates' => Candidate::where('status', Candidate::STATUS_PASSED)->count(),
+            'failed_candidates' => Candidate::where('status', Candidate::STATUS_FAILED)->count(),
             'converted_candidates' => Candidate::whereNotNull('employee_id')->count(),
         ];
 

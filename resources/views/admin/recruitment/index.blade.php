@@ -59,7 +59,7 @@
             ],
             [
                 'title' => 'Ứng viên',
-                'description' => 'CV, trạng thái và chuyển đổi thành nhân viên.',
+                'description' => 'Xem hồ sơ, duyệt tuyển dụng và chuyển thành nhân viên.',
                 'route' => route('admin.recruitment.candidates'),
                 'cta' => 'Xem hồ sơ',
                 'metric' => ($stats['candidates'] ?? 0).' hồ sơ',
@@ -68,9 +68,9 @@
             ],
             [
                 'title' => 'Phỏng vấn',
-                'description' => 'Lịch hẹn, điểm đánh giá và kết quả tuyển.',
+                'description' => 'Xem lịch hẹn và kết quả chấm điểm từ quản lý.',
                 'route' => route('admin.recruitment.interviews'),
-                'cta' => 'Quản lý lịch PV',
+                'cta' => 'Xem lịch PV',
                 'metric' => ($stats['interviews'] ?? 0).' buổi',
                 'gradient' => 'from-amber-500/10 to-orange-500/5',
                 'iconBg' => 'bg-amber-600',
@@ -101,14 +101,14 @@
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                         Tạo tin tuyển dụng
                     </a>
-                    <a href="{{ route('admin.recruitment.candidates.create') }}"
+                    <a href="{{ route('admin.recruitment.candidates') }}"
                        class="recruitment-btn-primary inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-cyan-700">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" /></svg>
-                        Thêm ứng viên
+                        Xem ứng viên
                     </a>
-                    <a href="{{ route('admin.recruitment.candidates') }}"
+                    <a href="{{ route('admin.recruitment.interviews') }}"
                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-transparent bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
-                        Lên lịch PV
+                        Xem phỏng vấn
                     </a>
                 </div>
             </div>

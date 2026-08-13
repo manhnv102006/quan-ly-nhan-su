@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Candidate;
 use App\Models\Interview;
+use App\Models\JobPost;
 use App\Models\KPIAssignment;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
@@ -44,10 +45,10 @@ class AdminPendingApprovalService
             ->count();
 
         $recruitment = Candidate::query()
-            ->where('status', 'new')
+            ->where('status', Candidate::STATUS_PENDING_HIRE_APPROVAL)
             ->count()
-            + Interview::query()
-                ->where('result', 'pending')
+            + \App\Models\JobPost::query()
+                ->where('status', 'pending_approval')
                 ->count();
 
         return [

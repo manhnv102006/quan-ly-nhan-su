@@ -7,6 +7,7 @@ use App\Models\Payroll;
 use App\Models\PayrollComplaint;
 use App\Models\PayrollPeriod;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -23,6 +24,66 @@ class PayrollComplaintService
         $sequence = $latest ? ((int) Str::after($latest, $prefix)) + 1 : 1;
 
         return $prefix.str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function filteredQuery(?string $status = null, ?string $search = null): Builder
+    {
+        $query = PayrollComplaint::query()
+            ->with(['employee.department', 'employee.position', 'payroll.payrollPeriod'])
+            ->latest('id');
+
+        if ($status) {
+            if ($status === PayrollComplaint::STATUS_PROCESSING) {
+                $query->whereIn('status', [
+                    PayrollComplaint::STATUS_PENDING,
+                    PayrollComplaint::STATUS_PROCESSING,
+                ]);
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        $search = trim((string) $search);
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('complaint_code', 'like', "%{$search}%")
+                    ->orWhere('subject', 'like', "%{$search}%")
+                    ->orWhereHas('employee', function ($employee) use ($search) {
+                        $employee->where('full_name', 'like', "%{$search}%")
+                            ->orWhere('employee_code', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        return $query;
+    }
+
+    /**
+     * @return array{awaiting: int, resolved: int, rejected: int}
+     */
+    public function dashboardStats(): array
+    {
+        return [
+            'awaiting' => PayrollComplaint::whereIn('status', [
+                PayrollComplaint::STATUS_PENDING,
+                PayrollComplaint::STATUS_PROCESSING,
+            ])->count(),
+            'resolved' => PayrollComplaint::where('status', PayrollComplaint::STATUS_RESOLVED)->count(),
+            'rejected' => PayrollComplaint::where('status', PayrollComplaint::STATUS_REJECTED)->count(),
+        ];
+    }
+
+    public function loadDetail(PayrollComplaint $complaint): PayrollComplaint
+    {
+        return $complaint->load([
+            'employee.department',
+            'employee.position',
+            'payroll.payrollPeriod',
+            'carriedToPayroll.payrollPeriod',
+            'managerConfirmer',
+            'resolver',
+            'rejecter',
+        ]);
     }
 
     public function assertEmployeeOwnsPayroll(Employee $employee, Payroll $payroll): void
@@ -129,6 +190,30 @@ class PayrollComplaintService
             'resolution_note' => $resolutionNote,
             'resolved_by' => $resolvedBy,
             'resolved_at' => now(),
+        ]);
+    }
+
+    /**
+     * @param  array{
+     *     employee_id: int,
+     *     payroll_id: int,
+     *     issue_type: string,
+     *     subject: string,
+     *     description: string,
+     *     disputed_amount?: int|null,
+     * }  $data
+     */
+    public function createComplaint(array $data): PayrollComplaint
+    {
+        return PayrollComplaint::create([
+            'complaint_code' => $this->generateCode(),
+            'employee_id' => $data['employee_id'],
+            'payroll_id' => $data['payroll_id'],
+            'issue_type' => $data['issue_type'],
+            'subject' => $data['subject'],
+            'description' => $data['description'],
+            'disputed_amount' => $data['disputed_amount'] ?? null,
+            'status' => PayrollComplaint::STATUS_PROCESSING,
         ]);
     }
 }

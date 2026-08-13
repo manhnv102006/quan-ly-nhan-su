@@ -2,6 +2,7 @@
     <h2 class="text-sm font-bold text-sky-900 mb-2">Quy định check-in / check-out</h2>
     <ul class="text-xs text-sky-900 space-y-1.5 list-disc list-inside">
         <li><strong>Bắt buộc check-in</strong> khi bắt đầu làm việc và <strong>check-out</strong> khi hết giờ ca (thủ công hoặc qua khuôn mặt).</li>
+        <li>Được phép <strong>check-in sớm tối đa 1 tiếng</strong> trước giờ bắt đầu ca (ví dụ ca 08:00 thì check-in từ 07:00).</li>
         <li><strong>Không check-in</strong> → coi như <strong>không đi làm</strong>, không ghi nhận ngày công cho buổi/ca đó.</li>
         <li><strong>Đã check-in nhưng không check-out</strong> → bị <strong>trừ nửa ngày lương</strong> cho mỗi buổi thiếu check-out (ca hành chính: sáng/chiều tính riêng).</li>
         <li>

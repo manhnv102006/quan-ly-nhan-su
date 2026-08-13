@@ -125,6 +125,11 @@ class PayrollComplaint extends Model
         return $this->status === self::STATUS_PROCESSING;
     }
 
+    public function isAwaitingAccountant(): bool
+    {
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_PROCESSING], true);
+    }
+
     public function isOpen(): bool
     {
         return in_array($this->status, [self::STATUS_PENDING, self::STATUS_PROCESSING], true);
@@ -145,20 +150,20 @@ class PayrollComplaint extends Model
     public function statusLabel(): string
     {
         return match ($this->status) {
-            self::STATUS_PROCESSING => 'Chờ kế toán xử lý',
+            self::STATUS_PROCESSING, self::STATUS_PENDING => 'Chờ kế toán xử lý',
             self::STATUS_RESOLVED => 'Đã xử lý',
             self::STATUS_REJECTED => 'Từ chối',
-            default => 'Chờ quản lý duyệt',
+            default => 'Chờ kế toán xử lý',
         };
     }
 
     public function statusBadgeClass(): string
     {
         return match ($this->status) {
-            self::STATUS_PROCESSING => 'bg-sky-50 text-sky-700 border-sky-100',
+            self::STATUS_PROCESSING, self::STATUS_PENDING => 'bg-sky-50 text-sky-700 border-sky-100',
             self::STATUS_RESOLVED => 'bg-emerald-50 text-emerald-700 border-emerald-100',
             self::STATUS_REJECTED => 'bg-rose-50 text-rose-700 border-rose-100',
-            default => 'bg-amber-50 text-amber-700 border-amber-100',
+            default => 'bg-sky-50 text-sky-700 border-sky-100',
         };
     }
 }

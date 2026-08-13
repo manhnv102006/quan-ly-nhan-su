@@ -12,8 +12,7 @@
             <p class="font-bold">Quy trình xử lý</p>
             <ol class="mt-2 list-decimal list-inside space-y-1 text-xs">
                 <li>Bạn gửi khiếu nại kèm mô tả và kỳ lương liên quan.</li>
-                <li>Quản lý phòng ban xem xét và chuyển kế toán.</li>
-                <li>Kế toán kiểm tra — nếu xác nhận công ty tính sai, số tiền thiếu sẽ <strong>được cộng vào bảng lương tháng liền sau</strong> khi kế toán tính lương kỳ đó.</li>
+                <li>Kế toán nhận và kiểm tra trực tiếp — nếu xác nhận công ty tính sai, số tiền thiếu sẽ <strong>được cộng vào bảng lương tháng liền sau</strong> khi kế toán tính lương kỳ đó.</li>
                 <li>Nếu khiếu nại không hợp lệ, kế toán từ chối và ghi rõ lý do.</li>
             </ol>
         </div>

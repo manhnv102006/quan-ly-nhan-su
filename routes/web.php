@@ -28,6 +28,7 @@ use App\Http\Controllers\NotificationController as UserNotificationController;
 use App\Http\Controllers\PublicRecruitmentController;
 
 use App\Http\Controllers\Admin\PayrollPeriodController;
+use App\Http\Controllers\Admin\PayrollComplaintController as AdminPayrollComplaintController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\RecruitmentController;
 use App\Http\Controllers\Admin\ShiftController;
@@ -47,7 +48,6 @@ use App\Http\Controllers\Accountant\TaxController as AccountantTaxController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Employee\NotificationController as EmployeeNotificationController;
 use App\Http\Controllers\Manager\EmployeeController as ManagerEmployeeController;
-use App\Http\Controllers\Manager\PayrollComplaintController as ManagerPayrollComplaintController;
 use App\Http\Controllers\Manager\KPIController as ManagerKPIController;
 use App\Http\Controllers\Manager\NotificationController as ManagerNotificationController;
 use App\Http\Controllers\ProfileController;
@@ -137,6 +137,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::patch('/payroll-periods/{payrollPeriod}/toggle-active', [PayrollPeriodController::class, 'toggleActive'])->name('payroll-periods.toggle-active');
     Route::post('/payroll-periods/{payrollPeriod}/payrolls/{payroll}/adjust', [PayrollPeriodController::class, 'adjustPayroll'])->name('payroll-periods.adjust-payroll');
     Route::resource('payroll-periods', PayrollPeriodController::class)->except(['destroy']);
+
+    Route::get('/payroll-complaints', [AdminPayrollComplaintController::class, 'index'])->name('payroll-complaints.index');
+    Route::get('/payroll-complaints/{payrollComplaint}', [AdminPayrollComplaintController::class, 'show'])->name('payroll-complaints.show');
 
     Route::get('/employees', [AdminModuleController::class, 'employees'])->name('employees');
     Route::get('/employees/trash', [EmployeeController::class, 'trash'])->name('employees.trash');
@@ -244,17 +247,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::delete('/recruitment/job-posts/{jobPost}', [JobPostController::class, 'destroy'])->name('recruitment.job-posts.destroy');
     Route::get('/recruitment/candidates', [CandidateController::class, 'index'])->name('recruitment.candidates');
     Route::get('/recruitment/interviewed-candidates', [CandidateController::class, 'interviewed'])->name('recruitment.interviewed-candidates');
-    Route::get('/recruitment/candidates/create', [CandidateController::class, 'create'])->name('recruitment.candidates.create');
     Route::get('/recruitment/candidates/{candidate}', [CandidateController::class, 'show'])->name('recruitment.candidates.show');
-    Route::get('/recruitment/candidates/{candidate}/edit', [CandidateController::class, 'edit'])->name('recruitment.candidates.edit');
-    Route::post('/recruitment/candidates', [CandidateController::class, 'store'])->name('recruitment.candidates.store');
-    Route::put('/recruitment/candidates/{candidate}', [CandidateController::class, 'update'])->name('recruitment.candidates.update');
+    Route::patch('/recruitment/candidates/{candidate}/approve-hire', [CandidateController::class, 'approveHire'])->name('recruitment.candidates.approve-hire');
+    Route::patch('/recruitment/candidates/{candidate}/reject-hire', [CandidateController::class, 'rejectHire'])->name('recruitment.candidates.reject-hire');
     Route::post('/recruitment/candidates/{candidate}/convert-to-employee', [CandidateController::class, 'convertToEmployee'])->name('recruitment.candidates.convert-to-employee');
-    Route::delete('/recruitment/candidates/{candidate}', [CandidateController::class, 'destroy'])->name('recruitment.candidates.destroy');
     Route::get('/recruitment/interviews', [InterviewController::class, 'index'])->name('recruitment.interviews');
-    Route::get('/recruitment/interviews/create', [InterviewController::class, 'create'])->name('recruitment.interviews.create');
-    Route::post('/recruitment/interviews', [InterviewController::class, 'store'])->name('recruitment.interviews.store');
-    Route::put('/recruitment/interviews/{interview}', [InterviewController::class, 'update'])->name('recruitment.interviews.update');
 
     Route::get('/payrolls/{payroll}/pdf', [PayrollController::class, 'exportPdf'])->name('payrolls.pdf');
 });
@@ -292,12 +289,10 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::patch('/early-leave/{earlyLeaveRequest}/approve', [EarlyLeaveApprovalController::class, 'approve'])->name('early-leave.approve');
     Route::patch('/early-leave/{earlyLeaveRequest}/reject', [EarlyLeaveApprovalController::class, 'reject'])->name('early-leave.reject');
 
-    Route::get('/payroll-complaints', [ManagerPayrollComplaintController::class, 'index'])->name('payroll-complaints.index');
-    Route::get('/payroll-complaints/{payrollComplaint}', [ManagerPayrollComplaintController::class, 'show'])->name('payroll-complaints.show');
-    Route::patch('/payroll-complaints/{payrollComplaint}/confirm', [ManagerPayrollComplaintController::class, 'confirm'])->name('payroll-complaints.confirm');
-    Route::patch('/payroll-complaints/{payrollComplaint}/reject', [ManagerPayrollComplaintController::class, 'reject'])->name('payroll-complaints.reject');
-
     Route::get('/recruitment', [ManagerRecruitmentController::class, 'index'])->name('recruitment.index');
+    Route::get('/recruitment/candidates', [ManagerRecruitmentController::class, 'candidates'])->name('recruitment.candidates.index');
+    Route::get('/recruitment/candidates/{candidate}', [ManagerRecruitmentController::class, 'showCandidate'])->name('recruitment.candidates.show');
+    Route::post('/recruitment/candidates/{candidate}/interviews', [ManagerRecruitmentController::class, 'storeInterview'])->name('recruitment.candidates.interviews.store');
     Route::get('/recruitment/job-posts/create', [ManagerRecruitmentController::class, 'createJobPost'])->name('recruitment.job-posts.create');
     Route::post('/recruitment/job-posts', [ManagerRecruitmentController::class, 'storeJobPost'])->name('recruitment.job-posts.store');
     Route::put('/recruitment/interviews/{interview}', [ManagerRecruitmentController::class, 'updateInterview'])->name('recruitment.interviews.update');

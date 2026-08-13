@@ -27,7 +27,10 @@ class AccountantPendingActionService
             ->where('status', SalaryAdvance::STATUS_PENDING)
             ->count();
         $pendingPayrollComplaints = PayrollComplaint::query()
-            ->where('status', PayrollComplaint::STATUS_PROCESSING)
+            ->whereIn('status', [
+                PayrollComplaint::STATUS_PENDING,
+                PayrollComplaint::STATUS_PROCESSING,
+            ])
             ->count();
 
         return array_map(function (array $item) use ($unread, $pendingAdvances, $pendingPayrollComplaints) {

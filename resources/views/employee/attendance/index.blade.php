@@ -104,7 +104,7 @@
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
             <h2 class="text-base font-semibold text-slate-800 mb-1">Trạng thái hôm nay</h2>
             <p class="text-xs text-slate-500 mb-4">
-                Bắt buộc check-in khi đi làm · Bắt buộc check-out khi tan ca · Không check-in = không ghi công · Thiếu check-out = trừ nửa ngày lương/buổi
+                Check-in sớm tối đa 1 tiếng trước ca · Bắt buộc check-out khi tan ca · Không check-in = không ghi công · Thiếu check-out = trừ nửa ngày lương/buổi
             </p>
 
             @if (($isBlockedDayOff ?? false))

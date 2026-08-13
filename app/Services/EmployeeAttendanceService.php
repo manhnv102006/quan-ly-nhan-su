@@ -19,6 +19,7 @@ class EmployeeAttendanceService
     /** Miễn trừ về sớm trước giờ tan ca — sau mốc này mới tính phút về sớm. */
     public const EARLY_LEAVE_GRACE_MINUTES = 20;
 
+    /** Cho phép check-in sớm tối đa 1 tiếng trước giờ bắt đầu ca. */
     public const EARLY_CHECK_IN_MINUTES = 60;
 
     public function __construct(
@@ -68,8 +69,8 @@ class EmployeeAttendanceService
 
         return $this->buildSessionState(
             $attendance,
-            Carbon::parse($shift->start_time)->setDateFrom($date),
-            Carbon::parse($shift->end_time)->setDateFrom($date),
+            $this->shiftDateTime($shift, $date, start: true),
+            $this->shiftDateTime($shift, $date, start: false),
             'check_in',
             'check_out',
             'late_minutes',
@@ -183,7 +184,7 @@ class EmployeeAttendanceService
                 ]);
             }
 
-            $sessionEnd = Carbon::parse($attendance->shift->end_time)->setDateFrom($attendance->attendance_date);
+            $sessionEnd = $this->shiftDateTime($attendance->shift, Carbon::parse($attendance->attendance_date), start: false);
             $this->assertCheckOutAfterCheckIn($now, Carbon::parse($attendance->check_in));
             $this->assertCanCheckOut($employee, $attendance, $now, $sessionEnd);
 
@@ -268,8 +269,8 @@ class EmployeeAttendanceService
             ]);
         }
 
-        $sessionStart = Carbon::parse($shift->start_time)->setDateFrom($today);
-        $sessionEnd = Carbon::parse($shift->end_time)->setDateFrom($today);
+        $sessionStart = $this->shiftDateTime($shift, $today, start: true);
+        $sessionEnd = $this->shiftDateTime($shift, $today, start: false);
 
         $this->assertCanCheckIn($now, $sessionStart, $sessionEnd);
 
@@ -334,7 +335,7 @@ class EmployeeAttendanceService
 
         if ($now->lt($earliestCheckIn)) {
             throw ValidationException::withMessages([
-                'attendance' => 'Chưa đến giờ check-in. Có thể check-in từ lúc '.$earliestCheckIn->format('H:i').' (trước ca '.self::EARLY_CHECK_IN_MINUTES.' phút). Ca bắt đầu lúc '.$sessionStart->format('H:i').'.',
+                'attendance' => 'Chưa đến giờ check-in. Có thể check-in từ lúc '.$earliestCheckIn->format('H:i').' (sớm tối đa 1 tiếng). Ca bắt đầu lúc '.$sessionStart->format('H:i').'.',
             ]);
         }
 
@@ -406,7 +407,7 @@ class EmployeeAttendanceService
                 $statusMessage = 'Hoàn thành buổi trước để check-in';
                 $statusTone = 'waiting';
             } elseif ($now->lt($earliestCheckIn)) {
-                $statusMessage = 'Check-in mở lúc '.$earliestCheckIn->format('H:i').' (trước ca '.self::EARLY_CHECK_IN_MINUTES.' phút)';
+                $statusMessage = 'Check-in mở lúc '.$earliestCheckIn->format('H:i').' (sớm tối đa 1 tiếng)';
                 $statusTone = 'upcoming';
             } elseif ($now->lt($sessionStart)) {
                 $canCheckIn = true;
@@ -450,6 +451,7 @@ class EmployeeAttendanceService
             'late_minutes' => (int) ($attendance->{$lateField} ?? 0),
             'session_start' => $sessionStart,
             'session_end' => $sessionEnd,
+            'earliest_check_in' => $earliestCheckIn,
             'grace_deadline' => $graceDeadline,
             'can_check_in' => $canCheckIn,
             'can_check_out' => $canCheckOut,
@@ -466,9 +468,25 @@ class EmployeeAttendanceService
         return self::GRACE_MINUTES.' phút';
     }
 
-    private function earliestCheckInAt(Carbon $sessionStart): Carbon
+    public function earliestCheckInAt(Carbon $sessionStart): Carbon
     {
         return $sessionStart->copy()->subMinutes(self::EARLY_CHECK_IN_MINUTES);
+    }
+
+    private function shiftDateTime(Shift $shift, Carbon $date, bool $start): Carbon
+    {
+        $column = $start ? 'start_time' : 'end_time';
+        $raw = $shift->getRawOriginal($column) ?? $shift->getAttributes()[$column] ?? null;
+
+        if ($raw === null) {
+            throw new \InvalidArgumentException("Shift {$column} is missing.");
+        }
+
+        $time = $raw instanceof Carbon
+            ? $raw->format('H:i:s')
+            : Carbon::parse((string) $raw)->format('H:i:s');
+
+        return Carbon::parse($date->format('Y-m-d').' '.$time, config('app.timezone'));
     }
 
     /**

@@ -3,23 +3,26 @@
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateInterviewEvaluationRequest;
+use App\Models\Candidate;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Interview;
 use App\Models\JobPost;
 use App\Services\ManagerScopeService;
+use App\Services\RecruitmentInterviewService;
 use Illuminate\Http\RedirectResponse;
-use App\Http\Requests\UpdateInterviewEvaluationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class RecruitmentController extends Controller
 {
-    public function __construct(private readonly ManagerScopeService $managerScope)
-    {
-    }
+    public function __construct(
+        private readonly ManagerScopeService $managerScope,
+        private readonly RecruitmentInterviewService $interviews,
+    ) {}
 
     public function index(): View
     {
@@ -27,6 +30,8 @@ class RecruitmentController extends Controller
         $departmentIds = $manager ? $this->managerScope->managedDepartmentIds($manager) : [];
 
         $departmentJobPosts = collect();
+        $candidateStats = ['total' => 0, 'new' => 0, 'interview' => 0, 'pending_hire_approval' => 0];
+
         if ($departmentIds !== []) {
             $departmentJobPosts = JobPost::query()
                 ->with(['department', 'submittedBy'])
@@ -34,6 +39,14 @@ class RecruitmentController extends Controller
                 ->latest()
                 ->limit(20)
                 ->get();
+
+            $candidatesQuery = $this->departmentCandidatesQuery($departmentIds);
+            $candidateStats = [
+                'total' => (clone $candidatesQuery)->count(),
+                'new' => (clone $candidatesQuery)->where('status', Candidate::STATUS_NEW)->count(),
+                'interview' => (clone $candidatesQuery)->where('status', Candidate::STATUS_INTERVIEW)->count(),
+                'pending_hire_approval' => (clone $candidatesQuery)->where('status', Candidate::STATUS_PENDING_HIRE_APPROVAL)->count(),
+            ];
         }
 
         $interviewsQuery = Interview::query()
@@ -71,9 +84,125 @@ class RecruitmentController extends Controller
         return view('manager.recruitment.index', [
             'interviews' => $interviews,
             'stats' => $stats,
+            'candidateStats' => $candidateStats,
             'departmentJobPosts' => $departmentJobPosts,
             'manager' => $manager,
         ]);
+    }
+
+    public function candidates(Request $request): View|RedirectResponse
+    {
+        $manager = $this->managerScope->resolveManagerEmployee(Auth::user());
+
+        if (! $manager) {
+            return redirect()
+                ->route('manager.recruitment.index')
+                ->with('error', 'Tài khoản chưa liên kết hồ sơ quản lý.');
+        }
+
+        $departmentIds = $this->managerScope->managedDepartmentIds($manager);
+
+        if ($departmentIds === []) {
+            return redirect()
+                ->route('manager.recruitment.index')
+                ->with('error', 'Bạn chưa được gắn phòng ban quản lý.');
+        }
+
+        $status = (string) $request->query('status', '');
+        $search = trim((string) $request->query('search', ''));
+
+        $query = $this->departmentCandidatesQuery($departmentIds)
+            ->with(['jobPost.department']);
+
+        if ($status !== '' && array_key_exists($status, Candidate::statusLabels())) {
+            $query->where('status', $status);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $candidates = $query->latest()->paginate(15)->withQueryString();
+
+        $statsBase = $this->departmentCandidatesQuery($departmentIds);
+        $stats = [
+            'total' => (clone $statsBase)->count(),
+            'new' => (clone $statsBase)->where('status', Candidate::STATUS_NEW)->count(),
+            'interview' => (clone $statsBase)->where('status', Candidate::STATUS_INTERVIEW)->count(),
+            'pending_hire_approval' => (clone $statsBase)->where('status', Candidate::STATUS_PENDING_HIRE_APPROVAL)->count(),
+            'passed' => (clone $statsBase)->where('status', Candidate::STATUS_PASSED)->count(),
+            'failed' => (clone $statsBase)->where('status', Candidate::STATUS_FAILED)->count(),
+        ];
+
+        return view('manager.recruitment.candidates.index', compact('candidates', 'stats', 'status', 'search'));
+    }
+
+    public function showCandidate(Candidate $candidate): View|RedirectResponse
+    {
+        $manager = $this->managerScope->resolveManagerEmployeeOrFail(Auth::user());
+        $this->ensureManagerCanAccessCandidate($candidate, $manager);
+
+        $candidate->load([
+            'jobPost.department.manager',
+            'jobPost.position',
+            'interviews.interviewer',
+        ]);
+
+        $hasCvFile = filled($candidate->cv_file) && Storage::disk('public')->exists($candidate->cv_file);
+        $cvUrl = $hasCvFile ? Storage::disk('public')->url($candidate->cv_file) : null;
+        $canScheduleInterview = $candidate->interviews->isEmpty();
+        $departmentInterviewers = $this->departmentInterviewersForCandidate($candidate);
+
+        return view('manager.recruitment.candidates.show', compact(
+            'candidate',
+            'hasCvFile',
+            'cvUrl',
+            'canScheduleInterview',
+            'departmentInterviewers',
+            'manager',
+        ));
+    }
+
+    public function storeInterview(Request $request, Candidate $candidate): RedirectResponse
+    {
+        $manager = $this->managerScope->resolveManagerEmployeeOrFail(Auth::user());
+        $this->ensureManagerCanAccessCandidate($candidate, $manager);
+
+        if ($candidate->interviews()->exists()) {
+            return back()->with('error', 'Ứng viên đã có lịch phỏng vấn.');
+        }
+
+        $allowedInterviewerIds = $this->allowedInterviewerIds($candidate);
+
+        if ($allowedInterviewerIds->isEmpty()) {
+            return back()->with('error', 'Phòng ban chưa có nhân viên để phân công phỏng vấn.');
+        }
+
+        $validated = $request->validate([
+            'interviewer_id' => ['required', 'integer', 'in:'.$allowedInterviewerIds->implode(',')],
+            'interview_date' => ['required', 'date', 'after:now'],
+            'note' => ['nullable', 'string'],
+        ], [
+            'interviewer_id.required' => 'Vui lòng chọn người phỏng vấn.',
+            'interviewer_id.in' => 'Người phỏng vấn phải là thành viên cùng phòng ban với ứng viên.',
+            'interview_date.required' => 'Thời gian phỏng vấn là bắt buộc.',
+            'interview_date.after' => 'Thời gian phỏng vấn phải ở tương lai.',
+        ]);
+
+        $this->interviews->scheduleInterview(
+            $candidate->id,
+            $validated['interview_date'],
+            $validated['note'] ?? null,
+            (int) $validated['interviewer_id'],
+        );
+
+        return redirect()
+            ->route('manager.recruitment.candidates.show', $candidate)
+            ->with('success', 'Đã tạo lịch phỏng vấn và gửi email mời ứng viên.');
     }
 
     public function createJobPost(): View|RedirectResponse
@@ -158,39 +287,35 @@ class RecruitmentController extends Controller
         $this->ensureManagerCanAccessInterview($interview, $manager);
 
         $validated = Interview::normalizedEvaluationPayload($request->validated());
+        $this->interviews->applyEvaluation($interview, $request->validated());
 
-        DB::transaction(function () use ($interview, $validated) {
-            $interview->update([
-                'status' => $validated['status'],
-                'result' => $validated['result'],
-                'technical_score' => $validated['technical_score'] ?? null,
-                'attitude_score' => $validated['attitude_score'] ?? null,
-                'culture_score' => $validated['culture_score'] ?? null,
-                'overall_score' => $validated['overall_score'] ?? null,
-                'recommendation' => $validated['recommendation'] ?? null,
-                'strengths' => $validated['strengths'] ?? null,
-                'weaknesses' => $validated['weaknesses'] ?? null,
-                'note' => $validated['note'] ?? null,
-            ]);
-
-            $candidateStatus = match ($validated['result']) {
-                'passed' => 'passed',
-                'failed' => 'failed',
-                default => 'interview',
-            };
-
-            $candidate = $interview->candidate;
-
-            if ($candidate !== null) {
-                $candidate->update([
-                    'status' => $candidateStatus,
-                ]);
-            }
-        });
+        $message = $validated['result'] === 'passed'
+            ? 'Đã gửi kết quả phỏng vấn cho Admin duyệt.'
+            : 'Cập nhật kết quả phỏng vấn thành công.';
 
         return redirect()
             ->route('manager.recruitment.index')
-            ->with('success', 'Cập nhật kết quả phỏng vấn thành công.');
+            ->with('success', $message);
+    }
+
+    private function departmentCandidatesQuery(array $departmentIds)
+    {
+        return Candidate::query()->whereHas(
+            'jobPost',
+            fn ($query) => $query->whereIn('department_id', $departmentIds)
+        );
+    }
+
+    private function ensureManagerCanAccessCandidate(Candidate $candidate, Employee $manager): void
+    {
+        $candidate->loadMissing('jobPost');
+        $departmentIds = $this->managerScope->managedDepartmentIds($manager);
+        $jobDepartmentId = $candidate->jobPost?->department_id;
+
+        abort_unless(
+            $jobDepartmentId !== null && in_array((int) $jobDepartmentId, $departmentIds, true),
+            403
+        );
     }
 
     private function ensureManagerCanAccessInterview(Interview $interview, Employee $manager): void
@@ -204,5 +329,25 @@ class RecruitmentController extends Controller
             || ($jobDepartmentId !== null && in_array((int) $jobDepartmentId, $departmentIds, true));
 
         abort_unless($allowed, 403);
+    }
+
+    private function departmentInterviewersForCandidate(Candidate $candidate)
+    {
+        $departmentId = $candidate->jobPost?->department_id;
+
+        if (! $departmentId) {
+            return collect();
+        }
+
+        return Employee::query()
+            ->where('department_id', $departmentId)
+            ->where('status', 'active')
+            ->orderBy('full_name')
+            ->get(['id', 'employee_code', 'full_name']);
+    }
+
+    private function allowedInterviewerIds(Candidate $candidate): \Illuminate\Support\Collection
+    {
+        return $this->departmentInterviewersForCandidate($candidate)->pluck('id');
     }
 }

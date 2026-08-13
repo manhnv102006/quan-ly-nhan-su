@@ -3,8 +3,8 @@
     @if (session('success'))<div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>@endif
     @if (session('error'))<div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{{ session('error') }}</div>@endif
 
-    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        @foreach([['Chờ QL', $stats['pending'], 'text-amber-600'], ['Chờ KT', $stats['processing'], 'text-sky-600'], ['Đã xử lý', $stats['resolved'], 'text-emerald-600'], ['Từ chối', $stats['rejected'], 'text-rose-600']] as [$label, $value, $tone])
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        @foreach([['Chờ xử lý', $stats['awaiting'], 'text-sky-600'], ['Đã xử lý', $stats['resolved'], 'text-emerald-600'], ['Từ chối', $stats['rejected'], 'text-rose-600']] as [$label, $value, $tone])
             @include('accountant.partials.stat-card', ['label' => $label, 'value' => $value, 'tone' => $tone])
         @endforeach
     </div>
@@ -14,7 +14,7 @@
         <div class="min-w-[160px]"><label class="accountant-label">Trạng thái</label>
             <select name="status" class="accountant-field">
                 <option value="">Tất cả</option>
-                @foreach(['pending'=>'Chờ quản lý','processing'=>'Chờ kế toán','resolved'=>'Đã xử lý','rejected'=>'Từ chối'] as $v=>$l)
+                @foreach(['processing'=>'Chờ kế toán','resolved'=>'Đã xử lý','rejected'=>'Từ chối'] as $v=>$l)
                     <option value="{{ $v }}" @selected(request('status')===$v)>{{ $l }}</option>
                 @endforeach
             </select>

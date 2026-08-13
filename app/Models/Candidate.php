@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Candidate extends Model
 {
+    public const STATUS_NEW = 'new';
+
+    public const STATUS_INTERVIEW = 'interview';
+
+    public const STATUS_PENDING_HIRE_APPROVAL = 'pending_hire_approval';
+
+    public const STATUS_PASSED = 'passed';
+
+    public const STATUS_FAILED = 'failed';
+
     protected $table = 'candidates';
 
     protected $fillable = [
@@ -49,5 +59,26 @@ class Candidate extends Model
     public function emailLogs(): HasMany
     {
         return $this->hasMany(RecruitmentEmailLog::class);
+    }
+
+    public static function statusLabels(): array
+    {
+        return [
+            self::STATUS_NEW => 'Mới',
+            self::STATUS_INTERVIEW => 'Phỏng vấn',
+            self::STATUS_PENDING_HIRE_APPROVAL => 'Chờ admin duyệt',
+            self::STATUS_PASSED => 'Đạt',
+            self::STATUS_FAILED => 'Không đạt',
+        ];
+    }
+
+    public function statusLabel(): string
+    {
+        return self::statusLabels()[$this->status] ?? $this->status;
+    }
+
+    public function awaitsHireApproval(): bool
+    {
+        return $this->status === self::STATUS_PENDING_HIRE_APPROVAL;
     }
 }

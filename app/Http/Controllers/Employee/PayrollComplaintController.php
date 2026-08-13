@@ -85,20 +85,18 @@ class PayrollComplaintController extends Controller
             return back()->withInput()->with('error', 'Phiếu lương này đang có khiếu nại chưa xử lý xong.');
         }
 
-        PayrollComplaint::create([
-            'complaint_code' => $this->complaints->generateCode(),
+        $this->complaints->createComplaint([
             'employee_id' => $employee->id,
             'payroll_id' => $payroll->id,
             'issue_type' => $validated['issue_type'],
             'subject' => $validated['subject'],
             'description' => $validated['description'],
             'disputed_amount' => $validated['disputed_amount'] ?? null,
-            'status' => PayrollComplaint::STATUS_PENDING,
         ]);
 
         return redirect()
             ->route('employee.payroll-complaints.index')
-            ->with('success', 'Đã gửi khiếu nại lương. Quản lý sẽ xem xét và chuyển kế toán xử lý.');
+            ->with('success', 'Đã gửi khiếu nại lương. Kế toán sẽ xem xét và phản hồi.');
     }
 
     public function show(PayrollComplaint $payrollComplaint): View

@@ -11,7 +11,7 @@
 
     @include('payroll-complaints.partials.detail', ['complaint' => $payrollComplaint])
 
-    @if($payrollComplaint->isProcessing())
+    @if($payrollComplaint->isAwaitingAccountant())
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <form method="POST" action="{{ route('accountant.payroll-complaints.resolve', $payrollComplaint) }}" class="accountant-card p-5 space-y-3">
                 @csrf @method('PATCH')
@@ -59,10 +59,6 @@
                 <textarea name="reject_reason" rows="4" required maxlength="1000" class="accountant-field" placeholder="Lý do từ chối...">{{ old('reject_reason') }}</textarea>
                 <button type="submit" class="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700">Từ chối</button>
             </form>
-        </div>
-    @elseif($payrollComplaint->isPending())
-        <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Khiếu nại đang chờ quản lý phòng ban xác nhận trước khi chuyển kế toán xử lý.
         </div>
     @endif
 </div>

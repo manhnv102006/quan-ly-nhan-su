@@ -72,10 +72,11 @@ class CandidateController extends Controller
 
         $stats = [
             'total' => Candidate::count(),
-            'new' => Candidate::where('status', 'new')->count(),
-            'interview' => Candidate::where('status', 'interview')->count(),
-            'passed' => Candidate::where('status', 'passed')->count(),
-            'failed' => Candidate::where('status', 'failed')->count(),
+            'new' => Candidate::where('status', Candidate::STATUS_NEW)->count(),
+            'interview' => Candidate::where('status', Candidate::STATUS_INTERVIEW)->count(),
+            'pending_hire_approval' => Candidate::where('status', Candidate::STATUS_PENDING_HIRE_APPROVAL)->count(),
+            'passed' => Candidate::where('status', Candidate::STATUS_PASSED)->count(),
+            'failed' => Candidate::where('status', Candidate::STATUS_FAILED)->count(),
             'converted' => Candidate::whereNotNull('employee_id')->count(),
         ];
 
@@ -112,10 +113,11 @@ class CandidateController extends Controller
 
         $stats = [
             'total' => (clone $interviewedCandidatesQuery)->count(),
-            'new' => (clone $interviewedCandidatesQuery)->where('status', 'new')->count(),
-            'interview' => (clone $interviewedCandidatesQuery)->where('status', 'interview')->count(),
-            'passed' => (clone $interviewedCandidatesQuery)->where('status', 'passed')->count(),
-            'failed' => (clone $interviewedCandidatesQuery)->where('status', 'failed')->count(),
+            'new' => (clone $interviewedCandidatesQuery)->where('status', Candidate::STATUS_NEW)->count(),
+            'interview' => (clone $interviewedCandidatesQuery)->where('status', Candidate::STATUS_INTERVIEW)->count(),
+            'pending_hire_approval' => (clone $interviewedCandidatesQuery)->where('status', Candidate::STATUS_PENDING_HIRE_APPROVAL)->count(),
+            'passed' => (clone $interviewedCandidatesQuery)->where('status', Candidate::STATUS_PASSED)->count(),
+            'failed' => (clone $interviewedCandidatesQuery)->where('status', Candidate::STATUS_FAILED)->count(),
             'converted' => (clone $interviewedCandidatesQuery)->whereNotNull('employee_id')->count(),
         ];
 
@@ -130,20 +132,46 @@ class CandidateController extends Controller
             'jobPost.department.manager',
             'jobPost.position',
             'employee',
+            'interviews.interviewer',
         ]);
 
         $cvData = $this->candidateCvData($candidate);
-
-        $canScheduleInterview = ! Interview::query()->where('candidate_id', $candidate->id)->exists();
+        $interview = $candidate->interviews->first();
 
         return view('admin.recruitment.candidates.show', array_merge([
             'candidate' => $candidate,
+            'interview' => $interview,
             'departments' => $this->activeDepartments(),
             'positions' => $this->activePositions(),
             'suggestedEmployeeCode' => $this->suggestEmployeeCode($candidate),
             'conversionPlacement' => $this->resolveConversionPlacement($candidate),
-            'canScheduleInterview' => $canScheduleInterview,
         ], $cvData));
+    }
+
+    public function approveHire(Candidate $candidate): RedirectResponse
+    {
+        if (! $candidate->awaitsHireApproval()) {
+            return back()->with('error', 'Chỉ duyệt được ứng viên đang chờ admin xác nhận tuyển dụng.');
+        }
+
+        $candidate->update([
+            'status' => Candidate::STATUS_PASSED,
+        ]);
+
+        return back()->with('success', 'Đã duyệt ứng viên. Bạn có thể tạo hồ sơ nhân viên.');
+    }
+
+    public function rejectHire(Candidate $candidate): RedirectResponse
+    {
+        if (! $candidate->awaitsHireApproval()) {
+            return back()->with('error', 'Chỉ từ chối được ứng viên đang chờ admin xác nhận tuyển dụng.');
+        }
+
+        $candidate->update([
+            'status' => Candidate::STATUS_FAILED,
+        ]);
+
+        return back()->with('success', 'Đã từ chối ứng viên sau phỏng vấn.');
     }
 
     public function store(Request $request): RedirectResponse
@@ -395,7 +423,7 @@ class CandidateController extends Controller
 
         return [
             'search' => (string) $request->string('search')->trim(),
-            'status' => in_array($status, ['new', 'interview', 'passed', 'failed'], true) ? $status : '',
+            'status' => in_array($status, array_keys(Candidate::statusLabels()), true) ? $status : '',
             'job_post_id' => (string) $request->input('job_post_id', ''),
             'cv_status' => in_array($cvStatus, ['has_cv', 'missing_cv'], true) ? $cvStatus : '',
             'converted' => in_array($converted, ['yes', 'no'], true) ? $converted : '',

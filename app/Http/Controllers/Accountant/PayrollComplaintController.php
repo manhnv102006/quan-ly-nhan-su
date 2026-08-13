@@ -17,48 +17,19 @@ class PayrollComplaintController extends Controller
     ) {}
     public function index(Request $request): View
     {
-        $query = PayrollComplaint::query()
-            ->with(['employee.department', 'employee.position', 'payroll.payrollPeriod'])
-            ->latest('id');
+        $complaints = $this->complaints
+            ->filteredQuery($request->query('status'), $request->query('search'))
+            ->paginate(15)
+            ->withQueryString();
 
-        if ($status = $request->query('status')) {
-            $query->where('status', $status);
-        }
-
-        if ($search = trim((string) $request->query('search', ''))) {
-            $query->where(function ($q) use ($search) {
-                $q->where('complaint_code', 'like', "%{$search}%")
-                    ->orWhere('subject', 'like', "%{$search}%")
-                    ->orWhereHas('employee', function ($employee) use ($search) {
-                        $employee->where('full_name', 'like', "%{$search}%")
-                            ->orWhere('employee_code', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        $complaints = $query->paginate(15)->withQueryString();
-
-        $stats = [
-            'pending' => PayrollComplaint::where('status', PayrollComplaint::STATUS_PENDING)->count(),
-            'processing' => PayrollComplaint::where('status', PayrollComplaint::STATUS_PROCESSING)->count(),
-            'resolved' => PayrollComplaint::where('status', PayrollComplaint::STATUS_RESOLVED)->count(),
-            'rejected' => PayrollComplaint::where('status', PayrollComplaint::STATUS_REJECTED)->count(),
-        ];
+        $stats = $this->complaints->dashboardStats();
 
         return view('accountant.payroll-complaints.index', compact('complaints', 'stats'));
     }
 
     public function show(PayrollComplaint $payrollComplaint): View
     {
-        $payrollComplaint->load([
-            'employee.department',
-            'employee.position',
-            'payroll.payrollPeriod',
-            'carriedToPayroll.payrollPeriod',
-            'managerConfirmer',
-            'resolver',
-            'rejecter',
-        ]);
+        $payrollComplaint = $this->complaints->loadDetail($payrollComplaint);
 
         $nextPeriod = $payrollComplaint->payroll?->payrollPeriod
             ? $this->complaints->nextPeriodAfter($payrollComplaint->payroll->payrollPeriod)
@@ -69,7 +40,7 @@ class PayrollComplaintController extends Controller
 
     public function resolve(Request $request, PayrollComplaint $payrollComplaint): RedirectResponse
     {
-        if (! $payrollComplaint->isProcessing()) {
+        if (! $payrollComplaint->isAwaitingAccountant()) {
             return back()->with('error', 'Chỉ xử lý được khiếu nại đang chờ kế toán.');
         }
 
@@ -105,7 +76,7 @@ class PayrollComplaintController extends Controller
 
     public function reject(Request $request, PayrollComplaint $payrollComplaint): RedirectResponse
     {
-        if (! $payrollComplaint->isProcessing()) {
+        if (! $payrollComplaint->isAwaitingAccountant()) {
             return back()->with('error', 'Chỉ từ chối được khiếu nại đang chờ kế toán.');
         }
 
