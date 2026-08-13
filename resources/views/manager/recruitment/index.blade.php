@@ -153,7 +153,8 @@
                             @php
                                 $statusClass = $statusClasses[$interview->status] ?? 'bg-slate-100 text-slate-700';
                                 $resultClass = $resultClasses[$interview->result] ?? 'bg-slate-100 text-slate-700';
-                                $openForm = $loop->first && session('success');
+                                $canManagerUpdate = ! $interview->isLockedForManager();
+                                $openForm = $canManagerUpdate && $loop->first && session('success');
                             @endphp
                             <div class="px-4 py-3">
                                 <details class="group w-full" @if($openForm) open @endif>
@@ -169,14 +170,15 @@
                                                 <span class="inline-flex rounded-md px-2 py-0.5 text-xs font-medium {{ $resultClass }}">{{ $resultLabels[$interview->result] ?? $interview->result }}</span>
                                             </div>
                                             <div class="md:col-span-2 md:text-right">
-                                                <span class="inline-flex items-center gap-1 text-sm font-semibold text-teal-700 group-open:text-teal-900">
-                                                    Cập nhật
+                                                <span class="inline-flex items-center gap-1 text-sm font-semibold {{ $canManagerUpdate ? 'text-teal-700 group-open:text-teal-900' : 'text-slate-500' }}">
+                                                    {{ $canManagerUpdate ? 'Cập nhật' : 'Xem chi tiết' }}
                                                     <svg class="h-4 w-4 transition group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
                                                 </span>
                                             </div>
                                         </div>
                                     </summary>
 
+                                    @if ($canManagerUpdate)
                                     <form action="{{ route('manager.recruitment.interviews.update', $interview) }}" method="POST" data-interview-evaluation class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
                                         @csrf
                                         @method('PUT')
@@ -261,6 +263,14 @@
                                             </button>
                                         </div>
                                     </form>
+                                    @else
+                                    <div class="mt-3">
+                                        @include('recruitment.partials.interview-readonly', ['interview' => $interview])
+                                        <p class="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+                                            Kết quả phỏng vấn đã được gửi cho Admin. Bạn không thể chỉnh sửa hay gửi lại.
+                                        </p>
+                                    </div>
+                                    @endif
                                 </details>
                             </div>
                         @empty

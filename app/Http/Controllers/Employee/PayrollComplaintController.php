@@ -18,17 +18,40 @@ class PayrollComplaintController extends Controller
         private readonly PayrollComplaintService $complaints,
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $employee = $this->employee();
+        $filter = (string) $request->query('filter', 'all');
 
-        $complaintList = PayrollComplaint::query()
+        $query = PayrollComplaint::query()
             ->with(['payroll.payrollPeriod'])
-            ->where('employee_id', $employee->id)
-            ->latest('id')
-            ->paginate(10);
+            ->where('employee_id', $employee->id);
 
-        return view('employee.payroll-complaints.index', compact('complaintList'));
+        if ($filter === 'active') {
+            $query->whereIn('status', [
+                PayrollComplaint::STATUS_PENDING,
+                PayrollComplaint::STATUS_PROCESSING,
+            ]);
+        } elseif ($filter === 'history') {
+            $query->whereIn('status', [
+                PayrollComplaint::STATUS_RESOLVED,
+                PayrollComplaint::STATUS_REJECTED,
+            ]);
+        }
+
+        $complaintList = $query->latest('id')->paginate(10)->withQueryString();
+
+        $stats = [
+            'total' => PayrollComplaint::where('employee_id', $employee->id)->count(),
+            'active' => PayrollComplaint::where('employee_id', $employee->id)
+                ->whereIn('status', [PayrollComplaint::STATUS_PENDING, PayrollComplaint::STATUS_PROCESSING])
+                ->count(),
+            'history' => PayrollComplaint::where('employee_id', $employee->id)
+                ->whereIn('status', [PayrollComplaint::STATUS_RESOLVED, PayrollComplaint::STATUS_REJECTED])
+                ->count(),
+        ];
+
+        return view('employee.payroll-complaints.index', compact('complaintList', 'filter', 'stats'));
     }
 
     public function create(Request $request): View
@@ -109,9 +132,11 @@ class PayrollComplaintController extends Controller
 
         $payrollComplaint->load([
             'payroll.payrollPeriod',
+            'employee',
+            'carriedToPayroll.payrollPeriod',
             'managerConfirmer',
-            'resolver',
-            'rejecter',
+            'resolver.employee',
+            'rejecter.employee',
         ]);
 
         return view('employee.payroll-complaints.show', compact('payrollComplaint'));

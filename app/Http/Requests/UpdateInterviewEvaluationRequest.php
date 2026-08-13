@@ -10,7 +10,9 @@ class UpdateInterviewEvaluationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $interview = $this->route('interview');
+
+        return $interview instanceof Interview && ! $interview->isLockedForManager();
     }
 
     protected function prepareForValidation(): void

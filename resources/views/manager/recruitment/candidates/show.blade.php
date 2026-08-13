@@ -105,9 +105,13 @@
                 @endif
             </form>
         </div>
-    @elseif ($interview && $interview->result === 'pending')
+    @elseif ($interview && ! $interview->isLockedForManager())
         <div class="manager-card border-teal-100 bg-teal-50/40 p-5 text-sm text-teal-900">
-            Sau khi phỏng vấn, cập nhật kết quả tại trang <a href="{{ route('manager.recruitment.index') }}" class="font-semibold underline">Tuyển dụng phòng ban</a>.
+            Sau khi phỏng vấn, cập nhật kết quả một lần tại trang <a href="{{ route('manager.recruitment.index') }}" class="font-semibold underline">Tuyển dụng phòng ban</a>.
+        </div>
+    @elseif ($interview && $interview->isLockedForManager())
+        <div class="manager-card border-slate-200 bg-slate-50 p-5 text-sm text-slate-700">
+            Kết quả phỏng vấn đã được gửi cho Admin. Bạn không thể chỉnh sửa thêm.
         </div>
     @elseif ($candidate->status === 'pending_hire_approval')
         <div class="manager-card border-violet-100 bg-violet-50/40 p-5 text-sm text-violet-900">

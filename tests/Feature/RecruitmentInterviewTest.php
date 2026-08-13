@@ -113,6 +113,47 @@ test('manager scoring passed sends candidate to admin for hire approval', functi
     expect($this->jobPost->fresh()->quantity)->toBe(2);
 });
 
+test('manager cannot update interview after result has been submitted', function () {
+    $candidate = Candidate::create([
+        'job_post_id' => $this->jobPost->id,
+        'full_name' => 'Nguyen Van E',
+        'phone' => '0900000005',
+        'email' => 'candidate-e@example.com',
+        'address' => 'Ha Noi',
+        'birth_date' => '1998-01-01',
+        'status' => Candidate::STATUS_PENDING_HIRE_APPROVAL,
+    ]);
+
+    $interview = Interview::create([
+        'candidate_id' => $candidate->id,
+        'interviewer_id' => $this->manager->id,
+        'interview_date' => now()->subDay(),
+        'status' => 'completed',
+        'result' => 'passed',
+        'overall_score' => 8,
+        'technical_score' => 8,
+        'attitude_score' => 8,
+        'culture_score' => 8,
+        'recommendation' => 'hire',
+    ]);
+
+    $response = $this->actingAs($this->managerUser)->put(route('manager.recruitment.interviews.update', $interview), [
+        'status' => 'completed',
+        'result' => 'failed',
+        'overall_score' => 3,
+        'technical_score' => 3,
+        'attitude_score' => 3,
+        'culture_score' => 3,
+        'recommendation' => 'reject',
+    ]);
+
+    $response->assertRedirect(route('manager.recruitment.index'));
+    $response->assertSessionHas('error');
+
+    expect($interview->fresh()->result)->toBe('passed');
+    expect($candidate->fresh()->status)->toBe(Candidate::STATUS_PENDING_HIRE_APPROVAL);
+});
+
 test('admin approving hire marks candidate passed and decrements job post quantity', function () {
     $candidate = Candidate::create([
         'job_post_id' => $this->jobPost->id,

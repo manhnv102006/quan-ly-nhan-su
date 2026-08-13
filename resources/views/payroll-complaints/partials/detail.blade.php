@@ -3,6 +3,7 @@
     $fmt = fn ($n) => number_format((float) $n, 0, ',', '.');
 @endphp
 
+<div class="space-y-4">
 <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
     <div class="rounded-2xl border border-slate-100 bg-slate-50/60 p-5 space-y-3">
         <h3 class="text-sm font-bold text-slate-800">Thông tin khiếu nại</h3>
@@ -31,16 +32,6 @@
                 <div><p class="text-xs text-slate-400">Khấu trừ</p><p class="font-medium text-rose-600">{{ $fmt($complaint->payroll->deduction) }} ₫</p></div>
                 <div><p class="text-xs text-slate-400">Thực lĩnh</p><p class="font-bold text-emerald-700">{{ $fmt($complaint->payroll->total_salary) }} ₫</p></div>
                 <div><p class="text-xs text-slate-400">Ngày công</p><p class="font-medium">{{ $complaint->payroll->actual_working_days }}/{{ $complaint->payroll->standard_working_days }}</p></div>
-            </div>
-        @endif
-
-        @if($complaint->manager_note)
-            <div class="rounded-xl bg-sky-50 border border-sky-100 p-3 text-sm">
-                <p class="text-xs font-bold text-sky-700">Ghi chú quản lý</p>
-                <p class="mt-1 text-sky-900 whitespace-pre-line">{{ $complaint->manager_note }}</p>
-                @if($complaint->manager_confirmed_at)
-                    <p class="mt-1 text-xs text-sky-600">{{ $complaint->manager_confirmed_at->format('d/m/Y H:i') }}</p>
-                @endif
             </div>
         @endif
 
@@ -85,4 +76,7 @@
             </div>
         @endif
     </div>
+</div>
+
+@include('payroll-complaints.partials.history', ['complaint' => $complaint])
 </div>

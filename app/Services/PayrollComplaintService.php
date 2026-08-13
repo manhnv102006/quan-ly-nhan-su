@@ -81,8 +81,8 @@ class PayrollComplaintService
             'payroll.payrollPeriod',
             'carriedToPayroll.payrollPeriod',
             'managerConfirmer',
-            'resolver',
-            'rejecter',
+            'resolver.employee',
+            'rejecter.employee',
         ]);
     }
 

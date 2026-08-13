@@ -86,6 +86,15 @@ class Interview extends Model
         return $status === self::STATUS_COMPLETED;
     }
 
+    public function isLockedForManager(): bool
+    {
+        if ($this->result !== 'pending') {
+            return true;
+        }
+
+        return in_array($this->status, [self::STATUS_COMPLETED, self::STATUS_NO_SHOW], true);
+    }
+
     /**
      * @param  array<string, mixed>  $validated
      * @return array<string, mixed>

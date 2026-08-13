@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Collection;
 
 class PayrollComplaint extends Model
 {
@@ -165,5 +166,100 @@ class PayrollComplaint extends Model
             self::STATUS_REJECTED => 'bg-rose-50 text-rose-700 border-rose-100',
             default => 'bg-sky-50 text-sky-700 border-sky-100',
         };
+    }
+
+    /**
+     * @return Collection<int, array{at: ?\Illuminate\Support\Carbon, title: string, description: ?string, actor: ?string, tone: string, pending?: bool}>
+     */
+    public function historyTimeline(): Collection
+    {
+        $fmt = fn ($n) => number_format((float) $n, 0, ',', '.');
+
+        $events = collect();
+
+        $events->push([
+            'at' => $this->created_at,
+            'title' => 'Gửi khiếu nại',
+            'description' => 'Nhân viên gửi khiếu nại trực tiếp tới kế toán xử lý (không qua quản lý).',
+            'actor' => $this->employee?->full_name,
+            'tone' => 'sky',
+        ]);
+
+        if ($this->resolved_at) {
+            $description = $this->resolution_note;
+
+            if ($this->confirmed_adjustment_amount) {
+                $adjustmentLine = 'Bổ sung chuyển tháng sau: '.$fmt($this->confirmed_adjustment_amount).' ₫';
+                $description = $description
+                    ? $adjustmentLine."\n".$description
+                    : $adjustmentLine;
+            }
+
+            $events->push([
+                'at' => $this->resolved_at,
+                'title' => 'Kế toán xử lý — đồng ý',
+                'description' => $description,
+                'actor' => $this->resolver?->name ?? $this->resolver?->employee?->full_name,
+                'tone' => 'emerald',
+            ]);
+        }
+
+        if ($this->rejected_at) {
+            $events->push([
+                'at' => $this->rejected_at,
+                'title' => 'Kế toán từ chối',
+                'description' => $this->reject_reason,
+                'actor' => $this->rejecter?->name ?? $this->rejecter?->employee?->full_name,
+                'tone' => 'rose',
+            ]);
+        }
+
+        if ($this->carried_at && $this->carriedToPayroll?->payrollPeriod) {
+            $period = $this->carriedToPayroll->payrollPeriod;
+
+            $events->push([
+                'at' => $this->carried_at,
+                'title' => 'Đã cộng vào bảng lương',
+                'description' => sprintf(
+                    'Kỳ %s (%s/%s)',
+                    $period->name,
+                    str_pad((string) $period->month, 2, '0', STR_PAD_LEFT),
+                    $period->year,
+                ),
+                'actor' => null,
+                'tone' => 'violet',
+            ]);
+        }
+
+        if ($this->isAwaitingAccountant()) {
+            $events->push([
+                'at' => null,
+                'title' => 'Chờ kế toán xử lý',
+                'description' => 'Khiếu nại đang chờ kế toán xem xét.',
+                'actor' => null,
+                'tone' => 'amber',
+                'pending' => true,
+            ]);
+        } elseif ($this->awaitsCarryForward()) {
+            $events->push([
+                'at' => null,
+                'title' => 'Chờ cộng bổ sung tháng sau',
+                'description' => 'Sẽ tự động cộng khi kế toán tính lương kỳ tiếp theo.',
+                'actor' => null,
+                'tone' => 'amber',
+                'pending' => true,
+            ]);
+        }
+
+        return $events
+            ->sortBy(fn (array $event) => ($event['pending'] ?? false)
+                ? PHP_INT_MAX
+                : ($event['at']?->getTimestamp() ?? 0))
+            ->values();
+    }
+
+    public function isClosed(): bool
+    {
+        return in_array($this->status, [self::STATUS_RESOLVED, self::STATUS_REJECTED], true);
     }
 }

@@ -286,6 +286,12 @@ class RecruitmentController extends Controller
         $manager = $this->managerScope->resolveManagerEmployeeOrFail(Auth::user());
         $this->ensureManagerCanAccessInterview($interview, $manager);
 
+        if ($interview->isLockedForManager()) {
+            return redirect()
+                ->route('manager.recruitment.index')
+                ->with('error', 'Kết quả phỏng vấn đã được gửi cho Admin. Bạn không thể chỉnh sửa thêm.');
+        }
+
         $validated = Interview::normalizedEvaluationPayload($request->validated());
         $this->interviews->applyEvaluation($interview, $request->validated());
 
