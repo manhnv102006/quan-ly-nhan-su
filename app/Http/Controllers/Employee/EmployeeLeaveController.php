@@ -7,17 +7,19 @@ use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Services\AutoNotificationService;
 use App\Services\DepartmentLeaveCapacityService;
+use App\Services\LeaveApprovalService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Carbon\Carbon;
 
 class EmployeeLeaveController extends Controller
 {
     public function __construct(
         private AutoNotificationService $autoNotifications,
         private DepartmentLeaveCapacityService $departmentLeaveCapacity,
+        private LeaveApprovalService $leaveApprovalService,
     ) {}
 
     private function getEmployee()
@@ -29,25 +31,34 @@ class EmployeeLeaveController extends Controller
         return $employee;
     }
 
-    public function index()
-{
-    $this->authorize('viewAny', LeaveRequest::class);
+    public function index(Request $request)
+    {
+        $this->authorize('viewAny', LeaveRequest::class);
 
-    $employee = $this->getEmployee();
+        $employee = $this->getEmployee();
+        $filter = (string) $request->query('filter', 'all');
+        if (! in_array($filter, ['all', 'active', 'history'], true)) {
+            $filter = 'all';
+        }
 
-    $leaveRequests = LeaveRequest::where('employee_id', $employee->id)
-        ->with(['approver', 'rejecter'])
-        ->latest()
-        ->paginate(10);
+        $baseQuery = LeaveRequest::query()->where('employee_id', $employee->id);
+        $stats = [
+            'total' => (clone $baseQuery)->count(),
+            'active' => (clone $baseQuery)->where('status', LeaveRequest::STATUS_PENDING)->count(),
+            'history' => (clone $baseQuery)->whereIn('status', [LeaveRequest::STATUS_APPROVED, LeaveRequest::STATUS_REJECTED])->count(),
+        ];
 
-    $isManager = Auth::user()->role?->name === 'manager';
-    // hoặc dùng hasRole('manager') nếu project của bạn có hàm này
+        $leaveRequests = (clone $baseQuery)
+            ->with(['approver', 'rejecter'])
+            ->employeeListFilter($filter)
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
 
-    return view(
-        'employee.leave-requests.index',
-        compact('leaveRequests', 'isManager')
-    );
-}
+        $isManager = Auth::user()->role?->name === 'manager';
+
+        return view('employee.leave-requests.index', compact('leaveRequests', 'isManager', 'filter', 'stats'));
+    }
 
     public function show(LeaveRequest $leaveRequest)
     {
@@ -192,6 +203,7 @@ class EmployeeLeaveController extends Controller
                 'reject_reason' => null,
             ]);
 
+            $this->leaveApprovalService->logSubmitted($leaveRequest, (int) Auth::id());
             $this->autoNotifications->leaveSubmitted($leaveRequest);
 
             return redirect()

@@ -69,6 +69,12 @@
             </div>
         </div>
 
+        @include('request-approvals.partials.employee-filter-tabs', [
+            'filter' => $filter ?? 'all',
+            'stats' => $stats ?? ['total' => 0, 'active' => 0, 'history' => 0],
+            'routeName' => 'employee.leave-requests',
+        ])
+
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
@@ -130,7 +136,13 @@
                         @empty
                             <tr>
                                 <td colspan="7" class="text-center py-12 text-slate-400 text-sm">
-                                    Bạn chưa gửi đơn xin nghỉ phép nào.
+                                    @if(($filter ?? 'all') === 'history')
+                                        Chưa có đơn nghỉ phép nào trong lịch sử.
+                                    @elseif(($filter ?? 'all') === 'active')
+                                        Không có đơn nghỉ phép đang chờ duyệt.
+                                    @else
+                                        Bạn chưa gửi đơn xin nghỉ phép nào.
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse

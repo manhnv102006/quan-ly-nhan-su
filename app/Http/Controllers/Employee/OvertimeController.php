@@ -18,17 +18,42 @@ class OvertimeController extends Controller
     {
     }
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $employee = Employee::where('user_id', Auth::id())->firstOrFail();
+        $filter = (string) $request->query('filter', 'all');
+        if (! in_array($filter, ['all', 'active', 'history'], true)) {
+            $filter = 'all';
+        }
 
-        $overtimeRequests = OvertimeRequest::query()
-            ->where('employee_id', $employee->id)
+        $baseQuery = OvertimeRequest::query()->where('employee_id', $employee->id);
+        $stats = [
+            'total' => (clone $baseQuery)->count(),
+            'active' => (clone $baseQuery)->where('status', OvertimeRequest::STATUS_PENDING)->count(),
+            'history' => (clone $baseQuery)->whereIn('status', [
+                OvertimeRequest::STATUS_APPROVED,
+                OvertimeRequest::STATUS_REJECTED,
+                OvertimeRequest::STATUS_COMPLETED,
+            ])->count(),
+        ];
+
+        $overtimeRequests = (clone $baseQuery)
+            ->employeeListFilter($filter)
             ->latest('work_date')
             ->latest('id')
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
-        return view('employee.overtime.index', compact('overtimeRequests'));
+        return view('employee.overtime.index', compact('overtimeRequests', 'filter', 'stats'));
+    }
+
+    public function show(OvertimeRequest $overtimeRequest): View
+    {
+        $this->authorize('view', $overtimeRequest);
+
+        $overtimeRequest->load(['approver', 'histories.actor']);
+
+        return view('employee.overtime.show', compact('overtimeRequest'));
     }
 
     public function create(Request $request): View
@@ -47,7 +72,7 @@ class OvertimeController extends Controller
         $employee = Employee::where('user_id', Auth::id())->firstOrFail();
         $validated = $request->validated();
 
-        $this->overtimeRequests->create([
+        $overtimeRequest = $this->overtimeRequests->create([
             'employee_id' => $employee->id,
             'work_date' => $validated['work_date'],
             'start_time' => $validated['start_time'],
@@ -55,6 +80,8 @@ class OvertimeController extends Controller
             'rate_multiplier' => $validated['rate_multiplier'],
             'reason' => $validated['reason'],
         ]);
+
+        $this->overtimeRequests->logSubmitted($overtimeRequest, (int) Auth::id());
 
         return redirect()
             ->route('employee.overtime-requests')

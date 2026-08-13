@@ -187,7 +187,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/leave-requests/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('leave-requests.show');
     Route::get('/overtime-requests/departments/{department}', [OvertimeRequestController::class, 'department'])->name('overtime-requests.department');
     Route::resource('overtime-requests', OvertimeRequestController::class)
-        ->parameters(['overtime-requests' => 'overtime_request']);
+        ->parameters(['overtime-requests' => 'overtime_request'])
+        ->except(['destroy']);
     Route::patch('/overtime-requests/{overtime_request}/approve', [OvertimeRequestController::class, 'approve'])->name('overtime-requests.approve');
     Route::patch('/overtime-requests/{overtime_request}/reject', [OvertimeRequestController::class, 'reject'])->name('overtime-requests.reject');
     Route::patch('/overtime-requests/{overtime_request}/status', [OvertimeRequestController::class, 'updateStatus'])->name('overtime-requests.status');
@@ -419,9 +420,11 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,admin,accountant']
     Route::get('/employee/overtime-requests', [EmployeeOvertimeController::class, 'index'])->name('employee.overtime-requests');
     Route::get('/employee/overtime-requests/create', [EmployeeOvertimeController::class, 'create'])->name('employee.overtime-requests.create');
     Route::post('/employee/overtime-requests', [EmployeeOvertimeController::class, 'store'])->name('employee.overtime-requests.store');
+    Route::get('/employee/overtime-requests/{overtimeRequest}', [EmployeeOvertimeController::class, 'show'])->name('employee.overtime-requests.show');
     Route::get('/employee/early-leave', [EmployeeEarlyLeaveController::class, 'index'])->name('employee.early-leave.index');
     Route::get('/employee/early-leave/create', [EmployeeEarlyLeaveController::class, 'create'])->name('employee.early-leave.create');
     Route::post('/employee/early-leave', [EmployeeEarlyLeaveController::class, 'store'])->name('employee.early-leave.store');
+    Route::get('/employee/early-leave/{earlyLeaveRequest}', [EmployeeEarlyLeaveController::class, 'show'])->name('employee.early-leave.show');
 });
 
 Route::middleware(['auth', 'verified', 'role:employee,manager,accountant'])->group(function () {

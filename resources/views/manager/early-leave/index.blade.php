@@ -110,7 +110,7 @@
                                             </div>
                                         </div>
                                     @else
-                                        <span class="text-xs text-slate-400">—</span>
+                                        <a href="{{ route('manager.early-leave.show', $req) }}" class="text-xs font-semibold text-teal-700 hover:underline">Chi tiết</a>
                                     @endif
                                 </td>
                             </tr>
@@ -131,6 +131,11 @@
                 </div>
             @endif
         </div>
+
+        @include('request-approvals.partials.processing-history', [
+            'histories' => $recentHistories ?? collect(),
+            'title' => 'Lịch sử phê duyệt gần đây',
+        ])
     </div>
 
     <script>

@@ -33,6 +33,12 @@
             </a>
         </div>
 
+        @include('request-approvals.partials.employee-filter-tabs', [
+            'filter' => $filter ?? 'all',
+            'stats' => $stats ?? ['total' => 0, 'active' => 0, 'history' => 0],
+            'routeName' => 'employee.early-leave.index',
+        ])
+
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
@@ -43,6 +49,7 @@
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-400">Lý do</th>
                             <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-400">Trạng thái</th>
                             <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-400">Ngày tạo</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-400">Chi tiết</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -65,12 +72,21 @@
                                 <td class="px-6 py-4 text-center text-xs text-slate-400">
                                     {{ $req->created_at->format('d/m/Y') }}
                                 </td>
+                                <td class="px-6 py-4 text-center">
+                                    <a href="{{ route('employee.early-leave.show', $req) }}" class="text-xs font-semibold text-violet-600 hover:underline">Xem</a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center py-14 text-slate-400 text-sm">
-                                    Bạn chưa có đơn xin về sớm nào.
-                                    <a href="{{ route('employee.early-leave.create') }}" class="text-violet-600 font-semibold hover:underline">Tạo đơn ngay</a>
+                                <td colspan="6" class="text-center py-14 text-slate-400 text-sm">
+                                    @if(($filter ?? 'all') === 'history')
+                                        Chưa có đơn về sớm nào trong lịch sử.
+                                    @elseif(($filter ?? 'all') === 'active')
+                                        Không có đơn về sớm đang chờ duyệt.
+                                    @else
+                                        Bạn chưa có đơn xin về sớm nào.
+                                        <a href="{{ route('employee.early-leave.create') }}" class="text-violet-600 font-semibold hover:underline">Tạo đơn ngay</a>
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse

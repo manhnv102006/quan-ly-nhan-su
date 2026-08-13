@@ -10,6 +10,7 @@ use App\Http\Requests\UpdateOvertimeStatusRequest;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
+use App\Models\OvertimeRequestHistory;
 use App\Services\OvertimeApprovalService;
 use App\Services\OvertimeRequestService;
 use App\Support\DepartmentSummaryBuilder;
@@ -37,6 +38,7 @@ class OvertimeRequestController extends Controller
             'scopeLabel' => 'Toàn công ty',
             'showDepartmentColumn' => true,
             'selectedDepartment' => null,
+            'recentHistories' => $data['recentHistories'],
         ]);
     }
 
@@ -80,7 +82,14 @@ class OvertimeRequestController extends Controller
             'completed' => (clone $scopedQuery)->where('status', OvertimeRequest::STATUS_COMPLETED)->count(),
         ];
 
-        return compact('overtimeRequests', 'stats');
+        $recentHistories = OvertimeRequestHistory::query()
+            ->with(['actor', 'overtimeRequest.employee'])
+            ->latest('processed_at')
+            ->latest('id')
+            ->limit(20)
+            ->get();
+
+        return compact('overtimeRequests', 'stats', 'recentHistories');
     }
 
     public function create(): View
@@ -167,11 +176,7 @@ class OvertimeRequestController extends Controller
 
     public function destroy(OvertimeRequest $overtimeRequest): RedirectResponse
     {
-        $overtimeRequest->delete();
-
-        return redirect()
-            ->route('admin.overtime-requests.index')
-            ->with('success', 'Xóa yêu cầu tăng ca thành công.');
+        abort(403, 'Không được phép xóa đơn tăng ca.');
     }
 
     public function approve(OvertimeRequest $overtimeRequest): RedirectResponse

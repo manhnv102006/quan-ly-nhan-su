@@ -74,29 +74,10 @@
         @endif
 
         @if($leaveRequest->histories->isNotEmpty())
-            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
-                <h3 class="text-sm font-bold uppercase text-slate-400 mb-5">Lịch sử xử lý</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="border-b border-slate-100 text-left text-xs uppercase text-slate-400">
-                                <th class="pb-3 pr-4">Người xử lý</th>
-                                <th class="pb-3 pr-4">Hành động</th>
-                                <th class="pb-3">Thời gian</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            @foreach($leaveRequest->histories->sortByDesc('created_at') as $history)
-                                <tr>
-                                    <td class="py-3 pr-4 font-medium text-slate-700">{{ $history->actor?->name ?? '—' }}</td>
-                                    <td class="py-3 pr-4"><x-approval-action-badge :action="$history->action" /></td>
-                                    <td class="py-3 text-slate-500">{{ optional($history->created_at)->format('d/m/Y H:i') }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            @include('request-approvals.partials.processing-history', [
+                'requestModel' => $leaveRequest,
+                'title' => 'Lịch sử xử lý',
+            ])
         @endif
 
     </div>

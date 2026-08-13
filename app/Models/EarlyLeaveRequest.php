@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -45,6 +46,11 @@ class EarlyLeaveRequest extends Model
         return $this->belongsTo(User::class, 'rejected_by');
     }
 
+    public function histories(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(EarlyLeaveRequestHistory::class)->orderByDesc('processed_at')->orderByDesc('id');
+    }
+
     public function isPending(): bool
     {
         return $this->status === self::STATUS_PENDING;
@@ -70,6 +76,34 @@ class EarlyLeaveRequest extends Model
             self::STATUS_APPROVED => 'bg-emerald-50 text-emerald-700 border-emerald-100',
             self::STATUS_REJECTED => 'bg-rose-50 text-rose-700 border-rose-100',
             default               => 'bg-amber-50 text-amber-700 border-amber-100',
+        };
+    }
+
+    /**
+     * @param  Builder<EarlyLeaveRequest>  $query
+     */
+    public function scopeForManagerApproval(Builder $query, Employee $manager): Builder
+    {
+        return $query->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->forManagerDepartmentApproval($manager));
+    }
+
+    /**
+     * @param  Builder<EarlyLeaveRequest>  $query
+     */
+    public function scopeRequiresAdminApproval(Builder $query): Builder
+    {
+        return $query->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->requiresAdminApproval());
+    }
+
+    /**
+     * @param  Builder<EarlyLeaveRequest>  $query
+     */
+    public function scopeEmployeeListFilter(Builder $query, string $filter): Builder
+    {
+        return match ($filter) {
+            'active' => $query->where('status', self::STATUS_PENDING),
+            'history' => $query->whereIn('status', [self::STATUS_APPROVED, self::STATUS_REJECTED]),
+            default => $query,
         };
     }
 }

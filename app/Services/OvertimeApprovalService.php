@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\Employee;
 use App\Models\OvertimeRequest;
 use App\Models\OvertimeRequestHistory;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -15,8 +17,9 @@ class OvertimeApprovalService
     ) {
     }
 
-    public function approve(OvertimeRequest $overtimeRequest, int $actorId): void
+    public function approve(OvertimeRequest $overtimeRequest, int $actorId, ?Employee $manager = null): void
     {
+        $this->assertActorAuthorized($overtimeRequest, $actorId, $manager);
         $this->assertPending($overtimeRequest);
 
         $this->processDecision(
@@ -31,8 +34,9 @@ class OvertimeApprovalService
         $this->settlement->settleIfCheckedOut($overtimeRequest->fresh());
     }
 
-    public function reject(OvertimeRequest $overtimeRequest, int $actorId, string $reason): void
+    public function reject(OvertimeRequest $overtimeRequest, int $actorId, string $reason, ?Employee $manager = null): void
     {
+        $this->assertActorAuthorized($overtimeRequest, $actorId, $manager);
         $this->assertPending($overtimeRequest);
 
         $this->processDecision(
@@ -50,14 +54,14 @@ class OvertimeApprovalService
      * @param  iterable<OvertimeRequest>  $overtimeRequests
      * @return array{approved: int, failed: int}
      */
-    public function bulkApprove(iterable $overtimeRequests, int $actorId): array
+    public function bulkApprove(iterable $overtimeRequests, int $actorId, ?Employee $manager = null): array
     {
         $approved = 0;
         $failed = 0;
 
         foreach ($overtimeRequests as $overtimeRequest) {
             try {
-                $this->approve($overtimeRequest, $actorId);
+                $this->approve($overtimeRequest, $actorId, $manager);
                 $approved++;
             } catch (ValidationException) {
                 $failed++;
@@ -71,14 +75,14 @@ class OvertimeApprovalService
      * @param  iterable<OvertimeRequest>  $overtimeRequests
      * @return array{rejected: int, failed: int}
      */
-    public function bulkReject(iterable $overtimeRequests, int $actorId, string $reason): array
+    public function bulkReject(iterable $overtimeRequests, int $actorId, string $reason, ?Employee $manager = null): array
     {
         $rejected = 0;
         $failed = 0;
 
         foreach ($overtimeRequests as $overtimeRequest) {
             try {
-                $this->reject($overtimeRequest, $actorId, $reason);
+                $this->reject($overtimeRequest, $actorId, $reason, $manager);
                 $rejected++;
             } catch (ValidationException) {
                 $failed++;
@@ -86,6 +90,41 @@ class OvertimeApprovalService
         }
 
         return compact('rejected', 'failed');
+    }
+
+    protected function assertActorAuthorized(OvertimeRequest $overtimeRequest, int $actorId, ?Employee $manager): void
+    {
+        $user = User::find($actorId);
+        $overtimeRequest->loadMissing('employee.user');
+        $requiresAdminApproval = $overtimeRequest->employee?->requiresAdminApproval() ?? false;
+
+        if ($requiresAdminApproval) {
+            if (! $user?->isAdmin()) {
+                throw ValidationException::withMessages(['authorization' => 'Đơn tăng ca của quản lý/kế toán chỉ Admin mới được duyệt hoặc từ chối.']);
+            }
+
+            return;
+        }
+
+        if ($user?->isAdmin()) {
+            throw ValidationException::withMessages(['authorization' => 'Admin chỉ được duyệt đơn tăng ca của quản lý/kế toán, không được duyệt đơn của nhân viên.']);
+        }
+
+        if (! $user?->isManager()) {
+            throw ValidationException::withMessages(['authorization' => 'Chỉ quản lý hoặc admin mới được duyệt hoặc từ chối đơn tăng ca.']);
+        }
+
+        if (! $manager) {
+            throw ValidationException::withMessages(['authorization' => 'Tài khoản quản lý chưa liên kết hồ sơ nhân viên. Vui lòng liên hệ quản trị để được hỗ trợ.']);
+        }
+
+        if ($overtimeRequest->employee?->user_id === $user->id) {
+            throw ValidationException::withMessages(['authorization' => 'Bạn không thể tự duyệt đơn tăng ca của chính mình.']);
+        }
+
+        if (! $overtimeRequest->employee?->isManagedBy($manager)) {
+            throw ValidationException::withMessages(['authorization' => 'Bạn không có quyền xử lý đơn tăng ca này.']);
+        }
     }
 
     protected function assertPending(OvertimeRequest $overtimeRequest): void

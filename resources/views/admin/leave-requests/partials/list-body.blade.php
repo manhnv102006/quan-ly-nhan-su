@@ -270,7 +270,7 @@
                                 @endif
                             </td>
                             <td class="min-w-[11rem] px-5 py-4">
-                                @if ($leaveRequest->status === 'pending' && $leaveRequest->employee?->hasManagerRole())
+                                @if ($leaveRequest->status === 'pending' && $leaveRequest->employee?->requiresAdminApproval())
                                     <div class="flex flex-wrap items-center justify-center gap-1.5">
                                         <form action="{{ route('admin.leave-requests.approve', $leaveRequest) }}" method="POST" class="inline"
                                               onsubmit="return confirm('Duyệt đơn nghỉ phép của quản lý {{ $leaveRequest->employee?->full_name }}?')">

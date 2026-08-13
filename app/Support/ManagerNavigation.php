@@ -39,6 +39,11 @@ class ManagerNavigation
                         'route' => 'manager.overtime-requests*',
                     ],
                     [
+                        'label' => 'Duyệt về sớm',
+                        'href' => route('manager.early-leave.index'),
+                        'route' => 'manager.early-leave*',
+                    ],
+                    [
                         'label' => 'Thông báo',
                         'href' => route('manager.notifications.index'),
                         'route' => 'manager.notifications*',
@@ -69,6 +74,11 @@ class ManagerNavigation
                         'label' => 'Tăng ca',
                         'href' => route('employee.overtime-requests'),
                         'route' => 'employee.overtime-requests*',
+                    ],
+                    [
+                        'label' => 'Về sớm',
+                        'href' => route('employee.early-leave.index'),
+                        'route' => 'employee.early-leave*',
                     ],
                     [
                         'label' => 'Ứng lương',

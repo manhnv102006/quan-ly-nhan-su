@@ -1,6 +1,6 @@
 @php
-    $isFromManager = $leaveRequest->employee?->user?->isManager() ?? false;
-    $canAdminDecide = $leaveRequest->status === 'pending' && $leaveRequest->employee?->hasManagerRole();
+    $requiresAdminApproval = $leaveRequest->employee?->requiresAdminApproval() ?? false;
+    $canAdminDecide = $leaveRequest->status === 'pending' && $requiresAdminApproval;
 @endphp
 
 <x-admin-layout title="Chi tiết đơn nghỉ phép">
@@ -18,9 +18,9 @@
                 </div>
                 <p class="text-slate-500">
                     @if ($canAdminDecide)
-                        Đây là đơn của quản lý — Admin được duyệt hoặc từ chối.
-                    @elseif ($isFromManager)
-                        Đơn nghỉ phép của quản lý — Admin là người phê duyệt.
+                        Đây là đơn của quản lý/kế toán — Admin được duyệt hoặc từ chối.
+                    @elseif ($requiresAdminApproval)
+                        Đơn nghỉ phép của quản lý/kế toán — Admin là người phê duyệt.
                     @else
                         Xem thông tin đơn nghỉ phép. Đơn của nhân viên thường do quản lý phê duyệt.
                     @endif
@@ -189,5 +189,10 @@
             }
         </script>
     @endif
+
+    @include('request-approvals.partials.processing-history', [
+        'requestModel' => $leaveRequest,
+        'title' => 'Lịch sử xử lý đơn nghỉ phép',
+    ])
 
 </x-admin-layout>

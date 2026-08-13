@@ -198,4 +198,16 @@ class OvertimeRequest extends Model
     {
         return self::STATUS_TAILWIND_CLASSES[$this->status] ?? 'bg-slate-100 text-slate-600 border-slate-200';
     }
+
+    /**
+     * @param  Builder<OvertimeRequest>  $query
+     */
+    public function scopeEmployeeListFilter(Builder $query, string $filter): Builder
+    {
+        return match ($filter) {
+            'active' => $query->where('status', self::STATUS_PENDING),
+            'history' => $query->whereIn('status', [self::STATUS_APPROVED, self::STATUS_REJECTED, self::STATUS_COMPLETED]),
+            default => $query,
+        };
+    }
 }

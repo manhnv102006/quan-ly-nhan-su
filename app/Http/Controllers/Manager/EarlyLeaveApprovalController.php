@@ -2,29 +2,38 @@
 
 namespace App\Http\Controllers\Manager;
 
+use App\Http\Controllers\Concerns\ResolvesCurrentEmployee;
 use App\Http\Controllers\Controller;
 use App\Models\EarlyLeaveRequest;
+use App\Models\EarlyLeaveRequestHistory;
 use App\Models\Employee;
+use App\Services\EarlyLeaveApprovalService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class EarlyLeaveApprovalController extends Controller
 {
+    use ResolvesCurrentEmployee;
+
+    public function __construct(private readonly EarlyLeaveApprovalService $approvalService)
+    {
+    }
+
     public function index(Request $request): View
     {
-        $managerEmployee = Employee::where('user_id', Auth::id())->first();
+        $manager = $this->currentManagerOrNull();
 
-        $query = EarlyLeaveRequest::with(['employee.department', 'employee.position', 'approver'])
+        $query = EarlyLeaveRequest::with(['employee.department', 'employee.position', 'approver', 'rejecter'])
             ->latest('request_date')
             ->latest('id');
 
-        // Manager chỉ thấy nhân viên trong phòng của mình
-        if ($managerEmployee?->department_id) {
-            $query->whereHas('employee', fn ($q) =>
-                $q->where('department_id', $managerEmployee->department_id)
-            );
+        if ($manager) {
+            $query->forManagerApproval($manager);
+        } else {
+            $query->whereRaw('0 = 1');
         }
 
         if ($status = $request->query('status')) {
@@ -33,37 +42,50 @@ class EarlyLeaveApprovalController extends Controller
 
         $requests = $query->paginate(15)->withQueryString();
 
-        $pendingCount = (clone $query->getQuery())->where('status', 'pending')->count();
+        $pendingCount = $manager
+            ? EarlyLeaveRequest::query()->forManagerApproval($manager)->where('status', 'pending')->count()
+            : 0;
 
-        return view('manager.early-leave.index', compact('requests', 'pendingCount'));
+        $recentHistories = $manager
+            ? EarlyLeaveRequestHistory::query()
+                ->whereHas('earlyLeaveRequest', fn ($query) => $query->forManagerApproval($manager))
+                ->with(['actor', 'earlyLeaveRequest.employee'])
+                ->latest('processed_at')
+                ->latest('id')
+                ->limit(15)
+                ->get()
+            : collect();
+
+        return view('manager.early-leave.index', compact('requests', 'pendingCount', 'manager', 'recentHistories'));
     }
 
     public function show(EarlyLeaveRequest $earlyLeaveRequest): View
     {
-        $earlyLeaveRequest->load(['employee.department', 'employee.position', 'approver', 'rejecter']);
+        $this->authorize('view', $earlyLeaveRequest);
+
+        $earlyLeaveRequest->load(['employee.department', 'employee.position', 'approver', 'rejecter', 'histories.actor']);
+
         return view('manager.early-leave.show', compact('earlyLeaveRequest'));
     }
 
     public function approve(EarlyLeaveRequest $earlyLeaveRequest): RedirectResponse
     {
-        if (! $earlyLeaveRequest->isPending()) {
-            return back()->with('error', 'Đơn này đã được xử lý.');
-        }
+        $this->authorize('approve', $earlyLeaveRequest);
 
-        $earlyLeaveRequest->update([
-            'status'      => EarlyLeaveRequest::STATUS_APPROVED,
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
-        ]);
+        $manager = $this->currentManagerOrNull();
+
+        try {
+            $this->approvalService->approve($earlyLeaveRequest, (int) Auth::id(), $manager);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', 'Không thể duyệt đơn về sớm.');
+        }
 
         return back()->with('success', 'Đã duyệt đơn xin về sớm.');
     }
 
     public function reject(Request $request, EarlyLeaveRequest $earlyLeaveRequest): RedirectResponse
     {
-        if (! $earlyLeaveRequest->isPending()) {
-            return back()->with('error', 'Đơn này đã được xử lý.');
-        }
+        $this->authorize('reject', $earlyLeaveRequest);
 
         $request->validate([
             'reject_reason' => ['required', 'string', 'max:500'],
@@ -71,12 +93,13 @@ class EarlyLeaveApprovalController extends Controller
             'reject_reason.required' => 'Vui lòng nhập lý do từ chối.',
         ]);
 
-        $earlyLeaveRequest->update([
-            'status'        => EarlyLeaveRequest::STATUS_REJECTED,
-            'rejected_by'   => Auth::id(),
-            'rejected_at'   => now(),
-            'reject_reason' => $request->reject_reason,
-        ]);
+        $manager = $this->currentManagerOrNull();
+
+        try {
+            $this->approvalService->reject($earlyLeaveRequest, (int) Auth::id(), $manager, $request->reject_reason);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', 'Không thể từ chối đơn về sớm.');
+        }
 
         return back()->with('success', 'Đã từ chối đơn xin về sớm.');
     }

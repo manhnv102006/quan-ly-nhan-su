@@ -241,6 +241,28 @@ class Employee extends Model
         return (bool) $this->user?->isManager();
     }
 
+    public function hasAccountantRole(): bool
+    {
+        $this->loadMissing('user');
+
+        return (bool) $this->user?->isAccountant();
+    }
+
+    public function requiresAdminApproval(): bool
+    {
+        return $this->hasManagerRole() || $this->hasAccountantRole();
+    }
+
+    /**
+     * @param  Builder<Employee>  $query
+     */
+    public function scopeRequiresAdminApproval(Builder $query): Builder
+    {
+        return $query->whereHas('user', function ($userQuery) {
+            $userQuery->whereHas('role', fn ($roleQuery) => $roleQuery->whereIn('name', [Role::MANAGER, Role::ACCOUNTANT]));
+        });
+    }
+
     public function clearStaleUserLink(): bool
     {
         if ($this->user_id === null) {
@@ -377,7 +399,7 @@ class Employee extends Model
             ->where('id', '!=', $manager->id)
             ->where(function (Builder $scope) {
                 $scope->whereDoesntHave('user')
-                    ->orWhereHas('user', fn (Builder $userQuery) => $userQuery->whereDoesntHave('role', fn ($roleQuery) => $roleQuery->where('name', 'manager')));
+                    ->orWhereHas('user', fn (Builder $userQuery) => $userQuery->whereDoesntHave('role', fn ($roleQuery) => $roleQuery->whereIn('name', [Role::MANAGER, Role::ACCOUNTANT])));
             });
     }
 
@@ -430,5 +452,12 @@ class Employee extends Model
         }
 
         return $this->todayShifts()->last();
+    }
+
+    public function hasShiftOnDate(string|\DateTimeInterface $date): bool
+    {
+        return $this->employeeShifts()
+            ->whereDate('work_date', $date)
+            ->exists();
     }
 }

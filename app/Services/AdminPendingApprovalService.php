@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Candidate;
+use App\Models\EarlyLeaveRequest;
 use App\Models\Interview;
 use App\Models\JobPost;
 use App\Models\KPIAssignment;
@@ -18,6 +19,7 @@ class AdminPendingApprovalService
      * @return array{
      *     managerLeave: int,
      *     managerOvertime: int,
+     *     elevatedEarlyLeave: int,
      *     kpiAssignments: int,
      *     payroll: int,
      *     recruitment: int,
@@ -28,12 +30,17 @@ class AdminPendingApprovalService
     {
         $managerLeave = LeaveRequest::query()
             ->where('status', LeaveRequest::STATUS_PENDING)
-            ->whereHas('employee', fn ($query) => $this->onlyManagerRoleEmployees($query))
+            ->whereHas('employee', fn ($query) => $this->onlyElevatedRoleEmployees($query))
             ->count();
 
         $managerOvertime = OvertimeRequest::query()
             ->where('status', OvertimeRequest::STATUS_PENDING)
-            ->whereHas('employee', fn ($query) => $this->onlyManagerRoleEmployees($query))
+            ->whereHas('employee', fn ($query) => $this->onlyElevatedRoleEmployees($query))
+            ->count();
+
+        $elevatedEarlyLeave = EarlyLeaveRequest::query()
+            ->where('status', EarlyLeaveRequest::STATUS_PENDING)
+            ->requiresAdminApproval()
             ->count();
 
         $kpiAssignments = KPIAssignment::query()
@@ -54,10 +61,11 @@ class AdminPendingApprovalService
         return [
             'managerLeave' => $managerLeave,
             'managerOvertime' => $managerOvertime,
+            'elevatedEarlyLeave' => $elevatedEarlyLeave,
             'kpiAssignments' => $kpiAssignments,
             'payroll' => $payroll,
             'recruitment' => $recruitment,
-            'total' => $managerLeave + $managerOvertime + $kpiAssignments + $payroll + $recruitment,
+            'total' => $managerLeave + $managerOvertime + $elevatedEarlyLeave + $kpiAssignments + $payroll + $recruitment,
         ];
     }
 
@@ -109,6 +117,10 @@ class AdminPendingApprovalService
             return route('admin.overtime-requests.index');
         }
 
+        if ($counts['elevatedEarlyLeave'] > 0) {
+            return route('admin.early-leave.index');
+        }
+
         if ($counts['kpiAssignments'] > 0) {
             return route('admin.kpi-assignments.index');
         }
@@ -132,6 +144,7 @@ class AdminPendingApprovalService
         return match ($route) {
             'admin.leave-requests' => $counts['managerLeave'],
             'admin.overtime-requests.index' => $counts['managerOvertime'],
+            'admin.early-leave.index' => $counts['elevatedEarlyLeave'],
             'admin.kpi-assignments.index' => $counts['kpiAssignments'],
             'admin.payroll-periods.index' => $counts['payroll'],
             'admin.recruitment' => $counts['recruitment'],
@@ -139,10 +152,10 @@ class AdminPendingApprovalService
         };
     }
 
-    private function onlyManagerRoleEmployees($query): void
+    private function onlyElevatedRoleEmployees($query): void
     {
         $query->whereHas('user', function ($userQuery) {
-            $userQuery->whereHas('role', fn ($roleQuery) => $roleQuery->where('name', Role::MANAGER));
+            $userQuery->whereHas('role', fn ($roleQuery) => $roleQuery->whereIn('name', [Role::MANAGER, Role::ACCOUNTANT]));
         });
     }
 }

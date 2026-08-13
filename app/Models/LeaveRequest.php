@@ -260,5 +260,17 @@ class LeaveRequest extends Model
                 $q->whereHas('employee', fn (Builder $employeeQuery) => $employeeQuery->where('department_id', $filters['department_id']));
             });
     }
+
+    /**
+     * @param  Builder<LeaveRequest>  $query
+     */
+    public function scopeEmployeeListFilter(Builder $query, string $filter): Builder
+    {
+        return match ($filter) {
+            'active' => $query->where('status', self::STATUS_PENDING),
+            'history' => $query->whereIn('status', [self::STATUS_APPROVED, self::STATUS_REJECTED]),
+            default => $query,
+        };
+    }
 }
 

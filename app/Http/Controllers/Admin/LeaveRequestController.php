@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveRequestRejectRequest;
 use App\Models\Department;
+use App\Models\EarlyLeaveRequest;
+use App\Models\EarlyLeaveRequestHistory;
 use App\Models\LeaveRequest;
+use App\Models\LeaveRequestHistory;
 use App\Services\LeaveApprovalService;
 use App\Support\DepartmentSummaryBuilder;
 use Illuminate\Http\RedirectResponse;
@@ -33,6 +36,7 @@ class LeaveRequestController extends Controller
             'scopeLabel' => 'Toàn công ty',
             'showDepartmentColumn' => true,
             'selectedDepartment' => null,
+            'recentHistories' => $data['recentHistories'],
         ]);
     }
 
@@ -162,6 +166,12 @@ class LeaveRequestController extends Controller
             ->orderBy('department_name')
             ->get(['id', 'department_name', 'department_code']);
 
-        return compact('leaveRequests', 'stats', 'filters', 'departments');
+        $recentHistories = LeaveRequestHistory::query()
+            ->with(['actor', 'leaveRequest.employee'])
+            ->latest()
+            ->limit(20)
+            ->get();
+
+        return compact('leaveRequests', 'stats', 'filters', 'departments', 'recentHistories');
     }
 }

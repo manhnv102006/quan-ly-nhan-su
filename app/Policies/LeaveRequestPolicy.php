@@ -91,14 +91,14 @@ class LeaveRequestPolicy
     protected function decideApprovalAccess(User $user, LeaveRequest $leaveRequest, string $action): Response
     {
         $leaveRequest->loadMissing('employee.user');
-        $isFromManager = $leaveRequest->employee?->user?->isManager() ?? false;
+        $requiresAdminApproval = $leaveRequest->employee?->requiresAdminApproval() ?? false;
 
-        if ($isFromManager) {
+        if ($requiresAdminApproval) {
             if ($user->isAdmin()) {
                 return Response::allow();
             }
 
-            return Response::deny("Đơn nghỉ phép của quản lý chỉ Admin mới được {$action}.", 403);
+            return Response::deny("Đơn nghỉ phép của quản lý/kế toán chỉ Admin mới được {$action}.", 403);
         }
 
         if ($user->isAdmin()) {

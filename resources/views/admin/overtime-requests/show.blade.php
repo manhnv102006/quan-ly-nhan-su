@@ -1,6 +1,6 @@
 @php
-    $canAdminDecide = $overtimeRequest->isPending();
-    $isFromManager = $overtimeRequest->employee?->hasManagerRole() ?? false;
+    $requiresAdminApproval = $overtimeRequest->employee?->requiresAdminApproval() ?? false;
+    $canAdminDecide = $overtimeRequest->isPending() && $requiresAdminApproval;
 @endphp
 
 <x-admin-layout title="Chi tiết đơn tăng ca">
@@ -10,13 +10,11 @@
                 <h4 class="mb-1">Chi tiết đơn tăng ca</h4>
                 <p class="text-muted mb-0">
                     @if ($canAdminDecide)
-                        @if ($isFromManager)
-                            Đơn tăng ca của quản lý — Admin có thể duyệt hoặc từ chối.
-                        @else
-                            Đơn tăng ca đang chờ duyệt — Admin có thể duyệt hoặc từ chối.
-                        @endif
-                    @elseif ($isFromManager)
-                        Đơn tăng ca của quản lý đã được xử lý.
+                        Đơn tăng ca của quản lý/kế toán — Admin có thể duyệt hoặc từ chối.
+                    @elseif ($overtimeRequest->isPending())
+                        Đơn tăng ca đang chờ Manager phòng ban duyệt — Admin chỉ xem.
+                    @elseif ($requiresAdminApproval)
+                        Đơn tăng ca của quản lý/kế toán đã được xử lý.
                     @else
                         Đơn tăng ca đã được xử lý.
                     @endif
@@ -32,11 +30,6 @@
                     <button type="button" class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#reject-form">Từ chối</button>
                 @endif
                 <a href="{{ route('admin.overtime-requests.edit', $overtimeRequest) }}" class="btn btn-warning">Sửa</a>
-                <form action="{{ route('admin.overtime-requests.destroy', $overtimeRequest) }}" method="POST" class="d-inline" onsubmit="return confirm('Xóa đơn tăng ca này?')">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-outline-danger">Xóa</button>
-                </form>
                 <a href="{{ route('admin.overtime-requests.index') }}" class="btn btn-outline-secondary">Quay lại</a>
             </div>
         </div>
@@ -65,5 +58,11 @@
                 @include('overtime-requests.partials.detail-fields', ['overtimeRequest' => $overtimeRequest])
             </div>
         </div>
+
+        @include('request-approvals.partials.processing-history', [
+            'requestModel' => $overtimeRequest,
+            'title' => 'Lịch sử xử lý đơn tăng ca',
+            'wrapperClass' => 'mt-3',
+        ])
     </div>
 </x-admin-layout>

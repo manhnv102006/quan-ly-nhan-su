@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\OvertimeRequest;
+use App\Models\OvertimeRequestHistory;
 use App\Support\TimeInput;
 use Carbon\Carbon;
 
@@ -69,5 +70,15 @@ class OvertimeRequestService
         $overtimeRequest->update($payload);
 
         return $overtimeRequest;
+    }
+
+    public function logSubmitted(OvertimeRequest $overtimeRequest, int $actorId): void
+    {
+        OvertimeRequestHistory::create([
+            'overtime_request_id' => $overtimeRequest->id,
+            'actor_id' => $actorId,
+            'action' => 'submitted',
+            'processed_at' => now(),
+        ]);
     }
 }

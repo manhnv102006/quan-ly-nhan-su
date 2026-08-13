@@ -56,15 +56,6 @@ class OvertimeRequestPolicy
 
     public function delete(User $user, OvertimeRequest $overtimeRequest): bool
     {
-        if ($user->isAdmin()) {
-            return true;
-        }
-
-        if ($user->isEmployee()) {
-            return $overtimeRequest->employee?->user_id === $user->id
-                && $overtimeRequest->status === OvertimeRequest::STATUS_PENDING;
-        }
-
         return false;
     }
 
@@ -81,14 +72,14 @@ class OvertimeRequestPolicy
     protected function decideApprovalAccess(User $user, OvertimeRequest $overtimeRequest): bool
     {
         $overtimeRequest->loadMissing('employee.user');
-        $isFromManager = $overtimeRequest->employee?->user?->isManager() ?? false;
+        $requiresAdminApproval = $overtimeRequest->employee?->requiresAdminApproval() ?? false;
 
-        if ($isFromManager) {
+        if ($requiresAdminApproval) {
             return $user->isAdmin();
         }
 
         if ($user->isAdmin()) {
-            return true;
+            return false;
         }
 
         if (! $user->isManager()) {
@@ -102,7 +93,7 @@ class OvertimeRequestPolicy
     {
         $overtimeRequest->loadMissing('employee.user');
 
-        if ($overtimeRequest->employee?->user?->isManager()) {
+        if ($overtimeRequest->employee?->requiresAdminApproval()) {
             return false;
         }
 

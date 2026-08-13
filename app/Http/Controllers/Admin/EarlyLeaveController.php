@@ -4,17 +4,25 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\EarlyLeaveRequest;
+use App\Models\EarlyLeaveRequestHistory;
+use App\Services\EarlyLeaveApprovalService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class EarlyLeaveController extends Controller
 {
+    public function __construct(private readonly EarlyLeaveApprovalService $approvalService)
+    {
+    }
+
     public function index(Request $request): View
     {
         $status = $request->get('status');
 
-        $query = EarlyLeaveRequest::with(['employee.department', 'approver'])
+        $query = EarlyLeaveRequest::with(['employee.department', 'employee.user.role', 'approver', 'rejecter'])
             ->orderBy('created_at', 'desc');
 
         if ($status) {
@@ -23,42 +31,45 @@ class EarlyLeaveController extends Controller
 
         $requests = $query->paginate(15)->withQueryString();
 
+        $recentHistories = EarlyLeaveRequestHistory::query()
+            ->with(['actor', 'earlyLeaveRequest.employee'])
+            ->latest('processed_at')
+            ->latest('id')
+            ->limit(20)
+            ->get();
+
         return view('admin.early-leave.index', [
             'requests' => $requests,
+            'recentHistories' => $recentHistories,
         ]);
     }
 
-    public function approve(EarlyLeaveRequest $earlyLeaveRequest)
+    public function approve(EarlyLeaveRequest $earlyLeaveRequest): RedirectResponse
     {
-        if ($earlyLeaveRequest->status !== EarlyLeaveRequest::STATUS_PENDING) {
-            return back()->with('error', 'Chỉ có thể duyệt đơn ở trạng thái chờ.');
-        }
+        $this->authorize('approve', $earlyLeaveRequest);
 
-        $earlyLeaveRequest->update([
-            'status' => EarlyLeaveRequest::STATUS_APPROVED,
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
-        ]);
+        try {
+            $this->approvalService->approve($earlyLeaveRequest, (int) Auth::id());
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', 'Không thể duyệt đơn về sớm.');
+        }
 
         return back()->with('success', 'Đã duyệt đơn về sớm thành công.');
     }
 
-    public function reject(Request $request, EarlyLeaveRequest $earlyLeaveRequest)
+    public function reject(Request $request, EarlyLeaveRequest $earlyLeaveRequest): RedirectResponse
     {
+        $this->authorize('reject', $earlyLeaveRequest);
+
         $request->validate([
             'reject_reason' => 'required|string|max:500',
         ]);
 
-        if ($earlyLeaveRequest->status !== EarlyLeaveRequest::STATUS_PENDING) {
-            return back()->with('error', 'Chỉ có thể từ chối đơn ở trạng thái chờ.');
+        try {
+            $this->approvalService->reject($earlyLeaveRequest, (int) Auth::id(), null, $request->reject_reason);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', 'Không thể từ chối đơn về sớm.');
         }
-
-        $earlyLeaveRequest->update([
-            'status' => EarlyLeaveRequest::STATUS_REJECTED,
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
-            'rejection_reason' => $request->reject_reason,
-        ]);
 
         return back()->with('success', 'Đã từ chối đơn về sớm.');
     }

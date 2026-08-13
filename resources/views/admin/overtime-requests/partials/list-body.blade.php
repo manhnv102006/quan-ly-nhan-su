@@ -78,6 +78,8 @@
                                         <p class="text-xs text-slate-500">{{ $item->employee?->employee_code ?? '—' }}</p>
                                         @if ($item->employee?->hasManagerRole())
                                             <span class="mt-1 inline-flex rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-600">Quản lý</span>
+                                        @elseif ($item->employee?->hasAccountantRole())
+                                            <span class="mt-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">Kế toán</span>
                                         @endif
                                     </div>
                                 </div>
@@ -118,7 +120,7 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex flex-wrap items-center justify-center gap-1.5">
-                                    @if ($item->isPending())
+                                    @if ($item->isPending() && $item->employee?->requiresAdminApproval())
                                         <form method="POST" action="{{ route('admin.overtime-requests.approve', $item) }}" class="inline">
                                             @csrf
                                             @method('PATCH')
@@ -133,6 +135,8 @@
                                                 class="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700">
                                             <i class="bi bi-x-lg"></i> Từ chối
                                         </button>
+                                    @elseif ($item->isPending())
+                                        <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-500">Chờ Manager</span>
                                     @endif
                                     <a href="{{ route('admin.overtime-requests.show', $item) }}"
                                        class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
@@ -144,16 +148,6 @@
                                        title="Sửa">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <form action="{{ route('admin.overtime-requests.destroy', $item) }}" method="POST" class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                                class="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
-                                                title="Xóa"
-                                                onclick="return confirm('Bạn có chắc muốn xóa đơn này?')">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
                                 </div>
                             </td>
                         </tr>

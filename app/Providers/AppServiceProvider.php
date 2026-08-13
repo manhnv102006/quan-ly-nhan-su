@@ -4,11 +4,13 @@ namespace App\Providers;
 
 use App\Models\Candidate;
 use App\Models\Contract;
+use App\Models\EarlyLeaveRequest;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\SalaryAdvance;
 use App\Observers\CandidateObserver;
 use App\Policies\ContractPolicy;
+use App\Policies\EarlyLeaveRequestPolicy;
 use App\Policies\LeaveRequestPolicy;
 use App\Policies\OvertimeRequestPolicy;
 use App\Services\AdminNotificationService;
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::policy(OvertimeRequest::class, OvertimeRequestPolicy::class);
         Gate::policy(LeaveRequest::class, LeaveRequestPolicy::class);
+        Gate::policy(EarlyLeaveRequest::class, EarlyLeaveRequestPolicy::class);
         Gate::policy(Contract::class, ContractPolicy::class);
 
         Candidate::observe(CandidateObserver::class);

@@ -27,5 +27,10 @@
             'showDepartmentColumn' => true,
             'scopeLabel' => 'Toàn công ty',
         ])
+
+        @include('request-approvals.partials.processing-history', [
+            'histories' => $recentHistories ?? collect(),
+            'title' => 'Lịch sử phê duyệt tăng ca gần đây',
+        ])
     </div>
 </x-admin-layout>

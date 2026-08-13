@@ -99,7 +99,7 @@ class OvertimeApprovalController extends Controller
         $this->authorize('approve', $overtimeRequest);
 
         try {
-            $this->service->approve($overtimeRequest, (int) Auth::id());
+            $this->service->approve($overtimeRequest, (int) Auth::id(), $this->currentManagerOrNull());
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->with('error', 'Không thể phê duyệt đơn tăng ca.');
         }
@@ -135,7 +135,7 @@ class OvertimeApprovalController extends Controller
             $this->authorize('approve', $overtimeRequest);
         }
 
-        $result = $this->service->bulkApprove($overtimeRequests, (int) Auth::id());
+        $result = $this->service->bulkApprove($overtimeRequests, (int) Auth::id(), $manager);
 
         if ($result['approved'] === 0) {
             return back()->with('error', 'Không thể duyệt các đơn đã chọn.');
@@ -186,7 +186,8 @@ class OvertimeApprovalController extends Controller
         $result = $this->service->bulkReject(
             $overtimeRequests,
             (int) Auth::id(),
-            trim($validated['reject_reason'])
+            trim($validated['reject_reason']),
+            $manager,
         );
 
         if ($result['rejected'] === 0) {
@@ -209,7 +210,7 @@ class OvertimeApprovalController extends Controller
         $this->authorize('reject', $overtimeRequest);
 
         try {
-            $this->service->reject($overtimeRequest, (int) Auth::id(), $request->validated('reject_reason'));
+            $this->service->reject($overtimeRequest, (int) Auth::id(), $request->validated('reject_reason'), $this->currentManagerOrNull());
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->with('error', 'Không thể từ chối đơn tăng ca.');
         }

@@ -1,6 +1,6 @@
 <x-admin-layout
     title="Đơn xin về sớm"
-    subtitle="Quản lý và duyệt toàn bộ đơn xin về sớm của công ty."
+    subtitle="Admin chỉ duyệt đơn của quản lý và kế toán. Đơn nhân viên thường do Manager phòng ban xử lý."
 >
     <div class="admin-page">
         <div class="admin-page-header">
@@ -8,7 +8,7 @@
                 <p class="admin-kicker">Về sớm</p>
                 <h2 class="admin-title">Đơn xin về sớm</h2>
                 <p class="admin-subtitle">
-                    Duyệt đơn để nhân viên check-out sớm có phép — không bị trừ lương vì về sớm.
+                    Admin chỉ duyệt đơn của quản lý và kế toán. Đơn nhân viên thường do Manager phòng ban xử lý.
                 </p>
             </div>
         </div>
@@ -69,7 +69,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    @if ($req->isPending())
+                                    @if ($req->isPending() && $req->employee?->requiresAdminApproval())
                                         <div class="flex items-center justify-center gap-2">
                                             <form method="POST" action="{{ route('admin.early-leave.approve', $req) }}">
                                                 @csrf @method('PATCH')
@@ -109,6 +109,8 @@
                                                 </form>
                                             </div>
                                         </div>
+                                    @elseif ($req->isPending())
+                                        <span class="text-xs text-slate-500">Chờ Manager duyệt</span>
                                     @else
                                         <span class="text-xs text-slate-400">—</span>
                                     @endif
@@ -131,6 +133,11 @@
                 </div>
             @endif
         </div>
+
+        @include('request-approvals.partials.processing-history', [
+            'histories' => $recentHistories ?? collect(),
+            'title' => 'Lịch sử phê duyệt về sớm gần đây',
+        ])
     </div>
 
     <script>

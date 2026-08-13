@@ -128,18 +128,18 @@ class LeaveApprovalService
     {
         $user = User::find($actorId);
         $leaveRequest->loadMissing('employee.user');
-        $isFromManager = $leaveRequest->employee?->user?->isManager() ?? false;
+        $requiresAdminApproval = $leaveRequest->employee?->requiresAdminApproval() ?? false;
 
-        if ($isFromManager) {
+        if ($requiresAdminApproval) {
             if (! $user?->isAdmin()) {
-                throw ValidationException::withMessages(['authorization' => 'Đơn nghỉ phép của quản lý chỉ Admin mới được duyệt hoặc từ chối.']);
+                throw ValidationException::withMessages(['authorization' => 'Đơn nghỉ phép của quản lý/kế toán chỉ Admin mới được duyệt hoặc từ chối.']);
             }
 
             return;
         }
 
         if ($user?->isAdmin()) {
-            throw ValidationException::withMessages(['authorization' => 'Admin chỉ được duyệt đơn nghỉ phép của quản lý, không được duyệt đơn của nhân viên.']);
+            throw ValidationException::withMessages(['authorization' => 'Admin chỉ được duyệt đơn nghỉ phép của quản lý/kế toán, không được duyệt đơn của nhân viên.']);
         }
 
         if (! $user?->isManager()) {
@@ -237,5 +237,15 @@ class LeaveApprovalService
         }
 
         return compact('rejected', 'failed');
+    }
+
+    public function logSubmitted(LeaveRequest $leaveRequest, int $actorId): void
+    {
+        LeaveRequestHistory::create([
+            'leave_request_id' => $leaveRequest->id,
+            'actor_id' => $actorId,
+            'action' => 'submitted',
+            'note' => 'Nhân viên gửi đơn nghỉ phép.',
+        ]);
     }
 }
