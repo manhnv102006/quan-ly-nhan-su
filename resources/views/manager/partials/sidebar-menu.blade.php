@@ -1,4 +1,6 @@
 @php
+    use App\Support\EmployeeSelfServiceNavigation;
+
     $navigation = $navigation ?? \App\Support\ManagerNavigation::items();
     $user = Auth::user();
 
@@ -15,27 +17,33 @@
     };
 
     $defaultOpenMenu = null;
+    $defaultOpenSubMenu = null;
 
     foreach ($navigation as $menuItem) {
         if (empty($menuItem['children']) || empty($menuItem['key'])) {
             continue;
         }
 
-        $groupActive = collect($menuItem['children'])->contains(fn ($child) => $isNavActive($child));
+        $groupActive = collect($menuItem['children'])->contains(
+            fn ($child) => EmployeeSelfServiceNavigation::itemIsActive($child)
+        );
 
         if ($groupActive) {
             $defaultOpenMenu = $menuItem['key'];
+            $defaultOpenSubMenu = EmployeeSelfServiceNavigation::defaultOpenSubMenuKey($menuItem['children']);
             break;
         }
     }
 @endphp
 
-<div x-data="{ openMenu: @js($defaultOpenMenu) }" class="space-y-1">
+<div x-data="{ openMenu: @js($defaultOpenMenu), openSubMenu: @js($defaultOpenSubMenu) }" class="space-y-1">
     @foreach ($navigation as $item)
         @php
             $hasChildren = ! empty($item['children']);
             $isActive = $isNavActive($item);
-            $hasActiveChild = $hasChildren && collect($item['children'])->contains(fn ($child) => $isNavActive($child));
+            $hasActiveChild = $hasChildren && collect($item['children'])->contains(
+                fn ($child) => EmployeeSelfServiceNavigation::itemIsActive($child)
+            );
             $groupHighlighted = $hasChildren && $hasActiveChild;
         @endphp
 
@@ -86,19 +94,11 @@
                     class="ml-5 mt-1 space-y-0.5 border-l border-slate-200/80 pl-4"
                     style="display: none;"
                 >
-                    @foreach ($item['children'] as $child)
-                        @php $childActive = $isNavActive($child); @endphp
-                        <a
-                            href="{{ $child['href'] }}"
-                            @if (! empty($child['target'])) target="{{ $child['target'] }}" @endif
-                            class="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm font-medium transition {{ $childActive ? 'bg-teal-50 text-teal-700' : 'text-slate-500 hover:bg-teal-50 hover:text-teal-700' }}"
-                        >
-                            <span class="truncate">{{ $child['label'] }}</span>
-                            @if (! empty($child['badge']) && $child['badge'] > 0)
-                                <x-nav-badge :count="$child['badge']" :active="$childActive" active-ring="ring-teal-500" />
-                            @endif
-                        </a>
-                    @endforeach
+                    @include('partials.self-service-nav-children', [
+                        'items' => $item['children'],
+                        'useMatch' => false,
+                        'theme' => 'manager',
+                    ])
                 </div>
             @else
                 <a

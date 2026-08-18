@@ -1,5 +1,6 @@
 @php
     use App\Support\AccountantNavigation;
+    use App\Support\EmployeeSelfServiceNavigation;
 
     $navigation = $navigation ?? AccountantNavigation::items();
     $user = Auth::user();
@@ -12,6 +13,7 @@
     $groupLabels = AccountantNavigation::groupLabels();
 
     $defaultOpenMenu = null;
+    $defaultOpenSubMenu = null;
 
     foreach ($navigation as $menuItem) {
         if (empty($menuItem['children']) || empty($menuItem['key'])) {
@@ -25,12 +27,16 @@
 
         if ($parentActive || $childActive) {
             $defaultOpenMenu = $menuItem['key'];
+            $defaultOpenSubMenu = EmployeeSelfServiceNavigation::defaultOpenSubMenuKey(
+                $menuItem['children'],
+                useMatch: true
+            );
             break;
         }
     }
 @endphp
 
-<div x-data="{ openMenu: @js($defaultOpenMenu) }">
+<div x-data="{ openMenu: @js($defaultOpenMenu), openSubMenu: @js($defaultOpenSubMenu) }">
     @foreach ($groupLabels as $groupKey => $groupLabel)
         @if ($groupedNavigation->has($groupKey))
             <div class="{{ $loop->first ? '' : 'mt-3' }}">
@@ -98,16 +104,11 @@
                                     class="ml-4 mt-0.5 space-y-0.5 border-l border-amber-200/80 pl-3"
                                     style="display: none;"
                                 >
-                                    @foreach ($item['children'] as $child)
-                                        @php $childActive = AccountantNavigation::isChildActive($child); @endphp
-                                        <a href="{{ $child['href'] }}"
-                                           class="flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition {{ $childActive ? 'bg-amber-50 text-amber-800' : 'text-slate-600 hover:bg-amber-50/80 hover:text-amber-800' }}">
-                                            <span class="truncate">{{ $child['label'] }}</span>
-                                            @if (! empty($child['badge']) && $child['badge'] > 0)
-                                                <x-nav-badge :count="$child['badge']" :active="$childActive" active-ring="ring-amber-500" />
-                                            @endif
-                                        </a>
-                                    @endforeach
+                                    @include('partials.self-service-nav-children', [
+                                        'items' => $item['children'],
+                                        'useMatch' => true,
+                                        'theme' => 'accountant',
+                                    ])
                                 </div>
                             </div>
                         @elseif (! empty($item['href']))

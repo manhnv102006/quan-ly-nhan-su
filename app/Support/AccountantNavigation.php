@@ -266,6 +266,12 @@ class AccountantNavigation
      */
     public static function isChildActive(array $child): bool
     {
+        if (! empty($child['children'])) {
+            return collect($child['children'])->contains(
+                fn (array $nested) => self::isChildActive($nested)
+            );
+        }
+
         return self::isRouteActive($child['match'] ?? null, $child['except'] ?? null);
     }
 }
