@@ -249,6 +249,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/recruitment/candidates', [CandidateController::class, 'index'])->name('recruitment.candidates');
     Route::get('/recruitment/interviewed-candidates', [CandidateController::class, 'interviewed'])->name('recruitment.interviewed-candidates');
     Route::get('/recruitment/candidates/{candidate}', [CandidateController::class, 'show'])->name('recruitment.candidates.show');
+    Route::get('/recruitment/candidates/{candidate}/cv', [CandidateController::class, 'cv'])->name('recruitment.candidates.cv');
     Route::patch('/recruitment/candidates/{candidate}/approve-hire', [CandidateController::class, 'approveHire'])->name('recruitment.candidates.approve-hire');
     Route::patch('/recruitment/candidates/{candidate}/reject-hire', [CandidateController::class, 'rejectHire'])->name('recruitment.candidates.reject-hire');
     Route::post('/recruitment/candidates/{candidate}/convert-to-employee', [CandidateController::class, 'convertToEmployee'])->name('recruitment.candidates.convert-to-employee');
@@ -293,6 +294,7 @@ Route::middleware(['auth', 'verified', 'role:manager'])->prefix('manager')->name
     Route::get('/recruitment', [ManagerRecruitmentController::class, 'index'])->name('recruitment.index');
     Route::get('/recruitment/candidates', [ManagerRecruitmentController::class, 'candidates'])->name('recruitment.candidates.index');
     Route::get('/recruitment/candidates/{candidate}', [ManagerRecruitmentController::class, 'showCandidate'])->name('recruitment.candidates.show');
+    Route::get('/recruitment/candidates/{candidate}/cv', [ManagerRecruitmentController::class, 'cv'])->name('recruitment.candidates.cv');
     Route::post('/recruitment/candidates/{candidate}/interviews', [ManagerRecruitmentController::class, 'storeInterview'])->name('recruitment.candidates.interviews.store');
     Route::get('/recruitment/job-posts/create', [ManagerRecruitmentController::class, 'createJobPost'])->name('recruitment.job-posts.create');
     Route::post('/recruitment/job-posts', [ManagerRecruitmentController::class, 'storeJobPost'])->name('recruitment.job-posts.store');

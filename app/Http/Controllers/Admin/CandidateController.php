@@ -9,6 +9,7 @@ use App\Models\Employee;
 use App\Models\Interview;
 use App\Models\JobPost;
 use App\Models\Position;
+use App\Services\CandidateCvService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,9 +19,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CandidateController extends Controller
 {
+    public function __construct(private readonly CandidateCvService $candidateCvService)
+    {
+    }
     public function create(): View
     {
         $jobPosts = $this->availableJobPosts();
@@ -146,6 +151,11 @@ class CandidateController extends Controller
             'suggestedEmployeeCode' => $this->suggestEmployeeCode($candidate),
             'conversionPlacement' => $this->resolveConversionPlacement($candidate),
         ], $cvData));
+    }
+
+    public function cv(Candidate $candidate): StreamedResponse
+    {
+        return $this->candidateCvService->stream($candidate);
     }
 
     public function approveHire(Candidate $candidate): RedirectResponse
@@ -409,8 +419,8 @@ class CandidateController extends Controller
 
     private function candidateCvData(Candidate $candidate): array
     {
-        $hasCvFile = filled($candidate->cv_file) && Storage::disk('public')->exists($candidate->cv_file);
-        $cvUrl = $hasCvFile ? Storage::disk('public')->url($candidate->cv_file) : null;
+        $hasCvFile = $this->candidateCvService->hasCv($candidate);
+        $cvUrl = $this->candidateCvService->viewUrl($candidate, 'admin.recruitment.candidates.cv');
 
         return compact('hasCvFile', 'cvUrl');
     }

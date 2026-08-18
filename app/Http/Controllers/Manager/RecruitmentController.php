@@ -9,19 +9,21 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Interview;
 use App\Models\JobPost;
+use App\Services\CandidateCvService;
 use App\Services\ManagerScopeService;
 use App\Services\RecruitmentInterviewService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RecruitmentController extends Controller
 {
     public function __construct(
         private readonly ManagerScopeService $managerScope,
         private readonly RecruitmentInterviewService $interviews,
+        private readonly CandidateCvService $candidateCvService,
     ) {}
 
     public function index(): View
@@ -152,8 +154,8 @@ class RecruitmentController extends Controller
             'interviews.interviewer',
         ]);
 
-        $hasCvFile = filled($candidate->cv_file) && Storage::disk('public')->exists($candidate->cv_file);
-        $cvUrl = $hasCvFile ? Storage::disk('public')->url($candidate->cv_file) : null;
+        $hasCvFile = $this->candidateCvService->hasCv($candidate);
+        $cvUrl = $this->candidateCvService->viewUrl($candidate, 'manager.recruitment.candidates.cv');
         $canScheduleInterview = $candidate->interviews->isEmpty();
         $departmentInterviewers = $this->departmentInterviewersForCandidate($candidate);
 
@@ -165,6 +167,14 @@ class RecruitmentController extends Controller
             'departmentInterviewers',
             'manager',
         ));
+    }
+
+    public function cv(Candidate $candidate): StreamedResponse|RedirectResponse
+    {
+        $manager = $this->managerScope->resolveManagerEmployeeOrFail(Auth::user());
+        $this->ensureManagerCanAccessCandidate($candidate, $manager);
+
+        return $this->candidateCvService->stream($candidate);
     }
 
     public function storeInterview(Request $request, Candidate $candidate): RedirectResponse

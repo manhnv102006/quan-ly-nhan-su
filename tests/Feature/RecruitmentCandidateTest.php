@@ -4,6 +4,8 @@ use App\Models\Candidate;
 use App\Models\JobPost;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $adminRole = Role::create([
@@ -55,4 +57,27 @@ test('admin cannot manually create candidates anymore', function () {
             'status' => 'new',
         ])
         ->assertNotFound();
+});
+
+test('admin can open candidate cv through application route', function () {
+    Storage::fake('public');
+
+    $cv = UploadedFile::fake()->create('cv.pdf', 100, 'application/pdf');
+    $storedPath = $cv->store('candidate-cvs', 'public');
+
+    $candidate = Candidate::create([
+        'job_post_id' => $this->jobPost->id,
+        'full_name' => 'Nguyen Van CV',
+        'phone' => '0900000003',
+        'email' => 'candidate-cv@example.com',
+        'birth_date' => '1998-01-01',
+        'address' => 'Ha Noi',
+        'cv_file' => $storedPath,
+        'status' => Candidate::STATUS_NEW,
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.recruitment.candidates.cv', $candidate))
+        ->assertOk()
+        ->assertHeader('content-disposition');
 });
