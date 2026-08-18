@@ -250,73 +250,13 @@ class AccountantNavigation
             [
                 'key' => 'personal',
                 'label' => 'Không gian NV',
-                'match' => [
-                    'attendance.*',
-                    'employee.payrolls.*',
-                    'employee.payroll-complaints.*',
-                    'employee.advances.*',
-                    'employee.tax-dependents.*',
-                    'employee.contracts.*',
-                    'employee.leave-requests*',
-                    'employee.overtime-requests*',
-                    'employee.notifications*',
-                    'profile.*',
-                ],
+                'match' => array_merge(
+                    ['attendance.*'],
+                    EmployeeSelfServiceNavigation::routePatterns(),
+                ),
                 'group' => self::GROUP_PERSONAL,
                 'icon' => 'M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z',
-                'children' => [
-                    [
-                        'label' => 'Chấm công',
-                        'href' => route('attendance.index'),
-                        'match' => 'attendance.*',
-                    ],
-                    [
-                        'label' => 'Phiếu lương',
-                        'href' => route('employee.payrolls.index'),
-                        'match' => 'employee.payrolls.*',
-                    ],
-                    [
-                        'label' => 'Khiếu nại lương',
-                        'href' => route('employee.payroll-complaints.index'),
-                        'match' => 'employee.payroll-complaints.*',
-                    ],
-                    [
-                        'label' => 'Ứng lương',
-                        'href' => route('employee.advances.index'),
-                        'match' => 'employee.advances.*',
-                    ],
-                    [
-                        'label' => 'NPT',
-                        'href' => route('employee.tax-dependents.index'),
-                        'match' => 'employee.tax-dependents.*',
-                    ],
-                    [
-                        'label' => 'Hợp đồng',
-                        'href' => route('employee.contracts.index'),
-                        'match' => 'employee.contracts.*',
-                    ],
-                    [
-                        'label' => 'Nghỉ phép',
-                        'href' => route('employee.leave-requests'),
-                        'match' => 'employee.leave-requests*',
-                    ],
-                    [
-                        'label' => 'Tăng ca',
-                        'href' => route('employee.overtime-requests'),
-                        'match' => 'employee.overtime-requests*',
-                    ],
-                    [
-                        'label' => 'Thông báo',
-                        'href' => route('employee.notifications.index'),
-                        'match' => 'employee.notifications*',
-                        'route' => 'employee.notifications*',
-                    ],
-                    [
-                        'label' => 'Hồ sơ',
-                        'href' => route('profile.edit'),
-                        'match' => 'profile.*',
-                    ],
-                ],
+                'children' => EmployeeSelfServiceNavigation::groupedItemsForAccountant(),
             ],
         ];
     }

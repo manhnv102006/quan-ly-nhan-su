@@ -59,48 +59,7 @@ class ManagerNavigation
                 'key' => 'personal',
                 'label' => 'Quản lý cá nhân',
                 'icon' => 'M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z',
-                'children' => [
-                    [
-                        'label' => 'Chấm công',
-                        'href' => route('attendance.index'),
-                        'route' => 'attendance.*',
-                    ],
-                    [
-                        'label' => 'Nghỉ phép',
-                        'href' => route('employee.leave-requests'),
-                        'route' => 'employee.leave-requests*',
-                    ],
-                    [
-                        'label' => 'Tăng ca',
-                        'href' => route('employee.overtime-requests'),
-                        'route' => 'employee.overtime-requests*',
-                    ],
-                    [
-                        'label' => 'Về sớm',
-                        'href' => route('employee.early-leave.index'),
-                        'route' => 'employee.early-leave*',
-                    ],
-                    [
-                        'label' => 'Ứng lương',
-                        'href' => route('employee.advances.index'),
-                        'route' => 'employee.advances.*',
-                    ],
-                    [
-                        'label' => 'Khiếu nại lương',
-                        'href' => route('employee.payroll-complaints.index'),
-                        'route' => 'employee.payroll-complaints.*',
-                    ],
-                    [
-                        'label' => 'Đăng ký NPT',
-                        'href' => route('employee.tax-dependents.index'),
-                        'route' => 'employee.tax-dependents.*',
-                    ],
-                    [
-                        'label' => 'Hồ sơ cá nhân',
-                        'href' => route('profile.edit'),
-                        'route' => 'profile.*',
-                    ],
-                ],
+                'children' => EmployeeSelfServiceNavigation::groupedItems(),
             ],
         ];
     }

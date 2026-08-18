@@ -384,7 +384,9 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
 
 Route::middleware(['auth', 'verified', 'role:employee,accountant'])->group(function () {
     Route::get('/employee/dashboard', [DashboardController::class, 'employee'])->name('employee.dashboard');
+});
 
+Route::middleware(['auth', 'verified', 'role:employee,manager,accountant'])->group(function () {
     Route::prefix('employee/kpis')->name('employee.kpis.')->group(function () {
         Route::get('/', [EmployeeKPIController::class, 'index'])->name('index');
         Route::get('/{employeeKpi}/edit', [EmployeeKPIController::class, 'edit'])->name('edit');
