@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Concerns;
 use App\Models\Department;
 use App\Models\Payroll;
 use App\Models\PayrollPeriod;
+use App\Models\PayrollPeriodBankDocument;
 use App\Services\AutoNotificationService;
 use App\Services\ModuleChangeLogService;
+use App\Services\PayrollPeriodBankDocumentService;
 use App\Services\PayrollService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 trait ManagesPayrollPeriods
 {
@@ -201,6 +204,7 @@ trait ManagesPayrollPeriods
         ];
 
         $activities = $payrollPeriod->activities()->with('causer')->latest()->get();
+        $payrollPeriod->load(['bankDocuments.uploader']);
 
         return $this->payrollPeriodView('show', [
             'payrollPeriod' => $payrollPeriod,
@@ -208,6 +212,79 @@ trait ManagesPayrollPeriods
             'departmentSummaries' => \App\Support\DepartmentSummaryBuilder::forPayrollPeriod($payrollPeriod),
             'activities' => $activities,
         ]);
+    }
+
+    public function storeBankDocument(
+        Request $request,
+        PayrollPeriod $payrollPeriod,
+        PayrollPeriodBankDocumentService $bankDocuments,
+    ): RedirectResponse {
+        $validated = $request->validate(
+            $bankDocuments->validationRules(),
+            $bankDocuments->validationMessages(),
+        );
+
+        $document = $bankDocuments->store(
+            $payrollPeriod,
+            $validated['file'],
+            filled($validated['note'] ?? null) ? $validated['note'] : null,
+            auth()->id(),
+        );
+
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('bank_document_upload')
+            ->withProperties([
+                'document_id' => $document->id,
+                'original_name' => $document->original_name,
+            ])
+            ->log('Đã lưu file ngân hàng đã đóng dấu: '.$document->original_name);
+
+        return redirect()
+            ->to($this->payrollPeriodRoute('show', $payrollPeriod))
+            ->with('success', 'Đã lưu file ngân hàng đã đóng dấu.');
+    }
+
+    public function downloadBankDocument(
+        PayrollPeriod $payrollPeriod,
+        PayrollPeriodBankDocument $bankDocument,
+        PayrollPeriodBankDocumentService $bankDocuments,
+    ): StreamedResponse {
+        $this->assertBankDocumentBelongsToPeriod($payrollPeriod, $bankDocument);
+
+        return $bankDocuments->download($bankDocument);
+    }
+
+    public function destroyBankDocument(
+        PayrollPeriod $payrollPeriod,
+        PayrollPeriodBankDocument $bankDocument,
+        PayrollPeriodBankDocumentService $bankDocuments,
+    ): RedirectResponse {
+        $this->assertBankDocumentBelongsToPeriod($payrollPeriod, $bankDocument);
+
+        $fileName = $bankDocument->original_name;
+        $bankDocuments->delete($bankDocument);
+
+        activity()
+            ->performedOn($payrollPeriod)
+            ->causedBy(auth()->user())
+            ->event('bank_document_delete')
+            ->withProperties([
+                'original_name' => $fileName,
+            ])
+            ->log('Đã xóa file ngân hàng: '.$fileName);
+
+        return redirect()
+            ->to($this->payrollPeriodRoute('show', $payrollPeriod))
+            ->with('success', 'Đã xóa file ngân hàng.');
+    }
+
+    protected function assertBankDocumentBelongsToPeriod(
+        PayrollPeriod $payrollPeriod,
+        PayrollPeriodBankDocument $bankDocument,
+    ): void {
+        abort_unless($bankDocument->payroll_period_id === $payrollPeriod->id, 404);
     }
 
     public function department(PayrollPeriod $payrollPeriod, Department $department): View

@@ -8,6 +8,7 @@ use App\Models\LeaveRequest;
 use App\Services\AutoNotificationService;
 use App\Services\DepartmentLeaveCapacityService;
 use App\Services\LeaveApprovalService;
+use App\Services\LeaveBalanceService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +21,7 @@ class EmployeeLeaveController extends Controller
         private AutoNotificationService $autoNotifications,
         private DepartmentLeaveCapacityService $departmentLeaveCapacity,
         private LeaveApprovalService $leaveApprovalService,
+        private LeaveBalanceService $leaveBalanceService,
     ) {}
 
     private function getEmployee()
@@ -56,8 +58,9 @@ class EmployeeLeaveController extends Controller
             ->withQueryString();
 
         $isManager = Auth::user()->role?->name === 'manager';
+        $leaveBalance = $this->leaveBalanceService->forEmployee($employee);
 
-        return view('employee.leave-requests.index', compact('leaveRequests', 'isManager', 'filter', 'stats'));
+        return view('employee.leave-requests.index', compact('leaveRequests', 'isManager', 'filter', 'stats', 'leaveBalance'));
     }
 
     public function show(LeaveRequest $leaveRequest)
@@ -76,6 +79,7 @@ class EmployeeLeaveController extends Controller
 
         return view('employee.leave-requests.create', [
             'leaveCapacityPercent' => $employee->leaveCapacityPercent(),
+            'leaveBalance' => $this->leaveBalanceService->forEmployee($employee),
         ]);
     }
 

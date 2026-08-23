@@ -50,6 +50,11 @@ class PayrollPeriod extends Model
         return $this->hasMany(Payroll::class);
     }
 
+    public function bankDocuments(): HasMany
+    {
+        return $this->hasMany(PayrollPeriodBankDocument::class)->latest();
+    }
+
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');

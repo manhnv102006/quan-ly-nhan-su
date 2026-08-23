@@ -3,7 +3,7 @@
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-bold text-slate-800">Danh mục loại phụ cấp</h2>
-                <p class="text-sm text-slate-500 mt-1">Cấu hình mức mặc định — tự điền khi tạo/gia hạn hợp đồng.</p>
+                <p class="text-sm text-slate-500 mt-1">Cấu hình mức mặc định — phụ cấp chức vụ chỉnh theo từng chức vụ, tự điền khi tạo/gia hạn hợp đồng.</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('admin.contracts.index') }}" class="admin-btn-secondary">Hợp đồng</a>
@@ -40,7 +40,15 @@
                                     @endif
                                 </td>
                                 <td class="px-5 py-3 text-slate-600">{{ $type->code }}</td>
-                                <td class="px-5 py-3 font-medium text-slate-800">{{ number_format($type->default_amount, 0, ',', '.') }}₫</td>
+                                <td class="px-5 py-3 font-medium text-slate-800">
+                                    @if($type->isPositionAllowance())
+                                        <a href="{{ route('admin.allowance-types.edit', $type) }}" class="font-semibold text-violet-600 hover:text-violet-700">
+                                            Theo chức vụ
+                                        </a>
+                                    @else
+                                        {{ number_format($type->default_amount, 0, ',', '.') }}₫
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3 text-sm text-slate-500">{{ $type->calculation_note ?: '—' }}</td>
                                 <td class="px-5 py-3 text-center">
                                     <span class="rounded-full px-2.5 py-1 text-[11px] font-bold {{ $type->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">

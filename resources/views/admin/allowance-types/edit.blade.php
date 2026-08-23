@@ -12,7 +12,10 @@
             <form action="{{ route('admin.allowance-types.update', $allowanceType) }}" method="POST">
                 @csrf
                 @method('PUT')
-                @include('admin.allowance-types.partials.form-fields', ['allowanceType' => $allowanceType])
+                @include('admin.allowance-types.partials.form-fields', [
+                    'allowanceType' => $allowanceType,
+                    'positionsForAllowance' => $positionsForAllowance ?? collect(),
+                ])
                 <div class="mt-6 flex justify-end gap-2 border-t border-slate-100 pt-5">
                     <a href="{{ route('admin.allowance-types.index') }}" class="admin-btn-secondary">Hủy</a>
                     <button type="submit" class="admin-btn-violet">Cập nhật</button>

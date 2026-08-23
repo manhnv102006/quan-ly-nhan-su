@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
 
 class LeaveApprovalService
 {
-    private const ANNUAL_LEAVE_ALLOWANCE = 12;
+    private const ANNUAL_LEAVE_ALLOWANCE = LeaveBalanceService::ANNUAL_LEAVE_DAYS;
 
     public function __construct(
         private readonly NotificationService $notifications,

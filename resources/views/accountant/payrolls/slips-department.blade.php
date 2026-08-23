@@ -91,8 +91,8 @@
                                 </td>
                                 <td class="px-5 py-3">
                                     <div class="flex justify-center gap-1">
-                                        <a href="{{ route('accountant.payrolls.pdf', $payroll) }}" class="accountant-btn-secondary !px-2 !py-1 !text-xs">PDF</a>
-                                        <a href="{{ route('accountant.payrolls.excel', $payroll) }}" class="accountant-btn-secondary !px-2 !py-1 !text-xs">Excel</a>
+                                        <a href="{{ route('accountant.payrolls.pdf', $payroll) }}" class="accountant-btn-secondary !px-2 !py-1 !text-xs" data-no-loader>PDF</a>
+                                        <a href="{{ route('accountant.payrolls.excel', $payroll) }}" class="accountant-btn-secondary !px-2 !py-1 !text-xs" data-no-loader>Excel</a>
                                     </div>
                                 </td>
                             </tr>

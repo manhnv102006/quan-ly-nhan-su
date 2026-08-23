@@ -9,7 +9,7 @@
         </div>
 
         <div class="admin-card p-5 sm:p-6">
-            <form method="POST" action="{{ route('admin.contracts.store') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('admin.contracts.store') }}" enctype="multipart/form-data" data-contract-confirm-form>
                 @csrf
                 @include('admin.contracts.partials.form-fields', [
                     'employees' => $employees,
@@ -25,6 +25,10 @@
                     <button type="submit" class="admin-btn-violet px-6">Lưu hợp đồng</button>
                 </div>
             </form>
+            @include('admin.contracts.partials.save-confirm-modal', [
+                'confirmTitle' => 'Xác nhận lưu hợp đồng',
+                'confirmAction' => 'Lưu hợp đồng',
+            ])
         </div>
     </div>
 </x-admin-layout>

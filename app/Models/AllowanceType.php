@@ -62,4 +62,9 @@ class AllowanceType extends Model
     {
         return $query->orderBy('sort_order')->orderBy('name');
     }
+
+    public function isPositionAllowance(): bool
+    {
+        return $this->code === self::CODE_POSITION;
+    }
 }

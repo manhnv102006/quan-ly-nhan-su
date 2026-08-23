@@ -4,14 +4,20 @@ namespace App\Http\Controllers\Accountant;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContractHistory;
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\ModuleChangeLog;
 use App\Models\Payroll;
 use App\Models\PayrollPeriod;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use ZipArchive;
 
 class PayrollController extends Controller
 {
@@ -243,5 +249,111 @@ class PayrollController extends Controller
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
+    }
+
+    public function exportDepartmentExcel(Request $request, PayrollPeriod $payrollPeriod, Department $department): Response|RedirectResponse
+    {
+        $payrolls = $this->departmentPayrolls($request, $payrollPeriod, $department);
+
+        if ($payrolls->isEmpty()) {
+            return back()->with('error', 'Không có phiếu lương nào để xuất Excel.');
+        }
+
+        $headers = ['Mã NV', 'Họ tên', 'Phòng ban', 'Lương CB', 'Phụ cấp', 'Thưởng', 'Tăng ca', 'Khấu trừ', 'Thực lĩnh', 'Trạng thái'];
+        $csv = "\xEF\xBB\xBF".implode(',', $headers)."\n";
+
+        foreach ($payrolls as $payroll) {
+            $row = [
+                $payroll->employee?->employee_code ?? '',
+                $payroll->employee?->full_name ?? '',
+                $payroll->employee?->department?->department_name ?? $department->department_name,
+                $payroll->basic_salary,
+                $payroll->totalAllowance(),
+                $payroll->bonus,
+                $payroll->overtime_pay,
+                $payroll->deduction,
+                $payroll->total_salary,
+                $payroll->statusLabel(),
+            ];
+            $csv .= implode(',', array_map(fn ($v) => '"'.str_replace('"', '""', (string) $v).'"', $row))."\n";
+        }
+
+        $scope = $request->filled('ids') ? 'da_chon' : 'phong_ban';
+        $filename = 'bang_luong_'.$scope.'_'.Str::slug($department->department_name).'_'.$payrollPeriod->month.'_'.$payrollPeriod->year.'.csv';
+
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
+    }
+
+    public function exportDepartmentPdf(Request $request, PayrollPeriod $payrollPeriod, Department $department): BinaryFileResponse|RedirectResponse|Response
+    {
+        $payrolls = $this->departmentPayrolls($request, $payrollPeriod, $department);
+
+        if ($payrolls->isEmpty()) {
+            return back()->with('error', 'Không có phiếu lương nào để xuất PDF.');
+        }
+
+        if ($payrolls->count() === 1) {
+            return $this->exportPdf($payrolls->first());
+        }
+
+        $zipDirectory = storage_path('app/temp');
+        if (! is_dir($zipDirectory)) {
+            mkdir($zipDirectory, 0755, true);
+        }
+
+        $tempZipPath = $zipDirectory.'/'.uniqid('payslips-', true).'.zip';
+        $zip = new ZipArchive;
+
+        if ($zip->open($tempZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            return back()->with('error', 'Không tạo được file ZIP phiếu lương.');
+        }
+
+        foreach ($payrolls as $payroll) {
+            $pdf = Pdf::loadView('admin.payrolls.pdf', compact('payroll'));
+            $entry = 'phieu_luong_'.($payroll->employee?->employee_code ?: 'NV'.$payroll->id)
+                .'_'.$payrollPeriod->month.'_'.$payrollPeriod->year.'.pdf';
+            $zip->addFromString($entry, $pdf->output());
+        }
+
+        $zip->close();
+
+        $filename = 'phieu_luong_'.Str::slug($department->department_name).'_'.$payrollPeriod->month.'_'.$payrollPeriod->year.'.zip';
+
+        return response()->download($tempZipPath, $filename)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * @return Collection<int, Payroll>
+     */
+    protected function departmentPayrolls(Request $request, PayrollPeriod $payrollPeriod, Department $department): Collection
+    {
+        $query = Payroll::query()
+            ->with([
+                'employee.department',
+                'employee.position',
+                'employee.insurance',
+                'employee.taxProfile',
+                'payrollPeriod.approver',
+                'payrollPeriod.payer',
+                'payrollAllowances',
+            ])
+            ->where('payroll_period_id', $payrollPeriod->id)
+            ->whereHas('employee', fn ($q) => $q->where('department_id', $department->id))
+            ->orderBy('employee_id');
+
+        $ids = collect($request->input('ids', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($ids->isNotEmpty()) {
+            $query->whereIn('id', $ids);
+        }
+
+        return $query->get();
     }
 }

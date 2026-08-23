@@ -31,6 +31,8 @@
 
     <div class="space-y-6">
 
+        @include('employee.partials.leave-paid-balance', ['leaveBalance' => $leaveBalance ?? null])
+
         @include('employee.partials.leave-request-rules')
 
         @if (session('success'))

@@ -168,7 +168,8 @@
                                         @endif
                                         <a href="{{ route('admin.payrolls.pdf', $payroll) }}"
                                            class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1"
-                                           title="Xuất PDF">
+                                           title="Xuất PDF"
+                                           data-no-loader>
                                             📄 Xuất PDF
                                         </a>
                                     </div>
@@ -382,7 +383,7 @@
 
                 <!-- Footer -->
                 <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-4 mt-6">
-                    <a id="modalPdfBtn" href="#" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-medium transition text-sm">
+                    <a id="modalPdfBtn" href="#" data-no-loader class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-medium transition text-sm">
                         📄 Xuất file PDF
                     </a>
                     <button onclick="closePayrollModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition text-sm">

@@ -55,6 +55,12 @@ function isModifiedNavigation(event) {
     return event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
 }
 
+function isDownloadLikeUrl(url) {
+    const value = (url || '').toLowerCase();
+
+    return /\/pdf(?:\/|$|\?)|\/excel(?:\/|$|\?)|export-|export_|\/download(?:\/|$|\?)|\/cv(?:\/|$|\?)|\.pdf(?:$|\?)|\.xlsx?(?:$|\?)|\.csv(?:$|\?)|\.zip(?:$|\?)/.test(value);
+}
+
 function shouldIgnoreLink(link) {
     if (!link) {
         return true;
@@ -77,6 +83,10 @@ function shouldIgnoreLink(link) {
     }
 
     if (href.toLowerCase().startsWith('javascript:')) {
+        return true;
+    }
+
+    if (isDownloadLikeUrl(href) || isDownloadLikeUrl(link.href)) {
         return true;
     }
 
@@ -114,6 +124,10 @@ document.addEventListener('click', (event) => {
     const link = event.target.closest('a[href]');
 
     if (shouldIgnoreLink(link)) {
+        if (link.hasAttribute('download') || link.dataset.noLoader !== undefined || isDownloadLikeUrl(link.href)) {
+            hidePageLoader();
+        }
+
         return;
     }
 

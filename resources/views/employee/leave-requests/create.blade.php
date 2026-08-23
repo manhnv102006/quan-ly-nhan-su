@@ -17,11 +17,13 @@
 
 <x-dynamic-component :component="$layout" :attributes="new \Illuminate\View\ComponentAttributeBag($layoutParams)">
 
-    <div class="max-w-2xl space-y-6">
+    <div class="w-full space-y-6">
         <a href="{{ $isManager ? route('manager.leave-requests.index') : route('employee.leave-requests') }}"
            class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition font-semibold">
             <span>←</span> {{ $isManager ? 'Quay lại quản lý nghỉ phép' : 'Quay lại danh sách' }}
         </a>
+
+        @include('employee.partials.leave-paid-balance', ['leaveBalance' => $leaveBalance ?? null])
 
         @include('employee.partials.leave-request-rules', ['leaveCapacityPercent' => $leaveCapacityPercent])
 

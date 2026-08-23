@@ -188,13 +188,13 @@
 
 <div class="mt-4 grid grid-cols-1 gap-4">
     <div>
-        <label for="description" class="admin-label">Mô tả *</label>
-        <textarea id="description" name="description" rows="2" class="admin-field" required placeholder="Mô tả ngắn">{{ old('description', $isEdit ? $contract->description : '') }}</textarea>
+        <label for="description" class="admin-label">Mô tả</label>
+        <textarea id="description" name="description" rows="2" class="admin-field" placeholder="Không bắt buộc">{{ old('description', $isEdit ? $contract->description : '') }}</textarea>
         @error('description')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
     </div>
     <div>
-        <label for="note" class="admin-label">Ghi chú nội bộ *</label>
-        <textarea id="note" name="note" rows="2" class="admin-field" required placeholder="Ghi chú nội bộ">{{ old('note', $isEdit ? $contract->note : '') }}</textarea>
+        <label for="note" class="admin-label">Ghi chú nội bộ</label>
+        <textarea id="note" name="note" rows="2" class="admin-field" placeholder="Không bắt buộc">{{ old('note', $isEdit ? $contract->note : '') }}</textarea>
         @error('note')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
     </div>
 </div>

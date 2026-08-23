@@ -6,6 +6,7 @@ use App\Models\AllowanceType;
 use App\Models\Contract;
 use App\Models\ContractAllowance;
 use App\Models\ContractType;
+use App\Models\Position;
 use Illuminate\Support\Collection;
 
 class ContractAllowanceService
@@ -30,8 +31,29 @@ class ContractAllowanceService
     }
 
     /**
+     * @return array<int, int>
+     */
+    public function positionAllowanceMap(): array
+    {
+        return Position::query()
+            ->get(['id', 'allowance'])
+            ->mapWithKeys(fn (Position $position) => [(int) $position->id => (int) $position->allowance])
+            ->all();
+    }
+
+    public function positionAllowanceAmount(?int $positionId): float
+    {
+        if (! $positionId) {
+            return 0.0;
+        }
+
+        return (float) (Position::query()->whereKey($positionId)->value('allowance') ?? 0);
+    }
+
+    /**
      * Giá trị điền sẵn cho form. Khi tạo mới (không có hợp đồng) trả về rỗng
      * để buộc người dùng phải tự nhập — không điền thì sẽ không có phụ cấp.
+     * Phụ cấp chức vụ được JS điền theo chức vụ đang chọn.
      *
      * @return array<int, float>
      */

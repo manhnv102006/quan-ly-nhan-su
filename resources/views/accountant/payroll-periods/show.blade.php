@@ -19,7 +19,12 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
-                <a href="{{ route('accountant.payroll-periods.export-excel', $payrollPeriod) }}" class="accountant-btn-secondary">Xuất Excel kỳ</a>
+                <a href="{{ route('accountant.payroll-periods.export-excel', $payrollPeriod) }}" class="accountant-btn-secondary" data-no-loader>Xuất Excel kỳ</a>
+                @include('partials.payroll-period-bank-documents', [
+                    'section' => 'button',
+                    'routePrefix' => 'accountant',
+                    'payrollPeriod' => $payrollPeriod,
+                ])
                 @if ($payrollPeriod->status === 'open')
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-sky-100 text-sky-700 border border-sky-200">
                         🔵 Chưa tính lương (Open)
@@ -91,6 +96,12 @@
                 </h3>
             </div>
         </div>
+
+        @include('partials.payroll-period-bank-documents', [
+            'section' => 'panel',
+            'routePrefix' => 'accountant',
+            'payrollPeriod' => $payrollPeriod,
+        ])
 
         <!-- Phân chia theo phòng ban -->
         <div class="mt-8">
@@ -165,6 +176,10 @@
                                                 <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-50 text-emerald-700 text-xs font-semibold">💰 {{ $activity->description }}</span>
                                             @elseif($activity->event === 'close')
                                                 <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs font-semibold">🔒 {{ $activity->description }}</span>
+                                            @elseif($activity->event === 'bank_document_upload')
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-sky-50 text-sky-700 text-xs font-semibold">📎 {{ $activity->description }}</span>
+                                            @elseif($activity->event === 'bank_document_delete')
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-rose-50 text-rose-700 text-xs font-semibold">🗑️ {{ $activity->description }}</span>
                                             @else
                                                 <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs font-semibold">{{ $activity->description }}</span>
                                             @endif

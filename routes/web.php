@@ -136,6 +136,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     // Kỳ lương
     Route::patch('/payroll-periods/{payrollPeriod}/toggle-active', [PayrollPeriodController::class, 'toggleActive'])->name('payroll-periods.toggle-active');
     Route::post('/payroll-periods/{payrollPeriod}/payrolls/{payroll}/adjust', [PayrollPeriodController::class, 'adjustPayroll'])->name('payroll-periods.adjust-payroll');
+    Route::post('/payroll-periods/{payrollPeriod}/bank-documents', [PayrollPeriodController::class, 'storeBankDocument'])->name('payroll-periods.bank-documents.store');
+    Route::get('/payroll-periods/{payrollPeriod}/bank-documents/{bankDocument}/download', [PayrollPeriodController::class, 'downloadBankDocument'])->name('payroll-periods.bank-documents.download');
+    Route::delete('/payroll-periods/{payrollPeriod}/bank-documents/{bankDocument}', [PayrollPeriodController::class, 'destroyBankDocument'])->name('payroll-periods.bank-documents.destroy');
     Route::resource('payroll-periods', PayrollPeriodController::class)->except(['destroy']);
 
     Route::get('/payroll-complaints', [AdminPayrollComplaintController::class, 'index'])->name('payroll-complaints.index');
@@ -321,8 +324,15 @@ Route::middleware(['auth', 'verified', 'role:accountant'])->prefix('accountant')
     Route::get('/payrolls/{payroll}/pdf', [AccountantPayrollController::class, 'exportPdf'])->name('payrolls.pdf');
     Route::get('/payrolls/{payroll}/excel', [AccountantPayrollController::class, 'exportExcel'])->name('payrolls.excel');
     Route::get('/payroll-periods/{payrollPeriod}/export-excel', [AccountantPayrollController::class, 'exportPeriodExcel'])->name('payroll-periods.export-excel');
+    Route::get('/payroll-periods/{payrollPeriod}/departments/{department}/export-excel', [AccountantPayrollController::class, 'exportDepartmentExcel'])->name('payroll-periods.department.export-excel');
+    Route::get('/payroll-periods/{payrollPeriod}/departments/{department}/export-pdf', [AccountantPayrollController::class, 'exportDepartmentPdf'])->name('payroll-periods.department.export-pdf');
+    Route::post('/payroll-periods/{payrollPeriod}/departments/{department}/export-excel', [AccountantPayrollController::class, 'exportDepartmentExcel'])->name('payroll-periods.department.export-excel.selected');
+    Route::post('/payroll-periods/{payrollPeriod}/departments/{department}/export-pdf', [AccountantPayrollController::class, 'exportDepartmentPdf'])->name('payroll-periods.department.export-pdf.selected');
     Route::patch('/payroll-periods/{payrollPeriod}/toggle-active', [AccountantPayrollPeriodController::class, 'toggleActive'])->name('payroll-periods.toggle-active');
     Route::post('/payroll-periods/{payrollPeriod}/payrolls/{payroll}/adjust', [AccountantPayrollPeriodController::class, 'adjustPayroll'])->name('payroll-periods.adjust-payroll');
+    Route::post('/payroll-periods/{payrollPeriod}/bank-documents', [AccountantPayrollPeriodController::class, 'storeBankDocument'])->name('payroll-periods.bank-documents.store');
+    Route::get('/payroll-periods/{payrollPeriod}/bank-documents/{bankDocument}/download', [AccountantPayrollPeriodController::class, 'downloadBankDocument'])->name('payroll-periods.bank-documents.download');
+    Route::delete('/payroll-periods/{payrollPeriod}/bank-documents/{bankDocument}', [AccountantPayrollPeriodController::class, 'destroyBankDocument'])->name('payroll-periods.bank-documents.destroy');
     Route::resource('payroll-periods', AccountantPayrollPeriodController::class)->except(['destroy']);
     Route::get('/payroll-periods/{payrollPeriod}/departments/{department}', [AccountantPayrollPeriodController::class, 'department'])->name('payroll-periods.department');
     Route::post('/payroll-periods/{payrollPeriod}/calculate', [AccountantPayrollPeriodController::class, 'calculate'])->name('payroll-periods.calculate');

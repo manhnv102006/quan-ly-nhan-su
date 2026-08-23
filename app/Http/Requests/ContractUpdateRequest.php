@@ -32,6 +32,12 @@ class ContractUpdateRequest extends FormRequest
             }
             $this->merge(['allowances' => $normalized]);
         }
+
+        foreach (['description', 'note'] as $field) {
+            if ($this->has($field) && trim((string) $this->input($field)) === '') {
+                $this->merge([$field => null]);
+            }
+        }
     }
 
     public function rules(): array
@@ -52,8 +58,8 @@ class ContractUpdateRequest extends FormRequest
             'allowances' => ['nullable', 'array'],
             'allowances.*' => ['nullable', 'numeric', 'min:0'],
             'signed_date' => ['required', 'date', 'before_or_equal:start_date'],
-            'description' => ['required', 'string', 'max:1000'],
-            'note' => ['required', 'string', 'max:1000'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'note' => ['nullable', 'string', 'max:1000'],
             'contract_file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
         ];
     }

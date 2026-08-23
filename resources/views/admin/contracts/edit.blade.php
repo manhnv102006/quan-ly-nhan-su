@@ -15,7 +15,7 @@
         </div>
 
         <div class="admin-card p-5 sm:p-6">
-            <form method="POST" action="{{ route('admin.contracts.update', $contract) }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('admin.contracts.update', $contract) }}" enctype="multipart/form-data" data-contract-confirm-form>
                 @csrf
                 @method('PUT')
                 @include('admin.contracts.partials.form-fields', [
@@ -31,6 +31,11 @@
                     <button type="submit" class="admin-btn-violet px-6">Lưu thay đổi</button>
                 </div>
             </form>
+            @include('admin.contracts.partials.save-confirm-modal', [
+                'confirmTitle' => 'Xác nhận lưu thay đổi',
+                'confirmAction' => 'Lưu thay đổi',
+                'confirmMessage' => 'Kiểm tra lại thông tin trước khi cập nhật hợp đồng.',
+            ])
         </div>
     </div>
 </x-admin-layout>

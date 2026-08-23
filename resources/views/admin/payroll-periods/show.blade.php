@@ -18,7 +18,13 @@
                 </p>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
+                @include('partials.payroll-period-bank-documents', [
+                    'section' => 'button',
+                    'routePrefix' => 'admin',
+                    'payrollPeriod' => $payrollPeriod,
+                    'buttonClass' => 'inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50',
+                ])
                 @if ($payrollPeriod->status === 'open')
                     <span class="inline-flex px-4 py-2 rounded-xl text-sm font-semibold bg-sky-100 text-sky-700 border border-sky-200">
                         🔵 Chưa tính lương (Open)
@@ -90,6 +96,13 @@
                 </h3>
             </div>
         </div>
+
+        @include('partials.payroll-period-bank-documents', [
+            'section' => 'panel',
+            'routePrefix' => 'admin',
+            'payrollPeriod' => $payrollPeriod,
+            'buttonClass' => 'inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50',
+        ])
 
         <!-- Phân chia theo phòng ban -->
         <div class="mt-8">
@@ -164,6 +177,10 @@
                                                 <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-50 text-emerald-700 text-xs font-semibold">💰 {{ $activity->description }}</span>
                                             @elseif($activity->event === 'close')
                                                 <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs font-semibold">🔒 {{ $activity->description }}</span>
+                                            @elseif($activity->event === 'bank_document_upload')
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-sky-50 text-sky-700 text-xs font-semibold">📎 {{ $activity->description }}</span>
+                                            @elseif($activity->event === 'bank_document_delete')
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-rose-50 text-rose-700 text-xs font-semibold">🗑️ {{ $activity->description }}</span>
                                             @else
                                                 <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs font-semibold">{{ $activity->description }}</span>
                                             @endif

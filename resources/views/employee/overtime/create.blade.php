@@ -5,7 +5,7 @@
 
 <x-dynamic-component :component="$layout" :attributes="new \Illuminate\View\ComponentAttributeBag($layoutParams)">
 
-    <div class="max-w-xl space-y-6">
+    <div class="w-full space-y-6">
 
         {{-- Header --}}
         <div class="flex items-center gap-3">

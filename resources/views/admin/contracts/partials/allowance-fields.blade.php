@@ -1,5 +1,9 @@
 @php
     $allowanceValues = $allowanceValues ?? [];
+    $positions = $positions ?? collect();
+    $positionAllowanceMap = $positions->mapWithKeys(
+        fn ($position) => [(int) $position->id => (int) $position->allowance]
+    )->all();
 @endphp
 
 <div class="mt-2 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 sm:p-5">
@@ -45,7 +49,11 @@
                     inputmode="numeric"
                     data-allowance-code="{{ $type->code }}"
                     data-default-amount="{{ (int) $type->default_amount }}"
-                    placeholder="Mặc định: {{ number_format((float) $type->default_amount, 0, ',', '.') }} (để trống nếu không áp dụng)"
+                    @if($type->isPositionAllowance())
+                        placeholder="Mặc định theo chức vụ đã chọn (để trống nếu không áp dụng)"
+                    @else
+                        placeholder="Mặc định: {{ number_format((float) $type->default_amount, 0, ',', '.') }} (để trống nếu không áp dụng)"
+                    @endif
                     value="{{ is_numeric($value) ? number_format((float) $value, 0, ',', '.') : $value }}"
                 >
                 @error('allowances.'.$type->id)<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
@@ -62,11 +70,60 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const allowanceInputs = document.querySelectorAll('.allowance-input');
+            const positionAllowanceInput = document.querySelector('.allowance-input[data-allowance-code="position"]');
+            const positionAllowances = @json($positionAllowanceMap);
+            const employeeSelect = document.querySelector('[data-employee-select]');
+            const positionSelect = document.querySelector('[data-position-select]');
+            const positionInput = document.querySelector('[data-position-input]');
 
             function formatMoney(value) {
                 const digits = (value || '').toString().replace(/\D/g, '');
                 if (digits === '') return '';
                 return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            function parseMoney(value) {
+                return parseInt((value || '').toString().replace(/\D/g, '') || '0', 10);
+            }
+
+            function currentPositionId() {
+                if (employeeSelect && employeeSelect.value) {
+                    const option = employeeSelect.selectedOptions[0];
+                    if (option && option.dataset.positionId) {
+                        return option.dataset.positionId;
+                    }
+                }
+
+                if (positionSelect && positionSelect.value) {
+                    return positionSelect.value;
+                }
+
+                return positionInput ? positionInput.value : '';
+            }
+
+            function positionAmount(positionId) {
+                if (!positionId) return 0;
+                return parseInt(positionAllowances[positionId] || 0, 10);
+            }
+
+            let lastAutoAmount = positionAmount(currentPositionId());
+
+            function syncPositionAllowance(force) {
+                if (!positionAllowanceInput) return;
+
+                const amount = positionAmount(currentPositionId());
+                const current = parseMoney(positionAllowanceInput.value);
+                const canOverwrite = force
+                    || current === 0
+                    || (lastAutoAmount !== null && current === lastAutoAmount);
+
+                if (!canOverwrite) {
+                    lastAutoAmount = amount;
+                    return;
+                }
+
+                positionAllowanceInput.value = amount > 0 ? formatMoney(amount) : '';
+                lastAutoAmount = amount;
             }
 
             allowanceInputs.forEach(function (input) {
@@ -84,13 +141,32 @@
                 }
             });
 
+            if (employeeSelect) {
+                if (currentPositionId()) {
+                    syncPositionAllowance(false);
+                }
+                employeeSelect.addEventListener('change', function () {
+                    syncPositionAllowance(false);
+                });
+            }
+
+            if (positionSelect && positionSelect.offsetParent !== null) {
+                positionSelect.addEventListener('change', function () {
+                    syncPositionAllowance(false);
+                });
+            }
+
             const fillDefaultButton = document.querySelector('[data-allowance-fill-default]');
             if (fillDefaultButton) {
                 fillDefaultButton.addEventListener('click', function () {
                     allowanceInputs.forEach(function (input) {
-                        const amount = parseInt(input.dataset.defaultAmount || '0', 10);
+                        const isPosition = input.dataset.allowanceCode === 'position';
+                        const amount = isPosition
+                            ? positionAmount(currentPositionId())
+                            : parseInt(input.dataset.defaultAmount || '0', 10);
                         input.value = amount > 0 ? formatMoney(amount) : '';
                     });
+                    lastAutoAmount = positionAmount(currentPositionId());
                 });
             }
 
@@ -100,6 +176,7 @@
                     allowanceInputs.forEach(function (input) {
                         input.value = '';
                     });
+                    lastAutoAmount = 0;
                 });
             }
         });

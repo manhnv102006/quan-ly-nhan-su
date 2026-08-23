@@ -20,14 +20,26 @@ class AllowanceTypeRequest extends FormRequest
                 'default_amount' => str_replace('.', '', (string) $this->input('default_amount')),
             ]);
         }
+
+        $positionAllowances = $this->input('position_allowances');
+        if (is_array($positionAllowances)) {
+            $cleaned = [];
+            foreach ($positionAllowances as $id => $amount) {
+                $cleaned[$id] = $amount === null || $amount === ''
+                    ? 0
+                    : str_replace('.', '', (string) $amount);
+            }
+            $this->merge(['position_allowances' => $cleaned]);
+        }
     }
 
     public function rules(): array
     {
         $type = $this->route('allowance_type');
         $typeId = $type?->id;
+        $isPositionType = $type instanceof AllowanceType && $type->isPositionAllowance();
 
-        return [
+        $rules = [
             'name' => ['required', 'string', 'max:100'],
             'code' => [
                 'required',
@@ -36,12 +48,19 @@ class AllowanceTypeRequest extends FormRequest
                 'alpha_dash',
                 Rule::unique('allowance_types', 'code')->ignore($typeId),
             ],
-            'default_amount' => ['required', 'numeric', 'min:0'],
+            'default_amount' => [$isPositionType ? 'nullable' : 'required', 'numeric', 'min:0'],
             'calculation_type' => ['required', 'string', Rule::in(array_keys(AllowanceType::CALC_LABELS))],
             'description' => ['nullable', 'string', 'max:255'],
             'calculation_note' => ['nullable', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:999'],
         ];
+
+        if ($isPositionType) {
+            $rules['position_allowances'] = ['nullable', 'array'];
+            $rules['position_allowances.*'] = ['nullable', 'numeric', 'min:0', 'max:999999999999.99'];
+        }
+
+        return $rules;
     }
 }

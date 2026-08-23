@@ -22,7 +22,7 @@ class PayrollService
     ) {}
 
     // Cấu hình số buổi nghỉ phép hưởng lương tối đa trong 1 tháng
-    private const MAX_PAID_LEAVES_PER_MONTH = 1;
+    private const MAX_PAID_LEAVES_PER_MONTH = LeaveBalanceService::MONTHLY_PAID_DAYS;
 
 
     private const STANDARD_MONTHLY_HOURS = 176;

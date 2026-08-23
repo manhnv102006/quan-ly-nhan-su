@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AllowanceTypeRequest;
 use App\Models\AllowanceType;
+use App\Models\Position;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AllowanceTypeController extends Controller
@@ -46,23 +48,59 @@ class AllowanceTypeController extends Controller
 
     public function edit(AllowanceType $allowanceType): View
     {
-        return view('admin.allowance-types.edit', compact('allowanceType'));
+        $positionsForAllowance = $allowanceType->isPositionAllowance()
+            ? Position::query()->where('status', 'active')->orderBy('position_name')->get()
+            : collect();
+
+        return view('admin.allowance-types.edit', compact('allowanceType', 'positionsForAllowance'));
     }
 
     public function update(AllowanceTypeRequest $request, AllowanceType $allowanceType): RedirectResponse
     {
         $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active', true);
+        $positionAllowances = $data['position_allowances'] ?? [];
+        unset($data['position_allowances']);
 
         if ($allowanceType->is_system) {
             unset($data['code']);
         }
 
-        $allowanceType->update($data);
+        if ($allowanceType->isPositionAllowance()) {
+            unset($data['default_amount']);
+        }
+
+        DB::transaction(function () use ($allowanceType, $data, $positionAllowances) {
+            $allowanceType->update($data);
+
+            if ($allowanceType->isPositionAllowance()) {
+                $this->syncPositionAllowances($positionAllowances);
+            }
+        });
 
         return redirect()
             ->route('admin.allowance-types.index')
-            ->with('success', 'Đã cập nhật loại phụ cấp.');
+            ->with('success', $allowanceType->isPositionAllowance()
+                ? 'Đã cập nhật loại phụ cấp và mức theo chức vụ.'
+                : 'Đã cập nhật loại phụ cấp.');
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $amounts
+     */
+    protected function syncPositionAllowances(array $amounts): void
+    {
+        $positions = Position::query()
+            ->where('status', 'active')
+            ->whereIn('id', array_keys($amounts))
+            ->get();
+
+        foreach ($positions as $position) {
+            $raw = $amounts[$position->id] ?? $amounts[(string) $position->id] ?? 0;
+            $position->update([
+                'allowance' => max(0, (float) $raw),
+            ]);
+        }
     }
 
     public function destroy(AllowanceType $allowanceType): RedirectResponse

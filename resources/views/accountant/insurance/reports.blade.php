@@ -9,7 +9,7 @@
                 <h2 class="text-2xl font-bold text-slate-900">Báo cáo nộp bảo hiểm</h2>
                 <p class="text-sm text-slate-500">{{ $label }} ({{ $start->format('d/m/Y') }} – {{ $end->format('d/m/Y') }})</p>
             </div>
-            <a href="{{ route('accountant.insurance.reports.export', request()->query()) }}" class="accountant-btn-primary">Xuất Excel (CSV)</a>
+            <a href="{{ route('accountant.insurance.reports.export', request()->query()) }}" class="accountant-btn-primary" data-no-loader>Xuất Excel (CSV)</a>
         </div>
 
         <form method="GET" class="accountant-card flex flex-wrap items-end gap-4 p-5">

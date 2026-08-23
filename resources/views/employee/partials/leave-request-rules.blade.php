@@ -83,6 +83,7 @@
                 <p class="font-bold text-amber-950 mb-1.5 text-xs uppercase tracking-wide">Ảnh hưởng lương</p>
                 <ul class="space-y-1.5 text-xs text-amber-950 list-disc list-inside leading-relaxed">
                     <li>Tối đa <strong>1 ngày công</strong> nghỉ hưởng lương / tháng (nửa ngày = 0,5).</li>
+                    <li>Loại <strong>Nghỉ phép</strong>: tối đa <strong>12 ngày</strong> / năm (đã duyệt).</li>
                     <li>Nghỉ không phép / vượt hạn mức / không lương → trừ <strong>300.000 ₫ / ngày</strong>.</li>
                     <li>Đơn duyệt đúng loại hưởng lương → tính ngày công, không phạt 300k/ngày.</li>
                 </ul>

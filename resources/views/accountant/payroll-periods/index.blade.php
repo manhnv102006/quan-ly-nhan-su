@@ -166,39 +166,39 @@
                                         <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500">Chưa tạo</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-4 py-4 whitespace-nowrap">
                                     @if ($period)
-                                        <div class="flex justify-center items-center gap-2">
+                                        <div class="inline-flex items-center justify-center gap-2">
                                             <a href="{{ route('accountant.payroll-periods.show', $period) }}"
-                                               class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-semibold transition"
+                                               class="inline-flex h-8 min-w-[5.25rem] shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg bg-blue-50 px-3 text-xs font-semibold text-blue-600 transition hover:bg-blue-100"
                                                title="Xem chi tiết">
-                                                👁️ Xem chi tiết
+                                                👁️ Xem
                                             </a>
 
                                             <a href="{{ route('accountant.payroll-periods.edit', $period) }}"
-                                               class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 text-xs font-semibold transition"
+                                               class="inline-flex h-8 min-w-[5.25rem] shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg bg-amber-50 px-3 text-xs font-semibold text-amber-600 transition hover:bg-amber-100"
                                                title="Chỉnh sửa kỳ lương">
-                                                ✏️ Chỉnh sửa
+                                                ✏️ Sửa
                                             </a>
 
                                             <form action="{{ route('accountant.payroll-periods.toggle-active', $period) }}" method="POST" class="inline">
                                                 @csrf
                                                 @method('PATCH')
                                                 <button type="submit"
-                                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg {{ $period->is_active ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' }} text-xs font-semibold transition"
+                                                        class="inline-flex h-8 min-w-[5.25rem] shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg px-3 text-xs font-semibold transition {{ $period->is_active ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' }}"
                                                         title="{{ $period->is_active ? 'Khóa kỳ lương' : 'Mở khóa kỳ lương' }}">
                                                     @if ($period->is_active)
                                                         🔒 Khóa
                                                     @else
-                                                        🔓 Mở khóa
+                                                        🔓 Mở
                                                     @endif
                                                 </button>
                                             </form>
                                         </div>
                                     @else
                                         <a href="{{ route('accountant.payroll-periods.create', ['year' => $selectedYear, 'month' => $slot['month']]) }}"
-                                           class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 hover:bg-violet-100 text-xs font-semibold transition">
-                                            + Tạo kỳ lương
+                                           class="inline-flex h-8 items-center justify-center gap-1 whitespace-nowrap rounded-lg bg-amber-50 px-3 text-xs font-semibold text-amber-800 transition hover:bg-amber-100">
+                                            + Tạo kỳ
                                         </a>
                                     @endif
                                 </td>

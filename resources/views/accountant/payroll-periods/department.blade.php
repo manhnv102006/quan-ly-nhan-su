@@ -89,17 +89,60 @@
 
         <!-- Danh sách bảng lương -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
-                <h3 class="font-semibold text-slate-800">Danh sách lương nhân viên</h3>
-                <span class="text-xs font-medium text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                    Hiển thị tối đa 10 nhân sự/trang
-                </span>
+            <form id="bulk-export-form" method="POST">
+                @csrf
+            <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 class="font-semibold text-slate-800">Danh sách lương nhân viên</h3>
+                    <p class="mt-1 text-xs text-slate-500">
+                        Chọn nhiều dòng để xuất hàng loạt, hoặc xuất cả phòng ban.
+                        <span data-selected-count class="font-semibold text-amber-700">0 đã chọn</span>
+                    </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    @if ($payrolls->isNotEmpty())
+                        <a href="{{ route('accountant.payroll-periods.department.export-excel', [$payrollPeriod, $department]) }}"
+                           class="inline-flex h-8 items-center rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                           data-no-loader>
+                            Excel tất cả
+                        </a>
+                        <a href="{{ route('accountant.payroll-periods.department.export-pdf', [$payrollPeriod, $department]) }}"
+                           class="inline-flex h-8 items-center rounded-lg bg-slate-100 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                           data-no-loader>
+                            PDF tất cả
+                        </a>
+                        <button type="submit"
+                                formaction="{{ route('accountant.payroll-periods.department.export-excel.selected', [$payrollPeriod, $department]) }}"
+                                data-bulk-export
+                                data-no-loader
+                                class="inline-flex h-8 items-center rounded-lg border border-emerald-200 bg-white px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                disabled>
+                            Excel đã chọn
+                        </button>
+                        <button type="submit"
+                                formaction="{{ route('accountant.payroll-periods.department.export-pdf.selected', [$payrollPeriod, $department]) }}"
+                                data-bulk-export
+                                data-no-loader
+                                class="inline-flex h-8 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                disabled>
+                            PDF đã chọn
+                        </button>
+                    @endif
+                    <span class="text-xs font-medium text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                        Hiển thị tối đa 10 nhân sự/trang
+                    </span>
+                </div>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead>
                         <tr class="bg-slate-50">
+                            <th class="w-12 px-4 py-4 text-center">
+                                <input type="checkbox" data-select-all class="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                                       @disabled($payrolls->isEmpty())
+                                       title="Chọn tất cả trang này">
+                            </th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Mã NV</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Họ và tên</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Lương cơ bản</th>
@@ -118,6 +161,11 @@
                                 $payslip = $payroll->payslipBreakdown();
                             @endphp
                             <tr class="border-t border-slate-100 hover:bg-slate-50 transition">
+                                <td class="px-4 py-4 text-center">
+                                    <input type="checkbox" name="ids[]" value="{{ $payroll->id }}"
+                                           data-row-select
+                                           class="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                </td>
                                 <td class="px-6 py-4 font-medium text-slate-700">
                                     {{ $payroll->employee?->employee_code ?: '—' }}
                                 </td>
@@ -150,30 +198,32 @@
                                 <td class="px-6 py-4 font-bold text-slate-950">
                                     {{ number_format($payslip['net_salary'], 0, ',', '.') }} ₫
                                 </td>
-                                <td class="px-6 py-4 text-center">
-                                    <div class="flex justify-center items-center gap-2">
+                                <td class="px-4 py-4 whitespace-nowrap">
+                                    <div class="inline-flex items-center justify-center gap-2">
                                         <button type="button"
                                                 onclick="openPayrollModal({{ json_encode($payroll->toModalPayload(route('accountant.payrolls.pdf', $payroll))) }})"
-                                                class="px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-semibold transition flex items-center gap-1"
+                                                class="inline-flex h-8 min-w-[4.5rem] items-center justify-center whitespace-nowrap rounded-lg bg-blue-50 px-3 text-xs font-semibold text-blue-600 hover:bg-blue-100"
                                                 title="Xem chi tiết">
-                                            👁️ Xem chi tiết
+                                            Xem
                                         </button>
                                         @if($payroll->status === 'calculated' && $payrollPeriod->is_active)
                                             <button type="button"
                                                 onclick="openAdjustModal({{ $payroll->id }}, {{ $payroll->bonus }}, {{ $payroll->deduction }}, '{{ $payroll->employee?->full_name }}')"
-                                                class="px-3 py-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 text-xs font-semibold transition flex items-center gap-1"
+                                                class="inline-flex h-8 min-w-[4.5rem] items-center justify-center whitespace-nowrap rounded-lg bg-orange-50 px-3 text-xs font-semibold text-orange-600 hover:bg-orange-100"
                                                 title="Điều chỉnh">
-                                                ✏️ Điều chỉnh
+                                                Sửa
                                             </button>
                                         @endif
                                         <a href="{{ route('accountant.payrolls.pdf', $payroll) }}"
-                                           class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1"
-                                           title="Xuất PDF">
+                                           class="inline-flex h-8 min-w-[4.5rem] items-center justify-center whitespace-nowrap rounded-lg bg-slate-100 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                                           title="Xuất PDF"
+                                           data-no-loader>
                                             PDF
                                         </a>
                                         <a href="{{ route('accountant.payrolls.excel', $payroll) }}"
-                                           class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold transition flex items-center gap-1"
-                                           title="Xuất Excel">
+                                           class="inline-flex h-8 min-w-[4.5rem] items-center justify-center whitespace-nowrap rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                                           title="Xuất Excel"
+                                           data-no-loader>
                                             Excel
                                         </a>
                                     </div>
@@ -181,7 +231,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="px-6 py-10 text-center text-slate-500">
+                                <td colspan="11" class="px-6 py-10 text-center text-slate-500">
                                     Kỳ lương này chưa được tính hoặc chưa có nhân sự nào trong phòng ban này được lập bảng lương.
                                 </td>
                             </tr>
@@ -195,6 +245,8 @@
                     {{ $payrolls->links() }}
                 </div>
             @endif
+            </form>
+        </div>
     <!-- Modal Chi tiết Phiếu lương -->
     <div id="payrollDetailModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
         <!-- Overlay -->
@@ -387,7 +439,7 @@
 
                 <!-- Footer -->
                 <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-4 mt-6">
-                    <a id="modalPdfBtn" href="#" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-medium transition text-sm">
+                    <a id="modalPdfBtn" href="#" data-no-loader class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-medium transition text-sm">
                         📄 Xuất file PDF
                     </a>
                     <button onclick="closePayrollModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition text-sm">
@@ -439,6 +491,60 @@
 
     <!-- Script điều khiển Modal -->
     <script>
+        (function () {
+            const form = document.getElementById('bulk-export-form');
+            if (!form) return;
+
+            const selectAll = form.querySelector('[data-select-all]');
+            const rows = () => Array.from(form.querySelectorAll('[data-row-select]'));
+            const buttons = form.querySelectorAll('[data-bulk-export]');
+            const countLabel = form.querySelector('[data-selected-count]');
+
+            function selectedCount() {
+                return rows().filter((box) => box.checked).length;
+            }
+
+            function syncSelection() {
+                const count = selectedCount();
+                const total = rows().length;
+
+                if (countLabel) {
+                    countLabel.textContent = count + ' đã chọn';
+                }
+
+                buttons.forEach((button) => {
+                    button.disabled = count === 0;
+                });
+
+                if (selectAll) {
+                    selectAll.checked = total > 0 && count === total;
+                    selectAll.indeterminate = count > 0 && count < total;
+                }
+            }
+
+            selectAll?.addEventListener('change', function () {
+                rows().forEach((box) => {
+                    box.checked = selectAll.checked;
+                });
+                syncSelection();
+            });
+
+            form.addEventListener('change', function (event) {
+                if (event.target.matches('[data-row-select]')) {
+                    syncSelection();
+                }
+            });
+
+            form.addEventListener('submit', function (event) {
+                if (selectedCount() === 0) {
+                    event.preventDefault();
+                    window.alert('Vui lòng chọn ít nhất một nhân viên để xuất hàng loạt.');
+                }
+            });
+
+            syncSelection();
+        })();
+
         let currentTab = 'payment';
 
         function openPayrollModal(data) {
