@@ -8,6 +8,7 @@ use App\Http\Requests\LeaveRequestRejectRequest;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Models\LeaveRequestHistory;
+use App\Services\DepartmentLeaveCapacityService;
 use App\Services\LeaveApprovalService;
 use App\Support\LeaveCapacityMessages;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,7 +23,10 @@ class LeaveApprovalController extends Controller
 {
     use ResolvesCurrentEmployee;
 
-    public function __construct(private readonly LeaveApprovalService $service) {}
+    public function __construct(
+        private readonly LeaveApprovalService $service,
+        private readonly DepartmentLeaveCapacityService $departmentLeaveCapacity,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -98,19 +102,33 @@ class LeaveApprovalController extends Controller
 
         $this->authorize('viewAsManager', $leaveRequest);
 
-        $leaveRequest->load(['employee.department', 'employee.position', 'approver', 'rejecter', 'histories.actor']);
+        $leaveRequest->load(['employee.department', 'employee.position', 'approver', 'rejecter', 'histories.actor', 'document']);
 
-        return view('manager.leave-requests.show', compact('leaveRequest'));
+        $capacityContext = $this->departmentLeaveCapacity->approvalCapacityContext($leaveRequest);
+        $capacityEnforcement = (string) config('leave.department_capacity_enforcement', 'override');
+
+        return view('manager.leave-requests.show', compact('leaveRequest', 'capacityContext', 'capacityEnforcement'));
     }
 
-    public function approve(LeaveRequest $leaveRequest): RedirectResponse
+    public function approve(Request $request, LeaveRequest $leaveRequest): RedirectResponse
     {
         $this->authorize('approve', $leaveRequest);
 
         $manager = $this->currentManager();
 
+        $validated = $request->validate([
+            'capacity_override_reason' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'capacity_override_reason.max' => 'Lý do duyệt vượt giới hạn không được vượt quá 1000 ký tự.',
+        ]);
+
         try {
-            $this->service->approve($leaveRequest, (int) Auth::id(), $manager);
+            $this->service->approve(
+                $leaveRequest,
+                (int) Auth::id(),
+                $manager,
+                $validated['capacity_override_reason'] ?? null,
+            );
         } catch (ValidationException $e) {
             if (isset($e->errors()['capacity'])) {
                 return redirect()

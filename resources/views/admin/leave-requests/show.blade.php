@@ -37,6 +37,12 @@
                             Duyệt đơn
                         </button>
                     </form>
+                    @if (($capacityContext['blocked'] ?? false) && ($capacityEnforcement ?? 'override') === 'override')
+                        <button type="button" onclick="openLeaveCapacityOverrideModal()"
+                                class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900 transition hover:bg-amber-100">
+                            Duyệt vượt giới hạn
+                        </button>
+                    @endif
                     <button type="button" onclick="openLeaveRejectModal()"
                             class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">
                         Từ chối
@@ -55,6 +61,13 @@
         @endif
 
         <x-leave-capacity-alert field="capacity" />
+
+        @include('shared.leave-capacity-approval-notice', [
+            'capacityContext' => $capacityContext ?? null,
+            'capacityEnforcement' => $capacityEnforcement ?? config('leave.department_capacity_enforcement', 'override'),
+            'canDecide' => $canAdminDecide,
+            'approveRoute' => route('admin.leave-requests.approve', $leaveRequest),
+        ])
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
@@ -85,7 +98,8 @@
                 <div class="space-y-4">
                     <div>
                         <p class="text-sm text-slate-500">Loại nghỉ</p>
-                        <p class="font-semibold">{{ $leaveRequest->leave_type }}</p>
+                        <p class="font-semibold">{{ $leaveRequest->leaveTypeLabel() }}</p>
+                        @include('shared.leave-type-policy', ['leaveRequest' => $leaveRequest])
                     </div>
                     <div>
                         <p class="text-sm text-slate-500">Từ ngày</p>
@@ -112,6 +126,16 @@
             <h2 class="mb-4 text-lg font-semibold">Lý do nghỉ phép</h2>
             <p class="text-slate-700">{{ $leaveRequest->reason }}</p>
         </div>
+
+        @if($leaveRequest->document)
+            <div class="rounded-2xl border bg-white p-6 shadow-sm">
+                <h2 class="mb-4 text-lg font-semibold">Giấy tờ minh chứng</h2>
+                <a href="{{ route('employee.leave-requests.document', $leaveRequest) }}"
+                   class="inline-flex items-center rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 transition hover:bg-sky-100">
+                    Tải xuống: {{ $leaveRequest->document->original_name }}
+                </a>
+            </div>
+        @endif
 
         @if($leaveRequest->histories->isNotEmpty())
             <div class="rounded-2xl border bg-white p-6 shadow-sm">
@@ -175,6 +199,35 @@
             </div>
         </div>
 
+        @if ($canAdminDecide && ($capacityContext['blocked'] ?? false) && ($capacityEnforcement ?? 'override') === 'override')
+            <div id="leave-capacity-override-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
+                <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+                    <h3 class="text-lg font-bold text-slate-800">Duyệt vượt giới hạn phòng ban</h3>
+                    <p class="mt-1 text-sm text-slate-500">Ghi rõ lý do nghiệp vụ để hệ thống lưu vào lịch sử đơn.</p>
+                    <form action="{{ route('admin.leave-requests.approve', $leaveRequest) }}" method="POST" class="mt-5">
+                        @csrf
+                        @method('PATCH')
+                        <label for="capacity_override_reason" class="mb-2 block text-sm font-semibold text-slate-700">Lý do duyệt vượt giới hạn</label>
+                        <textarea id="capacity_override_reason" name="capacity_override_reason" required rows="4"
+                                  class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20">{{ old('capacity_override_reason') }}</textarea>
+                        @error('capacity_override_reason')
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                        <div class="mt-6 flex gap-3">
+                            <button type="button" onclick="closeLeaveCapacityOverrideModal()"
+                                    class="flex-1 rounded-xl bg-slate-100 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200">
+                                Hủy
+                            </button>
+                            <button type="submit"
+                                    class="flex-1 rounded-xl bg-amber-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-amber-700">
+                                Xác nhận duyệt vượt
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endif
+
         <script>
             function openLeaveRejectModal() {
                 const modal = document.getElementById('leave-reject-modal');
@@ -184,6 +237,20 @@
 
             function closeLeaveRejectModal() {
                 const modal = document.getElementById('leave-reject-modal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+
+            function openLeaveCapacityOverrideModal() {
+                const modal = document.getElementById('leave-capacity-override-modal');
+                if (!modal) return;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            function closeLeaveCapacityOverrideModal() {
+                const modal = document.getElementById('leave-capacity-override-modal');
+                if (!modal) return;
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
             }

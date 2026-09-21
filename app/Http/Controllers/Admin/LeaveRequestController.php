@@ -9,6 +9,7 @@ use App\Models\EarlyLeaveRequest;
 use App\Models\EarlyLeaveRequestHistory;
 use App\Models\LeaveRequest;
 use App\Models\LeaveRequestHistory;
+use App\Services\DepartmentLeaveCapacityService;
 use App\Services\LeaveApprovalService;
 use App\Support\DepartmentSummaryBuilder;
 use Illuminate\Http\RedirectResponse;
@@ -20,8 +21,10 @@ use Illuminate\View\View;
 
 class LeaveRequestController extends Controller
 {
-    public function __construct(private readonly LeaveApprovalService $service)
-    {
+    public function __construct(
+        private readonly LeaveApprovalService $service,
+        private readonly DepartmentLeaveCapacityService $departmentLeaveCapacity,
+    ) {
     }
 
     public function index(Request $request): View
@@ -65,17 +68,32 @@ class LeaveRequestController extends Controller
             'approver.employee',
             'rejecter.employee',
             'histories.actor.employee',
+            'document',
         ]);
 
-        return view('admin.leave-requests.show', compact('leaveRequest'));
+        $capacityContext = $this->departmentLeaveCapacity->approvalCapacityContext($leaveRequest);
+        $capacityEnforcement = (string) config('leave.department_capacity_enforcement', 'override');
+
+        return view('admin.leave-requests.show', compact('leaveRequest', 'capacityContext', 'capacityEnforcement'));
     }
 
-    public function approve(LeaveRequest $leaveRequest): RedirectResponse
+    public function approve(Request $request, LeaveRequest $leaveRequest): RedirectResponse
     {
         $this->authorize('approve', $leaveRequest);
 
+        $validated = $request->validate([
+            'capacity_override_reason' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'capacity_override_reason.max' => 'Lý do duyệt vượt giới hạn không được vượt quá 1000 ký tự.',
+        ]);
+
         try {
-            $this->service->approve($leaveRequest, (int) Auth::id());
+            $this->service->approve(
+                $leaveRequest,
+                (int) Auth::id(),
+                null,
+                $validated['capacity_override_reason'] ?? null,
+            );
         } catch (ValidationException $e) {
             if (isset($e->errors()['capacity'])) {
                 return redirect()
@@ -124,7 +142,7 @@ class LeaveRequestController extends Controller
             'employee_name' => ['nullable', 'string', 'max:100'],
             'employee_code' => ['nullable', 'string', 'max:20'],
             'status' => ['nullable', Rule::in(array_keys(LeaveRequest::STATUS_LABELS))],
-            'leave_type' => ['nullable', Rule::in(array_keys(LeaveRequest::LEAVE_TYPE_LABELS))],
+            'leave_type' => ['nullable', Rule::in(array_keys(LeaveRequest::leaveTypeLabels()))],
             'start_from' => ['nullable', 'date'],
             'start_to' => ['nullable', 'date', 'after_or_equal:start_from'],
             'department_id' => ['nullable', 'integer', 'exists:departments,id'],

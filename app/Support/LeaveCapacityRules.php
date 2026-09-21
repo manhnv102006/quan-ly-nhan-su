@@ -15,12 +15,36 @@ final class LeaveCapacityRules
     /** Quản lý và kế toán: tối đa 20%. */
     public const RATIO_MANAGER_ACCOUNTANT = 0.20;
 
-    /** Đơn nghỉ trên mức này (ngày công) không tính vào giới hạn phòng ban. */
-    public const CAPACITY_EXEMPT_ABOVE_DAYS = 12;
+    /** Đơn nghỉ từ mức này trở lên (ngày công) không tính vào giới hạn phòng ban. */
+    public const LONG_LEAVE_EXEMPT_FROM_DAYS = 12;
 
-    public static function countsTowardDepartmentCapacity(float $totalDays): bool
+    /** @deprecated Dùng LONG_LEAVE_EXEMPT_FROM_DAYS */
+    public const CAPACITY_EXEMPT_ABOVE_DAYS = self::LONG_LEAVE_EXEMPT_FROM_DAYS;
+
+    /**
+     * Loại nghỉ theo luật — không bị giới hạn phòng ban (chỉ cảnh báo khi duyệt).
+     *
+     * @var list<string>
+     */
+    public const STATUTORY_CAPACITY_EXEMPT_LEAVE_TYPES = [
+        'maternity',
+        'sick',
+        'bereavement',
+        'wedding',
+    ];
+
+    public static function countsTowardDepartmentCapacity(string $leaveType, float $totalDays): bool
     {
-        return $totalDays <= self::CAPACITY_EXEMPT_ABOVE_DAYS;
+        if (self::isStatutoryCapacityExemptLeaveType($leaveType)) {
+            return false;
+        }
+
+        return $totalDays < self::LONG_LEAVE_EXEMPT_FROM_DAYS;
+    }
+
+    public static function isStatutoryCapacityExemptLeaveType(string $leaveType): bool
+    {
+        return in_array($leaveType, self::STATUTORY_CAPACITY_EXEMPT_LEAVE_TYPES, true);
     }
 
     public static function ratioFor(Employee $employee): float

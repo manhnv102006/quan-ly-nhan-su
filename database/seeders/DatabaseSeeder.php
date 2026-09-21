@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(RoleSeeder::class);
         $this->call(TaxPolicySeeder::class);
+        $this->call(LeaveTypeSeeder::class);
 
         $adminRoleId = Role::query()->where('name', Role::ADMIN)->value('id');
         $managerRoleId = Role::query()->where('name', Role::MANAGER)->value('id');

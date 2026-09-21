@@ -12,7 +12,7 @@
             'subtitle' => 'Thông tin chi tiết đơn xin nghỉ phép của bạn.',
         ];
 
-    $leaveTypes = \App\Models\LeaveRequest::LEAVE_TYPE_LABELS;
+    $leaveTypes = \App\Models\LeaveRequest::leaveTypeLabels();
 @endphp
 
 <x-dynamic-component :component="$layout" :attributes="new \Illuminate\View\ComponentAttributeBag($layoutParams)">
@@ -35,11 +35,17 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <p class="text-sm text-slate-500">Loại nghỉ</p>
-                    <p class="font-semibold">{{ $leaveTypes[$leaveRequest->leave_type] ?? $leaveRequest->leave_type }}</p>
+                    <p class="font-semibold">{{ $leaveTypes[$leaveRequest->leave_type] ?? $leaveRequest->leaveTypeLabel() }}</p>
+                    @include('shared.leave-type-policy', ['leaveRequest' => $leaveRequest])
                 </div>
                 <div>
                     <p class="text-sm text-slate-500">Số ngày</p>
-                    <p class="font-semibold">{{ $leaveRequest->total_days }} ngày</p>
+                    <p class="font-semibold">
+                        {{ $leaveRequest->total_days }} ngày
+                        @if($leaveRequest->halfDayPeriodLabel())
+                            <span class="text-slate-500">({{ $leaveRequest->halfDayPeriodLabel() }})</span>
+                        @endif
+                    </p>
                 </div>
                 <div>
                     <p class="text-sm text-slate-500">Từ ngày</p>
@@ -60,6 +66,16 @@
             <h3 class="text-sm font-bold uppercase text-slate-400 mb-5">Lý do nghỉ phép</h3>
             <p class="text-slate-700">{{ $leaveRequest->reason }}</p>
         </div>
+
+        @if($leaveRequest->document)
+            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+                <h3 class="text-sm font-bold uppercase text-slate-400 mb-5">Giấy tờ minh chứng</h3>
+                <a href="{{ route('employee.leave-requests.document', $leaveRequest) }}"
+                   class="inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs font-semibold text-sky-800 hover:bg-sky-100 transition">
+                    Tải xuống: {{ $leaveRequest->document->original_name }}
+                </a>
+            </div>
+        @endif
 
         @if(in_array($leaveRequest->status, [\App\Models\LeaveRequest::STATUS_APPROVED, \App\Models\LeaveRequest::STATUS_REJECTED], true))
             <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">

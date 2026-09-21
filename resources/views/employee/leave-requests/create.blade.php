@@ -25,14 +25,17 @@
 
         @include('employee.partials.leave-paid-balance', ['leaveBalance' => $leaveBalance ?? null])
 
-        @include('employee.partials.leave-request-rules', ['leaveCapacityPercent' => $leaveCapacityPercent])
+        @include('employee.partials.leave-request-rules', [
+            'leaveCapacityPercent' => $leaveCapacityPercent,
+            'typeLabels' => $leaveTypeOptions ?? \App\Models\LeaveRequest::leaveTypeLabels(),
+        ])
 
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-8">
             <h2 class="text-lg font-bold text-slate-800 mb-6">Đơn xin nghỉ phép mới</h2>
 
             <x-leave-capacity-alert field="leave_capacity" class="mb-6" />
 
-            <form id="leave-request-form" action="{{ route('employee.leave-requests.store') }}" method="POST" class="space-y-6">
+            <form id="leave-request-form" action="{{ route('employee.leave-requests.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                 @csrf
 
                 <div>
@@ -40,7 +43,7 @@
                     <select id="leave_type" name="leave_type" required
                             class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition text-sm">
                         <option value="">-- Chọn loại nghỉ phép --</option>
-                        @foreach (\App\Models\LeaveRequest::LEAVE_TYPE_LABELS as $value => $label)
+                        @foreach ($leaveTypeOptions ?? \App\Models\LeaveRequest::leaveTypeLabels() as $value => $label)
                             <option value="{{ $value }}" @selected(old('leave_type') == $value)>{{ $label }}</option>
                         @endforeach
                     </select>
@@ -49,19 +52,40 @@
                     @enderror
                 </div>
 
+                <div id="half-day-period-wrap" class="hidden rounded-2xl border border-violet-200 bg-violet-50/70 p-4 sm:p-5">
+                    <label for="half_day_period" class="block text-xs font-bold text-violet-900 uppercase mb-2">
+                        Buổi nghỉ <span class="text-rose-500">*</span>
+                    </label>
+                    <select id="half_day_period" name="half_day_period"
+                            class="w-full rounded-xl border border-violet-200 bg-white px-4 py-3 text-slate-800 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition text-sm">
+                        <option value="">-- Chọn buổi nghỉ --</option>
+                        @foreach (\App\Models\LeaveRequest::HALF_DAY_PERIOD_LABELS as $value => $label)
+                            <option value="{{ $value }}" @selected(old('half_day_period') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-2 text-[11px] leading-relaxed text-violet-900/80">Nghỉ nửa ngày chỉ áp dụng trong <strong>một ngày</strong>, trừ <strong>0,5 ngày</strong>; không áp dụng Chủ nhật / ngày Lễ.</p>
+                    @error('half_day_period')
+                        <p class="text-rose-500 text-xs mt-1.5 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label for="start_date" class="block text-xs font-bold text-slate-500 uppercase mb-2">Ngày bắt đầu <span class="text-rose-500">*</span></label>
-                        <input type="date" id="start_date" name="start_date" value="{{ old('start_date') }}" required
+                        <label for="start_date" class="block text-xs font-bold text-slate-500 uppercase mb-2">
+                            <span id="start-date-label">Ngày bắt đầu</span> <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="date" id="start_date" name="start_date" value="{{ old('start_date') }}"
+                               min="{{ today()->toDateString() }}" required
                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition text-sm">
                         @error('start_date')
                             <p class="text-rose-500 text-xs mt-1.5 font-medium">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    <div>
+                    <div id="end-date-wrap">
                         <label for="end_date" class="block text-xs font-bold text-slate-500 uppercase mb-2">Ngày kết thúc <span class="text-rose-500">*</span></label>
-                        <input type="date" id="end_date" name="end_date" value="{{ old('end_date') }}" required
+                        <input type="date" id="end_date" name="end_date" value="{{ old('end_date') }}"
+                               min="{{ today()->toDateString() }}" required
                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition text-sm">
                         @error('end_date')
                             <p class="text-rose-500 text-xs mt-1.5 font-medium">{{ $message }}</p>
@@ -74,6 +98,19 @@
                     <textarea id="reason" name="reason" rows="4" required placeholder="Nhập lý do chi tiết..."
                               class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition text-sm">{{ old('reason') }}</textarea>
                     @error('reason')
+                        <p class="text-rose-500 text-xs mt-1.5 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div id="supporting-document-wrap" class="hidden rounded-2xl border border-amber-200 bg-amber-50/70 p-4 sm:p-5">
+                    <label for="supporting_document" class="block text-xs font-bold text-amber-900 uppercase mb-2">
+                        Giấy tờ minh chứng <span class="text-rose-500">*</span>
+                    </label>
+                    <p id="supporting-document-hint" class="mb-3 text-xs leading-relaxed text-amber-900/90"></p>
+                    <input type="file" id="supporting_document" name="supporting_document" accept=".pdf,.jpg,.jpeg,.png"
+                           class="block w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-xs file:font-semibold file:text-sky-700 hover:file:bg-sky-50">
+                    <p class="mt-2 text-[11px] text-amber-800/80">PDF, JPG hoặc PNG — tối đa 5MB.</p>
+                    @error('supporting_document')
                         <p class="text-rose-500 text-xs mt-1.5 font-medium">{{ $message }}</p>
                     @enderror
                 </div>
@@ -98,8 +135,70 @@
             const leaveType = document.getElementById('leave_type');
             const startDate = document.getElementById('start_date');
             const endDate = document.getElementById('end_date');
+            const documentWrap = document.getElementById('supporting-document-wrap');
+            const documentInput = document.getElementById('supporting_document');
+            const documentHint = document.getElementById('supporting-document-hint');
+            const halfDayWrap = document.getElementById('half-day-period-wrap');
+            const halfDayPeriod = document.getElementById('half_day_period');
+            const endDateWrap = document.getElementById('end-date-wrap');
+            const startDateLabel = document.getElementById('start-date-label');
+            const typesRequiringDocument = @json($leaveTypesRequiringDocument ?? []);
+            const documentHints = @json($leaveDocumentHints ?? []);
+            const today = @json(today()->toDateString());
 
-            function syncHalfDayEndDate() {
+            function syncHalfDayFields() {
+                const isHalfDay = leaveType?.value === 'half_day';
+
+                if (halfDayWrap) {
+                    halfDayWrap.classList.toggle('hidden', !isHalfDay);
+                }
+
+                if (halfDayPeriod) {
+                    halfDayPeriod.required = isHalfDay;
+                    if (!isHalfDay) {
+                        halfDayPeriod.value = '';
+                    }
+                }
+
+                if (endDateWrap) {
+                    endDateWrap.classList.toggle('hidden', isHalfDay);
+                }
+
+                if (startDateLabel) {
+                    startDateLabel.textContent = isHalfDay ? 'Ngày nghỉ' : 'Ngày bắt đầu';
+                }
+            }
+
+            function syncDocumentRequirement() {
+                const type = leaveType?.value ?? '';
+                const required = typesRequiringDocument.includes(type);
+
+                if (documentWrap) {
+                    documentWrap.classList.toggle('hidden', !required);
+                }
+
+                if (documentInput) {
+                    documentInput.required = required;
+                    if (!required) {
+                        documentInput.value = '';
+                    }
+                }
+
+                if (documentHint) {
+                    documentHint.textContent = documentHints[type] ?? 'Vui lòng đính kèm giấy tờ minh chứng.';
+                }
+            }
+
+            function syncDateBounds() {
+                if (startDate) {
+                    startDate.min = today;
+                }
+
+                const minEnd = startDate?.value && startDate.value >= today ? startDate.value : today;
+                if (endDate && leaveType?.value !== 'half_day') {
+                    endDate.min = minEnd;
+                }
+
                 if (leaveType?.value === 'half_day' && startDate?.value) {
                     endDate.value = startDate.value;
                     endDate.readOnly = true;
@@ -110,9 +209,13 @@
                 }
             }
 
-            leaveType?.addEventListener('change', syncHalfDayEndDate);
-            startDate?.addEventListener('change', syncHalfDayEndDate);
-            syncHalfDayEndDate();
+            leaveType?.addEventListener('change', syncDateBounds);
+            leaveType?.addEventListener('change', syncDocumentRequirement);
+            leaveType?.addEventListener('change', syncHalfDayFields);
+            startDate?.addEventListener('change', syncDateBounds);
+            syncDateBounds();
+            syncDocumentRequirement();
+            syncHalfDayFields();
 
             form?.addEventListener('submit', function () {
                 const btn = document.getElementById('leave-request-submit');

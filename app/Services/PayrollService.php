@@ -143,16 +143,19 @@ class PayrollService
                     continue;
                 }
 
-                // Kiểm tra xem ngày vắng mặt này có đơn nghỉ phép có lương được duyệt không
+                // Đơn đã duyệt = nghỉ có phép. Chỉ loại công ty trả (phép năm / nửa ngày)
+                // mới chiếm hạn mức 1 ngày lương/tháng; BHXH, không lương, kết hôn, công tác
+                // không phạt 300k và không trừ quỹ ngày lương nội bộ.
                 $approvedLeave = $employee->leaveRequests()
                     ->where('status', 'approved')
-                    ->whereIn('leave_type', LeaveRequest::paidLeaveTypes())
                     ->whereDate('start_date', '<=', $record->attendance_date)
                     ->whereDate('end_date', '>=', $record->attendance_date)
                     ->first();
 
                 if ($approvedLeave) {
-                    $approvedPaidLeavesCount += $approvedLeave->leave_type === 'half_day' ? 0.5 : 1;
+                    if ($approvedLeave->leaveTypeConfig()?->countsTowardMonthlyPaidQuota()) {
+                        $approvedPaidLeavesCount += $approvedLeave->leave_type === 'half_day' ? 0.5 : 1;
+                    }
                 } else {
                     $unapprovedAbsences++;
                 }

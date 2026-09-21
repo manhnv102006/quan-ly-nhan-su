@@ -12,16 +12,20 @@ use Illuminate\Validation\ValidationException;
 
 class LeaveApprovalService
 {
-    private const ANNUAL_LEAVE_ALLOWANCE = LeaveBalanceService::ANNUAL_LEAVE_DAYS;
-
     public function __construct(
         private readonly NotificationService $notifications,
         private readonly DepartmentLeaveCapacityService $departmentLeaveCapacity,
+        private readonly LeaveBalanceService $leaveBalanceService,
+        private readonly LeaveCarryOverService $leaveCarryOverService,
     ) {
     }
 
-    public function approve(LeaveRequest $leaveRequest, int $actorId, ?Employee $manager = null): void
-    {
+    public function approve(
+        LeaveRequest $leaveRequest,
+        int $actorId,
+        ?Employee $manager = null,
+        ?string $capacityOverrideReason = null,
+    ): void {
         if ($manager) {
             $leaveRequest->authorizeManagerAction($manager);
         }
@@ -31,7 +35,7 @@ class LeaveApprovalService
 
         $leaveRequest->loadMissing('employee');
 
-        DB::transaction(function () use ($leaveRequest, $actorId) {
+        DB::transaction(function () use ($leaveRequest, $actorId, $capacityOverrideReason) {
             // Khoá phòng ban trước khi kiểm tra hạn mức để hai lượt duyệt song song không cùng vượt 30%/20%.
             $this->departmentLeaveCapacity->lockDepartment($leaveRequest->employee?->department_id);
 
@@ -40,7 +44,12 @@ class LeaveApprovalService
 
             $this->assertAnnualAllowance($leaveRequest);
             $this->assertNoApprovedOverlap($leaveRequest);
-            $this->assertDepartmentCapacity($leaveRequest);
+
+            $capacityWouldBlock = $this->departmentLeaveCapacity->approvalBlockedMessage($leaveRequest) !== null;
+            $this->assertDepartmentCapacity($leaveRequest, $capacityOverrideReason);
+
+            $usedCapacityOverride = $capacityWouldBlock
+                && filled(trim((string) $capacityOverrideReason));
 
             $this->processDecision(
                 leaveRequest: $leaveRequest,
@@ -49,35 +58,49 @@ class LeaveApprovalService
                 action: 'approved',
                 title: 'Đơn nghỉ phép đã được phê duyệt',
                 content: 'Đơn nghỉ phép từ '.$leaveRequest->start_date?->format('d/m/Y').' đến '.$leaveRequest->end_date?->format('d/m/Y').' của bạn đã được phê duyệt.',
+                decisionNote: $usedCapacityOverride
+                    ? '[Duyệt vượt giới hạn phòng ban] '.trim($capacityOverrideReason)
+                    : null,
             );
         });
     }
 
     protected function assertAnnualAllowance(LeaveRequest $leaveRequest): void
     {
-        if ($leaveRequest->leave_type !== 'annual') {
+        if (! in_array($leaveRequest->leave_type, LeaveRequest::annualDeductingLeaveTypes(), true)) {
             return;
         }
 
-        $year = $leaveRequest->start_date?->year ?? now()->year;
-        $used = LeaveRequest::where('employee_id', $leaveRequest->employee_id)
-            ->where('leave_type', 'annual')
-            ->where('status', LeaveRequest::STATUS_APPROVED)
-            ->whereYear('start_date', $year)
-            ->sum('total_days');
+        $employee = $leaveRequest->employee;
+        if (! $employee) {
+            return;
+        }
 
-        if (($used + $leaveRequest->total_days) > self::ANNUAL_LEAVE_ALLOWANCE) {
-            throw ValidationException::withMessages(['total_days' => 'Số ngày phép năm không đủ để duyệt đơn này.']);
+        $available = $this->leaveBalanceService->availableAnnualDaysForSubmission(
+            $employee,
+            $leaveRequest->start_date,
+            $leaveRequest->id,
+        );
+
+        if ((float) $leaveRequest->total_days > $available) {
+            throw ValidationException::withMessages(['total_days' => 'Số ngày phép năm không đủ để duyệt đơn này (đã tính các đơn đang chờ duyệt).']);
         }
     }
 
     protected function assertNoApprovedOverlap(LeaveRequest $leaveRequest): void
     {
+        $halfDayPeriod = $leaveRequest->leave_type === 'half_day' ? $leaveRequest->half_day_period : null;
         $overlap = LeaveRequest::where('employee_id', $leaveRequest->employee_id)
             ->where('id', '!=', $leaveRequest->id)
             ->where('status', LeaveRequest::STATUS_APPROVED)
             ->overlappingPeriod($leaveRequest->start_date, $leaveRequest->end_date)
-            ->exists();
+            ->get()
+            ->contains(fn (LeaveRequest $existing) => $existing->conflictsWithSubmission(
+                $leaveRequest->start_date,
+                $leaveRequest->end_date,
+                (string) $leaveRequest->leave_type,
+                $halfDayPeriod,
+            ));
 
         if ($overlap) {
             throw ValidationException::withMessages([
@@ -86,13 +109,21 @@ class LeaveApprovalService
         }
     }
 
-    protected function assertDepartmentCapacity(LeaveRequest $leaveRequest): void
+    protected function assertDepartmentCapacity(LeaveRequest $leaveRequest, ?string $capacityOverrideReason = null): void
     {
         $capacityError = $this->departmentLeaveCapacity->approvalBlockedMessage($leaveRequest);
 
-        if ($capacityError !== null) {
-            throw ValidationException::withMessages(['capacity' => $capacityError]);
+        if ($capacityError === null) {
+            return;
         }
+
+        $enforcement = (string) config('leave.department_capacity_enforcement', 'override');
+
+        if ($enforcement === 'override' && filled(trim((string) $capacityOverrideReason))) {
+            return;
+        }
+
+        throw ValidationException::withMessages(['capacity' => $capacityError]);
     }
 
     public function reject(LeaveRequest $leaveRequest, int $actorId, ?Employee $manager, string $reason): void
@@ -160,9 +191,10 @@ class LeaveApprovalService
         string $action,
         string $title,
         string $content,
-        ?string $rejectReason = null
+        ?string $rejectReason = null,
+        ?string $decisionNote = null,
     ): void {
-        DB::transaction(function () use ($leaveRequest, $actorId, $status, $action, $title, $content, $rejectReason) {
+        DB::transaction(function () use ($leaveRequest, $actorId, $status, $action, $title, $content, $rejectReason, $decisionNote) {
             if ($status === LeaveRequest::STATUS_APPROVED) {
                 $leaveRequest->update([
                     'status' => $status,
@@ -187,8 +219,12 @@ class LeaveApprovalService
                 'leave_request_id' => $leaveRequest->id,
                 'actor_id' => $actorId,
                 'action' => $action,
-                'note' => $rejectReason,
+                'note' => $rejectReason ?? $decisionNote,
             ]);
+
+            if ($status === LeaveRequest::STATUS_APPROVED) {
+                $this->leaveCarryOverService->consumeForApprovedLeave($leaveRequest->fresh(['employee']));
+            }
 
             $employeeUserId = $leaveRequest->employee?->user_id;
             if ($employeeUserId) {

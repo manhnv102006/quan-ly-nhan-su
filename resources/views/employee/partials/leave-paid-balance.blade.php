@@ -32,7 +32,10 @@
             <p class="text-[11px] font-bold uppercase tracking-wide text-sky-800">Phép năm {{ $balance['year'] }}</p>
             <p class="mt-2 text-3xl font-black text-sky-900">{{ $formatDays($balance['annual_remaining']) }}</p>
             <p class="mt-1 text-xs text-sky-800">
-                Còn lại / hạn mức {{ $formatDays($balance['annual_quota']) }} loại <strong>Nghỉ phép</strong>
+                Năm {{ $balance['year'] }}: {{ $formatDays($balance['current_year_remaining'] ?? max(0, $balance['annual_quota'] - $balance['annual_used'])) }} còn / {{ $formatDays($balance['annual_quota']) }} hạn mức
+                @if(($balance['carried_over_remaining'] ?? 0) > 0)
+                    · Chuyển từ {{ $balance['carried_over']['source_year'] ?? 'năm trước' }}: {{ $formatDays($balance['carried_over_remaining']) }}
+                @endif
             </p>
             <p class="mt-3 text-xs leading-relaxed text-sky-900/80">
                 Đã duyệt: <strong>{{ $formatDays($balance['annual_used']) }}</strong>
@@ -42,6 +45,12 @@
             </p>
             <p class="mt-2 text-[11px] leading-relaxed text-sky-800/80">
                 Chỉ tính loại Nghỉ phép. Đơn chờ duyệt chưa trừ hạn mức; muốn hưởng lương vẫn phải nằm trong 1 ngày/tháng.
+                @if($balance['annual_is_prorated'] ?? false)
+                    Hạn mức năm nay cộng dồn <strong>1 ngày/tháng</strong> (pro-rata). {{ \App\Support\LeaveAccrualRules::proRataDescription() }}
+                @endif
+                @if(($balance['carried_over']['active'] ?? false) && ($balance['carried_over_remaining'] ?? 0) > 0)
+                    Phép chuyển từ năm {{ $balance['carried_over']['source_year'] }} dùng trước, hết hạn <strong>{{ \Illuminate\Support\Carbon::parse($balance['carried_over']['expires_at'])->format('d/m/Y') }}</strong>.
+                @endif
             </p>
         </div>
     </div>

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\LeaveCapacityRules;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -204,6 +205,76 @@ class Employee extends Model
     public function hasPermanentlyLeft(): bool
     {
         return $this->status === self::STATUS_RESIGNED;
+    }
+
+    /**
+     * Nhân sự tính vào mẫu số "đang làm việc" khi kiểm tra giới hạn nghỉ phòng ban.
+     * Loại trừ: nghỉ việc, thử việc, nghỉ thai sản dài hạn (đơn thai sản đã duyệt).
+     */
+    public function countsTowardDepartmentWorkingHeadcount(Carbon|string|null $day = null): bool
+    {
+        if ($this->status !== self::STATUS_ACTIVE) {
+            return false;
+        }
+
+        $day = Carbon::parse($day ?? today());
+
+        if ($this->isOnProbationOn($day)) {
+            return false;
+        }
+
+        return ! $this->isOnLongTermMaternityLeaveOn($day);
+    }
+
+    public function isOnProbationOn(Carbon $day): bool
+    {
+        return $this->contracts()
+            ->where('status', Contract::STATUS_ACTIVE)
+            ->whereDate('start_date', '<=', $day)
+            ->where(function (Builder $query) use ($day) {
+                $query->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $day);
+            })
+            ->whereHas('contractType', fn (Builder $query) => $query->where('category', ContractType::CATEGORY_PROBATION))
+            ->exists();
+    }
+
+    public function isOnLongTermMaternityLeaveOn(Carbon $day): bool
+    {
+        return $this->leaveRequests()
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->where('leave_type', 'maternity')
+            ->whereDate('start_date', '<=', $day)
+            ->whereDate('end_date', '>=', $day)
+            ->exists();
+    }
+
+    /**
+     * @param  Builder<Employee>  $query
+     */
+    public function scopeCountsTowardDepartmentWorkingHeadcount(Builder $query, Carbon|string $day): Builder
+    {
+        $day = Carbon::parse($day)->toDateString();
+
+        return $query
+            ->where('status', self::STATUS_ACTIVE)
+            ->whereDoesntHave('contracts', function (Builder $contractQuery) use ($day) {
+                $contractQuery
+                    ->where('status', Contract::STATUS_ACTIVE)
+                    ->whereDate('start_date', '<=', $day)
+                    ->where(function (Builder $dateQuery) use ($day) {
+                        $dateQuery->whereNull('end_date')
+                            ->orWhereDate('end_date', '>=', $day);
+                    })
+                    ->whereHas('contractType', fn (Builder $typeQuery) => $typeQuery->where('category', ContractType::CATEGORY_PROBATION));
+            })
+            ->whereDoesntHave('leaveRequests', function (Builder $leaveQuery) use ($day) {
+                $leaveQuery
+                    ->where('status', LeaveRequest::STATUS_APPROVED)
+                    ->where('leave_type', 'maternity')
+                    ->whereDate('start_date', '<=', $day)
+                    ->whereDate('end_date', '>=', $day);
+            });
     }
 
     /**

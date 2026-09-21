@@ -51,6 +51,7 @@
                     ['route' => 'admin.shifts.index', 'label' => 'Quản lý ca'],
                     ['route' => 'admin.employee-shifts.index', 'label' => 'Danh sách gán ca'],
                     ['route' => 'admin.leave-requests', 'label' => 'Quản lý nghỉ phép'],
+                    ['route' => 'admin.leave-types.index', 'label' => 'Loại nghỉ phép'],
                     ['route' => 'admin.overtime-requests.index', 'label' => 'Duyệt tăng ca'],
                     ['route' => 'admin.early-leave.index', 'label' => 'Duyệt về sớm'],
                     ['route' => 'admin.face-enrollments.index', 'label' => 'Chấm công khuôn mặt'],

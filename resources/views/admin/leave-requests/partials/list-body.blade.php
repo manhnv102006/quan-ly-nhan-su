@@ -23,7 +23,7 @@
                 return ['key' => $key, 'label' => $filterLabels[$key], 'value' => $statusLabels[$value] ?? $value];
             }
             if ($key === 'leave_type') {
-                return ['key' => $key, 'label' => $filterLabels[$key], 'value' => \App\Models\LeaveRequest::LEAVE_TYPE_LABELS[$value] ?? $value];
+                return ['key' => $key, 'label' => $filterLabels[$key], 'value' => \App\Models\LeaveRequest::leaveTypeLabels()[$value] ?? $value];
             }
             if ($key === 'department_id') {
                 $dept = $departments->firstWhere('id', (int) $value);
@@ -140,7 +140,7 @@
                     <select id="leave_type" name="leave_type"
                             class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
                         <option value="">Tất cả loại nghỉ</option>
-                        @foreach (\App\Models\LeaveRequest::LEAVE_TYPE_LABELS as $val => $label)
+                        @foreach (\App\Models\LeaveRequest::leaveTypeLabels() as $val => $label)
                             <option value="{{ $val }}" @selected(($filters['leave_type'] ?? '') === $val)>{{ $label }}</option>
                         @endforeach
                     </select>

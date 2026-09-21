@@ -31,6 +31,13 @@
 
         <x-leave-capacity-alert field="capacity" />
 
+        @include('shared.leave-capacity-approval-notice', [
+            'capacityContext' => $capacityContext ?? null,
+            'capacityEnforcement' => $capacityEnforcement ?? config('leave.department_capacity_enforcement', 'override'),
+            'canDecide' => $leaveRequest->isAwaitingManagerApproval(),
+            'approveRoute' => route('manager.leave-requests.approve', $leaveRequest),
+        ])
+
         @if ($errors->any() && ! $errors->has('capacity'))
             <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4">
                 <ul class="list-disc space-y-1 ps-5 text-sm text-rose-700">
@@ -61,6 +68,14 @@
                                 Duyệt đơn
                             </button>
                         </form>
+                        @if (($capacityContext['blocked'] ?? false) && ($capacityEnforcement ?? 'override') === 'override')
+                            <button type="button"
+                                    x-data
+                                    x-on:click="$dispatch('open-modal', 'override-capacity-approve')"
+                                    class="inline-flex items-center rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-900 transition hover:bg-amber-100">
+                                Duyệt vượt giới hạn
+                            </button>
+                        @endif
                     @endif
                 @endcan
                 @can('reject', $leaveRequest)
@@ -93,7 +108,8 @@
                 </div>
                 <div class="rounded-3xl bg-slate-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Loại nghỉ</p>
-                    <p class="mt-2 text-base font-bold text-slate-800">{{ \App\Models\LeaveRequest::LEAVE_TYPE_LABELS[$leaveRequest->leave_type] ?? $leaveRequest->leave_type }}</p>
+                    <p class="mt-2 text-base font-bold text-slate-800">{{ $leaveRequest->leaveTypeLabel() }}</p>
+                    @include('shared.leave-type-policy', ['leaveRequest' => $leaveRequest])
                 </div>
                 <div class="rounded-3xl bg-slate-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Thời gian nghỉ</p>
@@ -113,6 +129,12 @@
                 <div class="rounded-3xl bg-slate-50 p-4 sm:col-span-2 lg:col-span-3">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Lý do nghỉ</p>
                     <p class="mt-2 text-sm leading-6 text-slate-700">{{ $leaveRequest->reason ?? '—' }}</p>
+                    @if($leaveRequest->document)
+                        <a href="{{ route('employee.leave-requests.document', $leaveRequest) }}"
+                           class="mt-3 inline-flex items-center rounded-xl border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-sky-800 transition hover:bg-sky-50">
+                            Tải giấy tờ: {{ $leaveRequest->document->original_name }}
+                        </a>
+                    @endif
                 </div>
             </div>
         </section>
@@ -129,6 +151,42 @@
 
         @include('manager.leave-requests.partials.history-table', ['leaveRequest' => $leaveRequest])
     </div>
+
+    @can('approve', $leaveRequest)
+        @if($leaveRequest->isAwaitingManagerApproval() && ($capacityContext['blocked'] ?? false) && ($capacityEnforcement ?? 'override') === 'override')
+            <x-modal name="override-capacity-approve" :show="$errors->has('capacity_override_reason')">
+                <form method="POST" action="{{ route('manager.leave-requests.approve', $leaveRequest) }}" class="p-6">
+                    @csrf
+                    @method('PATCH')
+                    <h3 class="text-lg font-bold text-slate-800">Duyệt vượt giới hạn phòng ban</h3>
+                    <p class="mt-1 text-sm text-slate-500">Ghi rõ lý do nghiệp vụ để hệ thống lưu vào lịch sử đơn.</p>
+
+                    <div class="mt-5">
+                        <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                            Lý do duyệt vượt giới hạn <span class="text-rose-500">*</span>
+                        </label>
+                        <textarea name="capacity_override_reason" rows="4" required minlength="1"
+                                  class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 focus:border-amber-300 focus:ring-2 focus:ring-amber-500/20 @error('capacity_override_reason') border-rose-400 @enderror">{{ old('capacity_override_reason') }}</textarea>
+                        @error('capacity_override_reason')
+                            <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="mt-6 flex justify-end gap-2">
+                        <button type="button"
+                                x-on:click="$dispatch('close-modal', 'override-capacity-approve')"
+                                class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                            Hủy
+                        </button>
+                        <button type="submit"
+                                class="rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700">
+                            Xác nhận duyệt vượt
+                        </button>
+                    </div>
+                </form>
+            </x-modal>
+        @endif
+    @endcan
 
     @can('reject', $leaveRequest)
         @if($leaveRequest->isAwaitingManagerApproval())

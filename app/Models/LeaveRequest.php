@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use App\Support\LeaveDateRange;
+use App\Support\LeaveTypeRegistry;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class LeaveRequest extends Model
 {
@@ -15,11 +17,21 @@ class LeaveRequest extends Model
     public const STATUS_APPROVED = 'approved';
     public const STATUS_REJECTED = 'rejected';
 
+    public const HALF_DAY_MORNING = 'morning';
+
+    public const HALF_DAY_AFTERNOON = 'afternoon';
+
+    public const HALF_DAY_PERIOD_LABELS = [
+        self::HALF_DAY_MORNING => 'Buổi sáng',
+        self::HALF_DAY_AFTERNOON => 'Buổi chiều',
+    ];
+
     protected $fillable = [
         'employee_id',
         'leave_type',
         'start_date',
         'end_date',
+        'half_day_period',
         'total_days',
         'reason',
         'status',
@@ -84,6 +96,11 @@ class LeaveRequest extends Model
         return $this->hasMany(LeaveRequestHistory::class);
     }
 
+    public function document(): HasOne
+    {
+        return $this->hasOne(LeaveRequestDocument::class);
+    }
+
     public const STATUS_LABELS = [
         self::STATUS_PENDING => 'Chờ duyệt',
         self::STATUS_APPROVED => 'Đã duyệt',
@@ -96,60 +113,75 @@ class LeaveRequest extends Model
         self::STATUS_REJECTED => 'text-bg-danger',
     ];
 
-    public const LEAVE_TYPE_LABELS = [
-        'annual' => 'Nghỉ phép',
-        'sick' => 'Nghỉ ốm',
-        'maternity' => 'Nghỉ thai sản',
-        'compensatory' => 'Nghỉ bù',
-        'holiday' => 'Nghỉ lễ, Tết',
-        'business_trip' => 'Nghỉ công tác',
-        'half_day' => 'Nghỉ nửa ngày',
-        'unpaid' => 'Nghỉ không lương',
-        'other' => 'Lý do khác',
-    ];
-
-    public const LEAVE_TYPE_BADGE_CLASSES = [
-        'annual' => 'bg-sky-50 text-sky-700 border-sky-100',
-        'sick' => 'bg-amber-50 text-amber-700 border-amber-100',
-        'maternity' => 'bg-pink-50 text-pink-700 border-pink-100',
-        'compensatory' => 'bg-indigo-50 text-indigo-700 border-indigo-100',
-        'holiday' => 'bg-red-50 text-red-700 border-red-100',
-        'business_trip' => 'bg-teal-50 text-teal-700 border-teal-100',
-        'half_day' => 'bg-violet-50 text-violet-700 border-violet-100',
-        'unpaid' => 'bg-slate-100 text-slate-700 border-slate-200',
-        'other' => 'bg-slate-50 text-slate-600 border-slate-200',
-    ];
+    /**
+     * Nhãn của mọi loại nghỉ phép, kể cả loại Admin đã tắt — đơn cũ vẫn cần hiển thị đúng tên.
+     *
+     * @return array<string, string>
+     */
+    public static function leaveTypeLabels(): array
+    {
+        return LeaveTypeRegistry::labels();
+    }
 
     /** @return list<string> */
     public static function selectableLeaveTypes(): array
     {
-        return array_keys(self::LEAVE_TYPE_LABELS);
+        return LeaveTypeRegistry::codes();
+    }
+
+    /** @return list<string> */
+    public static function selectableLeaveTypesForEmployee(?Employee $employee = null): array
+    {
+        return array_keys(self::leaveTypeLabelsForEmployee($employee));
+    }
+
+    /** @return array<string, string> */
+    public static function leaveTypeLabelsForEmployee(?Employee $employee = null): array
+    {
+        return LeaveTypeRegistry::labelsForGender($employee?->gender);
     }
 
     /** @return list<string> */
     public static function paidLeaveTypes(): array
     {
-        return ['annual', 'sick', 'maternity', 'compensatory', 'holiday', 'business_trip', 'half_day'];
+        return LeaveTypeRegistry::paidCodes();
+    }
+
+    /** @return list<string> */
+    public static function monthlyPaidQuotaLeaveTypes(): array
+    {
+        return LeaveTypeRegistry::monthlyPaidQuotaCodes();
+    }
+
+    /** @return list<string> */
+    public static function annualDeductingLeaveTypes(): array
+    {
+        return LeaveTypeRegistry::annualDeductingCodes();
     }
 
     /** @return array<string, array{label: string, class: string}> */
     public static function leaveTypeBadgeMap(): array
     {
-        $map = [];
+        return LeaveTypeRegistry::badgeMap();
+    }
 
-        foreach (self::LEAVE_TYPE_LABELS as $key => $label) {
-            $map[$key] = [
-                'label' => $label,
-                'class' => self::LEAVE_TYPE_BADGE_CLASSES[$key] ?? 'bg-slate-100 text-slate-600 border-slate-200',
-            ];
-        }
-
-        return $map;
+    public function leaveTypeConfig(): ?LeaveType
+    {
+        return LeaveTypeRegistry::find($this->leave_type);
     }
 
     public function leaveTypeLabel(): string
     {
-        return self::LEAVE_TYPE_LABELS[$this->leave_type] ?? ucfirst((string) $this->leave_type);
+        return $this->leaveTypeConfig()?->name ?? ucfirst((string) $this->leave_type);
+    }
+
+    public function halfDayPeriodLabel(): ?string
+    {
+        if ($this->leave_type !== 'half_day' || $this->half_day_period === null) {
+            return null;
+        }
+
+        return self::HALF_DAY_PERIOD_LABELS[$this->half_day_period] ?? ucfirst((string) $this->half_day_period);
     }
 
     public function isPending(): bool
@@ -220,6 +252,59 @@ class LeaveRequest extends Model
     public function coversCalendarDay(Carbon|string $day): bool
     {
         return LeaveDateRange::dayWithinPeriod($day, $this->start_date, $this->end_date);
+    }
+
+    public static function periodsConflict(
+        Carbon|string $aStart,
+        Carbon|string $aEnd,
+        ?string $aLeaveType,
+        ?string $aHalfDayPeriod,
+        Carbon|string $bStart,
+        Carbon|string $bEnd,
+        ?string $bLeaveType,
+        ?string $bHalfDayPeriod,
+    ): bool {
+        if (! LeaveDateRange::periodsOverlap($aStart, $aEnd, $bStart, $bEnd)) {
+            return false;
+        }
+
+        if (
+            $aLeaveType === 'half_day'
+            && $bLeaveType === 'half_day'
+            && self::isSingleCalendarDay($aStart, $aEnd)
+            && self::isSingleCalendarDay($bStart, $bEnd)
+            && Carbon::parse($aStart)->isSameDay($bStart)
+            && filled($aHalfDayPeriod)
+            && filled($bHalfDayPeriod)
+            && $aHalfDayPeriod !== $bHalfDayPeriod
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function conflictsWithSubmission(
+        Carbon|string $startDate,
+        Carbon|string $endDate,
+        string $leaveType,
+        ?string $halfDayPeriod = null,
+    ): bool {
+        return self::periodsConflict(
+            $this->start_date,
+            $this->end_date,
+            $this->leave_type,
+            $this->half_day_period,
+            $startDate,
+            $endDate,
+            $leaveType,
+            $halfDayPeriod,
+        );
+    }
+
+    private static function isSingleCalendarDay(Carbon|string $start, Carbon|string $end): bool
+    {
+        return Carbon::parse($start)->isSameDay($end);
     }
 
     /**

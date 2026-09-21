@@ -519,6 +519,6 @@ class AutoNotificationService
 
     private function leaveTypeLabel(string $type): string
     {
-        return LeaveRequest::LEAVE_TYPE_LABELS[$type] ?? 'nghỉ phép';
+        return LeaveRequest::leaveTypeLabels()[$type] ?? 'nghỉ phép';
     }
 }

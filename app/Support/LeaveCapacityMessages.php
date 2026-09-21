@@ -64,6 +64,34 @@ final class LeaveCapacityMessages
             : 'Không thể gửi đơn: phòng ban chưa có nhân viên đang làm việc nên không xác định được hạn mức nghỉ phép.';
     }
 
+    /**
+     * @param  list<array{day: \Carbon\Carbon, count: int, headcount?: int, max_slots?: int}>  $fullDays
+     */
+    public static function statutoryCapacityWarning(
+        string $employeeName,
+        string $departmentName,
+        string $periodLabel,
+        array $fullDays,
+        int $maxSlots,
+        int $percent,
+        string $roleLabel,
+        int $headcount,
+    ): string {
+        $daysText = self::formatDayList($fullDays);
+        $peakCount = self::peakApprovedCount($fullDays);
+
+        return implode("\n", [
+            'Cảnh báo: phòng ban «'.$departmentName.'» đã đạt hoặc vượt giới hạn nghỉ trong khoảng '.$periodLabel.'.',
+            '',
+            '• Loại nghỉ «'.self::statutoryLeaveLabel().'» không bị chặn bởi giới hạn phòng ban.',
+            '• Ngày đã đủ hạn mức: '.$daysText,
+            '• Số người nghỉ (đơn đã duyệt, không tính loại theo luật): '.$peakCount.'/'.$maxSlots.' người/ngày',
+            '• Hạn mức tham chiếu ('.$roleLabel.'): '.$percent.'% · Nhân sự đang làm việc: '.$headcount.' người',
+            '',
+            'Bạn vẫn có thể duyệt đơn của '.$employeeName.' nhưng nên cân nhắc nguồn lực phòng ban.',
+        ]);
+    }
+
     public static function bulkApprovePartialFailure(int $failedCount): string
     {
         return $failedCount.' đơn không được duyệt do đã đạt giới hạn nghỉ phép phòng ban ('
@@ -95,5 +123,10 @@ final class LeaveCapacityMessages
         }
 
         return (int) max(array_column($fullDays, 'count'));
+    }
+
+    private static function statutoryLeaveLabel(): string
+    {
+        return 'thai sản, ốm, hiếu, kết hôn';
     }
 }

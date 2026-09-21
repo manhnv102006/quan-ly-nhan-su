@@ -10,3 +10,5 @@ Artisan::command('inspire', function () {
 
 Schedule::command('notifications:contracts-expiring')->dailyAt('08:00');
 Schedule::command('notifications:dispatch-scheduled')->everyMinute();
+Schedule::command('leave:accrue-monthly')->dailyAt(config('leave.accrual_schedule_time', '23:30'));
+Schedule::command('leave:carry-over-annual')->yearlyOn(1, 1, '00:15');

@@ -15,7 +15,7 @@
     ];
     $employeeStatusLabels = \App\Models\Employee::STATUS_LABELS;
     $employeeStatusClasses = \App\Models\Employee::STATUS_BADGE_CLASSES;
-    $leaveTypeLabels = \App\Models\LeaveRequest::LEAVE_TYPE_LABELS;
+    $leaveTypeLabels = \App\Models\LeaveRequest::leaveTypeLabels();
     $leaveStatusLabels = [
         'pending' => 'Chờ duyệt',
         'approved' => 'Đã duyệt',

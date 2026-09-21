@@ -21,7 +21,7 @@ beforeEach(function () {
         'date_of_birth' => '1995-01-01',
         'phone' => '0900000011',
         'email' => 'leave-balance@example.com',
-        'hire_date' => now()->toDateString(),
+        'hire_date' => '2025-01-01',
         'status' => 'active',
     ]);
 });
@@ -65,4 +65,32 @@ test('paid leave balance subtracts approved monthly and annual days', function (
         ->and($balance['annual_used'])->toBe(3.0)
         ->and($balance['annual_remaining'])->toBe(9.0)
         ->and($balance['annual_pending'])->toBe(1.0);
+});
+
+test('bhxh and statutory company leave do not consume the monthly paid quota', function () {
+    LeaveRequest::create([
+        'employee_id' => $this->employee->id,
+        'leave_type' => 'sick',
+        'start_date' => '2026-08-03',
+        'end_date' => '2026-08-07',
+        'total_days' => 5,
+        'reason' => 'Ốm BHXH',
+        'status' => LeaveRequest::STATUS_APPROVED,
+    ]);
+
+    LeaveRequest::create([
+        'employee_id' => $this->employee->id,
+        'leave_type' => 'wedding',
+        'start_date' => '2026-08-10',
+        'end_date' => '2026-08-12',
+        'total_days' => 3,
+        'reason' => 'Kết hôn',
+        'status' => LeaveRequest::STATUS_APPROVED,
+    ]);
+
+    $balance = app(LeaveBalanceService::class)->forEmployee($this->employee, Carbon::parse('2026-08-23'));
+
+    expect($balance['monthly_used'])->toBe(0.0)
+        ->and($balance['monthly_remaining'])->toBe(1.0)
+        ->and($balance['annual_used'])->toBe(0.0);
 });
