@@ -46,6 +46,7 @@ class OvertimeRequest extends Model
         'total_hours',
         'rate_multiplier',
         'reason',
+        'voluntary_consent_at',
         'status',
         'approved_by',
         'approved_at',
@@ -58,6 +59,7 @@ class OvertimeRequest extends Model
     {
         return [
             'work_date' => 'date',
+            'voluntary_consent_at' => 'datetime',
             'approved_at' => 'datetime',
             'actual_check_in' => 'datetime',
             'actual_check_out' => 'datetime',
@@ -128,6 +130,28 @@ class OvertimeRequest extends Model
             ->where('start_time', '<', $endTime)
             ->where('end_time', '>', $startTime)
             ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId));
+    }
+
+    /**
+     * Đơn OT đang chiếm khung giờ (chờ duyệt, đã duyệt, hoàn thành) — dùng để chặn trùng thời gian.
+     *
+     * @param  Builder<OvertimeRequest>  $query
+     */
+    public function scopeOverlappingActiveTime(
+        Builder $query,
+        int $employeeId,
+        string $workDate,
+        string $startTime,
+        string $endTime,
+        ?int $ignoreId = null,
+    ): Builder {
+        return $query
+            ->overlappingTime($employeeId, $workDate, $startTime, $endTime, $ignoreId)
+            ->whereIn('status', [
+                self::STATUS_PENDING,
+                self::STATUS_APPROVED,
+                self::STATUS_COMPLETED,
+            ]);
     }
 
     public function scopeAwaitingManagerApproval(Builder $query): Builder

@@ -3,7 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Models\OvertimeRequest;
+use App\Services\OvertimeLeaveConflictService;
 use App\Services\OvertimeLimitService;
+use App\Services\OvertimeProhibitionService;
+use App\Support\OvertimeReasonRules;
 use App\Support\TimeInput;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -26,6 +29,10 @@ abstract class OvertimeRequestBaseRequest extends FormRequest
             $merge['end_time'] = TimeInput::forInput($this->input('end_time'));
         }
 
+        if ($this->has('reason')) {
+            $merge['reason'] = trim((string) $this->input('reason'));
+        }
+
         if ($merge !== []) {
             $this->merge($merge);
         }
@@ -40,13 +47,13 @@ abstract class OvertimeRequestBaseRequest extends FormRequest
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'total_hours' => ['nullable', 'numeric', 'min:0'],
             'rate_multiplier' => ['required', 'numeric', 'in:1.5,2.0,3.0'],
-            'reason' => ['required', 'string', 'max:1000'],
+            'reason' => OvertimeReasonRules::rules(OvertimeReasonRules::maxLengthForAdmin()),
         ];
     }
 
     public function messages(): array
     {
-        return [
+        return array_merge(OvertimeReasonRules::messages(), [
             'employee_id.required' => 'Vui lòng chọn nhân viên.',
             'employee_id.exists' => 'Nhân viên không hợp lệ.',
             'work_date.required' => 'Vui lòng chọn ngày tăng ca.',
@@ -58,8 +65,7 @@ abstract class OvertimeRequestBaseRequest extends FormRequest
             'end_time.after' => 'Giờ kết thúc phải lớn hơn giờ bắt đầu.',
             'rate_multiplier.required' => 'Vui lòng chọn loại ngày tăng ca.',
             'rate_multiplier.in' => 'Loại ngày tăng ca không hợp lệ.',
-            'reason.required' => 'Vui lòng nhập lý do tăng ca.',
-        ];
+        ]);
     }
 
     protected function ignoreOvertimeRequestId(): ?int
@@ -79,11 +85,32 @@ abstract class OvertimeRequestBaseRequest extends FormRequest
                 return;
             }
 
+            $prohibition = app(OvertimeProhibitionService::class)->violationMessage((int) $employeeId);
+
+            if ($prohibition !== null) {
+                $validator->errors()->add('work_date', $prohibition);
+
+                return;
+            }
+
             $query = OvertimeRequest::query()
-                ->overlappingTime($employeeId, $workDate, $start, $end, $this->ignoreOvertimeRequestId());
+                ->overlappingActiveTime($employeeId, $workDate, $start, $end, $this->ignoreOvertimeRequestId());
 
             if ($query->exists()) {
-                $validator->errors()->add('start_time', 'Khoảng thời gian tăng ca bị trùng trong cùng ngày.');
+                $validator->errors()->add('start_time', 'Khoảng thời gian tăng ca bị trùng với đơn khác trong cùng ngày.');
+
+                return;
+            }
+
+            $leaveConflict = app(OvertimeLeaveConflictService::class)->violationMessage(
+                (int) $employeeId,
+                (string) $workDate,
+                (string) $start,
+                (string) $end,
+            );
+
+            if ($leaveConflict !== null) {
+                $validator->errors()->add('work_date', $leaveConflict);
 
                 return;
             }

@@ -74,10 +74,12 @@ class EmployeeController extends Controller
             'position_id' => ['nullable', 'exists:positions,id'],
             'hire_date' => ['required', 'date'],
             'status' => ['required', Rule::in(Employee::selectableStatuses())],
+            'overtime_ban_status' => ['nullable', Rule::in(array_keys(Employee::OT_BAN_LABELS))],
             'user_id' => ['nullable', 'exists:users,id', Rule::unique('employees', 'user_id')],
         ], self::DOCUMENT_RULES));
 
         $validated['employee_code'] = strtoupper($validated['employee_code']);
+        $validated['overtime_ban_status'] = $validated['overtime_ban_status'] ?? null;
 
 
         $employee = Employee::create(collect($validated)->except(['documents', 'remove_documents'])->all());
@@ -209,10 +211,12 @@ class EmployeeController extends Controller
             'position_id' => ['nullable', 'exists:positions,id'],
             'hire_date' => ['required', 'date'],
             'status' => ['required', Rule::in(Employee::selectableStatuses())],
+            'overtime_ban_status' => ['nullable', Rule::in(array_keys(Employee::OT_BAN_LABELS))],
             'user_id' => ['nullable', 'exists:users,id', Rule::unique('employees', 'user_id')->ignore($employee->id)],
         ], self::DOCUMENT_RULES));
 
         $validated['employee_code'] = strtoupper($validated['employee_code']);
+        $validated['overtime_ban_status'] = $validated['overtime_ban_status'] ?? null;
 
 
         $employee->update(collect($validated)->except(['documents', 'remove_documents'])->all());

@@ -96,9 +96,14 @@
 @endif
 
 <div class="col-12">
-    <label for="reason" class="form-label fw-semibold">Lý do</label>
+    <label for="reason" class="form-label fw-semibold">Lý do / công việc cần làm <span class="text-danger">*</span></label>
     <textarea id="reason" name="reason" rows="4" class="form-control @error('reason') is-invalid @enderror"
-              placeholder="Nhập lý do tăng ca..." required>{{ old('reason', $model?->reason) }}</textarea>
+              minlength="{{ \App\Support\OvertimeReasonRules::minLength() }}"
+              maxlength="{{ \App\Support\OvertimeReasonRules::maxLengthForAdmin() }}"
+              placeholder="Mô tả rõ lý do và công việc cần làm thêm giờ..." required>{{ old('reason', $model?->reason) }}</textarea>
+    <div class="form-text">
+        Bắt buộc tối thiểu {{ \App\Support\OvertimeReasonRules::minLength() }} ký tự để phục vụ giải trình với Sở LĐTBXH khi thanh tra.
+    </div>
     @error('reason')
         <div class="invalid-feedback">{{ $message }}</div>
     @enderror

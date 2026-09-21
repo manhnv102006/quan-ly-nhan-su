@@ -64,7 +64,7 @@ class OvertimeRequestStoreRequest extends OvertimeRequestBaseRequest
 
             foreach ($employeeIds as $employeeId) {
                 $exists = OvertimeRequest::query()
-                    ->overlappingTime($employeeId, $workDate, $start, $end, $this->ignoreOvertimeRequestId())
+                    ->overlappingActiveTime($employeeId, $workDate, $start, $end, $this->ignoreOvertimeRequestId())
                     ->exists();
 
                 if ($exists) {

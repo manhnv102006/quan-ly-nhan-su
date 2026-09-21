@@ -42,8 +42,18 @@
         </div>
     </div>
     <div class="col-12">
-        <label class="form-label text-muted mb-1">Lý do</label>
+        <label class="form-label text-muted mb-1">Lý do / công việc</label>
         <div class="border rounded-3 p-3 bg-light">{{ $model?->reason ?: '—' }}</div>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label text-muted mb-1">Đồng thuận tự nguyện</label>
+        <div class="fw-semibold">
+            @if ($model?->voluntary_consent_at)
+                Đã xác nhận lúc {{ $model->voluntary_consent_at->format('d/m/Y H:i') }}
+            @else
+                —
+            @endif
+        </div>
     </div>
     @if($model?->reject_reason)
         <div class="col-12">

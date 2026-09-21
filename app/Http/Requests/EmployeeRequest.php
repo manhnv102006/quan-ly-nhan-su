@@ -22,6 +22,7 @@ class EmployeeRequest extends FormRequest
             'email' => strtolower(trim((string) $this->input('email', ''))),
             'phone' => preg_replace('/\s+/', '', (string) $this->input('phone', '')),
             'address' => $this->filled('address') ? trim((string) $this->input('address')) : null,
+            'overtime_ban_status' => $this->input('overtime_ban_status') ?: null,
         ]);
     }
 
@@ -56,6 +57,7 @@ class EmployeeRequest extends FormRequest
             'position_id' => ['required', 'exists:positions,id'],
             'hire_date' => ['required', 'date', 'after_or_equal:date_of_birth'],
             'status' => ['required', Rule::in(Employee::selectableStatuses())],
+            'overtime_ban_status' => ['nullable', Rule::in(array_keys(Employee::OT_BAN_LABELS))],
             'user_id' => [
                 'nullable',
                 'integer',
@@ -134,6 +136,21 @@ class EmployeeRequest extends FormRequest
         ];
     }
 
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $banStatus = $this->input('overtime_ban_status');
+            $gender = $this->input('gender');
+
+            if ($banStatus && $gender !== 'female') {
+                $validator->errors()->add(
+                    'overtime_ban_status',
+                    'Chỉ áp dụng cấm OT (Điều 137) cho lao động nữ.',
+                );
+            }
+        });
+    }
+
     public function attributes(): array
     {
         return [
@@ -148,6 +165,7 @@ class EmployeeRequest extends FormRequest
             'position_id' => 'chức vụ',
             'hire_date' => 'ngày vào làm',
             'status' => 'trạng thái',
+            'overtime_ban_status' => 'cấm tăng ca (Điều 137)',
             'user_id' => 'tài khoản liên kết',
         ];
     }

@@ -33,6 +33,12 @@
             </div>
         @endif
 
+        @include('shared.overtime-prohibition-notice', ['employee' => $employee])
+
+        @include('shared.overtime-half-day-leave-notice', ['halfDayLeaveContext' => $halfDayLeaveContext ?? null])
+
+        @include('shared.overtime-limit-warnings', ['overtimeLimits' => $overtimeLimitContext ?? null])
+
         {{-- Form --}}
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
             <form method="POST" action="{{ route('employee.overtime-requests.store') }}" class="space-y-5">
@@ -88,22 +94,22 @@
 
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">
-                        Lý do tăng ca <span class="text-rose-500">*</span>
+                        Lý do / công việc cần làm <span class="text-rose-500">*</span>
                     </label>
-                    <textarea name="reason" rows="4"
-                              placeholder="Ví dụ: Xử lý công việc tồn đọng, hoàn thiện báo cáo cuối tháng..."
+                    <textarea name="reason" rows="4" required
+                              minlength="{{ \App\Support\OvertimeReasonRules::minLength() }}"
+                              maxlength="{{ \App\Support\OvertimeReasonRules::maxLengthForEmployee() }}"
+                              placeholder="Ví dụ: Hoàn thiện báo cáo sản xuất tháng 9, xử lý đơn hàng xuất khẩu gấp..."
                               class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 transition resize-none">{{ old('reason') }}</textarea>
+                    <p class="mt-1.5 text-xs text-slate-500 leading-relaxed">
+                        Bắt buộc mô tả rõ lý do và công việc (tối thiểu {{ \App\Support\OvertimeReasonRules::minLength() }} ký tự) để phục vụ giải trình với Sở LĐTBXH khi thanh tra.
+                    </p>
                     @error('reason')<p class="text-rose-600 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 
-                <div class="rounded-xl bg-slate-50 border border-slate-100 px-4 py-3 text-xs text-slate-500 leading-relaxed">
-                    <p class="font-semibold text-slate-600 mb-1">Giới hạn tăng ca theo Luật Lao động:</p>
-                    <ul class="list-disc ps-4 space-y-0.5">
-                        <li>Tối đa {{ \App\Services\OvertimeLimitService::MAX_HOURS_PER_DAY }} giờ/ngày (50% giờ làm bình thường).</li>
-                        <li>Tối đa {{ \App\Services\OvertimeLimitService::MAX_HOURS_PER_MONTH }} giờ/tháng.</li>
-                        <li>Tối đa {{ \App\Services\OvertimeLimitService::MAX_HOURS_PER_YEAR }} giờ/năm.</li>
-                    </ul>
-                </div>
+                @include('shared.overtime-limit-rules', ['overtimeLimits' => $overtimeLimitContext ?? null])
+
+                @include('shared.overtime-voluntary-consent-field')
 
                 <div class="flex gap-3 pt-1">
                     <button type="submit"

@@ -120,6 +120,8 @@
                     @error('status') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
                 </div>
 
+                @include('admin.employees.partials.overtime-ban-status-field', ['employee' => new \App\Models\Employee()])
+
                 <div>
                     <label class="block text-sm font-medium text-slate-700">Tài khoản liên kết</label>
 

@@ -31,9 +31,20 @@ class Employee extends Model
 
     public const STATUS_BADGE_CLASSES = [
         self::STATUS_ACTIVE => 'bg-emerald-50 text-emerald-700 border-emerald-100',
-        self::STATUS_INACTIVE => 'bg-amber-50 text-amber-700 border-amber-100',
+        self::STATUS_INACTIVE => 'bg-amber-50 text-amber-700 border-emerald-100',
         self::STATUS_ON_LEAVE => 'bg-sky-50 text-sky-700 border-sky-100',
         self::STATUS_RESIGNED => 'bg-rose-50 text-rose-700 border-rose-100',
+    ];
+
+    /** Mang thai từ tháng thứ 7 — cấm OT (Điều 137). */
+    public const OT_BAN_PREGNANCY_7M = 'pregnancy_7m_plus';
+
+    /** Nuôi con dưới 12 tháng tuổi — cấm OT (Điều 137). */
+    public const OT_BAN_NURSING_UNDER_12M = 'nursing_under_12m';
+
+    public const OT_BAN_LABELS = [
+        self::OT_BAN_PREGNANCY_7M => 'Mang thai từ tháng thứ 7 (cấm OT — Điều 137)',
+        self::OT_BAN_NURSING_UNDER_12M => 'Nuôi con dưới 12 tháng tuổi (cấm OT — Điều 137)',
     ];
 
     protected $fillable = [
@@ -51,6 +62,7 @@ class Employee extends Model
         'avatar',
         'hire_date',
         'status',
+        'overtime_ban_status',
     ];
 
     protected function casts(): array
@@ -190,6 +202,20 @@ class Employee extends Model
     public function statusBadgeClass(): string
     {
         return self::STATUS_BADGE_CLASSES[$this->status] ?? 'bg-slate-100 text-slate-600 border-slate-200';
+    }
+
+    public function isOvertimeProhibited(): bool
+    {
+        return filled($this->overtime_ban_status);
+    }
+
+    public function overtimeBanStatusLabel(): ?string
+    {
+        if (! $this->isOvertimeProhibited()) {
+            return null;
+        }
+
+        return self::OT_BAN_LABELS[$this->overtime_ban_status] ?? null;
     }
 
     public function isActive(): bool

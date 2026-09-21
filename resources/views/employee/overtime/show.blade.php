@@ -17,7 +17,15 @@
                 <div><p class="text-slate-500">Khung giờ</p><p class="font-semibold">{{ \App\Support\TimeInput::forInput($overtimeRequest->start_time) }} → {{ \App\Support\TimeInput::forInput($overtimeRequest->end_time) }}</p></div>
                 <div><p class="text-slate-500">Tổng giờ</p><p class="font-semibold">{{ number_format(abs((float) $overtimeRequest->total_hours), 1) }}h</p></div>
                 <div><p class="text-slate-500">Trạng thái</p><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-bold {{ $statusClasses[$overtimeRequest->status] ?? '' }}">{{ $statusLabels[$overtimeRequest->status] ?? $overtimeRequest->status }}</span></div>
-                <div class="md:col-span-2"><p class="text-slate-500">Lý do</p><p class="font-medium text-slate-700">{{ $overtimeRequest->reason }}</p></div>
+                <div class="md:col-span-2"><p class="text-slate-500">Lý do / công việc</p><p class="font-medium text-slate-700">{{ $overtimeRequest->reason }}</p></div>
+                <div class="md:col-span-2">
+                    <p class="text-slate-500">Đồng thuận tự nguyện</p>
+                    @if ($overtimeRequest->voluntary_consent_at)
+                        <p class="font-medium text-emerald-700">Đã xác nhận lúc {{ $overtimeRequest->voluntary_consent_at->format('d/m/Y H:i') }}</p>
+                    @else
+                        <p class="font-medium text-slate-500">—</p>
+                    @endif
+                </div>
             </div>
         </div>
 

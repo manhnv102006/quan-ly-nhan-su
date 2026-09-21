@@ -167,6 +167,13 @@
                                     {{ $employee->date_of_birth?->format('d/m/Y') ?? '—' }}
                                 </div>
                             </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-500 mb-2">Cấm tăng ca (Điều 137)</label>
+                                <div class="px-4 py-3 rounded-xl border {{ $employee->isOvertimeProhibited() ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-slate-50 border-slate-200 text-slate-700' }}">
+                                    {{ $employee->overtimeBanStatusLabel() ?? 'Không áp dụng' }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

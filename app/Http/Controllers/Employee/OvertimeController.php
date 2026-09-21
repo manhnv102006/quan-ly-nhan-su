@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEmployeeOvertimeRequest;
 use App\Models\Employee;
 use App\Models\OvertimeRequest;
+use App\Services\OvertimeLeaveConflictService;
+use App\Services\OvertimeLimitService;
 use App\Services\OvertimeRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -56,15 +58,24 @@ class OvertimeController extends Controller
         return view('employee.overtime.show', compact('overtimeRequest'));
     }
 
-    public function create(Request $request): View
-    {
+    public function create(
+        Request $request,
+        OvertimeLimitService $overtimeLimits,
+        OvertimeLeaveConflictService $leaveConflicts,
+    ): View {
+        $employee = Employee::where('user_id', Auth::id())->firstOrFail();
+
         $prefill = [
             'work_date' => $request->query('work_date', $request->query('date')),
             'start_time' => $request->query('start_time'),
             'end_time' => $request->query('end_time'),
         ];
 
-        return view('employee.overtime.create', compact('prefill'));
+        $workDate = (string) ($prefill['work_date'] ?? now()->format('Y-m-d'));
+        $overtimeLimitContext = $overtimeLimits->contextForEmployee($employee->id, $workDate);
+        $halfDayLeaveContext = $leaveConflicts->halfDayLeaveOnDate($employee->id, $workDate);
+
+        return view('employee.overtime.create', compact('prefill', 'overtimeLimitContext', 'halfDayLeaveContext', 'employee'));
     }
 
     public function store(StoreEmployeeOvertimeRequest $request): RedirectResponse
@@ -79,6 +90,7 @@ class OvertimeController extends Controller
             'end_time' => $validated['end_time'],
             'rate_multiplier' => $validated['rate_multiplier'],
             'reason' => $validated['reason'],
+            'voluntary_consent_at' => now(),
         ]);
 
         $this->overtimeRequests->logSubmitted($overtimeRequest, (int) Auth::id());
