@@ -10,6 +10,8 @@ use App\Models\EmployeeDocument;
 use App\Models\Position;
 use App\Models\User;
 use App\Rules\DepartmentEmployeeCapacity;
+use App\Services\EmployeeCodeService;
+use App\Services\EmployeeHistoryService;
 use App\Services\EmployeeShiftScheduleService;
 use App\Services\ManagerDepartmentSyncService;
 use Illuminate\Database\QueryException;
@@ -30,6 +32,8 @@ class EmployeeController extends Controller
     public function __construct(
         private readonly ManagerDepartmentSyncService $managerDepartmentSync,
         private readonly EmployeeShiftScheduleService $shiftScheduleService,
+        private readonly EmployeeHistoryService $historyService,
+        private readonly EmployeeCodeService $employeeCodes,
     ) {}
 
     private const DOCUMENT_RULES = [
@@ -41,6 +45,19 @@ class EmployeeController extends Controller
         'remove_documents.*' => ['integer', 'exists:employee_documents,id'],
     ];
 
+
+    public function nextCode(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $departmentId = (int) $request->query('department_id');
+
+        if (! Department::query()->whereKey($departmentId)->exists()) {
+            return response()->json(['code' => null], 422);
+        }
+
+        return response()->json([
+            'code' => $this->employeeCodes->nextCode($departmentId),
+        ]);
+    }
 
     public function create(): View
     {
@@ -63,7 +80,6 @@ class EmployeeController extends Controller
         $validated = $request->validated();
 
         $validated = $request->validate(array_merge([
-            'employee_code' => ['required', 'string', 'max:20', 'unique:employees,employee_code'],
             'full_name' => ['required', 'string', 'max:100'],
             'gender' => ['required', 'in:male,female,other'],
             'date_of_birth' => ['required', 'date'],
@@ -78,13 +94,14 @@ class EmployeeController extends Controller
             'user_id' => ['nullable', 'exists:users,id', Rule::unique('employees', 'user_id')],
         ], self::DOCUMENT_RULES));
 
-        $validated['employee_code'] = strtoupper($validated['employee_code']);
         $validated['overtime_ban_status'] = $validated['overtime_ban_status'] ?? null;
-
+        $validated['employee_code'] = $this->employeeCodes->nextCode((int) $validated['department_id']);
 
         $employee = Employee::create(collect($validated)->except(['documents', 'remove_documents'])->all());
 
         $this->managerDepartmentSync->syncAfterEmployeeSaved($employee->fresh());
+
+        $this->historyService->logCreate($employee->fresh(), $request->user()?->id);
 
         $this->storeUploadedDocuments($employee, $request);
 
@@ -155,6 +172,11 @@ class EmployeeController extends Controller
             ->limit(10)
             ->get();
 
+        $profileHistories = $employee->profileHistories()
+            ->with('performer')
+            ->limit(20)
+            ->get();
+
         $availableAccounts = User::query()
             ->with('role')
             ->availableForEmployeeLink()
@@ -171,6 +193,7 @@ class EmployeeController extends Controller
             'departments',
             'transferHistory',
             'contractHistories',
+            'profileHistories',
             'availableAccounts',
             'shiftMonth',
             'shiftMonthSummary',
@@ -200,7 +223,6 @@ class EmployeeController extends Controller
         $validated = $request->validated();
 
         $validated = $request->validate(array_merge([
-            'employee_code' => ['required', 'string', 'max:20', 'unique:employees,employee_code,'.$employee->id],
             'full_name' => ['required', 'string', 'max:100'],
             'gender' => ['required', 'in:male,female,other'],
             'date_of_birth' => ['required', 'date'],
@@ -215,13 +237,20 @@ class EmployeeController extends Controller
             'user_id' => ['nullable', 'exists:users,id', Rule::unique('employees', 'user_id')->ignore($employee->id)],
         ], self::DOCUMENT_RULES));
 
-        $validated['employee_code'] = strtoupper($validated['employee_code']);
         $validated['overtime_ban_status'] = $validated['overtime_ban_status'] ?? null;
+        $validated['employee_code'] = $this->employeeCodes->codeForSave(
+            $employee,
+            (int) $validated['department_id'],
+        );
 
+        $original = $employee->only(EmployeeHistoryService::TRACKED_FIELDS);
 
         $employee->update(collect($validated)->except(['documents', 'remove_documents'])->all());
 
         $this->managerDepartmentSync->syncAfterEmployeeSaved($employee->fresh());
+
+        $changes = $this->historyService->collectChanges($employee, $original);
+        $this->historyService->logUpdate($employee, $changes, $request->user()?->id);
 
         $this->removeDocuments($employee, $request->input('remove_documents', []));
         $this->storeUploadedDocuments($employee, $request);
@@ -263,6 +292,7 @@ class EmployeeController extends Controller
         }
 
         $fromDepartmentName = $employee->department?->department_name ?? 'Chưa gán';
+        $original = $employee->only(EmployeeHistoryService::TRACKED_FIELDS);
 
         $employee->departmentTransfers()->create([
             'from_department_id' => $employee->department_id,
@@ -274,7 +304,18 @@ class EmployeeController extends Controller
 
         Department::where('manager_id', $employee->id)->update(['manager_id' => null]);
 
-        $employee->update(['department_id' => $validated['to_department_id']]);
+        $newCode = $this->employeeCodes->nextCode((int) $validated['to_department_id']);
+
+        $employee->update([
+            'department_id' => $validated['to_department_id'],
+            'employee_code' => $newCode,
+        ]);
+
+        $this->historyService->logUpdate(
+            $employee,
+            $this->historyService->collectChanges($employee, $original),
+            $request->user()?->id,
+        );
 
         $this->managerDepartmentSync->syncAfterEmployeeSaved($employee->fresh());
 
@@ -319,6 +360,8 @@ class EmployeeController extends Controller
 
         app(ManagerDepartmentSyncService::class)->syncAfterEmployeeSaved($employee->fresh());
 
+        $this->historyService->logLinkAccount($employee->fresh(), $user, $request->user()?->id);
+
         return redirect()
             ->route('admin.employees.show', $employee)
             ->with('success', "Đã liên kết tài khoản {$user->username} với nhân viên {$employee->full_name}.");
@@ -335,6 +378,8 @@ class EmployeeController extends Controller
         $username = $employee->linkedUser?->username ?? 'tài khoản';
 
         $employee->update(['user_id' => null]);
+
+        $this->historyService->logUnlinkAccount($employee->fresh(), $username, request()->user()?->id);
 
         return redirect()
             ->route('admin.employees.show', $employee)
@@ -440,8 +485,12 @@ class EmployeeController extends Controller
         Department::where('manager_id', $employee->id)->update(['manager_id' => null]);
 
         if ($employee->user_id !== null) {
+            $username = $employee->linkedUser?->username ?? 'tài khoản';
             $employee->update(['user_id' => null]);
+            $this->historyService->logUnlinkAccount($employee->fresh(), $username, request()->user()?->id);
         }
+
+        $this->historyService->logDelete($employee, request()->user()?->id);
 
         $employee->delete();
 
@@ -462,6 +511,8 @@ class EmployeeController extends Controller
 
         $employee->restore();
 
+        $this->historyService->logRestore($employee->fresh(), request()->user()?->id);
+
         return redirect()
             ->route('admin.employees.trash')
             ->with('success', "Đã khôi phục nhân viên {$employee->full_name}.");
@@ -476,6 +527,8 @@ class EmployeeController extends Controller
             Department::where('manager_id', $employee->id)->update(['manager_id' => null]);
 
             $employee->documents()->get()->each(fn (EmployeeDocument $document) => $document->deleteFile());
+
+            $this->historyService->logForceDelete($employee, request()->user()?->id);
 
             $employee->forceDelete();
         } catch (QueryException) {

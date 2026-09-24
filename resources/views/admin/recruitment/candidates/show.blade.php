@@ -224,7 +224,8 @@
 
                             <div>
                                 <label class="mb-2 block text-sm font-bold text-slate-700">Mã nhân viên</label>
-                                <input type="text" name="employee_code" value="{{ old('employee_code', $suggestedEmployeeCode) }}" class="{{ $fieldClass }}">
+                                <input type="text" value="{{ $suggestedEmployeeCode !== '' ? $suggestedEmployeeCode : 'Chưa xác định phòng ban' }}" readonly class="{{ $fieldClass }} bg-slate-50 font-mono">
+                                <p class="mt-1 text-xs text-slate-500">Hệ thống tự cấp mã theo phòng ban của tin tuyển dụng.</p>
                             </div>
                             <div>
                                 <label class="mb-2 block text-sm font-bold text-slate-700">Giới tính</label>

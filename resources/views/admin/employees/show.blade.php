@@ -277,6 +277,25 @@
                     </div>
                 </div>
 
+                <div id="lich-su-ho-so" class="bg-white rounded-3xl shadow-sm border border-slate-100">
+                    <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-600">Hồ sơ nhân sự</p>
+                            <h3 class="mt-1 text-lg font-semibold text-slate-800">Lịch sử sửa hồ sơ</h3>
+                            <p class="mt-1 text-sm text-slate-500">Theo dõi các thay đổi thông tin cá nhân, phòng ban, chức vụ và trạng thái.</p>
+                        </div>
+                        <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                            {{ $profileHistories->count() }} bản ghi
+                        </span>
+                    </div>
+
+                    <div class="p-6">
+                        @include('admin.employees.partials.profile-history-timeline', [
+                            'histories' => $profileHistories,
+                        ])
+                    </div>
+                </div>
+
                 <div id="lich-su-dieu-chuyen" class="bg-white rounded-3xl shadow-sm border border-slate-100">
                     <div class="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                         <div>
@@ -314,6 +333,10 @@
                         <a href="#hop-dong" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700 transition">
                             <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">📄</span>
                             Hợp đồng lao động
+                        </a>
+                        <a href="#lich-su-ho-so" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700 transition">
+                            <span class="w-8 h-8 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center text-xs">✏</span>
+                            Lịch sử sửa hồ sơ
                         </a>
                         <a href="#lich-su-dieu-chuyen" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-violet-50 hover:text-violet-700 transition">
                             <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-xs">↔</span>

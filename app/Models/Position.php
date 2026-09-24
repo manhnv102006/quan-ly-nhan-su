@@ -27,6 +27,11 @@ class Position extends Model
         'deleted_at',
     ];
 
+    public static function staffId(): ?int
+    {
+        return static::query()->where('position_name', 'Nhân viên')->value('id');
+    }
+
     public function employees(): HasMany
     {
         return $this->hasMany(Employee::class);

@@ -24,7 +24,11 @@
                 @endif
             </p>
             <p class="mt-2 text-[11px] leading-relaxed text-emerald-800/80">
-                Mọi loại hưởng lương (phép, ốm, nửa ngày…) cùng tính vào hạn mức 1 ngày/tháng. Vượt hạn mức sẽ trừ 300.000 ₫/ngày.
+                @if($balance['monthly_quota'] <= 0)
+                    Chưa đủ điều kiện: cần hoàn thành <strong>trọn 1 tháng làm việc</strong> mới được 1 ngày hưởng lương/tháng. {{ \App\Support\LeaveAccrualRules::proRataDescription() }}
+                @else
+                    Mọi loại hưởng lương (phép, ốm, nửa ngày…) cùng tính vào hạn mức 1 ngày/tháng. Vượt hạn mức sẽ trừ 300.000 ₫/ngày.
+                @endif
             </p>
         </div>
 

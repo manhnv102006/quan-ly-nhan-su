@@ -10,6 +10,8 @@ use App\Models\Interview;
 use App\Models\JobPost;
 use App\Models\Position;
 use App\Services\CandidateCvService;
+use App\Services\EmployeeCodeService;
+use App\Services\EmployeeHistoryService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -279,21 +281,18 @@ class CandidateController extends Controller
         }
 
         $validated = $request->validate([
-            'employee_code' => ['required', 'string', 'max:20', 'unique:employees,employee_code'],
             'gender' => ['required', 'in:male,female,other'],
             'date_of_birth' => ['required', 'date'],
             'hire_date' => ['required', 'date'],
             'status' => ['required', Rule::in(Employee::selectableStatuses())],
         ], [
-            'employee_code.required' => 'Mã nhân viên là bắt buộc.',
-            'employee_code.unique' => 'Mã nhân viên đã tồn tại.',
             'date_of_birth.required' => 'Ngày sinh là bắt buộc để tạo hồ sơ nhân viên.',
             'hire_date.required' => 'Ngày vào làm là bắt buộc.',
         ]);
 
-        $employee = DB::transaction(function () use ($candidate, $validated, $placement) {
+        $employee = DB::transaction(function () use ($candidate, $validated, $placement, $request) {
             $employee = Employee::create([
-                'employee_code' => strtoupper($validated['employee_code']),
+                'employee_code' => app(EmployeeCodeService::class)->nextCode((int) $placement['department_id']),
                 'full_name' => $candidate->full_name,
                 'gender' => $validated['gender'],
                 'date_of_birth' => $validated['date_of_birth'],
@@ -312,6 +311,12 @@ class CandidateController extends Controller
                 'employee_id' => $employee->id,
                 'converted_at' => now(),
             ]);
+
+            app(EmployeeHistoryService::class)->logCreate(
+                $employee->fresh(),
+                $request->user()?->id,
+                'Chuyển từ ứng viên tuyển dụng',
+            );
 
             return $employee;
         });
@@ -513,22 +518,12 @@ class CandidateController extends Controller
 
     private function suggestEmployeeCode(Candidate $candidate): string
     {
-        $baseCode = 'NV'.now()->format('ym').str_pad((string) $candidate->id, 4, '0', STR_PAD_LEFT);
-        $candidateCode = Str::upper(Str::limit($baseCode, 20, ''));
+        $departmentId = $this->resolveConversionPlacement($candidate)['department_id'] ?? null;
 
-        if (! Employee::where('employee_code', $candidateCode)->exists()) {
-            return $candidateCode;
+        if (! $departmentId) {
+            return '';
         }
 
-        for ($index = 2; $index <= 99; $index++) {
-            $suffix = '-'.$index;
-            $code = Str::upper(Str::limit($baseCode, 20 - strlen($suffix), '').$suffix);
-
-            if (! Employee::where('employee_code', $code)->exists()) {
-                return $code;
-            }
-        }
-
-        return Str::upper(Str::limit($baseCode.'-'.Str::random(4), 20, ''));
+        return app(EmployeeCodeService::class)->nextCode((int) $departmentId);
     }
 }

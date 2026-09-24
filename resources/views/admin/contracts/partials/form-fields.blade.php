@@ -172,8 +172,18 @@
     <div>
         <label for="contract_file" class="admin-label">File hợp đồng @if(!$isEdit)*@endif</label>
         <input type="file" id="contract_file" name="contract_file" class="admin-field"
-               accept=".pdf,.doc,.docx" @if(!$isEdit) required @endif>
-        <p class="mt-1 text-[11px] text-slate-400">PDF, DOC, DOCX · tối đa 10MB</p>
+               accept="{{ $isEdit ? '.pdf,.doc,.docx' : '.pdf,application/pdf' }}"
+               @if(!$isEdit) required data-pdf-only @endif>
+        <p class="mt-1 text-[11px] text-slate-400">
+            @if($isEdit)
+                PDF, DOC, DOCX · tối đa 10MB
+            @else
+                Chỉ nhận file PDF · tối đa 10MB
+            @endif
+        </p>
+        @unless($isEdit)
+            <p class="mt-1 hidden text-xs text-rose-600" data-pdf-only-error></p>
+        @endunless
         @if($isEdit && $contract->file_path)
             <p class="mt-1 text-xs text-slate-500">
                 Hiện tại:
@@ -231,6 +241,64 @@
 
                 employeeSelect.addEventListener('change', syncEmployeeInfo);
                 syncEmployeeInfo();
+            });
+        </script>
+    @endpush
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const input = document.querySelector('[data-pdf-only]');
+                if (!input) return;
+
+                const error = document.querySelector('[data-pdf-only-error]');
+
+                function isPdf(file) {
+                    const name = (file.name || '').toLowerCase();
+                    const type = (file.type || '').toLowerCase();
+
+                    return name.endsWith('.pdf') && (type === '' || type === 'application/pdf');
+                }
+
+                function reject(message) {
+                    input.value = '';
+                    if (!error) return;
+                    error.textContent = message;
+                    error.classList.remove('hidden');
+                }
+
+                function clearError() {
+                    if (!error) return;
+                    error.textContent = '';
+                    error.classList.add('hidden');
+                }
+
+                input.addEventListener('change', function () {
+                    const file = input.files && input.files[0];
+                    if (!file) {
+                        clearError();
+                        return;
+                    }
+
+                    if (!isPdf(file)) {
+                        reject('Chỉ được tải file PDF. Các định dạng khác đã bị chặn.');
+                        return;
+                    }
+
+                    clearError();
+                });
+
+                const form = input.closest('form');
+                if (!form) return;
+
+                form.addEventListener('submit', function (event) {
+                    const file = input.files && input.files[0];
+                    if (!file || isPdf(file)) return;
+
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    reject('Chỉ được tải file PDF. Các định dạng khác đã bị chặn.');
+                }, true);
             });
         </script>
     @endpush

@@ -82,7 +82,8 @@
                         <div class="rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3 text-xs text-slate-600 leading-relaxed">
                             <p class="font-semibold text-slate-700 mb-1">Trước khi gửi, hãy kiểm tra:</p>
                             <ul class="list-disc list-inside space-y-0.5">
-                                <li>Ngày và giờ về sớm đúng với kế hoạch thực tế.</li>
+                                <li>Ngày xin về sớm phải là ngày bạn <strong>đã được xếp ca</strong>.</li>
+                                <li>Giờ về sớm phải nằm trong khung giờ ca làm của ngày đó.</li>
                                 <li>Lý do cụ thể, trung thực — tránh gửi đơn trùng ngày đã có.</li>
                                 <li>Nếu về trong {{ $grace }} phút trước tan ca, có thể không cần đơn (xem bảng minh họa bên phải).</li>
                             </ul>
@@ -249,10 +250,6 @@
         (function () {
             const grace = {{ $grace }};
             const shiftSchedule = @json($shiftSchedule);
-            const sessions = [
-                { label: 'buổi sáng', end: '12:00' },
-                { label: 'buổi chiều', end: '17:00' },
-            ];
             const requestDateInput = document.getElementById('request_date');
             const dateHint = document.getElementById('request-date-hint');
             const leaveTimeInput = document.getElementById('leave_time');
@@ -260,6 +257,7 @@
             const submitBtn = document.getElementById('early-leave-submit');
             const form = document.getElementById('early-leave-form');
             let hasShiftOnSelectedDate = true;
+            let leaveTimeWithinShift = true;
 
             function toMinutes(time) {
                 const [h, m] = time.split(':').map(Number);
@@ -304,43 +302,84 @@
                     requestDateInput.classList.add('border-slate-200', 'focus:border-violet-500', 'focus:ring-violet-500/20');
                 }
 
-                if (submitBtn) {
-                    submitBtn.disabled = !hasShiftOnSelectedDate;
+                updateSubmitState();
+            }
+
+            function findShiftForLeaveTime(dateValue, leaveTimeValue) {
+                const shifts = shiftSchedule[dateValue] || [];
+                const leaveMin = toMinutes(leaveTimeValue);
+
+                for (const shift of shifts) {
+                    const startMin = toMinutes(shift.start);
+                    const endMin = toMinutes(shift.end);
+
+                    if (leaveMin >= startMin && leaveMin < endMin) {
+                        return shift;
+                    }
                 }
+
+                return null;
+            }
+
+            function updateSubmitState() {
+                if (!submitBtn) {
+                    return;
+                }
+
+                submitBtn.disabled = !hasShiftOnSelectedDate || !leaveTimeWithinShift;
             }
 
             function updateTimeHint() {
                 const value = leaveTimeInput?.value;
+                const dateValue = requestDateInput?.value;
+
                 if (!value || !timeHint) {
+                    leaveTimeWithinShift = true;
+                    updateSubmitState();
                     timeHint?.classList.add('hidden');
                     return;
                 }
 
-                const leaveMin = toMinutes(value);
-                let matched = sessions[0];
-
-                for (const session of sessions) {
-                    const endMin = toMinutes(session.end);
-                    if (leaveMin <= endMin) {
-                        matched = session;
-                        break;
-                    }
-                    matched = session;
+                if (!dateValue || !hasShiftOnSelectedDate) {
+                    leaveTimeWithinShift = false;
+                    updateSubmitState();
+                    timeHint.className = 'rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs leading-relaxed text-rose-800';
+                    timeHint.innerHTML = '<strong>Không thể chọn giờ:</strong> Vui lòng chọn ngày có ca làm trước.';
+                    timeHint.classList.remove('hidden');
+                    return;
                 }
 
-                const endMin = toMinutes(matched.end);
+                const matchedShift = findShiftForLeaveTime(dateValue, value);
+
+                if (!matchedShift) {
+                    leaveTimeWithinShift = false;
+                    const shifts = shiftSchedule[dateValue] || [];
+                    const ranges = shifts.map(function (shift) {
+                        return shift.start + '–' + shift.end;
+                    }).join(', ');
+                    timeHint.className = 'rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs leading-relaxed text-rose-800';
+                    timeHint.innerHTML = '<strong>Giờ không hợp lệ:</strong> Giờ về sớm phải nằm trong ca làm của ngày đó (' + ranges + ').';
+                    timeHint.classList.remove('hidden');
+                    updateSubmitState();
+                    return;
+                }
+
+                leaveTimeWithinShift = true;
+                const leaveMin = toMinutes(value);
+                const endMin = toMinutes(matchedShift.end);
                 const graceStartMin = endMin - grace;
                 const earlyMinutes = graceStartMin - leaveMin;
 
                 if (earlyMinutes <= 0) {
                     timeHint.className = 'rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs leading-relaxed text-emerald-800';
-                    timeHint.innerHTML = '<strong>Không cần lo phạt:</strong> Giờ bạn chọn nằm trong ' + grace + ' phút miễn trừ trước tan ' + matched.label + ' (' + formatMinutes(graceStartMin) + ' – ' + matched.end + '). Vẫn có thể gửi đơn nếu muốn ghi nhận chính thức.';
+                    timeHint.innerHTML = '<strong>Không cần lo phạt:</strong> Giờ bạn chọn nằm trong ' + grace + ' phút miễn trừ trước tan ca ' + matchedShift.name + ' (' + formatMinutes(graceStartMin) + ' – ' + matchedShift.end + '). Vẫn có thể gửi đơn nếu muốn ghi nhận chính thức.';
                 } else {
                     timeHint.className = 'rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900';
-                    timeHint.innerHTML = '<strong>Nên gửi đơn:</strong> Về lúc <strong>' + value + '</strong> (tan ca ' + matched.end + ') — nếu không có đơn duyệt, hệ thống có thể trừ lương khoảng <strong>' + earlyMinutes + ' phút</strong> (sau ' + grace + 'p miễn trừ).';
+                    timeHint.innerHTML = '<strong>Nên gửi đơn:</strong> Về lúc <strong>' + value + '</strong> (tan ca ' + matchedShift.end + ') — nếu không có đơn duyệt, hệ thống có thể trừ lương khoảng <strong>' + earlyMinutes + ' phút</strong> (sau ' + grace + 'p miễn trừ).';
                 }
 
                 timeHint.classList.remove('hidden');
+                updateSubmitState();
             }
 
             requestDateInput?.addEventListener('change', updateDateHint);
@@ -350,7 +389,8 @@
 
             form?.addEventListener('submit', function (event) {
                 updateDateHint();
-                if (!hasShiftOnSelectedDate) {
+                updateTimeHint();
+                if (!hasShiftOnSelectedDate || !leaveTimeWithinShift) {
                     event.preventDefault();
                 }
             });

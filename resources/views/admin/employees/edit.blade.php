@@ -27,11 +27,10 @@
                 @method('PUT')
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Mã nhân viên <span class="text-rose-500">*</span></label>
-                    <input type="text" name="employee_code" value="{{ old('employee_code', $employee->employee_code) }}" required
-                           maxlength="20" pattern="[A-Za-z0-9_-]+"
-                           class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('employee_code') border-rose-400 @else border-slate-200 @enderror">
-                    @error('employee_code') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
+                    <label class="block text-sm font-medium text-slate-700">Mã nhân viên</label>
+                    <input type="text" id="employee-code-preview" value="{{ $employee->employee_code }}" readonly
+                           class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 text-sm font-mono">
+                    <p class="mt-1 text-xs text-slate-500">Đổi phòng ban sẽ cấp mã mới của phòng đó. Giữ nguyên phòng thì mã không đổi.</p>
                 </div>
 
                 <div>
@@ -185,5 +184,27 @@
         </div>
 
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const department = document.querySelector('select[name="department_id"]');
+            const preview = document.getElementById('employee-code-preview');
+            const currentDepartmentId = @json((string) $employee->department_id);
+            const currentCode = @json($employee->employee_code);
+            if (!department || !preview) return;
+
+            const refresh = async () => {
+                if (!department.value || department.value === currentDepartmentId) {
+                    preview.value = currentCode;
+                    return;
+                }
+                const response = await fetch(`{{ route('admin.employees.next-code') }}?department_id=${department.value}`);
+                const data = await response.json();
+                preview.value = data.code || currentCode;
+            };
+
+            department.addEventListener('change', refresh);
+        });
+    </script>
 
 </x-admin-layout>

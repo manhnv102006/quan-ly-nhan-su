@@ -8,6 +8,8 @@ use App\Models\Position;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\ContractTypeValidationService;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $this->adminRole = Role::create(['name' => Role::ADMIN, 'description' => 'Admin']);
@@ -25,6 +27,7 @@ beforeEach(function () {
 
     $this->position = Position::create([
         'position_name' => 'Developer',
+        'base_salary' => 10000000,
         'status' => 'active',
     ]);
 
@@ -122,6 +125,43 @@ test('sets pending status when start date is in the future', function () {
 
     expect(Contract::query()->where('contract_code', 'HD-PENDING-001')->value('status'))
         ->toBe(Contract::STATUS_PENDING);
+});
+
+test('contract creation accepts only a pdf file', function () {
+    Storage::fake('public');
+
+    $payload = [
+        'employee_id' => $this->employee->id,
+        'contract_type_id' => $this->fixedType->id,
+        'department_id' => $this->department->id,
+        'position_id' => $this->position->id,
+        'start_date' => now()->toDateString(),
+        'signed_date' => now()->toDateString(),
+        'salary' => '15.000.000',
+    ];
+
+    $this->actingAs($this->admin)->post(route('admin.contracts.store'), $payload + [
+        'contract_code' => 'HD-DOCX-001',
+        'contract_file' => UploadedFile::fake()->create(
+            'hop-dong.docx',
+            100,
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ),
+    ])->assertSessionHasErrors('contract_file');
+
+    expect(Contract::query()->where('contract_code', 'HD-DOCX-001')->exists())->toBeFalse();
+
+    $this->actingAs($this->admin)->post(route('admin.contracts.store'), $payload + [
+        'contract_code' => 'HD-PDF-001',
+        'contract_file' => UploadedFile::fake()->create('hop-dong.pdf', 100, 'application/pdf'),
+    ])->assertRedirect(route('admin.contracts.by-employee', $this->employee));
+
+    $contract = Contract::query()->where('contract_code', 'HD-PDF-001')->first();
+
+    expect($contract)->not->toBeNull()
+        ->and($contract->file_path)->toEndWith('.pdf');
+
+    Storage::disk('public')->assertExists($contract->file_path);
 });
 
 test('validates probation contract max duration', function () {

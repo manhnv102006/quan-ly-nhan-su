@@ -71,6 +71,44 @@ class LeaveAccrualRules
         return $startMonth !== null && $month >= $startMonth;
     }
 
+    /**
+     * Số tháng đã kết thúc và đủ điều kiện cộng phép trong năm (không tính tháng hiện tại).
+     * Phép chỉ được cộng sau khi nhân viên hoàn thành trọn một tháng làm việc.
+     */
+    public static function completedAccrualMonthsInYear(Carbon $hireDate, int $year, Carbon $asOf): int
+    {
+        $asOf = $asOf->copy()->startOfDay();
+
+        if ($asOf->year < $year) {
+            return 0;
+        }
+
+        $reference = $asOf->copy();
+        if ($reference->year > $year) {
+            $reference = Carbon::create($year, 12, 31)->startOfDay();
+        }
+
+        $lastCompleted = $reference->copy()->startOfMonth()->subDay();
+        if ($lastCompleted->year < $year) {
+            return 0;
+        }
+
+        if ($hireDate->year > $year) {
+            return 0;
+        }
+
+        if ($hireDate->year < $year) {
+            return min(12, $lastCompleted->month);
+        }
+
+        $startMonth = self::accrualStartMonth($hireDate, $year);
+        if ($startMonth === null || $lastCompleted->month < $startMonth) {
+            return 0;
+        }
+
+        return $lastCompleted->month - $startMonth + 1;
+    }
+
     public static function proRataDescription(): string
     {
         $cutoff = self::midMonthCutoffDay();

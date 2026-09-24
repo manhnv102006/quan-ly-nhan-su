@@ -44,6 +44,7 @@ class JobPostController extends Controller
         $validated = $this->validateJobPost($request);
 
         $validated = $this->applyDepartmentRecruiter($validated);
+        $validated['position_id'] = $validated['position_id'] ?: Position::staffId();
 
         JobPost::create($validated);
 
@@ -95,6 +96,7 @@ class JobPostController extends Controller
         $validated = $this->validateJobPost($request);
 
         $validated = $this->applyDepartmentRecruiter($validated);
+        $validated['position_id'] = $validated['position_id'] ?: Position::staffId();
 
         $jobPost->update($validated);
 

@@ -9,6 +9,7 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Interview;
 use App\Models\JobPost;
+use App\Models\Position;
 use App\Services\CandidateCvService;
 use App\Services\ManagerScopeService;
 use App\Services\RecruitmentInterviewService;
@@ -271,6 +272,7 @@ class RecruitmentController extends Controller
 
         JobPost::create([
             'department_id' => $validated['department_id'],
+            'position_id' => Position::staffId(),
             'recruiter_id' => $recruiterId,
             'submitted_by_employee_id' => $manager->id,
             'title' => $validated['title'],

@@ -1036,3 +1036,19 @@ test('14d: overtime create page shows reason and work description requirement', 
         ->assertSee('Lý do / công việc cần làm')
         ->assertSee('Sở LĐTBXH');
 });
+
+test('14e: employee cannot submit overtime for a past work date', function () {
+    $user = linkEmployeeToUser($this->employee);
+
+    $response = $this->actingAs($user)->post(route('employee.overtime-requests.store'), employeeOvertimeFormData([
+        'work_date' => '2026-09-02',
+        'start_time' => '18:00',
+        'end_time' => '20:00',
+        'rate_multiplier' => '1.5',
+        'reason' => 'Đăng ký tăng ca cho ngày đã qua',
+    ]));
+
+    $response->assertSessionHasErrors('work_date');
+    expect(session('errors')->get('work_date')[0])->toContain('quá khứ');
+    $this->assertDatabaseCount('overtime_requests', 0);
+});

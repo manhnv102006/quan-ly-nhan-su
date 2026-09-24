@@ -98,6 +98,11 @@ class ContractStoreRequest extends FormRequest
         return [
             'department_id.required' => 'Nhân viên chưa có phòng ban trong hồ sơ. Vui lòng cập nhật hồ sơ nhân viên trước.',
             'position_id.required' => 'Nhân viên chưa có chức vụ trong hồ sơ. Vui lòng cập nhật hồ sơ nhân viên trước.',
+            'contract_file.required' => 'Vui lòng tải file hợp đồng PDF.',
+            'contract_file.file' => 'Tệp hợp đồng không hợp lệ.',
+            'contract_file.mimes' => 'Chỉ được tải file PDF.',
+            'contract_file.extensions' => 'Chỉ được tải file PDF.',
+            'contract_file.max' => 'Tệp hợp đồng không được vượt quá 10MB.',
         ];
     }
 
@@ -117,7 +122,7 @@ class ContractStoreRequest extends FormRequest
             'signed_date' => ['required', 'date', 'before_or_equal:start_date'],
             'description' => ['nullable', 'string', 'max:1000'],
             'note' => ['nullable', 'string', 'max:1000'],
-            'contract_file' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
+            'contract_file' => ['required', 'file', 'extensions:pdf', 'mimes:pdf', 'max:10240'],
         ];
     }
 

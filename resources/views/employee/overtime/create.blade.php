@@ -49,8 +49,10 @@
                         Ngày tăng ca <span class="text-rose-500">*</span>
                     </label>
                     <input type="date" name="work_date"
+                           min="{{ now()->format('Y-m-d') }}"
                            value="{{ old('work_date', $prefill['work_date'] ?? now()->format('Y-m-d')) }}"
                            class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 transition">
+                    <p class="mt-1.5 text-xs text-slate-500">Chỉ được chọn từ hôm nay trở đi, không đăng ký tăng ca cho ngày đã qua.</p>
                     @error('work_date')<p class="text-rose-600 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 

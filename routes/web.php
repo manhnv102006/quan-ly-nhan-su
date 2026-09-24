@@ -149,6 +149,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/employees/trash', [EmployeeController::class, 'trash'])->name('employees.trash');
     Route::post('/employees/{id}/restore', [EmployeeController::class, 'restore'])->name('employees.restore');
     Route::delete('/employees/{id}/force-delete', [EmployeeController::class, 'forceDelete'])->name('employees.forceDelete');
+    Route::get('/employees/next-code', [EmployeeController::class, 'nextCode'])->name('employees.next-code');
     Route::get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create');
     Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
     Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');

@@ -108,6 +108,11 @@ class Employee extends Model
         return $this->hasMany(ContractHistory::class)->orderByDesc('created_at');
     }
 
+    public function profileHistories(): HasMany
+    {
+        return $this->hasMany(EmployeeHistory::class)->orderByDesc('created_at');
+    }
+
     public function moduleChangeLogs(): HasMany
     {
         return $this->hasMany(ModuleChangeLog::class)->orderByDesc('created_at');
@@ -551,10 +556,22 @@ class Employee extends Model
         return $this->todayShifts()->last();
     }
 
-    public function hasShiftOnDate(string|\DateTimeInterface $date): bool
+    /**
+     * @return \Illuminate\Support\Collection<int, EmployeeShift>
+     */
+    public function shiftsOnDate(string|\DateTimeInterface $date): \Illuminate\Support\Collection
     {
         return $this->employeeShifts()
             ->whereDate('work_date', $date)
-            ->exists();
+            ->with('shift')
+            ->get()
+            ->filter(fn (EmployeeShift $employeeShift) => $employeeShift->shift !== null)
+            ->sortBy(fn (EmployeeShift $employeeShift) => $employeeShift->shift?->start_time)
+            ->values();
+    }
+
+    public function hasShiftOnDate(string|\DateTimeInterface $date): bool
+    {
+        return $this->shiftsOnDate($date)->isNotEmpty();
     }
 }

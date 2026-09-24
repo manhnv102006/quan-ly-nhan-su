@@ -94,11 +94,6 @@ class LeaveBalanceService
             return $annualDays;
         }
 
-        $startMonth = LeaveAccrualRules::accrualStartMonth($hireDate, $year);
-        if ($startMonth === null) {
-            return 0.0;
-        }
-
         $reference = $asOf->copy();
         if ($reference->year > $year) {
             $reference = $yearEnd->copy()->startOfDay();
@@ -106,9 +101,35 @@ class LeaveBalanceService
             return 0.0;
         }
 
-        $monthsAccrued = max(0, $reference->month - $startMonth + 1);
+        $monthsAccrued = LeaveAccrualRules::completedAccrualMonthsInYear($hireDate, $year, $reference);
 
         return min((float) $monthsAccrued, $annualDays);
+    }
+
+    /**
+     * Hạn mức nghỉ hưởng lương trong tháng: nhân viên mới phải hoàn thành ít nhất
+     * một tháng làm việc (theo quy tắc cộng phép) mới được 1 ngày/tháng.
+     */
+    public function monthlyPaidQuotaForEmployee(Employee $employee, ?Carbon $asOf = null): float
+    {
+        $configured = self::configuredMonthlyPaidDays();
+        $asOf = ($asOf ?? now())->copy()->startOfDay();
+
+        if (! $employee->hire_date) {
+            return $configured;
+        }
+
+        $hireDate = Carbon::parse($employee->hire_date)->startOfDay();
+
+        if ($hireDate->year < $asOf->year) {
+            return $configured;
+        }
+
+        if (LeaveAccrualRules::completedAccrualMonthsInYear($hireDate, (int) $asOf->year, $asOf) > 0) {
+            return $configured;
+        }
+
+        return 0.0;
     }
 
     /**
@@ -142,7 +163,7 @@ class LeaveBalanceService
         $annualPending = $this->annualDaysInYear($employee, $year, LeaveRequest::STATUS_PENDING);
         $availability = app(LeaveCarryOverService::class)->annualLeaveAvailability($employee, $year, $asOf);
         $annualDays = self::configuredAnnualLeaveDays();
-        $monthlyQuota = self::configuredMonthlyPaidDays();
+        $monthlyQuota = $this->monthlyPaidQuotaForEmployee($employee, $asOf);
 
         return [
             'month_label' => $asOf->format('m/Y'),
@@ -150,7 +171,7 @@ class LeaveBalanceService
             'monthly_quota' => $monthlyQuota,
             'monthly_used' => $monthlyUsed,
             'monthly_pending' => $monthlyPending,
-            'monthly_remaining' => max(0, $monthlyQuota - $monthlyUsed),
+            'monthly_remaining' => max(0.0, $monthlyQuota - $monthlyUsed),
             'annual_quota' => $availability['annual_quota'],
             'annual_used' => $availability['annual_used'],
             'annual_pending' => $annualPending,

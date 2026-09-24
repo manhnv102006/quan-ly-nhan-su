@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreEmployeeEarlyLeaveRequest;
 use App\Models\EarlyLeaveRequest;
 use App\Models\Employee;
 use App\Models\EmployeeShift;
@@ -11,7 +12,6 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class EarlyLeaveController extends Controller
@@ -94,27 +94,10 @@ class EarlyLeaveController extends Controller
         return view('employee.early-leave.create', compact('recentRequests', 'stats', 'shiftSchedule'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreEmployeeEarlyLeaveRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'request_date' => ['required', 'date', 'after_or_equal:today'],
-            'leave_time'   => ['required', 'date_format:H:i'],
-            'reason'       => ['required', 'string', 'max:500'],
-        ], [
-            'request_date.required'     => 'Vui lòng chọn ngày xin về sớm.',
-            'request_date.after_or_equal' => 'Ngày xin về sớm phải từ hôm nay trở đi.',
-            'leave_time.required'       => 'Vui lòng chọn giờ muốn về sớm.',
-            'leave_time.date_format'    => 'Giờ không hợp lệ.',
-            'reason.required'           => 'Vui lòng nhập lý do.',
-        ]);
-
+        $validated = $request->validated();
         $employee = Employee::where('user_id', Auth::id())->firstOrFail();
-
-        if (! $employee->hasShiftOnDate($validated['request_date'])) {
-            throw ValidationException::withMessages([
-                'request_date' => 'Ngày bạn chọn không có ca làm. Vui lòng chọn ngày khác.',
-            ]);
-        }
 
         $earlyLeaveRequest = EarlyLeaveRequest::create([
             'employee_id'  => $employee->id,

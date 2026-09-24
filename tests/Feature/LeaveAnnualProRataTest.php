@@ -49,23 +49,11 @@ test('employee hired on january first of same year accrues monthly not twelve da
     $service = app(LeaveBalanceService::class);
 
     expect($service->annualQuotaForEmployee($employee, 2026, Carbon::parse('2026-08-23')))
-        ->toBe(8.0);
+        ->toBe(7.0);
 });
 
 test('employee hired on or before cutoff day counts hire month', function () {
     $employee = createEmployeeHiredOn('2026-07-15');
-    $service = app(LeaveBalanceService::class);
-
-    expect($service->annualQuotaForEmployee($employee, 2026, Carbon::parse('2026-07-31')))
-        ->toBe(1.0)
-        ->and($service->annualQuotaForEmployee($employee, 2026, Carbon::parse('2026-08-23')))
-        ->toBe(2.0)
-        ->and($service->annualQuotaForEmployee($employee, 2026, Carbon::parse('2026-12-31')))
-        ->toBe(6.0);
-});
-
-test('employee hired after cutoff day accrues from next month by default', function () {
-    $employee = createEmployeeHiredOn('2026-07-16');
     $service = app(LeaveBalanceService::class);
 
     expect($service->annualQuotaForEmployee($employee, 2026, Carbon::parse('2026-07-31')))
@@ -76,6 +64,20 @@ test('employee hired after cutoff day accrues from next month by default', funct
         ->toBe(5.0);
 });
 
+test('employee hired after cutoff day accrues from next month by default', function () {
+    $employee = createEmployeeHiredOn('2026-07-16');
+    $service = app(LeaveBalanceService::class);
+
+    expect($service->annualQuotaForEmployee($employee, 2026, Carbon::parse('2026-07-31')))
+        ->toBe(0.0)
+        ->and($service->annualQuotaForEmployee($employee, 2026, Carbon::parse('2026-08-23')))
+        ->toBe(0.0)
+        ->and($service->annualQuotaForEmployee($employee, 2026, Carbon::parse('2026-09-05')))
+        ->toBe(1.0)
+        ->and($service->annualQuotaForEmployee($employee, 2026, Carbon::parse('2026-12-31')))
+        ->toBe(4.0);
+});
+
 test('employee hired after cutoff day accrues current month when configured', function () {
     Config::set('leave.mid_month_after_cutoff', LeaveAccrualRules::AFTER_CUTOFF_CURRENT_MONTH);
 
@@ -83,7 +85,7 @@ test('employee hired after cutoff day accrues current month when configured', fu
     $service = app(LeaveBalanceService::class);
 
     expect($service->annualQuotaForEmployee($employee, 2026, Carbon::parse('2026-08-23')))
-        ->toBe(2.0);
+        ->toBe(1.0);
 });
 
 test('mid year hire balance reflects pro rata quota not twelve days immediately', function () {
@@ -91,9 +93,30 @@ test('mid year hire balance reflects pro rata quota not twelve days immediately'
 
     $balance = app(LeaveBalanceService::class)->forEmployee($employee, Carbon::parse('2026-08-23'));
 
-    expect($balance['annual_quota'])->toBe(2.0)
+    expect($balance['annual_quota'])->toBe(1.0)
         ->and($balance['annual_is_prorated'])->toBeTrue()
-        ->and($balance['annual_remaining'])->toBe(2.0);
+        ->and($balance['annual_remaining'])->toBe(1.0);
+});
+
+test('new hire in first incomplete month has zero monthly paid quota and annual quota', function () {
+    $employee = createEmployeeHiredOn('2026-09-10');
+
+    $balance = app(LeaveBalanceService::class)->forEmployee($employee, Carbon::parse('2026-09-21'));
+
+    expect($balance['monthly_quota'])->toBe(0.0)
+        ->and($balance['monthly_remaining'])->toBe(0.0)
+        ->and($balance['annual_quota'])->toBe(0.0)
+        ->and($balance['annual_remaining'])->toBe(0.0);
+});
+
+test('new hire receives monthly paid quota after completing first accrual month', function () {
+    $employee = createEmployeeHiredOn('2026-09-10');
+
+    $balance = app(LeaveBalanceService::class)->forEmployee($employee, Carbon::parse('2026-10-05'));
+
+    expect($balance['monthly_quota'])->toBe(1.0)
+        ->and($balance['monthly_remaining'])->toBe(1.0)
+        ->and($balance['annual_quota'])->toBe(1.0);
 });
 
 test('annual leave approval is blocked when exceeding pro rata quota', function () {
@@ -125,7 +148,7 @@ test('annual leave approval is blocked when exceeding pro rata quota', function 
         Carbon::parse('2026-08-18'),
     );
 
-    expect($allowance)->toBe(2.0);
+    expect($allowance)->toBe(1.0);
 
     expect(fn () => app(\App\Services\LeaveApprovalService::class)->approve(
         $pending,

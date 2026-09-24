@@ -43,7 +43,7 @@ class StoreEmployeeOvertimeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'work_date' => ['required', 'date'],
+            'work_date' => ['required', 'date', 'after_or_equal:today'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'rate_multiplier' => ['required', 'numeric', 'in:1.5,2.0,3.0'],
@@ -56,6 +56,7 @@ class StoreEmployeeOvertimeRequest extends FormRequest
     {
         return array_merge(OvertimeReasonRules::messages(), [
             'work_date.required' => 'Vui lòng chọn ngày tăng ca.',
+            'work_date.after_or_equal' => 'Ngày tăng ca phải từ hôm nay trở đi, không được chọn ngày trong quá khứ.',
             'start_time.required' => 'Vui lòng nhập giờ bắt đầu.',
             'end_time.required' => 'Vui lòng nhập giờ kết thúc.',
             'end_time.after' => 'Giờ kết thúc phải lớn hơn giờ bắt đầu.',

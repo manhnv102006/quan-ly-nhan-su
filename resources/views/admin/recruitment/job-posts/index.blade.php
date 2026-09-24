@@ -2,6 +2,8 @@
     @php
         $showForm = ($showCreateForm ?? false) || ($showEditForm ?? false);
         $formJobPost = ($showEditForm ?? false) ? ($editingJobPost ?? null) : null;
+        $staffPositionId = ($positions ?? collect())->firstWhere('position_name', 'Nhân viên')?->id;
+        $selectedPositionId = (string) old('position_id', $formJobPost?->position_id ?? $staffPositionId);
         $formAction = ($showEditForm ?? false) && $formJobPost
             ? route('admin.recruitment.job-posts.update', $formJobPost)
             : route('admin.recruitment.job-posts.store');
@@ -145,15 +147,14 @@
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">Chức vụ</label>
                         <select name="position_id" class="{{ $inputClass }}">
-                            <option value="">Chưa gắn chức vụ</option>
                             @foreach (($positions ?? collect()) as $position)
-                                <option value="{{ $position->id }}" @selected((string) old('position_id', $formJobPost?->position_id) === (string) $position->id)>
+                                <option value="{{ $position->id }}" @selected($selectedPositionId === (string) $position->id)>
                                     {{ $position->position_name }}
                                 </option>
                             @endforeach
                         </select>
                         @error('position_id')<p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>@enderror
-                        <p class="mt-2 text-xs text-slate-500">Khi chuyển ứng viên thành nhân viên, chức vụ sẽ lấy từ tin tuyển dụng này.</p>
+                        <p class="mt-2 text-xs text-slate-500">Mặc định là Nhân viên. Đổi chức vụ khác khi cần, trước khi chuyển ứng viên thành nhân viên.</p>
                     </div>
 
                     <div>

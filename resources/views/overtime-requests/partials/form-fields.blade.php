@@ -25,6 +25,7 @@
 <div class="col-md-4">
     <label for="work_date" class="form-label fw-semibold">Ngày</label>
     <input type="date" id="work_date" name="work_date" class="form-control @error('work_date') is-invalid @enderror"
+           min="{{ now()->format('Y-m-d') }}"
            value="{{ old('work_date', optional($model?->work_date)->format('Y-m-d')) }}" required>
     @error('work_date')
         <div class="invalid-feedback">{{ $message }}</div>

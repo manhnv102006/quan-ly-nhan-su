@@ -17,7 +17,6 @@ class EmployeeRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'employee_code' => strtoupper(trim((string) $this->input('employee_code', ''))),
             'full_name' => trim((string) $this->input('full_name', '')),
             'email' => strtolower(trim((string) $this->input('email', ''))),
             'phone' => preg_replace('/\s+/', '', (string) $this->input('phone', '')),
@@ -31,13 +30,6 @@ class EmployeeRequest extends FormRequest
         $employeeId = $this->route('employee')?->id;
 
         return array_merge([
-            'employee_code' => [
-                'required',
-                'string',
-                'max:20',
-                'regex:/^[A-Z0-9_-]+$/',
-                Rule::unique('employees', 'employee_code')->ignore($employeeId),
-            ],
             'full_name' => ['required', 'string', 'min:2', 'max:100'],
             'gender' => ['required', Rule::in(['male', 'female', 'other'])],
             'date_of_birth' => ['required', 'date', 'before:today', 'before_or_equal:'.now()->subYears(16)->toDateString()],
@@ -85,11 +77,6 @@ class EmployeeRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'employee_code.required' => 'Vui lòng nhập mã nhân viên.',
-            'employee_code.max' => 'Mã nhân viên không được vượt quá 20 ký tự.',
-            'employee_code.regex' => 'Mã nhân viên chỉ được chứa chữ cái, số, dấu gạch ngang hoặc gạch dưới.',
-            'employee_code.unique' => 'Mã nhân viên đã tồn tại trong hệ thống.',
-
             'full_name.required' => 'Vui lòng nhập họ và tên.',
             'full_name.min' => 'Họ và tên phải có ít nhất 2 ký tự.',
             'full_name.max' => 'Họ và tên không được vượt quá 100 ký tự.',

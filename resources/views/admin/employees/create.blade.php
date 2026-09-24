@@ -26,11 +26,10 @@
                 @csrf
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Mã nhân viên <span class="text-rose-500">*</span></label>
-                    <input type="text" name="employee_code" value="{{ old('employee_code') }}" required
-                           maxlength="20" pattern="[A-Za-z0-9_-]+" placeholder="VD: EMP001"
-                           class="mt-1 w-full rounded-xl border px-4 py-3 text-slate-800 text-sm @error('employee_code') border-rose-400 @else border-slate-200 @enderror">
-                    @error('employee_code') <span class="mt-1 block text-red-600 text-xs">{{ $message }}</span> @enderror
+                    <label class="block text-sm font-medium text-slate-700">Mã nhân viên</label>
+                    <input type="text" id="employee-code-preview" value="Chọn phòng ban để cấp mã" readonly
+                           class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 text-sm font-mono">
+                    <p class="mt-1 text-xs text-slate-500">Mã tự tăng theo phòng ban, ví dụ phòng Công nghệ Thông tin: CNTT001, CNTT002.</p>
                 </div>
 
                 <div>
@@ -152,5 +151,26 @@
         </div>
 
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const department = document.querySelector('select[name="department_id"]');
+            const preview = document.getElementById('employee-code-preview');
+            if (!department || !preview) return;
+
+            const refresh = async () => {
+                if (!department.value) {
+                    preview.value = 'Chọn phòng ban để cấp mã';
+                    return;
+                }
+                const response = await fetch(`{{ route('admin.employees.next-code') }}?department_id=${department.value}`);
+                const data = await response.json();
+                preview.value = data.code || 'Không cấp được mã';
+            };
+
+            department.addEventListener('change', refresh);
+            refresh();
+        });
+    </script>
 
 </x-admin-layout>
