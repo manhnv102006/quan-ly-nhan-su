@@ -31,6 +31,16 @@ class LeaveCancellationService
         $today = ($today ?? now())->copy()->startOfDay();
 
         if ($leaveRequest->status === LeaveRequest::STATUS_PENDING) {
+            if ($this->leaveHasStarted($leaveRequest, $today)) {
+                return $this->planResult(
+                    'blocked',
+                    'Đơn đã đến ngày nghỉ, không thể hủy.',
+                    0.0,
+                    (float) $leaveRequest->total_days,
+                    null,
+                );
+            }
+
             return $this->planResult(
                 'full',
                 'Hủy đơn đang chờ duyệt. Toàn bộ số ngày đang giữ chỗ được hoàn lại.',
@@ -55,47 +65,31 @@ class LeaveCancellationService
             $workingDays,
             fn (string $day) => Carbon::parse($day)->startOfDay()->lte($today),
         ));
-        $remaining = array_values(array_filter(
-            $workingDays,
-            fn (string $day) => Carbon::parse($day)->startOfDay()->gt($today),
-        ));
 
-        if ($remaining === []) {
+        if ($consumed !== []) {
             return $this->planResult(
                 'blocked',
-                'Đơn đã nghỉ hết hoặc ngày nghỉ đã qua, không thể hủy để hoàn số dư.',
+                'Bạn đã nghỉ rồi, không thể hủy đơn này.',
                 0.0,
                 $this->daysForDates($leaveRequest, $consumed),
                 null,
             );
         }
 
-        if ($consumed === []) {
-            return $this->planResult(
-                'full',
-                'Hủy đơn đã duyệt trước ngày nghỉ. Toàn bộ số ngày được hoàn vào số dư.',
-                (float) $leaveRequest->total_days,
-                0.0,
-                null,
-            );
-        }
-
-        $keptDays = min((float) $leaveRequest->total_days, $this->daysForDates($leaveRequest, $consumed));
-        $refundedDays = max(0.0, (float) $leaveRequest->total_days - $keptDays);
-        $newEnd = $consumed[array_key_last($consumed)];
-
         return $this->planResult(
-            'partial',
-            sprintf(
-                'Đã nghỉ một phần. Giữ %s đã nghỉ đến %s và hoàn %s chưa nghỉ vào số dư.',
-                $this->formatDays($keptDays),
-                Carbon::parse($newEnd)->format('d/m/Y'),
-                $this->formatDays($refundedDays),
-            ),
-            $refundedDays,
-            $keptDays,
-            $newEnd,
+            'full',
+            'Hủy đơn đã duyệt trước ngày nghỉ. Toàn bộ số ngày được hoàn vào số dư.',
+            (float) $leaveRequest->total_days,
+            0.0,
+            null,
         );
+    }
+
+    private function leaveHasStarted(LeaveRequest $leaveRequest, Carbon $today): bool
+    {
+        $start = Carbon::parse($leaveRequest->start_date)->startOfDay();
+
+        return $start->lte($today);
     }
 
     public function canCancel(LeaveRequest $leaveRequest, ?Carbon $today = null): bool

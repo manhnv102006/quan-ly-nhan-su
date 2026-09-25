@@ -93,7 +93,7 @@ test('employee cancels an approved leave before it starts and the balance is ref
         ->and($balance['annual_used'])->toBe(0.0);
 });
 
-test('employee cancels the unused part of an approved leave and only that part is refunded', function () {
+test('employee cannot cancel an approved leave after it has started', function () {
     $leave = makeLeave($this->employee, [
         'start_date' => '2026-09-22',
         'end_date' => '2026-09-25',
@@ -102,59 +102,33 @@ test('employee cancels the unused part of an approved leave and only that part i
         'approved_at' => '2026-09-20 08:00:00',
     ]);
 
-    $carry = LeaveCarryOver::create([
-        'employee_id' => $this->employee->id,
-        'source_year' => 2025,
-        'target_year' => 2026,
-        'days' => 2,
-        'days_used' => 0,
-        'expires_at' => '2026-04-30',
-        'status' => 'exhausted',
-    ]);
-    $carry->update(['days_used' => 2, 'status' => 'exhausted']);
+    $this->actingAs($this->user)
+        ->from(route('employee.leave-requests.show', $leave))
+        ->post(route('employee.leave-requests.cancel', $leave))
+        ->assertRedirect(route('employee.leave-requests.show', $leave))
+        ->assertSessionHasErrors('leave_request');
 
-    $this->actingAs($this->user)->post(route('employee.leave-requests.cancel', $leave))
-        ->assertRedirect();
-
-    $fresh = $leave->fresh();
-    $balance = app(LeaveBalanceService::class)->forEmployee($this->employee);
-
-    expect($fresh->status)->toBe(LeaveRequest::STATUS_APPROVED)
-        ->and($fresh->end_date->toDateString())->toBe('2026-09-24')
-        ->and($fresh->total_days)->toBe(3.0)
-        ->and($balance['annual_used'])->toBe(3.0)
-        ->and($carry->fresh()->days_used)->toBe(2.0);
+    expect($leave->fresh()->status)->toBe(LeaveRequest::STATUS_APPROVED)
+        ->and($leave->fresh()->end_date->toDateString())->toBe('2026-09-25')
+        ->and($leave->fresh()->total_days)->toBe(4.0);
 });
 
-test('partial cancel refunds carry-over days that were not yet taken', function () {
-    Carbon::setTestNow('2026-02-11');
-
+test('employee cannot cancel a pending leave whose start date has arrived', function () {
     $leave = makeLeave($this->employee, [
-        'start_date' => '2026-02-10',
-        'end_date' => '2026-02-13',
-        'total_days' => 4,
-        'status' => LeaveRequest::STATUS_APPROVED,
-        'approved_at' => '2026-02-01 08:00:00',
+        'start_date' => '2026-09-24',
+        'end_date' => '2026-09-25',
+        'total_days' => 2,
+        'status' => LeaveRequest::STATUS_PENDING,
     ]);
 
-    $carry = LeaveCarryOver::create([
-        'employee_id' => $this->employee->id,
-        'source_year' => 2025,
-        'target_year' => 2026,
-        'days' => 3,
-        'days_used' => 0,
-        'expires_at' => '2026-04-30',
-        'status' => 'active',
-    ]);
-    app(LeaveCarryOverService::class)->consumeForApprovedLeave($leave->fresh(['employee']));
-    expect($carry->fresh()->days_used)->toBe(3.0);
+    $this->actingAs($this->user)
+        ->from(route('employee.leave-requests'))
+        ->post(route('employee.leave-requests.cancel', $leave))
+        ->assertRedirect(route('employee.leave-requests'))
+        ->assertSessionHasErrors('leave_request');
 
-    $this->actingAs($this->user)->post(route('employee.leave-requests.cancel', $leave));
-
-    expect($leave->fresh()->total_days)->toBe(2.0)
-        ->and($leave->fresh()->end_date->toDateString())->toBe('2026-02-11')
-        ->and($carry->fresh()->days_used)->toBe(2.0)
-        ->and($carry->fresh()->status)->toBe('active');
+    expect($leave->fresh()->status)->toBe(LeaveRequest::STATUS_PENDING)
+        ->and($leave->fresh()->total_days)->toBe(2.0);
 });
 
 test('employee cannot cancel an approved leave that is already fully taken', function () {
