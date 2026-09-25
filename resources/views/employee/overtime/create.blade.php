@@ -41,7 +41,7 @@
 
         {{-- Form --}}
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
-            <form method="POST" action="{{ route('employee.overtime-requests.store') }}" class="space-y-5">
+            <form id="overtime-request-form" method="POST" action="{{ route('employee.overtime-requests.store') }}" class="space-y-5">
                 @csrf
 
                 <div>
@@ -127,6 +127,40 @@
         </div>
     </div>
 
+    <div id="overtime-confirm-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="overtime-confirm-title">
+        <div class="w-full max-w-md rounded-3xl border border-amber-100 bg-white p-6 shadow-xl">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h3 id="overtime-confirm-title" class="mt-4 text-lg font-bold text-slate-800">Xác nhận tăng ca</h3>
+            <p class="mt-1 text-sm text-slate-500">Bạn có muốn gửi đơn tăng ca với khung giờ này không?</p>
+            <dl class="mt-4 space-y-2.5 rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-sm">
+                <div class="flex items-center justify-between gap-3">
+                    <dt class="text-slate-500">Ngày</dt>
+                    <dd id="overtime-confirm-date" class="font-semibold text-slate-800">—</dd>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                    <dt class="text-slate-500">Khung giờ</dt>
+                    <dd id="overtime-confirm-time" class="font-semibold text-slate-800">—</dd>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                    <dt class="text-slate-500">Thời lượng</dt>
+                    <dd id="overtime-confirm-hours" class="font-semibold text-amber-700">—</dd>
+                </div>
+            </dl>
+            <div class="mt-5 flex gap-3">
+                <button type="button" id="overtime-confirm-cancel" class="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-200">
+                    Không gửi
+                </button>
+                <button type="button" id="overtime-confirm-ok" class="flex-1 rounded-xl bg-amber-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-amber-500/20 transition hover:bg-amber-700">
+                    Xác nhận tăng ca
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const startInput = document.querySelector('input[name="start_time"]');
         const endInput   = document.querySelector('input[name="end_time"]');
@@ -153,6 +187,66 @@
         startInput.addEventListener('change', updatePreview);
         endInput.addEventListener('change', updatePreview);
         updatePreview();
+
+        const overtimeForm = document.getElementById('overtime-request-form');
+        const workDateInput = overtimeForm?.querySelector('input[name="work_date"]');
+        const confirmModal = document.getElementById('overtime-confirm-modal');
+        const confirmDate = document.getElementById('overtime-confirm-date');
+        const confirmTime = document.getElementById('overtime-confirm-time');
+        const confirmHours = document.getElementById('overtime-confirm-hours');
+        const confirmCancel = document.getElementById('overtime-confirm-cancel');
+        const confirmOk = document.getElementById('overtime-confirm-ok');
+
+        function formatWorkDate(value) {
+            const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+            return match ? `${match[3]}/${match[2]}/${match[1]}` : (value || '—');
+        }
+
+        function openOvertimeConfirm() {
+            if (!confirmModal) {
+                return;
+            }
+            confirmDate.textContent = formatWorkDate(workDateInput?.value);
+            confirmTime.textContent = `${startInput?.value || '—'} → ${endInput?.value || '—'}`;
+            confirmHours.textContent = hoursVal?.textContent || '—';
+            confirmModal.classList.remove('hidden');
+            confirmModal.classList.add('flex');
+            confirmOk?.focus();
+        }
+
+        function closeOvertimeConfirm() {
+            confirmModal?.classList.add('hidden');
+            confirmModal?.classList.remove('flex');
+        }
+
+        overtimeForm?.addEventListener('submit', function (event) {
+            if (overtimeForm.dataset.confirmedOvertime === '1') {
+                return;
+            }
+
+            event.preventDefault();
+            openOvertimeConfirm();
+        });
+
+        confirmCancel?.addEventListener('click', closeOvertimeConfirm);
+        confirmModal?.addEventListener('click', function (event) {
+            if (event.target === confirmModal) {
+                closeOvertimeConfirm();
+            }
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && confirmModal && !confirmModal.classList.contains('hidden')) {
+                closeOvertimeConfirm();
+            }
+        });
+        confirmOk?.addEventListener('click', function () {
+            if (!overtimeForm) {
+                return;
+            }
+            overtimeForm.dataset.confirmedOvertime = '1';
+            closeOvertimeConfirm();
+            overtimeForm.requestSubmit();
+        });
     </script>
 
 </x-dynamic-component>
