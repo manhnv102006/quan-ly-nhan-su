@@ -48,7 +48,7 @@
                 @endif
             </p>
             <p class="mt-2 text-[11px] leading-relaxed text-sky-800/80">
-                Chỉ tính loại Nghỉ phép. Đơn chờ duyệt chưa trừ hạn mức; muốn hưởng lương vẫn phải nằm trong 1 ngày/tháng.
+                Chỉ tính loại Nghỉ phép. Đơn vừa gửi đã trừ số còn lại; quản lý duyệt thì giữ nguyên, từ chối hoặc hủy thì hoàn lại. Muốn hưởng lương vẫn phải nằm trong 1 ngày/tháng.
                 @if($balance['annual_is_prorated'] ?? false)
                     Hạn mức năm nay cộng dồn <strong>1 ngày/tháng</strong> (pro-rata). {{ \App\Support\LeaveAccrualRules::proRataDescription() }}
                 @endif

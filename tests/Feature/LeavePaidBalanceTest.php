@@ -60,10 +60,10 @@ test('paid leave balance subtracts approved monthly and annual days', function (
     $balance = app(LeaveBalanceService::class)->forEmployee($this->employee, Carbon::parse('2026-08-23'));
 
     expect($balance['monthly_used'])->toBe(0.5)
-        ->and($balance['monthly_remaining'])->toBe(0.5)
+        ->and($balance['monthly_remaining'])->toBe(0.0)
         ->and($balance['monthly_pending'])->toBe(1.0)
         ->and($balance['annual_used'])->toBe(3.0)
-        ->and($balance['annual_remaining'])->toBe(9.0)
+        ->and($balance['annual_remaining'])->toBe(8.0)
         ->and($balance['annual_pending'])->toBe(1.0);
 });
 
@@ -93,4 +93,57 @@ test('bhxh and statutory company leave do not consume the monthly paid quota', f
     expect($balance['monthly_used'])->toBe(0.0)
         ->and($balance['monthly_remaining'])->toBe(1.0)
         ->and($balance['annual_used'])->toBe(0.0);
+});
+
+test('pending paid leave is reserved immediately and restored when rejected', function () {
+    $pending = LeaveRequest::create([
+        'employee_id' => $this->employee->id,
+        'leave_type' => 'annual',
+        'start_date' => '2026-08-20',
+        'end_date' => '2026-08-20',
+        'total_days' => 1,
+        'reason' => 'Chờ duyệt',
+        'status' => LeaveRequest::STATUS_PENDING,
+    ]);
+
+    $reserved = app(LeaveBalanceService::class)->forEmployee($this->employee, Carbon::parse('2026-08-23'));
+
+    expect($reserved['monthly_remaining'])->toBe(0.0)
+        ->and($reserved['annual_remaining'])->toBe(11.0)
+        ->and($reserved['annual_pending'])->toBe(1.0);
+
+    $pending->update(['status' => LeaveRequest::STATUS_REJECTED]);
+
+    $refunded = app(LeaveBalanceService::class)->forEmployee($this->employee, Carbon::parse('2026-08-23'));
+
+    expect($refunded['monthly_remaining'])->toBe(1.0)
+        ->and($refunded['annual_remaining'])->toBe(12.0)
+        ->and($refunded['annual_pending'])->toBe(0.0)
+        ->and($refunded['monthly_used'])->toBe(0.0);
+});
+
+test('approved paid leave keeps the days already reserved at submission', function () {
+    $pending = LeaveRequest::create([
+        'employee_id' => $this->employee->id,
+        'leave_type' => 'annual',
+        'start_date' => '2026-08-20',
+        'end_date' => '2026-08-20',
+        'total_days' => 1,
+        'reason' => 'Chờ duyệt',
+        'status' => LeaveRequest::STATUS_PENDING,
+    ]);
+
+    $reserved = app(LeaveBalanceService::class)->forEmployee($this->employee, Carbon::parse('2026-08-23'));
+    expect($reserved['annual_remaining'])->toBe(11.0)
+        ->and($reserved['monthly_remaining'])->toBe(0.0);
+
+    $pending->update(['status' => LeaveRequest::STATUS_APPROVED]);
+
+    $approved = app(LeaveBalanceService::class)->forEmployee($this->employee, Carbon::parse('2026-08-23'));
+
+    expect($approved['annual_remaining'])->toBe(11.0)
+        ->and($approved['monthly_remaining'])->toBe(0.0)
+        ->and($approved['annual_used'])->toBe(1.0)
+        ->and($approved['annual_pending'])->toBe(0.0)
+        ->and($approved['monthly_used'])->toBe(1.0);
 });

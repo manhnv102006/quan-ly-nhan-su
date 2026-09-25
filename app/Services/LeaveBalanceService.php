@@ -164,6 +164,11 @@ class LeaveBalanceService
         $availability = app(LeaveCarryOverService::class)->annualLeaveAvailability($employee, $year, $asOf);
         $annualDays = self::configuredAnnualLeaveDays();
         $monthlyQuota = $this->monthlyPaidQuotaForEmployee($employee, $asOf);
+        $reserved = $this->reservePendingAnnualDays(
+            $annualPending,
+            $availability['current_year_remaining'],
+            $availability['carried_over_remaining'],
+        );
 
         return [
             'month_label' => $asOf->format('m/Y'),
@@ -171,16 +176,37 @@ class LeaveBalanceService
             'monthly_quota' => $monthlyQuota,
             'monthly_used' => $monthlyUsed,
             'monthly_pending' => $monthlyPending,
-            'monthly_remaining' => max(0.0, $monthlyQuota - $monthlyUsed),
+            'monthly_remaining' => max(0.0, $monthlyQuota - $monthlyUsed - $monthlyPending),
             'annual_quota' => $availability['annual_quota'],
             'annual_used' => $availability['annual_used'],
             'annual_pending' => $annualPending,
-            'annual_remaining' => $availability['total_remaining'],
-            'current_year_remaining' => $availability['current_year_remaining'],
+            'annual_remaining' => $reserved['total_remaining'],
+            'current_year_remaining' => $reserved['current_year_remaining'],
             'carried_over' => $availability['carried_over'],
-            'carried_over_remaining' => $availability['carried_over_remaining'],
+            'carried_over_remaining' => $reserved['carried_over_remaining'],
             'total_annual_allowance' => $availability['total_allowance'],
             'annual_is_prorated' => $availability['annual_quota'] < $annualDays,
+        ];
+    }
+
+    /**
+     * Đơn chờ duyệt giữ chỗ ngay: phép chuyển năm dùng trước, phần còn lại trừ phép năm hiện tại.
+     * Từ chối hoặc hủy đơn thì đơn không còn pending nên số ngày được hoàn.
+     *
+     * @return array{current_year_remaining: float, carried_over_remaining: float, total_remaining: float}
+     */
+    private function reservePendingAnnualDays(float $pending, float $currentYearRemaining, float $carriedOverRemaining): array
+    {
+        $fromCarry = min($pending, max(0.0, $carriedOverRemaining));
+        $fromCurrentYear = min(max(0.0, $pending - $fromCarry), max(0.0, $currentYearRemaining));
+
+        $carriedRemaining = max(0.0, $carriedOverRemaining - $fromCarry);
+        $currentRemaining = max(0.0, $currentYearRemaining - $fromCurrentYear);
+
+        return [
+            'current_year_remaining' => $currentRemaining,
+            'carried_over_remaining' => $carriedRemaining,
+            'total_remaining' => $currentRemaining + $carriedRemaining,
         ];
     }
 
