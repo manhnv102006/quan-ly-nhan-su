@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Contract;
 use App\Models\ContractExtension;
+use App\Models\ContractSuspension;
 use App\Models\ContractTermination;
 use App\Models\ContractType;
 use App\Models\Employee;
@@ -314,10 +315,96 @@ class ContractService
         });
     }
 
+    public function suspend(Contract $contract, array $data, ?int $performedBy = null): Contract
+    {
+        if (! $contract->canBeSuspended()) {
+            throw ValidationException::withMessages([
+                'contract' => 'Chỉ tạm hoãn được hợp đồng đang còn hiệu lực.',
+            ]);
+        }
+
+        if ($contract->openSuspension()) {
+            throw ValidationException::withMessages([
+                'contract' => 'Hợp đồng đang có một lần tạm hoãn chưa kết thúc.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($contract, $data, $performedBy) {
+            $contract->update(['status' => Contract::STATUS_SUSPENDED]);
+
+            ContractSuspension::create([
+                'contract_id' => $contract->id,
+                'reason' => $data['reason'],
+                'start_date' => $data['start_date'],
+                'expected_end_date' => $data['expected_end_date'],
+                'note' => $data['note'] ?? null,
+                'performed_by' => $performedBy,
+            ]);
+
+            $this->historyService->logSuspend(
+                $contract->refresh(),
+                $data['reason'],
+                $performedBy,
+                $data['note'] ?? null,
+            );
+
+            return $contract;
+        });
+    }
+
+    public function resume(Contract $contract, array $data, ?int $performedBy = null): Contract
+    {
+        if (! $contract->canBeResumed()) {
+            throw ValidationException::withMessages([
+                'contract' => 'Chỉ tiếp tục được hợp đồng đang tạm hoãn.',
+            ]);
+        }
+
+        $suspension = $contract->openSuspension();
+
+        if (! $suspension) {
+            throw ValidationException::withMessages([
+                'contract' => 'Không tìm thấy lần tạm hoãn đang mở.',
+            ]);
+        }
+
+        $resumeDate = Carbon::parse($data['resume_date'])->startOfDay();
+        $suspendStart = $suspension->start_date->copy()->startOfDay();
+
+        if ($resumeDate->lt($suspendStart)) {
+            throw ValidationException::withMessages([
+                'resume_date' => 'Ngày tiếp tục phải từ ngày bắt đầu tạm hoãn trở đi.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($contract, $data, $performedBy, $suspension, $resumeDate, $suspendStart) {
+            $pausedDays = (int) $suspendStart->diffInDays($resumeDate, true);
+            $endDate = $contract->end_date?->copy();
+
+            if ($endDate) {
+                $endDate = $endDate->addDays($pausedDays);
+            }
+
+            $contract->update([
+                'status' => Contract::STATUS_ACTIVE,
+                'end_date' => $endDate,
+            ]);
+
+            $suspension->update([
+                'resumed_at' => $resumeDate->toDateString(),
+                'note' => $data['note'] ?? $suspension->note,
+            ]);
+
+            $this->historyService->logResume($contract->refresh(), $performedBy, $data['note'] ?? null);
+
+            return $contract;
+        });
+    }
+
     public function terminate(Contract $contract, array $data, ?int $performedBy = null): Contract
     {
-        if (! $contract->isCancellable()) {
-            throw ValidationException::withMessages(['contract' => 'Chỉ chấm dứt được hợp đồng Draft hoặc Active.']);
+        if (! $contract->isCancellable() && ! $contract->canBeResumed()) {
+            throw ValidationException::withMessages(['contract' => 'Chỉ chấm dứt được hợp đồng Draft, Active hoặc đang tạm hoãn.']);
         }
 
         return DB::transaction(function () use ($contract, $data, $performedBy) {
@@ -534,14 +621,14 @@ class ContractService
             ]);
         }
 
-        $hasActiveContract = Contract::query()
+        $hasBlockingContract = Contract::query()
             ->forEmployee($employee->id)
-            ->active()
+            ->whereIn('status', [Contract::STATUS_ACTIVE, Contract::STATUS_SUSPENDED])
             ->exists();
 
-        if ($hasActiveContract) {
+        if ($hasBlockingContract) {
             throw ValidationException::withMessages([
-                'employee_id' => 'Nhân viên đã có hợp đồng hiệu lực, vui lòng gia hạn/chuyển loại thay vì tạo mới',
+                'employee_id' => 'Nhân viên đã có hợp đồng hiệu lực hoặc đang tạm hoãn, vui lòng gia hạn/chuyển loại/tiếp tục thay vì tạo mới',
             ]);
         }
     }

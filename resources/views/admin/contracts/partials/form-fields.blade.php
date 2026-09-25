@@ -143,7 +143,12 @@
     <div>
         <label for="start_date" class="admin-label">Ngày bắt đầu *</label>
         <input type="date" id="start_date" name="start_date" class="admin-field" data-start-date
-               value="{{ old('start_date', $isEdit ? $contract->start_date?->format('Y-m-d') : now()->format('Y-m-d')) }}" required>
+               value="{{ old('start_date', $isEdit ? $contract->start_date?->format('Y-m-d') : now()->format('Y-m-d')) }}"
+               @unless($isEdit) min="{{ now()->format('Y-m-d') }}" @endunless
+               required>
+        @unless($isEdit)
+            <p class="mt-1 text-[11px] text-slate-400">Chỉ được chọn từ hôm nay trở đi.</p>
+        @endunless
         @error('start_date')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
     </div>
 

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ContractCancelRequest;
 use App\Http\Requests\ContractConvertRequest;
+use App\Http\Requests\ContractResumeRequest;
+use App\Http\Requests\ContractSuspendRequest;
 use App\Http\Requests\ContractTerminateRequest;
 use App\Http\Requests\ContractExtendRequest;
 use App\Http\Requests\ContractStoreRequest;
@@ -172,7 +174,7 @@ class ContractController extends Controller
     public function show(int $id): View
     {
         $contract = Contract::withTrashed()
-            ->with(['employee.department', 'employee.position', 'department', 'position', 'contractType', 'creator', 'extensions', 'terminations', 'previousContract'])
+            ->with(['employee.department', 'employee.position', 'department', 'position', 'contractType', 'creator', 'extensions', 'terminations', 'suspensions', 'previousContract'])
             ->findOrFail($id);
 
         $history = Contract::withTrashed()
@@ -317,6 +319,24 @@ class ContractController extends Controller
                 $newContract->id,
                 $newContract->contract_code,
             ));
+    }
+
+    public function suspend(ContractSuspendRequest $request, Contract $contract): RedirectResponse
+    {
+        $this->service->suspend($contract, $request->validated(), $request->user()?->id);
+
+        return redirect()
+            ->route('admin.contracts.show', $contract)
+            ->with('success', 'Đã tạm hoãn hợp đồng.');
+    }
+
+    public function resume(ContractResumeRequest $request, Contract $contract): RedirectResponse
+    {
+        $this->service->resume($contract, $request->validated(), $request->user()?->id);
+
+        return redirect()
+            ->route('admin.contracts.show', $contract)
+            ->with('success', 'Đã tiếp tục hợp đồng. Thời hạn được cộng thêm số ngày đã tạm hoãn.');
     }
 
     public function terminate(ContractTerminateRequest $request, Contract $contract): RedirectResponse

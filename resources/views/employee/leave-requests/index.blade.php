@@ -18,12 +18,14 @@
         'pending' => 'Chờ duyệt',
         'approved' => 'Đã duyệt',
         'rejected' => 'Từ chối',
+        'cancelled' => 'Đã hủy',
     ];
 
     $statusClasses = [
         'pending' => 'bg-amber-50 text-amber-700 border-amber-100',
         'approved' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
         'rejected' => 'bg-rose-50 text-rose-700 border-rose-100',
+        'cancelled' => 'bg-slate-100 text-slate-600 border-slate-200',
     ];
 @endphp
 
@@ -35,7 +37,21 @@
 
         @include('employee.partials.leave-request-rules')
 
-        @if (session('success'))
+        @if ($errors->any())
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800">
+                {{ $errors->first() }}
+            </div>
+        @endif
+
+        @if (session('leave_paid_shortfall') && session('success'))
+            <div class="flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 shadow-sm" role="alert">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 font-black">!</div>
+                <div>
+                    <p class="text-sm font-bold text-amber-950">Đơn vượt số ngày hưởng lương</p>
+                    <p class="mt-1 text-sm font-medium leading-relaxed text-amber-900">{{ session('success') }}</p>
+                </div>
+            </div>
+        @elseif (session('success'))
             <div id="success-toast" class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 shadow-sm rounded-2xl px-5 py-4">
                 <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
                     <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,10 +145,22 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <a href="{{ route('employee.leave-requests.show', $request) }}"
-                                       class="inline-flex items-center px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-100 text-xs font-semibold hover:bg-sky-100 transition">
-                                        Chi tiết
-                                    </a>
+                                    <div class="inline-flex items-center gap-2">
+                                        <a href="{{ route('employee.leave-requests.show', $request) }}"
+                                           class="inline-flex items-center px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-100 text-xs font-semibold hover:bg-sky-100 transition">
+                                            Chi tiết
+                                        </a>
+                                        @if(app(\App\Services\LeaveCancellationService::class)->canCancel($request))
+                                            <form method="POST" action="{{ route('employee.leave-requests.cancel', $request) }}"
+                                                  onsubmit="return confirm('Xác nhận hủy đơn nghỉ phép? Số ngày chưa nghỉ sẽ được hoàn vào số dư.');">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="inline-flex items-center px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-100 text-xs font-semibold hover:bg-rose-100 transition">
+                                                    Hủy
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty

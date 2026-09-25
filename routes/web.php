@@ -236,6 +236,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/contracts/{contract}/extend', [ContractController::class, 'extendStore'])->name('contracts.extend');
     Route::post('/contracts/{contract}/cancel', [ContractController::class, 'cancel'])->name('contracts.cancel');
     Route::post('/contracts/{contract}/terminate', [ContractController::class, 'terminate'])->name('contracts.terminate');
+    Route::post('/contracts/{contract}/suspend', [ContractController::class, 'suspend'])->name('contracts.suspend');
+    Route::post('/contracts/{contract}/resume', [ContractController::class, 'resume'])->name('contracts.resume');
     Route::get('/contracts/{contract}/convert', [ContractController::class, 'convertForm'])->name('contracts.convert.form');
     Route::post('/contracts/{contract}/convert', [ContractController::class, 'convertStore'])->name('contracts.convert');
     Route::post('/contracts/{contract}/activate', [ContractController::class, 'activate'])->name('contracts.activate');
@@ -415,9 +417,11 @@ Route::middleware(['auth', 'verified', 'role:employee,manager,accountant'])->gro
 Route::middleware(['auth', 'verified', 'role:employee,manager,admin,accountant'])->group(function () {
     Route::get('/employee/leave-requests', [EmployeeLeaveController::class, 'index'])->name('employee.leave-requests');
     Route::get('/employee/leave-requests/create', [EmployeeLeaveController::class, 'create'])->name('employee.leave-requests.create');
+    Route::get('/employee/leave-requests/paid-balance-preview', [EmployeeLeaveController::class, 'paidBalancePreview'])->name('employee.leave-requests.paid-balance-preview');
     Route::get('/employee/leave-requests/{leaveRequest}', [EmployeeLeaveController::class, 'show'])->name('employee.leave-requests.show');
     Route::get('/employee/leave-requests/{leaveRequest}/document', [EmployeeLeaveController::class, 'downloadDocument'])->name('employee.leave-requests.document');
     Route::post('/employee/leave-requests', [EmployeeLeaveController::class, 'store'])->name('employee.leave-requests.store');
+    Route::post('/employee/leave-requests/{leaveRequest}/cancel', [EmployeeLeaveController::class, 'cancel'])->name('employee.leave-requests.cancel');
     Route::get('/employee/payrolls', [EmployeePayrollController::class, 'index'])->name('employee.payrolls.index');
     Route::get('/employee/payrolls/{payroll}/pdf', [EmployeePayrollController::class, 'exportPdf'])->name('employee.payrolls.pdf');
     Route::get('/employee/payrolls/{payroll}', [EmployeePayrollController::class, 'show'])->name('employee.payrolls.show');

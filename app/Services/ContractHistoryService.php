@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Contract;
 use App\Models\ContractHistory;
+use App\Models\ContractSuspension;
 use App\Models\ContractTermination;
 use App\Models\ContractType;
 use App\Models\Department;
@@ -187,6 +188,45 @@ class ContractHistoryService
         return $this->store(
             $contract,
             ContractHistory::ACTION_TERMINATE,
+            $summary,
+            $performedBy,
+            ['note' => $note],
+        );
+    }
+
+    public function logSuspend(Contract $contract, string $reason, ?int $performedBy = null, ?string $note = null): ContractHistory
+    {
+        $reasonLabel = ContractSuspension::REASON_LABELS[$reason] ?? $reason;
+
+        $summary = sprintf(
+            '%s tạm hoãn hợp đồng %s của nhân viên %s (lý do: %s)',
+            $this->performerName($performedBy),
+            $contract->contract_code,
+            $this->employeeName($contract),
+            $reasonLabel,
+        );
+
+        return $this->store(
+            $contract,
+            ContractHistory::ACTION_SUSPEND,
+            $summary,
+            $performedBy,
+            ['note' => $note],
+        );
+    }
+
+    public function logResume(Contract $contract, ?int $performedBy = null, ?string $note = null): ContractHistory
+    {
+        $summary = sprintf(
+            '%s tiếp tục hợp đồng %s của nhân viên %s',
+            $this->performerName($performedBy),
+            $contract->contract_code,
+            $this->employeeName($contract),
+        );
+
+        return $this->store(
+            $contract,
+            ContractHistory::ACTION_RESUME,
             $summary,
             $performedBy,
             ['note' => $note],

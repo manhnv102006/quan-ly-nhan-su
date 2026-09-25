@@ -45,6 +45,9 @@
                             ['label' => 'Ngày bắt đầu', 'value' => optional($contract->start_date)->format('d/m/Y') ?? '—'],
                             ['label' => 'Ngày kết thúc', 'value' => optional($contract->end_date)->format('d/m/Y') ?? 'Không xác định'],
                             ['label' => 'Ngày ký', 'value' => optional($contract->signed_date)->format('d/m/Y') ?? '—'],
+                            ['label' => 'Tạm hoãn', 'value' => $contract->openSuspension()
+                                ? $contract->openSuspension()->reason_label.' · '.$contract->openSuspension()->start_date->format('d/m/Y').' → '.$contract->openSuspension()->expected_end_date->format('d/m/Y')
+                                : '—'],
                             ['label' => 'Lương cơ bản', 'value' => number_format($contract->salary, 0, ',', '.') . '₫'],
                             ['label' => 'Tổng phụ cấp', 'value' => number_format($totalAllowance, 0, ',', '.') . '₫'],
                         ] as $field)
@@ -211,6 +214,50 @@
                                 Chuyển loại (VD: thử việc → chính thức)
                             </a>
 
+                            <details class="rounded-xl border border-amber-100 bg-amber-50/60">
+                                <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-amber-800">
+                                    Tạm hoãn hợp đồng
+                                </summary>
+                                <form method="POST" action="{{ route('admin.contracts.suspend', $contract) }}" class="space-y-3 border-t border-amber-100 px-4 py-4">
+                                    @csrf
+                                    <p class="text-xs leading-5 text-amber-900">
+                                        Trong thời gian tạm hoãn, hợp đồng không tính lương. Khi tiếp tục, ngày kết thúc được cộng thêm số ngày đã hoãn.
+                                    </p>
+                                    <div>
+                                        <label for="suspend_reason" class="admin-label">Lý do tạm hoãn *</label>
+                                        <select id="suspend_reason" name="reason" class="admin-field" required>
+                                            <option value="">— Chọn lý do —</option>
+                                            @foreach(\App\Models\ContractSuspension::REASON_LABELS as $value => $label)
+                                                <option value="{{ $value }}" @selected(old('reason') === $value)>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('reason')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+                                    </div>
+                                    <div>
+                                        <label for="suspend_start_date" class="admin-label">Ngày bắt đầu tạm hoãn *</label>
+                                        <input type="date" id="suspend_start_date" name="start_date" class="admin-field" required
+                                               min="{{ now()->format('Y-m-d') }}"
+                                               value="{{ old('start_date', now()->format('Y-m-d')) }}">
+                                        @error('start_date')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+                                    </div>
+                                    <div>
+                                        <label for="suspend_expected_end_date" class="admin-label">Ngày dự kiến tiếp tục *</label>
+                                        <input type="date" id="suspend_expected_end_date" name="expected_end_date" class="admin-field" required
+                                               value="{{ old('expected_end_date') }}">
+                                        @error('expected_end_date')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+                                    </div>
+                                    <div>
+                                        <label for="suspend_note" class="admin-label">Ghi chú</label>
+                                        <textarea id="suspend_note" name="note" rows="2" class="admin-field">{{ old('note') }}</textarea>
+                                    </div>
+                                    <button type="submit"
+                                            onclick="return confirm('Xác nhận tạm hoãn hợp đồng này?')"
+                                            class="w-full rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700">
+                                        Xác nhận tạm hoãn
+                                    </button>
+                                </form>
+                            </details>
+
                             <details class="rounded-xl border border-rose-100 bg-rose-50/50">
                                 <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-rose-700">
                                     Chấm dứt hợp đồng
@@ -245,6 +292,35 @@
                                 </form>
                             </details>
                         </div>
+                    @elseif($contract->canBeResumed())
+                        @php($openSuspension = $contract->openSuspension())
+                        <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                            <p class="font-semibold">Hợp đồng đang tạm hoãn</p>
+                            @if($openSuspension)
+                                <p class="mt-1">{{ $openSuspension->reason_label }}</p>
+                                <p class="mt-1">Từ {{ $openSuspension->start_date->format('d/m/Y') }} đến dự kiến {{ $openSuspension->expected_end_date->format('d/m/Y') }}.</p>
+                            @endif
+                        </div>
+                        <form method="POST" action="{{ route('admin.contracts.resume', $contract) }}" class="space-y-3">
+                            @csrf
+                            <div>
+                                <label for="resume_date" class="admin-label">Ngày tiếp tục *</label>
+                                <input type="date" id="resume_date" name="resume_date" class="admin-field" required
+                                       max="{{ now()->format('Y-m-d') }}"
+                                       min="{{ $openSuspension?->start_date?->format('Y-m-d') }}"
+                                       value="{{ old('resume_date', now()->format('Y-m-d')) }}">
+                                @error('resume_date')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="resume_note" class="admin-label">Ghi chú</label>
+                                <textarea id="resume_note" name="note" rows="2" class="admin-field">{{ old('note') }}</textarea>
+                            </div>
+                            <button type="submit"
+                                    onclick="return confirm('Tiếp tục hợp đồng và cộng thời hạn theo số ngày đã tạm hoãn?')"
+                                    class="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                                Tiếp tục hợp đồng
+                            </button>
+                        </form>
                     @elseif($contract->isEditable())
                         <p class="text-sm text-slate-500">Hợp đồng chưa hiệu lực — chỉ sửa hoặc kích hoạt.</p>
                     @else

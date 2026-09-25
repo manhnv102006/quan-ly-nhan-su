@@ -22,6 +22,25 @@ class AutoNotificationService
         private AdminNotificationService $notifications,
     ) {}
 
+    public function leavePaidBalanceShortfall(Employee $employee, string $message): void
+    {
+        $this->afterCommit(function () use ($employee, $message) {
+            $userId = $employee->user_id;
+
+            if (! $userId) {
+                return;
+            }
+
+            $this->send(
+                'leave',
+                'Đơn nghỉ vượt số ngày hưởng lương',
+                $message,
+                [$userId],
+                $employee->department_id,
+            );
+        });
+    }
+
     public function leaveSubmitted(LeaveRequest $leaveRequest): void
     {
         $this->afterCommit(function () use ($leaveRequest) {
@@ -91,6 +110,34 @@ class AutoNotificationService
                 $leaveRequest->start_date->format('d/m/Y'),
                 $leaveRequest->end_date->format('d/m/Y'),
             ), [$userId], $leaveRequest->employee?->department_id);
+        });
+    }
+
+    public function leaveCancelled(LeaveRequest $leaveRequest): void
+    {
+        $this->afterCommit(function () use ($leaveRequest) {
+            $leaveRequest->loadMissing('employee.department');
+            $employee = $leaveRequest->employee;
+
+            if (! $employee) {
+                return;
+            }
+
+            $recipients = $this->resolveRecipients(
+                $this->adminUserIds(),
+                [$this->departmentManagerUserId($employee->department_id)],
+            );
+            $recipients = $this->excludeUserIds($recipients, [$employee->user_id]);
+
+            $this->send('leave', 'Nhân viên đã hủy đơn nghỉ phép', sprintf(
+                '%s hủy đơn %s từ %s đến %s (%s ngày, trạng thái %s).',
+                $employee->full_name,
+                $this->leaveTypeLabel($leaveRequest->leave_type),
+                $leaveRequest->start_date->format('d/m/Y'),
+                $leaveRequest->end_date->format('d/m/Y'),
+                $leaveRequest->total_days,
+                $leaveRequest->statusLabel(),
+            ), $recipients, $employee->department_id);
         });
     }
 

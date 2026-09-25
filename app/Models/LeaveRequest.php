@@ -16,6 +16,7 @@ class LeaveRequest extends Model
     public const STATUS_PENDING = 'pending';
     public const STATUS_APPROVED = 'approved';
     public const STATUS_REJECTED = 'rejected';
+    public const STATUS_CANCELLED = 'cancelled';
 
     public const HALF_DAY_MORNING = 'morning';
 
@@ -105,12 +106,14 @@ class LeaveRequest extends Model
         self::STATUS_PENDING => 'Chờ duyệt',
         self::STATUS_APPROVED => 'Đã duyệt',
         self::STATUS_REJECTED => 'Từ chối',
+        self::STATUS_CANCELLED => 'Đã hủy',
     ];
 
     public const STATUS_BADGE_CLASSES = [
         self::STATUS_PENDING => 'text-bg-warning',
         self::STATUS_APPROVED => 'text-bg-success',
         self::STATUS_REJECTED => 'text-bg-danger',
+        self::STATUS_CANCELLED => 'text-bg-secondary',
     ];
 
     /**
@@ -353,7 +356,7 @@ class LeaveRequest extends Model
     {
         return match ($filter) {
             'active' => $query->where('status', self::STATUS_PENDING),
-            'history' => $query->whereIn('status', [self::STATUS_APPROVED, self::STATUS_REJECTED]),
+            'history' => $query->whereIn('status', [self::STATUS_APPROVED, self::STATUS_REJECTED, self::STATUS_CANCELLED]),
             default => $query,
         };
     }

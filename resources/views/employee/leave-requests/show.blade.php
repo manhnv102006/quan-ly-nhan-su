@@ -19,6 +19,18 @@
 
     <div class="space-y-6">
 
+        @if (session('success'))
+            <div class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 shadow-sm rounded-2xl px-5 py-4">
+                <p class="text-sm font-medium text-emerald-800">{{ session('success') }}</p>
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800">
+                {{ $errors->first() }}
+            </div>
+        @endif
+
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-xl font-bold text-slate-800">Chi tiết đơn nghỉ phép</h2>
@@ -74,6 +86,21 @@
                    class="inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs font-semibold text-sky-800 hover:bg-sky-100 transition">
                     Tải xuống: {{ $leaveRequest->document->original_name }}
                 </a>
+            </div>
+        @endif
+
+        @if(($cancellation['mode'] ?? 'blocked') !== 'blocked')
+            <div class="bg-white rounded-3xl border border-amber-100 shadow-sm p-6">
+                <h3 class="text-sm font-bold uppercase text-amber-700 mb-2">Hủy đơn</h3>
+                <p class="text-sm text-slate-600 mb-4">{{ $cancellation['message'] }}</p>
+                <form method="POST" action="{{ route('employee.leave-requests.cancel', $leaveRequest) }}"
+                      onsubmit="return confirm('Xác nhận hủy đơn nghỉ phép? Số ngày chưa nghỉ sẽ được hoàn vào số dư.');">
+                    @csrf
+                    <button type="submit"
+                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 text-white font-semibold text-xs hover:bg-rose-700 transition">
+                        Hủy đơn
+                    </button>
+                </form>
             </div>
         @endif
 

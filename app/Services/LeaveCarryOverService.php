@@ -275,6 +275,100 @@ class LeaveCarryOverService
         });
     }
 
+    /**
+     * Số ngày phép chuyển năm đã bị đơn này chiếm (phép chuyển dùng trước).
+     * Gọi khi đơn vẫn còn approved và total_days chưa đổi.
+     */
+    public function allocatedCarryOverDays(LeaveRequest $leaveRequest): float
+    {
+        if (! in_array($leaveRequest->leave_type, LeaveRequest::annualDeductingLeaveTypes(), true)) {
+            return 0.0;
+        }
+
+        if ($leaveRequest->status !== LeaveRequest::STATUS_APPROVED) {
+            return 0.0;
+        }
+
+        $year = (int) ($leaveRequest->start_date?->year ?? now()->year);
+        $record = $this->lockedCarryOverRecord((int) $leaveRequest->employee_id, $year);
+
+        if (! $record || $leaveRequest->start_date?->gt($record->expires_at)) {
+            return 0.0;
+        }
+
+        $pool = (float) $record->days;
+        $requests = LeaveRequest::query()
+            ->where('employee_id', $leaveRequest->employee_id)
+            ->where('status', LeaveRequest::STATUS_APPROVED)
+            ->whereIn('leave_type', LeaveRequest::annualDeductingLeaveTypes())
+            ->whereYear('start_date', $year)
+            ->whereDate('start_date', '<=', $record->expires_at->toDateString())
+            ->orderBy('approved_at')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($requests as $request) {
+            $take = min((float) $request->total_days, $pool);
+
+            if ($request->id === $leaveRequest->id) {
+                return $take;
+            }
+
+            $pool -= $take;
+        }
+
+        return 0.0;
+    }
+
+    /**
+     * Hoàn phần phép chuyển năm của đơn này khi hủy hết hoặc rút ngắn.
+     * $newTotalDays = 0 khi hủy cả đơn.
+     */
+    public function releaseForReducedLeave(LeaveRequest $leaveRequest, float $newTotalDays): void
+    {
+        $allocated = $this->allocatedCarryOverDays($leaveRequest);
+        $stillFromCarry = min(max(0.0, $newTotalDays), $allocated);
+        $release = $allocated - $stillFromCarry;
+
+        if ($release <= 0) {
+            return;
+        }
+
+        $year = (int) ($leaveRequest->start_date?->year ?? now()->year);
+        $record = $this->lockedCarryOverRecord((int) $leaveRequest->employee_id, $year);
+
+        if (! $record) {
+            return;
+        }
+
+        $record->days_used = max(0.0, (float) $record->days_used - $release);
+
+        if ($record->status !== LeaveCarryOver::STATUS_EXPIRED) {
+            $record->status = $record->remainingDays() <= 0
+                ? LeaveCarryOver::STATUS_EXHAUSTED
+                : LeaveCarryOver::STATUS_ACTIVE;
+        }
+
+        $record->save();
+
+        Log::info('[leave:carry-over] Hoàn phép chuyển do hủy đơn', [
+            'leave_request_id' => $leaveRequest->id,
+            'employee_id' => $leaveRequest->employee_id,
+            'days' => $release,
+            'days_used' => $record->days_used,
+        ]);
+    }
+
+    protected function lockedCarryOverRecord(int $employeeId, int $year): ?LeaveCarryOver
+    {
+        return LeaveCarryOver::query()
+            ->where('employee_id', $employeeId)
+            ->where('target_year', $year)
+            ->lockForUpdate()
+            ->orderByDesc('source_year')
+            ->first();
+    }
+
     protected function markExpired(LeaveCarryOver $record): void
     {
         if ($record->status === LeaveCarryOver::STATUS_ACTIVE) {

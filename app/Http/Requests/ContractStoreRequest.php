@@ -98,6 +98,7 @@ class ContractStoreRequest extends FormRequest
         return [
             'department_id.required' => 'Nhân viên chưa có phòng ban trong hồ sơ. Vui lòng cập nhật hồ sơ nhân viên trước.',
             'position_id.required' => 'Nhân viên chưa có chức vụ trong hồ sơ. Vui lòng cập nhật hồ sơ nhân viên trước.',
+            'start_date.after_or_equal' => 'Ngày bắt đầu không được là ngày trong quá khứ.',
             'contract_file.required' => 'Vui lòng tải file hợp đồng PDF.',
             'contract_file.file' => 'Tệp hợp đồng không hợp lệ.',
             'contract_file.mimes' => 'Chỉ được tải file PDF.',
@@ -114,7 +115,7 @@ class ContractStoreRequest extends FormRequest
             'department_id' => ['required', 'exists:departments,id'],
             'position_id' => ['required', 'exists:positions,id'],
             'contract_code' => ['nullable', 'string', 'max:50', Rule::unique('contracts', 'contract_code')],
-            'start_date' => ['required', 'date'],
+            'start_date' => ['required', 'date', 'after_or_equal:today'],
             'end_date' => ['nullable', 'date', 'after:start_date'],
             'salary' => ['required', 'numeric', 'min:1'],
             'allowances' => ['nullable', 'array'],
@@ -139,15 +140,15 @@ class ContractStoreRequest extends FormRequest
                 return;
             }
 
-            $hasActiveContract = Contract::query()
+            $hasBlockingContract = Contract::query()
                 ->forEmployee($employee->id)
-                ->where('status', Contract::STATUS_ACTIVE)
+                ->whereIn('status', [Contract::STATUS_ACTIVE, Contract::STATUS_SUSPENDED])
                 ->exists();
 
-            if ($hasActiveContract) {
+            if ($hasBlockingContract) {
                 $v->errors()->add(
                     'employee_id',
-                    'Nhân viên đã có hợp đồng hiệu lực, vui lòng gia hạn/chuyển loại thay vì tạo mới'
+                    'Nhân viên đã có hợp đồng hiệu lực hoặc đang tạm hoãn, vui lòng gia hạn/chuyển loại/tiếp tục thay vì tạo mới'
                 );
                 return;
             }

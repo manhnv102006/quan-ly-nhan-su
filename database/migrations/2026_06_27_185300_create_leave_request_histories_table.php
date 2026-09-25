@@ -12,7 +12,7 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->unsignedBigInteger('leave_request_id');
             $table->unsignedBigInteger('actor_id')->nullable();
-            $table->enum('action', ['submitted', 'approved', 'rejected']);
+            $table->enum('action', ['submitted', 'approved', 'rejected', 'cancelled']);
             $table->text('note')->nullable();
             $table->timestamps();
 

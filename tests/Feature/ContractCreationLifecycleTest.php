@@ -127,6 +127,22 @@ test('sets pending status when start date is in the future', function () {
         ->toBe(Contract::STATUS_PENDING);
 });
 
+test('contract creation rejects a start date in the past', function () {
+    $this->actingAs($this->admin)->post(route('admin.contracts.store'), [
+        'employee_id' => $this->employee->id,
+        'contract_type_id' => $this->fixedType->id,
+        'department_id' => $this->department->id,
+        'position_id' => $this->position->id,
+        'start_date' => now()->subDay()->toDateString(),
+        'signed_date' => now()->subDay()->toDateString(),
+        'salary' => '15.000.000',
+        'contract_code' => 'HD-PAST-001',
+        'contract_file' => UploadedFile::fake()->create('hop-dong.pdf', 100, 'application/pdf'),
+    ])->assertSessionHasErrors('start_date');
+
+    expect(Contract::query()->where('contract_code', 'HD-PAST-001')->exists())->toBeFalse();
+});
+
 test('contract creation accepts only a pdf file', function () {
     Storage::fake('public');
 

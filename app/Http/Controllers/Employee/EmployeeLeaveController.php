@@ -9,6 +9,7 @@ use App\Services\AutoNotificationService;
 use App\Services\DepartmentLeaveCapacityService;
 use App\Services\LeaveApprovalService;
 use App\Services\LeaveBalanceService;
+use App\Services\LeaveCancellationService;
 use App\Services\LeaveRequestDocumentService;
 use App\Services\LeaveTypeQuotaService;
 use App\Support\LeaveDocumentRules;
@@ -26,6 +27,7 @@ class EmployeeLeaveController extends Controller
         private DepartmentLeaveCapacityService $departmentLeaveCapacity,
         private LeaveApprovalService $leaveApprovalService,
         private LeaveBalanceService $leaveBalanceService,
+        private LeaveCancellationService $leaveCancellationService,
         private LeaveRequestDocumentService $leaveRequestDocumentService,
         private LeaveTypeQuotaService $leaveTypeQuota,
     ) {}
@@ -53,7 +55,7 @@ class EmployeeLeaveController extends Controller
         $stats = [
             'total' => (clone $baseQuery)->count(),
             'active' => (clone $baseQuery)->where('status', LeaveRequest::STATUS_PENDING)->count(),
-            'history' => (clone $baseQuery)->whereIn('status', [LeaveRequest::STATUS_APPROVED, LeaveRequest::STATUS_REJECTED])->count(),
+            'history' => (clone $baseQuery)->whereIn('status', [LeaveRequest::STATUS_APPROVED, LeaveRequest::STATUS_REJECTED, LeaveRequest::STATUS_CANCELLED])->count(),
         ];
 
         $leaveRequests = (clone $baseQuery)
@@ -74,8 +76,66 @@ class EmployeeLeaveController extends Controller
         $this->authorize('view', $leaveRequest);
 
         $leaveRequest->load(['approver', 'rejecter', 'histories.actor', 'document']);
+        $cancellation = $this->leaveCancellationService->plan($leaveRequest);
 
-        return view('employee.leave-requests.show', compact('leaveRequest'));
+        return view('employee.leave-requests.show', compact('leaveRequest', 'cancellation'));
+    }
+
+    public function paidBalancePreview(Request $request)
+    {
+        $this->authorize('create', LeaveRequest::class);
+
+        $employee = $this->getEmployee();
+
+        $validated = $request->validate([
+            'leave_type' => ['required', 'string'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+        ]);
+
+        if ($validated['leave_type'] !== 'annual') {
+            return response()->json(['applies' => false]);
+        }
+
+        $start = Carbon::parse($validated['start_date']);
+        $end = Carbon::parse($validated['end_date']);
+        $holidays = \App\Models\Holiday::inRange($start->toDateString(), $end->toDateString())->get();
+        $requestedDays = (float) count($this->leaveBalanceService->workingDayDatesInRange($start, $end, $holidays));
+
+        if ($requestedDays === 0.0) {
+            return response()->json([
+                'applies' => true,
+                'split' => false,
+                'blocked' => false,
+                'message' => null,
+            ]);
+        }
+
+        $plan = $this->leaveBalanceService->planAnnualLeaveSubmission(
+            $employee,
+            $start,
+            $end,
+            $holidays,
+            $requestedDays,
+        );
+
+        $message = null;
+
+        if ($plan['blocked']) {
+            $message = $plan['message'];
+        } elseif ($plan['split']) {
+            $message = $this->paidShortfallMessage($requestedDays, $plan['paid_days'], $plan['unpaid_days'], false);
+        }
+
+        return response()->json([
+            'applies' => true,
+            'requested_days' => $requestedDays,
+            'paid_days' => $plan['paid_days'],
+            'unpaid_days' => $plan['unpaid_days'],
+            'split' => $plan['split'],
+            'blocked' => $plan['blocked'],
+            'message' => $message,
+        ]);
     }
 
     public function create()
@@ -90,6 +150,22 @@ class EmployeeLeaveController extends Controller
             'leaveTypesRequiringDocument' => LeaveDocumentRules::typesRequiringDocument(),
             'leaveDocumentHints' => LeaveDocumentRules::documentHints(),
         ]);
+    }
+
+    public function cancel(LeaveRequest $leaveRequest)
+    {
+        $this->authorize('cancel', $leaveRequest);
+
+        $updated = $this->leaveCancellationService->cancel($leaveRequest, (int) Auth::id());
+        $this->autoNotifications->leaveCancelled($updated);
+
+        $message = $updated->status === LeaveRequest::STATUS_CANCELLED
+            ? 'Đã hủy đơn nghỉ phép. Số ngày chưa nghỉ được hoàn vào số dư.'
+            : 'Đã hủy phần nghỉ còn lại. Số ngày chưa nghỉ được hoàn vào số dư, phần đã nghỉ vẫn được giữ.';
+
+        return redirect()
+            ->route('employee.leave-requests.show', $updated)
+            ->with('success', $message);
     }
 
     public function downloadDocument(LeaveRequest $leaveRequest)
@@ -228,10 +304,11 @@ class EmployeeLeaveController extends Controller
             }, $annualPlan['segments']);
 
             if ($annualPlan['split']) {
-                $splitNotice = sprintf(
-                    'Đã tách đơn: %s nghỉ phép và %s nghỉ không lương do vượt số dư phép năm.',
-                    $this->formatLeaveDays($annualPlan['paid_days']),
-                    $this->formatLeaveDays($annualPlan['unpaid_days']),
+                $splitNotice = $this->paidShortfallMessage(
+                    $totalDays,
+                    $annualPlan['paid_days'],
+                    $annualPlan['unpaid_days'],
+                    true,
                 );
             }
         }
@@ -304,10 +381,30 @@ class EmployeeLeaveController extends Controller
 
             $successMessage = $splitNotice ?? 'Tạo đơn xin nghỉ phép thành công.';
 
+            if ($splitNotice !== null) {
+                $this->autoNotifications->leavePaidBalanceShortfall($employee, $splitNotice);
+            }
+
             return redirect()
                 ->route('employee.leave-requests')
-                ->with('success', $successMessage);
+                ->with('success', $successMessage)
+                ->with('leave_paid_shortfall', $splitNotice !== null);
         });
+    }
+
+    private function paidShortfallMessage(float $requestedDays, float $paidDays, float $unpaidDays, bool $submitted): string
+    {
+        $outcome = $submitted
+            ? 'đã được tách thành đơn nghỉ không lương'
+            : 'sẽ được tách thành đơn nghỉ không lương nếu bạn gửi đơn';
+
+        return sprintf(
+            'Bạn xin nghỉ %s nhưng chỉ còn %s hưởng lương. %s không được hưởng lương và %s.',
+            $this->formatLeaveDays($requestedDays),
+            $this->formatLeaveDays($paidDays),
+            $this->formatLeaveDays($unpaidDays),
+            $outcome,
+        );
     }
 
     private function formatLeaveDays(float $days): string

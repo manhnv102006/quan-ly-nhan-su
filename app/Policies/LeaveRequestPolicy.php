@@ -78,6 +78,21 @@ class LeaveRequestPolicy
         return Response::deny('Bạn không có quyền tạo đơn nghỉ phép.', 403);
     }
 
+    public function cancel(User $user, LeaveRequest $leaveRequest): Response
+    {
+        $leaveRequest->loadMissing('employee');
+
+        if ($leaveRequest->employee?->user_id !== $user->id) {
+            return Response::deny('Bạn chỉ được hủy đơn nghỉ phép của chính mình.', 403);
+        }
+
+        if (! in_array($leaveRequest->status, [LeaveRequest::STATUS_PENDING, LeaveRequest::STATUS_APPROVED], true)) {
+            return Response::deny('Chỉ hủy được đơn đang chờ duyệt hoặc đã duyệt.', 403);
+        }
+
+        return Response::allow();
+    }
+
     public function approve(User $user, LeaveRequest $leaveRequest): Response
     {
         return $this->decideApprovalAccess($user, $leaveRequest, 'duyệt');

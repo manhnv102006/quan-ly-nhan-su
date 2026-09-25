@@ -2,6 +2,8 @@
 
 use App\Models\Employee;
 use App\Models\LeaveRequest;
+use App\Models\Notification;
+use App\Models\NotificationUser;
 use App\Models\Role;
 use App\Models\User;
 use Carbon\Carbon;
@@ -83,7 +85,7 @@ test('B7: annual leave exceeding balance is split into paid and unpaid requests'
     $response->assertRedirect(route('employee.leave-requests'));
     $response->assertSessionHas(
         'success',
-        'Đã tách đơn: 1 ngày nghỉ phép và 2 ngày nghỉ không lương do vượt số dư phép năm.',
+        'Bạn xin nghỉ 3 ngày nhưng chỉ còn 1 ngày hưởng lương. 2 ngày không được hưởng lương và đã được tách thành đơn nghỉ không lương.',
     );
 
     $pending = LeaveRequest::query()
@@ -100,6 +102,42 @@ test('B7: annual leave exceeding balance is split into paid and unpaid requests'
         ->and((float) $pending[1]->total_days)->toBe(2.0)
         ->and($pending[1]->start_date->toDateString())->toBe('2026-10-07')
         ->and($pending[1]->reason)->toContain('Phần vượt số dư phép năm');
+
+    $notification = Notification::query()->where('title', 'Đơn nghỉ vượt số ngày hưởng lương')->first();
+
+    expect($notification)->not->toBeNull()
+        ->and($notification->content)->toContain('2 ngày không được hưởng lương');
+
+    expect(
+        NotificationUser::query()
+            ->where('notification_id', $notification->id)
+            ->where('user_id', $this->user->id)
+            ->exists()
+    )->toBeTrue();
+});
+
+test('B7: annual leave preview warns when requested days exceed paid balance', function () {
+    LeaveRequest::create([
+        'employee_id' => $this->employee->id,
+        'leave_type' => 'annual',
+        'start_date' => '2026-03-02',
+        'end_date' => '2026-03-12',
+        'total_days' => 11,
+        'reason' => 'Phép năm',
+        'status' => LeaveRequest::STATUS_APPROVED,
+    ]);
+
+    $response = $this->actingAs($this->user)->getJson(route('employee.leave-requests.paid-balance-preview', [
+        'leave_type' => 'annual',
+        'start_date' => '2026-10-06',
+        'end_date' => '2026-10-08',
+    ]));
+
+    $response->assertOk()
+        ->assertJsonPath('split', true)
+        ->assertJsonPath('paid_days', 1)
+        ->assertJsonPath('unpaid_days', 2)
+        ->assertJsonPath('message', 'Bạn xin nghỉ 3 ngày nhưng chỉ còn 1 ngày hưởng lương. 2 ngày không được hưởng lương và sẽ được tách thành đơn nghỉ không lương nếu bạn gửi đơn.');
 });
 
 test('B7: annual leave with zero balance is blocked', function () {
@@ -229,7 +267,7 @@ test('B8: pending annual leave causes split when new request exceeds remaining b
     $response->assertSessionHasNoErrors();
     $response->assertSessionHas(
         'success',
-        'Đã tách đơn: 1 ngày nghỉ phép và 2 ngày nghỉ không lương do vượt số dư phép năm.',
+        'Bạn xin nghỉ 3 ngày nhưng chỉ còn 1 ngày hưởng lương. 2 ngày không được hưởng lương và đã được tách thành đơn nghỉ không lương.',
     );
 });
 

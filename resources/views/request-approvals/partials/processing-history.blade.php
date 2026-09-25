@@ -12,6 +12,7 @@
         'submitted' => ['label' => 'Gửi đơn', 'class' => 'bg-sky-50 text-sky-700 border-sky-100'],
         'approved' => ['label' => 'Phê duyệt', 'class' => 'bg-emerald-50 text-emerald-700 border-emerald-100'],
         'rejected' => ['label' => 'Từ chối', 'class' => 'bg-rose-50 text-rose-700 border-rose-100'],
+        'cancelled' => ['label' => 'Hủy đơn', 'class' => 'bg-slate-100 text-slate-600 border-slate-200'],
     ];
 @endphp
 

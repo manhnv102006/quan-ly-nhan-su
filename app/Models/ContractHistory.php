@@ -19,6 +19,10 @@ class ContractHistory extends Model
 
     public const ACTION_TERMINATE = 'terminate';
 
+    public const ACTION_SUSPEND = 'suspend';
+
+    public const ACTION_RESUME = 'resume';
+
     public const ACTION_ACTIVATE = 'activate';
 
     public const ACTION_DELETE = 'delete';
@@ -34,6 +38,8 @@ class ContractHistory extends Model
         self::ACTION_CONVERT => 'Chuyển loại',
         self::ACTION_CANCEL => 'Hủy hợp đồng',
         self::ACTION_TERMINATE => 'Chấm dứt',
+        self::ACTION_SUSPEND => 'Tạm hoãn',
+        self::ACTION_RESUME => 'Tiếp tục hợp đồng',
         self::ACTION_ACTIVATE => 'Kích hoạt',
         self::ACTION_DELETE => 'Xóa mềm',
         self::ACTION_RESTORE => 'Khôi phục',
@@ -47,6 +53,8 @@ class ContractHistory extends Model
         self::ACTION_CONVERT => 'bg-indigo-50 text-indigo-700',
         self::ACTION_CANCEL => 'bg-rose-50 text-rose-700',
         self::ACTION_TERMINATE => 'bg-rose-50 text-rose-800',
+        self::ACTION_SUSPEND => 'bg-amber-50 text-amber-800',
+        self::ACTION_RESUME => 'bg-emerald-50 text-emerald-800',
         self::ACTION_ACTIVATE => 'bg-teal-50 text-teal-700',
         self::ACTION_DELETE => 'bg-amber-50 text-amber-700',
         self::ACTION_RESTORE => 'bg-lime-50 text-lime-700',

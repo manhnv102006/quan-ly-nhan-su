@@ -91,6 +91,7 @@
                     <li>Quản lý → <strong>Admin</strong> duyệt / từ chối.</li>
                     <li>Không trùng khoảng nghỉ với đơn <strong>đã duyệt</strong> hoặc <strong>đang chờ duyệt</strong>.</li>
                     <li>Gửi đơn trước ngày nghỉ, kèm lý do (bắt buộc).</li>
+                    <li>Nhân viên được <strong>hủy đơn đang chờ duyệt</strong>, hoặc <strong>hủy đơn đã duyệt trước ngày nghỉ</strong>. Nếu đã nghỉ một phần, hệ thống giữ các ngày đã nghỉ và <strong>hoàn số dư</strong> cho các ngày chưa nghỉ.</li>
                     @if ($documentTypeNames !== [])
                         <li><strong>{{ implode(', ', $documentTypeNames) }}:</strong> bắt buộc đính kèm giấy tờ minh chứng (PDF/JPG/PNG).</li>
                     @endif

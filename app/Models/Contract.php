@@ -15,6 +15,7 @@ class Contract extends Model
     public const STATUS_DRAFT = 'draft';
     public const STATUS_PENDING = 'pending';
     public const STATUS_ACTIVE = 'active';
+    public const STATUS_SUSPENDED = 'suspended';
     public const STATUS_EXPIRED = 'expired';
     public const STATUS_REPLACED = 'replaced';
     public const STATUS_TERMINATED = 'terminated';
@@ -24,6 +25,7 @@ class Contract extends Model
         self::STATUS_DRAFT => 'Đang soạn',
         self::STATUS_PENDING => 'Chờ hiệu lực',
         self::STATUS_ACTIVE => 'Còn hiệu lực',
+        self::STATUS_SUSPENDED => 'Tạm hoãn',
         self::STATUS_EXPIRED => 'Đã hết hạn',
         self::STATUS_REPLACED => 'Đã thay thế',
         self::STATUS_TERMINATED => 'Đã chấm dứt',
@@ -117,6 +119,11 @@ class Contract extends Model
         return $this->hasMany(ContractTermination::class)->orderByDesc('created_at');
     }
 
+    public function suspensions(): HasMany
+    {
+        return $this->hasMany(ContractSuspension::class)->orderByDesc('created_at');
+    }
+
     public function contractAllowances(): HasMany
     {
         return $this->hasMany(ContractAllowance::class);
@@ -156,6 +163,7 @@ class Contract extends Model
             self::STATUS_DRAFT,
             self::STATUS_PENDING,
             self::STATUS_ACTIVE,
+            self::STATUS_SUSPENDED,
         ]);
     }
 
@@ -212,6 +220,25 @@ class Contract extends Model
         return $this->status === self::STATUS_ACTIVE;
     }
 
+    public function canBeSuspended(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+
+    public function canBeResumed(): bool
+    {
+        return $this->status === self::STATUS_SUSPENDED;
+    }
+
+    public function openSuspension(): ?ContractSuspension
+    {
+        if ($this->relationLoaded('suspensions')) {
+            return $this->suspensions->first(fn (ContractSuspension $suspension) => $suspension->resumed_at === null);
+        }
+
+        return $this->suspensions()->whereNull('resumed_at')->latest('id')->first();
+    }
+
     public function isFixedTermRenewalBlocked(): bool
     {
         $this->loadMissing('contractType');
@@ -242,6 +269,7 @@ class Contract extends Model
 
         return match ($this->status) {
             self::STATUS_ACTIVE => 'badge text-bg-success',
+            self::STATUS_SUSPENDED => 'badge text-bg-warning',
             self::STATUS_PENDING => 'badge text-bg-info',
             self::STATUS_EXPIRED => 'badge text-bg-warning',
             self::STATUS_REPLACED => 'badge text-bg-secondary',
@@ -259,6 +287,7 @@ class Contract extends Model
 
         return match ($this->status) {
             self::STATUS_ACTIVE => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+            self::STATUS_SUSPENDED => 'bg-amber-50 text-amber-800 border-amber-100',
             self::STATUS_PENDING => 'bg-sky-50 text-sky-700 border-sky-100',
             self::STATUS_EXPIRED => 'bg-amber-50 text-amber-700 border-amber-100',
             self::STATUS_DRAFT => 'bg-slate-100 text-slate-700 border-slate-200',

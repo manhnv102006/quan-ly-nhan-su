@@ -93,6 +93,8 @@
                     </div>
                 </div>
 
+                <div id="paid-balance-notice" class="hidden rounded-2xl border px-4 py-3 text-sm font-medium leading-relaxed" role="alert"></div>
+
                 <div>
                     <label for="reason" class="block text-xs font-bold text-slate-500 uppercase mb-2">Lý do xin nghỉ <span class="text-rose-500">*</span></label>
                     <textarea id="reason" name="reason" rows="4" required placeholder="Nhập lý do chi tiết..."
@@ -145,6 +147,75 @@
             const typesRequiringDocument = @json($leaveTypesRequiringDocument ?? []);
             const documentHints = @json($leaveDocumentHints ?? []);
             const today = @json(today()->toDateString());
+            const previewUrl = @json(route('employee.leave-requests.paid-balance-preview'));
+            const paidNotice = document.getElementById('paid-balance-notice');
+            let previewTimer = null;
+            let latestPreview = null;
+
+            function hidePaidNotice() {
+                latestPreview = null;
+                if (!paidNotice) {
+                    return;
+                }
+                paidNotice.classList.add('hidden');
+                paidNotice.textContent = '';
+            }
+
+            function showPaidNotice(message, blocked) {
+                if (!paidNotice) {
+                    return;
+                }
+                paidNotice.textContent = message;
+                paidNotice.className = blocked
+                    ? 'rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium leading-relaxed text-rose-800'
+                    : 'rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium leading-relaxed text-amber-950';
+            }
+
+            function schedulePaidPreview() {
+                clearTimeout(previewTimer);
+
+                if (leaveType?.value !== 'annual' || !startDate?.value || !endDate?.value) {
+                    hidePaidNotice();
+                    return;
+                }
+
+                previewTimer = setTimeout(fetchPaidPreview, 250);
+            }
+
+            async function fetchPaidPreview() {
+                const params = new URLSearchParams({
+                    leave_type: leaveType.value,
+                    start_date: startDate.value,
+                    end_date: leaveType.value === 'half_day' ? startDate.value : endDate.value,
+                });
+
+                try {
+                    const response = await fetch(previewUrl + '?' + params.toString(), {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        hidePaidNotice();
+                        return;
+                    }
+
+                    const data = await response.json();
+                    latestPreview = data;
+
+                    if (!data.applies || !data.message) {
+                        hidePaidNotice();
+                        latestPreview = data;
+                        return;
+                    }
+
+                    showPaidNotice(data.message, Boolean(data.blocked));
+                } catch (error) {
+                    hidePaidNotice();
+                }
+            }
 
             function syncHalfDayFields() {
                 const isHalfDay = leaveType?.value === 'half_day';
@@ -212,12 +283,27 @@
             leaveType?.addEventListener('change', syncDateBounds);
             leaveType?.addEventListener('change', syncDocumentRequirement);
             leaveType?.addEventListener('change', syncHalfDayFields);
+            leaveType?.addEventListener('change', schedulePaidPreview);
             startDate?.addEventListener('change', syncDateBounds);
+            startDate?.addEventListener('change', schedulePaidPreview);
+            endDate?.addEventListener('change', schedulePaidPreview);
             syncDateBounds();
             syncDocumentRequirement();
             syncHalfDayFields();
+            schedulePaidPreview();
 
-            form?.addEventListener('submit', function () {
+            form?.addEventListener('submit', function (event) {
+                if (latestPreview?.split && form.dataset.confirmedSplit !== '1') {
+                    event.preventDefault();
+                    const accepted = window.confirm((latestPreview.message || 'Đơn này vượt số ngày hưởng lương.') + '\n\nBạn vẫn muốn gửi đơn?');
+                    if (!accepted) {
+                        return;
+                    }
+                    form.dataset.confirmedSplit = '1';
+                    form.requestSubmit();
+                    return;
+                }
+
                 const btn = document.getElementById('leave-request-submit');
                 if (btn && !btn.disabled) {
                     btn.disabled = true;
