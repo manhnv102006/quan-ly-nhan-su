@@ -433,7 +433,7 @@ class Payroll extends Model
         if ($breakdown['unpaid_leave_fine'] > 0) {
             $lines[] = [
                 'type' => PayrollPenaltyDetail::TYPE_UNPAID_LEAVE,
-                'label' => 'Phạt nghỉ không phép / quá phép ('.$this->unpaid_leave_days.' ngày)',
+                'label' => 'Phạt nghỉ không phép ('.$this->unpaid_leave_days.' ngày)',
                 'amount' => (float) $breakdown['unpaid_leave_fine'],
                 'note' => null,
             ];

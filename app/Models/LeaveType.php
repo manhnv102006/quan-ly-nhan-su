@@ -209,9 +209,28 @@ class LeaveType extends Model
     }
 
     /**
-     * Chỉ phép năm / nghỉ nửa ngày (và loại custom trừ phép năm) mới chiếm
-     * quỹ 1 ngày hưởng lương/tháng. Nghỉ việc riêng hưởng lương theo luật
-     * (kết hôn, hiếu), ngày lễ tự sinh, công tác và chế độ BHXH không bị kẹp hạn mức nội bộ này.
+     * Số ngày công công ty phải trả cho một ngày vắng có đơn loại này.
+     * BHXH chi riêng nên công ty trả 0. Nghỉ không lương và loại do người duyệt chọn cũng là 0.
+     */
+    public function companyPaidWorkDaysFor(string $leaveTypeCode): float
+    {
+        if (! $this->isCompanyPaid()) {
+            return 0.0;
+        }
+
+        $days = $leaveTypeCode === 'half_day' ? 0.5 : 1.0;
+        $percent = $this->salary_percent;
+
+        if ($percent === null) {
+            return $days;
+        }
+
+        return round($days * max(0.0, (float) $percent) / 100, 2);
+    }
+
+    /**
+     * Phép năm và nghỉ nửa ngày vẫn được theo dõi trên thẻ số dư tháng.
+     * Không dùng để cắt lương: mọi đơn công ty trả đã duyệt đều được tính ngày công.
      */
     public function countsTowardMonthlyPaidQuota(): bool
     {

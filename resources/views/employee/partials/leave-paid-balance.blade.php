@@ -12,22 +12,15 @@
 @if($balance)
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div class="rounded-3xl border border-emerald-200 bg-emerald-50/80 p-5">
-            <p class="text-[11px] font-bold uppercase tracking-wide text-emerald-800">Hưởng lương tháng {{ $balance['month_label'] }}</p>
-            <p class="mt-2 text-3xl font-black text-emerald-900">{{ $formatDays($balance['monthly_remaining']) }}</p>
-            <p class="mt-1 text-xs text-emerald-800">
-                Còn lại / hạn mức {{ $formatDays($balance['monthly_quota']) }}
-            </p>
+            <p class="text-[11px] font-bold uppercase tracking-wide text-emerald-800">Công ty trả lương</p>
+            <p class="mt-2 text-sm font-bold leading-snug text-emerald-950">Đơn đã duyệt được tính đủ ngày công</p>
             <p class="mt-3 text-xs leading-relaxed text-emerald-900/80">
-                Đã duyệt: <strong>{{ $formatDays($balance['monthly_used']) }}</strong>
-                @if($balance['monthly_pending'] > 0)
-                    · Đang chờ: <strong>{{ $formatDays($balance['monthly_pending']) }}</strong>
-                @endif
+                Phép năm, nửa ngày, kết hôn, hiếu, nghỉ bù và công tác do công ty trả. Nghỉ nhiều ngày trong tháng {{ $balance['month_label'] }} vẫn được trả nếu còn số dư phép năm.
             </p>
             <p class="mt-2 text-[11px] leading-relaxed text-emerald-800/80">
+                Ốm, thai sản và các chế độ BHXH: công ty không trả lương ngày đó, không phạt 300.000 ₫. Vắng không có đơn đã duyệt mới bị phạt.
                 @if($balance['monthly_quota'] <= 0)
-                    Chưa đủ điều kiện: cần hoàn thành <strong>trọn 1 tháng làm việc</strong> mới được 1 ngày hưởng lương/tháng. {{ \App\Support\LeaveAccrualRules::proRataDescription() }}
-                @else
-                    Mọi loại hưởng lương (phép, ốm, nửa ngày…) cùng tính vào hạn mức 1 ngày/tháng. Vượt hạn mức sẽ trừ 300.000 ₫/ngày.
+                    Phép năm bắt đầu cộng sau khi hoàn thành <strong>trọn 1 tháng làm việc</strong>. {{ \App\Support\LeaveAccrualRules::proRataDescription() }}
                 @endif
             </p>
         </div>
@@ -48,7 +41,7 @@
                 @endif
             </p>
             <p class="mt-2 text-[11px] leading-relaxed text-sky-800/80">
-                Chỉ tính loại Nghỉ phép. Đơn vừa gửi đã trừ số còn lại; quản lý duyệt thì giữ nguyên, từ chối hoặc hủy thì hoàn lại. Muốn hưởng lương vẫn phải nằm trong 1 ngày/tháng.
+                Chỉ tính loại Nghỉ phép. Đơn vừa gửi đã trừ số còn lại; quản lý duyệt thì giữ nguyên, từ chối hoặc hủy thì hoàn lại. Ngày phép trong số dư này được công ty trả nguyên lương.
                 @if($balance['annual_is_prorated'] ?? false)
                     Hạn mức năm nay cộng dồn <strong>1 ngày/tháng</strong> (pro-rata). {{ \App\Support\LeaveAccrualRules::proRataDescription() }}
                 @endif

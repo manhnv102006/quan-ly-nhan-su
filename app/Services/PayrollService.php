@@ -23,10 +23,6 @@ class PayrollService
         private PayrollComplaintService $complaintService,
     ) {}
 
-    // Cấu hình số buổi nghỉ phép hưởng lương tối đa trong 1 tháng
-    private const MAX_PAID_LEAVES_PER_MONTH = LeaveBalanceService::MONTHLY_PAID_DAYS;
-
-
     private const STANDARD_MONTHLY_HOURS = 176;
 
     private const OVERTIME_RATE_MULTIPLIER = 1.5;
@@ -119,13 +115,14 @@ class PayrollService
                 ->whereIn('status', ['present', 'late'])
                 ->sum('work_ratio');
 
-            // D. Nghỉ phép: Tính số ngày nghỉ có lương và không lương
-            $absentRecords = $employee->attendances()
+            // D. Ngày vắng hoặc đánh dấu nghỉ: đơn công ty trả thì cộng ngày công,
+            // đơn BHXH / không lương thì không trả và không phạt, vắng không đơn thì phạt.
+            $leaveAttendanceRecords = $employee->attendances()
                 ->whereBetween('attendance_date', [$startDate, $endDate])
-                ->where('status', 'absent')
+                ->whereIn('status', ['absent', 'leave'])
                 ->get();
 
-            $approvedPaidLeavesCount = 0;
+            $paidLeaveDays = 0.0;
             $unapprovedAbsences = 0;
 
             // Lấy các ngày nghỉ lễ mà nhân viên KHÔNG ĐI LÀM (Nếu đi làm thì đã tính ở presentDays)
@@ -140,15 +137,15 @@ class PayrollService
                 }
             }
 
-            foreach ($absentRecords as $record) {
+            foreach ($leaveAttendanceRecords as $record) {
                 // Bỏ qua nếu ngày vắng mặt trùng với ngày Lễ (Vì đã tính là holidayPaidDays)
                 if (in_array($record->attendance_date->format('Y-m-d'), $holidayDates)) {
                     continue;
                 }
 
-                // Đơn đã duyệt = nghỉ có phép. Chỉ loại công ty trả (phép năm / nửa ngày)
-                // mới chiếm hạn mức 1 ngày lương/tháng; BHXH, không lương, kết hôn, công tác
-                // không phạt 300k và không trừ quỹ ngày lương nội bộ.
+                // Đơn đã duyệt do công ty trả (phép năm, nửa ngày, kết hôn, hiếu, nghỉ bù, công tác)
+                // được tính ngày công, không kẹp 1 ngày/tháng. BHXH trả riêng nên công ty không cộng
+                // ngày đó và cũng không phạt. Chỉ vắng không có đơn đã duyệt mới bị phạt.
                 $approvedLeave = $employee->leaveRequests()
                     ->where('status', 'approved')
                     ->whereDate('start_date', '<=', $record->attendance_date)
@@ -156,20 +153,19 @@ class PayrollService
                     ->first();
 
                 if ($approvedLeave) {
-                    if ($approvedLeave->leaveTypeConfig()?->countsTowardMonthlyPaidQuota()) {
-                        $approvedPaidLeavesCount += $approvedLeave->leave_type === 'half_day' ? 0.5 : 1;
-                    }
-                } else {
+                    $paidLeaveDays += $approvedLeave->leaveTypeConfig()
+                        ?->companyPaidWorkDaysFor((string) $approvedLeave->leave_type) ?? 0.0;
+
+                    continue;
+                }
+
+                if ($record->status === 'absent') {
                     $unapprovedAbsences++;
                 }
             }
 
-            // Tính số ngày nghỉ có lương và không lương thực tế
-            $paidLeaveDays = min($approvedPaidLeavesCount, self::MAX_PAID_LEAVES_PER_MONTH);
-            $excessPaidLeaves = max(0, $approvedPaidLeavesCount - self::MAX_PAID_LEAVES_PER_MONTH);
-
-            // Số ngày nghỉ bị trừ tiền = nghỉ không phép + nghỉ có phép vượt quá hạn mức
-            $unpaidLeaveDays = $unapprovedAbsences + $excessPaidLeaves;
+            $paidLeaveDays = round($paidLeaveDays, 2);
+            $unpaidLeaveDays = $unapprovedAbsences;
 
             // E. Ngày công thực tế = ngày đi làm (present+late) + nghỉ phép hưởng lương + nghỉ lễ
             $actualWorkingDays = $presentDays + $paidLeaveDays + $holidayPaidDays;
@@ -839,7 +835,7 @@ class PayrollService
         if ($unpaidLeaveFine > 0) {
             $rows[] = [
                 'type' => PayrollPenaltyDetail::TYPE_UNPAID_LEAVE,
-                'label' => 'Phạt nghỉ không phép / quá phép ('.$unpaidLeaveDays.' ngày)',
+                'label' => 'Phạt nghỉ không phép ('.$unpaidLeaveDays.' ngày)',
                 'amount' => $unpaidLeaveFine,
                 'note' => null,
             ];

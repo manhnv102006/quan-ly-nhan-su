@@ -101,14 +101,15 @@
             <div class="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3">
                 <p class="font-bold text-amber-950 mb-1.5 text-xs uppercase tracking-wide">Ảnh hưởng lương</p>
                 <ul class="space-y-1.5 text-xs text-amber-950 list-disc list-inside leading-relaxed">
-                    <li>Tối đa <strong>1 ngày công</strong> nghỉ hưởng lương / tháng (nửa ngày = 0,5).</li>
-                    <li>Loại <strong>Nghỉ phép</strong>: tối đa <strong>12 ngày</strong> / năm (đã duyệt); cuối tháng hệ thống tự cộng <strong>1 ngày/tháng</strong>. {{ \App\Support\LeaveAccrualRules::proRataDescription() }}</li>
+                    <li>Đơn đã duyệt do <strong>công ty trả</strong> (phép năm, nửa ngày, kết hôn, hiếu, nghỉ bù, công tác) được tính ngày công, không phạt 300.000 ₫. Nghỉ nhiều ngày trong một tháng vẫn được trả đủ.</li>
+                    <li>Loại <strong>Nghỉ phép</strong>: tối đa <strong>12 ngày</strong> / năm (đã duyệt); cuối tháng hệ thống tự cộng <strong>1 ngày/tháng</strong> vào số dư. {{ \App\Support\LeaveAccrualRules::proRataDescription() }}</li>
                     <li><strong>Nghỉ không lương dài hạn:</strong> lũy kế vượt <strong>{{ (int) config('leave.unpaid_leave_accrual_block_days', 12) }} ngày làm việc/năm</strong> (đã duyệt) → tháng đó <strong>không cộng phép</strong>.</li>
                     <li><strong>Nghỉ thai sản:</strong> vẫn <strong>cộng phép</strong> trong tháng nghỉ thai sản (đã duyệt).</li>
                     <li><strong>Nghỉ ốm BHXH:</strong> tối đa <strong>{{ (int) config('leave.sick_leave_accrual_allowed_months', 2) }} tháng/năm</strong> vẫn cộng phép; tháng ốm vượt hạn <strong>không cộng</strong>.</li>
                     <li><strong>Phép chuyển năm:</strong> phép năm trước còn dư chuyển sang (<em>carried_over</em>), ưu tiên dùng trước, <strong>hết hạn cuối tháng {{ (int) config('leave.carry_over_expiry_month', 4) }}</strong> năm mới.</li>
-                    <li>Nghỉ không phép / vượt hạn mức / không lương → trừ <strong>300.000 ₫ / ngày</strong>.</li>
-                    <li>Đơn duyệt đúng loại hưởng lương → tính ngày công, không phạt 300k/ngày.</li>
+                    <li>Đơn <strong>BHXH trả</strong> (ốm, thai sản…): công ty không trả lương ngày đó và không phạt; trợ cấp do BHXH chi.</li>
+                    <li>Nghỉ không lương đã duyệt: không tính ngày công, không phạt.</li>
+                    <li>Vắng không có đơn đã duyệt: không tính ngày công và phạt <strong>300.000 ₫ / ngày</strong>.</li>
                 </ul>
             </div>
         </div>

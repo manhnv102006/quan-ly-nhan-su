@@ -11,6 +11,6 @@
         <li>Chủ nhật &amp; ngày Lễ không tính vào số ngày nghỉ; nghỉ nửa ngày = 0,5 ngày (một ngày, chọn sáng/chiều).</li>
         <li>Giới hạn cùng nghỉ: NV <strong>{{ $employeePercent }}%</strong>, QL/KT <strong>{{ $managerPercent }}%</strong> nhân sự đang làm việc / ngày (chỉ đơn đã duyệt; từ {{ \App\Support\LeaveCapacityRules::LONG_LEAVE_EXEMPT_FROM_DAYS }} ngày/đơn và loại thai sản/ốm/hiếu/kết hôn không tính).</li>
         <li>NV: QL phòng duyệt · QL: Admin duyệt · Không trùng đơn đã duyệt hoặc đang chờ.</li>
-        <li>Lương: tối đa <strong>1 ngày công</strong> nghỉ hưởng lương/tháng; loại Nghỉ phép tối đa <strong>12 ngày/năm</strong> (pro-rata {{ \App\Support\LeaveAccrualRules::proRataDescription() }}); nghỉ không phép / vượt hạn mức → trừ <strong>300.000 ₫/ngày</strong>.</li>
+        <li>Lương: đơn đã duyệt do công ty trả được tính ngày công (phép năm theo số dư, tối đa <strong>12 ngày/năm</strong>, pro-rata {{ \App\Support\LeaveAccrualRules::proRataDescription() }}). BHXH không tính vào lương công ty. Vắng không đơn → trừ <strong>300.000 ₫/ngày</strong>.</li>
     </ul>
 </div>
