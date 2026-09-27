@@ -20,7 +20,13 @@
             <form method="POST" action="{{ route('logout') }}" class="hidden sm:block">@csrf<button type="submit" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600">Thoát</button></form>
         </div>
     </div>
-    @if (session('success') || session('error'))
-        <div class="border-t border-slate-100 px-4 py-2 lg:px-6"><p class="text-sm font-medium {{ session('error') ? 'text-rose-600' : 'text-emerald-600' }}">{{ session('error') ?? session('success') }}</p></div>
+    @php
+        $pageAlreadyShowsError = request()->routeIs('accountant.payroll-periods.department');
+        $headerFlash = session('error') && ! $pageAlreadyShowsError
+            ? session('error')
+            : (! session('error') ? session('success') : null);
+    @endphp
+    @if ($headerFlash)
+        <div class="border-t border-slate-100 px-4 py-2 lg:px-6"><p class="text-sm font-medium {{ session('error') && ! $pageAlreadyShowsError ? 'text-rose-600' : 'text-emerald-600' }}">{{ $headerFlash }}</p></div>
     @endif
 </header>

@@ -106,10 +106,10 @@ class PayrollDemoSeeder extends Seeder
             ['Case NV', 'Mô tả'],
             [
                 ['Case 1', 'Đi làm đủ công + tăng ca'],
-                ['Case 2', 'Thiếu công (20/26), vắng không phép'],
+                ['Case 2', '20 ngày đi làm, ngày công còn lại vắng không phép'],
                 ['Case 3', 'Đủ công + đi muộn 3 lần + OT'],
                 ['Case 4', '24 ngày đi làm + 2 ngày nghỉ phép có lương'],
-                ['Case 5', '22 ngày đi làm + 4 ngày vắng không phép'],
+                ['Case 5', '22 ngày đi làm, ngày công còn lại vắng không phép'],
             ]
         );
     }
@@ -237,11 +237,11 @@ class PayrollDemoSeeder extends Seeder
         match ($scenario) {
             0 => $this->insertPresentDays($employee->id, $shiftId, $days, 0, $total),
             1 => $this->insertPresentDays($employee->id, $shiftId, $days, 0, min(20, $total))
-                + $this->insertAbsentDays($employee->id, $shiftId, array_slice($days, min(20, $total), min(6, $total - min(20, $total)))),
+                + $this->insertAbsentDays($employee->id, $shiftId, array_slice($days, min(20, $total))),
             2 => $this->insertMixedLatePresent($employee->id, $shiftId, $days),
             3 => $this->seedPaidLeaveScenario($employee->id, $shiftId, $days),
             default => $this->insertPresentDays($employee->id, $shiftId, $days, 0, min(22, $total))
-                + $this->insertAbsentDays($employee->id, $shiftId, array_slice($days, min(22, $total), min(4, $total - min(22, $total)))),
+                + $this->insertAbsentDays($employee->id, $shiftId, array_slice($days, min(22, $total))),
         };
     }
 

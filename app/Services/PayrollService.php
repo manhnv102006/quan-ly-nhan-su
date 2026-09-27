@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\Payroll;
+use App\Models\PayrollPenaltyDetail;
 use App\Models\PayrollPeriod;
 use App\Models\Holiday;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +35,14 @@ class PayrollService
 
     /** Muộn quá số phút này trong ngày → trừ nguyên 1 ngày công. */
     public const LATE_FULL_DAY_THRESHOLD_MINUTES = 180;
+
+    /**
+     * Dòng chấm công được tính là "đã có dữ liệu".
+     * late vẫn là ngày đã đi làm, không phải ngày trống.
+     *
+     * @var list<string>
+     */
+    private const ATTENDANCE_COVERAGE_STATUSES = ['present', 'late', 'absent', 'leave'];
 
     /**
      * Tự động tính lương cho toàn bộ nhân viên hoạt động trong một kỳ lương.
@@ -67,25 +77,18 @@ class PayrollService
             return 'no_employees';
         }
 
+        if ($this->attendanceCoverageGaps($period, $departmentId) !== []) {
+            return 'incomplete_attendance';
+        }
+
         $startDate = $period->start_date;
         $endDate = $period->end_date;
 
         // Tính ngày công chuẩn trong kỳ (Thứ 2 - Thứ 7, trừ Chủ nhật)
         $standardWorkingDays = $this->calculateStandardWorkingDays($startDate, $endDate);
 
-        // Lấy danh sách ngày Lễ / Sự kiện trong kỳ
-        $holidays = Holiday::inRange($startDate, $endDate)->get();
-        $holidayDates = [];
-        foreach ($holidays as $holiday) {
-            $hStart = Carbon::parse($holiday->start_date)->max($startDate);
-            $hEnd = Carbon::parse($holiday->end_date)->min($endDate);
-            for ($date = $hStart->copy(); $date->lte($hEnd); $date->addDay()) {
-                if (!$date->isSunday()) {
-                    $holidayDates[] = $date->format('Y-m-d');
-                }
-            }
-        }
-        $holidayDates = array_unique($holidayDates);
+        // Ngày lễ rơi vào ngày công chuẩn (Chủ nhật không tính)
+        $holidayDates = $this->holidayDatesInPeriod($startDate, $endDate);
 
         foreach ($employees as $employee) {
             // A. Lương hợp đồng (full tháng): Ưu tiên hợp đồng active còn hiệu lực trong kỳ, nếu không thì lấy từ chức vụ
@@ -220,10 +223,15 @@ class PayrollService
                 $contractSalary,
                 $standardWorkingDays
             );
-            $deduction = $latePenalty['amount']
-                + $earlyPenalty['amount']
-                + $missingCheckoutPenalty['amount']
-                + ($unpaidLeaveDays * 300000);
+            $unpaidLeaveFine = $unpaidLeaveDays * 300000;
+            $penaltyRows = $this->buildPenaltyDetailRows(
+                $latePenalty,
+                $earlyPenalty,
+                $missingCheckoutPenalty,
+                $unpaidLeaveDays,
+                $unpaidLeaveFine
+            );
+            $deduction = array_sum(array_column($penaltyRows, 'amount'));
 
             // H. Thưởng KPI: Tính điểm KPI trung bình và quy đổi thưởng
             $averageKpiScore = $employee->employeeKpis()
@@ -324,6 +332,10 @@ class PayrollService
                 $payroll->payrollAllowances()->create($snapshot);
             }
 
+            foreach ($penaltyRows as $penaltyRow) {
+                $payroll->penaltyDetails()->create($penaltyRow);
+            }
+
             $this->tax->snapshotForPayroll($payroll);
 
             $this->complaintService->markCarriedToPayroll($carryForward['complaints'], $payroll);
@@ -350,6 +362,10 @@ class PayrollService
         // Cho phép tính lại nếu ở trạng thái open hoặc calculated
         if (!in_array($period->status, ['open', 'calculated'])) {
             return 'invalid_status';
+        }
+
+        if ($this->attendanceCoverageGaps($period, $departmentId) !== []) {
+            return 'incomplete_attendance';
         }
 
         // Xóa vĩnh viễn tất cả các bản ghi lương của kỳ này (kể cả đã xóa mềm) để tránh trùng lặp unique constraint
@@ -430,22 +446,177 @@ class PayrollService
     }
 
     /**
-     * Tính số ngày công chuẩn trong kỳ lương (Thứ 2 - Thứ 7, trừ Chủ nhật).
+     * Nhân viên active còn ngày công chuẩn chưa có dòng chấm công và cũng không phải ngày lễ.
+     * Những ngày này nếu bỏ qua sẽ bị trừ lương theo tỷ lệ mà phiếu không ghi nhận.
+     *
+     * @return list<array{employee_id: int, employee_code: string, full_name: string, missing_count: int, missing_dates: list<string>}>
      */
-    private function calculateStandardWorkingDays($startDate, $endDate): int
+    public function attendanceCoverageGaps(PayrollPeriod $period, ?int $departmentId = null): array
     {
-        $days = 0;
-        $current = \Carbon\Carbon::parse($startDate)->copy();
-        $end = \Carbon\Carbon::parse($endDate);
+        $employeesQuery = Employee::query()
+            ->where('status', 'active')
+            ->orderBy('employee_code');
+
+        if ($departmentId) {
+            $employeesQuery->where('department_id', $departmentId);
+        }
+
+        $employees = $employeesQuery->get(['id', 'employee_code', 'full_name']);
+        if ($employees->isEmpty()) {
+            return [];
+        }
+
+        $standardDates = $this->standardWorkingDates($period->start_date, $period->end_date);
+        if ($standardDates === []) {
+            return [];
+        }
+
+        $holidayDates = array_fill_keys($this->holidayDatesInPeriod($period->start_date, $period->end_date), true);
+
+        $coveredByEmployee = [];
+        $rows = Attendance::query()
+            ->whereIn('employee_id', $employees->pluck('id'))
+            ->whereBetween('attendance_date', [$period->start_date, $period->end_date])
+            ->whereIn('status', self::ATTENDANCE_COVERAGE_STATUSES)
+            ->get(['employee_id', 'attendance_date']);
+
+        foreach ($rows as $row) {
+            $coveredByEmployee[$row->employee_id][$row->attendance_date->toDateString()] = true;
+        }
+
+        $gaps = [];
+        foreach ($employees as $employee) {
+            $covered = $coveredByEmployee[$employee->id] ?? [];
+            $missing = [];
+
+            foreach ($standardDates as $date) {
+                if (isset($covered[$date]) || isset($holidayDates[$date])) {
+                    continue;
+                }
+
+                $missing[] = $date;
+            }
+
+            if ($missing === []) {
+                continue;
+            }
+
+            $gaps[] = [
+                'employee_id' => $employee->id,
+                'employee_code' => $employee->employee_code,
+                'full_name' => $employee->full_name,
+                'missing_count' => count($missing),
+                'missing_dates' => $missing,
+            ];
+        }
+
+        return $gaps;
+    }
+
+    /**
+     * @param  list<array{employee_code: string, full_name: string, missing_count: int, missing_dates: list<string>}>  $gaps
+     */
+    public function attendanceCoverageMessage(array $gaps, string $action = 'tính lương'): string
+    {
+        if ($gaps === []) {
+            return '';
+        }
+
+        $lines = [];
+        foreach (array_slice($gaps, 0, 8) as $gap) {
+            $lines[] = sprintf(
+                '%s %s: còn %d ngày chưa có dữ liệu chấm công (%s), cần xử lý trước khi %s.',
+                $gap['employee_code'],
+                $gap['full_name'],
+                $gap['missing_count'],
+                $this->formatMissingDates($gap['missing_dates']),
+                $action
+            );
+        }
+
+        $hidden = count($gaps) - count($lines);
+        if ($hidden > 0) {
+            $lines[] = "Và {$hidden} nhân viên khác cũng còn ngày chưa có dữ liệu chấm công.";
+        }
+
+        if (count($lines) === 1) {
+            return $lines[0];
+        }
+
+        return "Không thể {$action}.\n".implode("\n", $lines);
+    }
+
+    /**
+     * @param  list<string>  $dates
+     */
+    private function formatMissingDates(array $dates): string
+    {
+        $shown = array_slice($dates, 0, 5);
+        $labels = array_map(
+            fn (string $date) => Carbon::parse($date)->format('d/m/Y'),
+            $shown
+        );
+
+        $hidden = count($dates) - count($shown);
+        if ($hidden > 0) {
+            $labels[] = "và {$hidden} ngày khác";
+        }
+
+        return implode(', ', $labels);
+    }
+
+    /**
+     * Ngày công chuẩn trong kỳ (Thứ 2 - Thứ 7, trừ Chủ nhật).
+     *
+     * @return list<string>
+     */
+    private function standardWorkingDates($startDate, $endDate): array
+    {
+        $days = [];
+        $current = Carbon::parse($startDate)->copy()->startOfDay();
+        $end = Carbon::parse($endDate)->startOfDay();
 
         while ($current->lte($end)) {
-            if (!$current->isSunday()) {
-                $days++;
+            if (! $current->isSunday()) {
+                $days[] = $current->toDateString();
             }
             $current->addDay();
         }
 
         return $days;
+    }
+
+    /**
+     * Ngày lễ giao với kỳ lương, bỏ Chủ nhật vì Chủ nhật không thuộc ngày công chuẩn.
+     *
+     * @return list<string>
+     */
+    private function holidayDatesInPeriod($startDate, $endDate): array
+    {
+        $periodStart = Carbon::parse($startDate)->startOfDay();
+        $periodEnd = Carbon::parse($endDate)->startOfDay();
+        $holidayDates = [];
+
+        foreach (Holiday::inRange($periodStart, $periodEnd)->get() as $holiday) {
+            $hStart = Carbon::parse($holiday->start_date)->max($periodStart);
+            $hEnd = Carbon::parse($holiday->end_date)->min($periodEnd);
+
+            for ($date = $hStart->copy(); $date->lte($hEnd); $date->addDay()) {
+                if (! $date->isSunday()) {
+                    $holidayDates[] = $date->toDateString();
+                }
+            }
+        }
+
+        return array_values(array_unique($holidayDates));
+    }
+
+    /**
+     * Tính số ngày công chuẩn trong kỳ lương (Thứ 2 - Thứ 7, trừ Chủ nhật).
+     */
+    private function calculateStandardWorkingDays($startDate, $endDate): int
+    {
+        return count($this->standardWorkingDates($startDate, $endDate));
     }
 
     /**
@@ -624,6 +795,60 @@ class PayrollService
     }
 
     /**
+     * @param  array{amount: float, late_days: int, total_late_minutes: int, full_day_count: int}  $latePenalty
+     * @param  array{amount: float, early_days: int, total_early_minutes: int}  $earlyPenalty
+     * @param  array{amount: float, session_count: int}  $missingCheckoutPenalty
+     * @return list<array{type: string, label: string, amount: float, note: null}>
+     */
+    private function buildPenaltyDetailRows(
+        array $latePenalty,
+        array $earlyPenalty,
+        array $missingCheckoutPenalty,
+        float $unpaidLeaveDays,
+        float $unpaidLeaveFine
+    ): array {
+        $rows = [];
+
+        if ($latePenalty['amount'] > 0) {
+            $rows[] = [
+                'type' => PayrollPenaltyDetail::TYPE_LATE,
+                'label' => 'Phạt đi muộn ('.$latePenalty['late_days'].' lần, '.$latePenalty['total_late_minutes'].' phút)',
+                'amount' => $latePenalty['amount'],
+                'note' => null,
+            ];
+        }
+
+        if ($earlyPenalty['amount'] > 0) {
+            $rows[] = [
+                'type' => PayrollPenaltyDetail::TYPE_EARLY,
+                'label' => 'Phạt về sớm ('.$earlyPenalty['early_days'].' lần, '.$earlyPenalty['total_early_minutes'].' phút)',
+                'amount' => $earlyPenalty['amount'],
+                'note' => null,
+            ];
+        }
+
+        if ($missingCheckoutPenalty['amount'] > 0) {
+            $rows[] = [
+                'type' => PayrollPenaltyDetail::TYPE_MISSING_CHECKOUT,
+                'label' => 'Phạt quên checkout ('.$missingCheckoutPenalty['session_count'].' buổi)',
+                'amount' => $missingCheckoutPenalty['amount'],
+                'note' => null,
+            ];
+        }
+
+        if ($unpaidLeaveFine > 0) {
+            $rows[] = [
+                'type' => PayrollPenaltyDetail::TYPE_UNPAID_LEAVE,
+                'label' => 'Phạt nghỉ không phép / quá phép ('.$unpaidLeaveDays.' ngày)',
+                'amount' => $unpaidLeaveFine,
+                'note' => null,
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
      * @return array{amount: float, early_days: int, total_early_minutes: int}
      */
     public function earlyPenaltyForPayroll(Payroll $payroll): array
@@ -648,6 +873,38 @@ class PayrollService
         );
 
         return $this->calculateEarlyPenaltyForPeriod(
+            $employee,
+            $period->start_date,
+            $period->end_date,
+            $contractSalary,
+            (int) $payroll->standard_working_days
+        );
+    }
+
+    /**
+     * @return array{amount: float, session_count: int}
+     */
+    public function missingCheckoutPenaltyForPayroll(Payroll $payroll): array
+    {
+        $period = $payroll->payrollPeriod;
+        $employee = $payroll->employee;
+
+        if (! $period || ! $employee) {
+            return [
+                'amount' => 0,
+                'session_count' => 0,
+            ];
+        }
+
+        $employee->loadMissing(['contracts.contractType', 'position']);
+
+        $contractSalary = $this->resolveContractSalary(
+            $employee,
+            $period->start_date,
+            $period->end_date
+        );
+
+        return $this->calculateMissingCheckoutPenaltyForPeriod(
             $employee,
             $period->start_date,
             $period->end_date,

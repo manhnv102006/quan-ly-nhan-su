@@ -163,6 +163,19 @@ class TaxService
     }
 
     /**
+     * Thực lĩnh = thu nhập chịu thuế (đã cộng lại tiền phạt) − phạt − bảo hiểm − thuế TNCN.
+     *
+     * @param  array<string, mixed>  $calc
+     */
+    private function takeHomePay(Payroll $payroll, array $calc): float
+    {
+        return max(0, (float) $calc['gross']
+            - (float) $payroll->deduction
+            - (float) $calc['insurance']
+            - (float) $calc['pit']);
+    }
+
+    /**
      * Tính thuế lũy tiến từng phần theo 5 bậc 2026.
      *
      * @return array{pit: float, breakdown: list<array{level: int, label: string, amount: float, rate: float, tax: float}>}
@@ -278,6 +291,7 @@ class TaxService
         $calc = $this->calculateEmployeeMonthly($employee, $this->payrollGrossIncome($payroll), $periodDate);
         /** @var TaxPolicy $policy */
         $policy = $calc['tax_policy'];
+        $netIncome = $this->takeHomePay($payroll, $calc);
 
         return PayrollTaxSnapshot::query()->updateOrCreate(
             ['payroll_id' => $payroll->id],
@@ -293,7 +307,7 @@ class TaxService
                 'assessable_income' => $calc['assessable_income'],
                 'taxable_income' => $calc['taxable_income'],
                 'pit' => $calc['pit'],
-                'net_income' => $calc['net_income'],
+                'net_income' => $netIncome,
                 'brackets_snapshot' => $policy->brackets,
             ]
         );
@@ -354,6 +368,7 @@ class TaxService
 
             $calc = $this->calculateEmployeeMonthly($employee, $this->payrollGrossIncome($payroll), $periodDate);
             unset($calc['tax_policy']);
+            $calc['net_income'] = $this->takeHomePay($payroll, $calc);
 
             return array_merge($calc, [
                 'payroll' => $payroll,

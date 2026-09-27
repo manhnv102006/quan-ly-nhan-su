@@ -81,6 +81,11 @@ class Payroll extends Model
         return $this->hasMany(PayrollAllowance::class);
     }
 
+    public function penaltyDetails(): HasMany
+    {
+        return $this->hasMany(PayrollPenaltyDetail::class)->orderBy('id');
+    }
+
     public function payrollTaxSnapshot(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(PayrollTaxSnapshot::class);
@@ -220,7 +225,7 @@ class Payroll extends Model
                 'bhtn_employee' => 0,
                 'pit' => 0,
                 'total_deductions' => $penalty,
-                'net_salary' => $gross,
+                'net_salary' => max(0, $grossIncome - $penalty),
                 'advance_deduction' => $advanceDeduction,
                 'advance_outstanding' => 0.0,
             ];
@@ -246,6 +251,8 @@ class Payroll extends Model
 
         $insurance = $bhxh + $bhyt + $bhtn;
         $pit = (float) $tax['pit'];
+        // Thực lĩnh = tổng thu nhập − tổng giảm trừ.
+        // Tổng giảm trừ gồm phạt (đã trừ sẵn trong total_salary), bảo hiểm NLĐ và thuế TNCN.
         $totalDeductions = $penalty + $insurance + $pit;
 
         return [
@@ -257,7 +264,7 @@ class Payroll extends Model
             'bhtn_employee' => $bhtn,
             'pit' => $pit,
             'total_deductions' => $totalDeductions,
-            'net_salary' => max(0, $gross - $insurance - $pit),
+            'net_salary' => max(0, $grossIncome - $totalDeductions),
             'advance_deduction' => $advanceDeduction,
             'advance_outstanding' => $advanceOutstanding,
         ];
@@ -272,12 +279,186 @@ class Payroll extends Model
     }
 
     /**
+     * Tách tiền phạt trên phiếu.
+     * Đi muộn, về sớm, quên checkout và nghỉ không phép tính lại từ chấm công cùng công thức lúc lập lương.
+     * Khoản còn lại lấy nhãn từ lý do điều chỉnh lương nếu có nhật ký, không thì "Điều chỉnh khác".
+     *
+     * @return array{
+     *     late: array{amount: float, late_days: int, total_late_minutes: int, full_day_count: int},
+     *     early: array{amount: float, early_days: int, total_early_minutes: int},
+     *     missing_checkout: array{amount: float, session_count: int},
+     *     unpaid_leave_fine: float,
+     *     other: float,
+     *     other_label: string
+     * }
+     */
+    public function penaltyDisplayBreakdown(): array
+    {
+        $service = app(PayrollService::class);
+        $late = $service->latePenaltyForPayroll($this);
+        $early = $service->earlyPenaltyForPayroll($this);
+        $missing = $service->missingCheckoutPenaltyForPayroll($this);
+        $unpaid = (float) $this->unpaid_leave_days * 300000;
+        $advance = $this->advanceDeductionAmount();
+        $stored = (float) $this->deduction;
+        $other = round($stored - $late['amount'] - $early['amount'] - $missing['amount'] - $unpaid - $advance, 0);
+        $adjustReason = ModuleChangeLog::query()
+            ->where('module', ModuleChangeLog::MODULE_PAYROLL)
+            ->where('entity_type', self::class)
+            ->where('entity_id', $this->id)
+            ->where('field_name', 'deduction')
+            ->where('action', 'adjust')
+            ->latest('id')
+            ->value('note');
+        $adjustReason = trim((string) $adjustReason);
+        $otherLabel = $adjustReason !== '' ? $adjustReason : 'Điều chỉnh khác';
+
+        return [
+            'late' => $late,
+            'early' => $early,
+            'missing_checkout' => $missing,
+            'unpaid_leave_fine' => $unpaid,
+            'other' => $other,
+            'other_label' => $otherLabel,
+        ];
+    }
+
+    /**
+     * Các dòng phạt in trên phiếu. Ưu tiên snapshot đã lưu lúc tính lương.
+     *
+     * @return list<array{type: string, label: string, amount: float, note: ?string}>
+     */
+    public function penaltySlipLines(): array
+    {
+        $details = $this->relationLoaded('penaltyDetails')
+            ? $this->penaltyDetails
+            : $this->penaltyDetails()->get();
+
+        if ($details->isNotEmpty()) {
+            return $details->map(fn (PayrollPenaltyDetail $row) => [
+                'type' => $row->type,
+                'label' => $row->label,
+                'amount' => (float) $row->amount,
+                'note' => $row->note,
+            ])->values()->all();
+        }
+
+        return $this->legacyPenaltySlipLines();
+    }
+
+    public function manualPenaltyAmount(): float
+    {
+        $details = $this->relationLoaded('penaltyDetails')
+            ? $this->penaltyDetails
+            : null;
+
+        if ($details) {
+            return (float) $details->where('type', PayrollPenaltyDetail::TYPE_MANUAL)->sum('amount');
+        }
+
+        return (float) $this->penaltyDetails()
+            ->where('type', PayrollPenaltyDetail::TYPE_MANUAL)
+            ->sum('amount');
+    }
+
+    /**
+     * Phiếu cũ chưa có snapshot: chốt các dòng tính lại được, phần lệch ghi "Điều chỉnh khác".
+     */
+    public function snapshotLegacyPenaltyDetails(): void
+    {
+        if ($this->penaltyDetails()->exists()) {
+            return;
+        }
+
+        foreach ($this->legacyPenaltySlipLines() as $line) {
+            $this->penaltyDetails()->create($line);
+        }
+    }
+
+    public function replaceManualPenalty(float $amount, ?string $note): void
+    {
+        $this->snapshotLegacyPenaltyDetails();
+        $this->penaltyDetails()->where('type', PayrollPenaltyDetail::TYPE_MANUAL)->delete();
+
+        if ($amount > 0) {
+            $this->penaltyDetails()->create([
+                'type' => PayrollPenaltyDetail::TYPE_MANUAL,
+                'label' => 'Phạt nhập tay',
+                'amount' => round($amount, 0),
+                'note' => $note !== null && trim($note) !== '' ? trim($note) : null,
+            ]);
+        }
+
+        $this->deduction = round(
+            (float) $this->penaltyDetails()->sum('amount') + $this->advanceDeductionAmount(),
+            0
+        );
+    }
+
+    /**
+     * @return list<array{type: string, label: string, amount: float, note: ?string}>
+     */
+    private function legacyPenaltySlipLines(): array
+    {
+        $breakdown = $this->penaltyDisplayBreakdown();
+        $lines = [];
+
+        if ($breakdown['late']['amount'] > 0) {
+            $lines[] = [
+                'type' => PayrollPenaltyDetail::TYPE_LATE,
+                'label' => 'Phạt đi muộn ('.$breakdown['late']['late_days'].' lần, '.$breakdown['late']['total_late_minutes'].' phút)',
+                'amount' => (float) $breakdown['late']['amount'],
+                'note' => null,
+            ];
+        }
+
+        if ($breakdown['early']['amount'] > 0) {
+            $lines[] = [
+                'type' => PayrollPenaltyDetail::TYPE_EARLY,
+                'label' => 'Phạt về sớm ('.$breakdown['early']['early_days'].' lần, '.$breakdown['early']['total_early_minutes'].' phút)',
+                'amount' => (float) $breakdown['early']['amount'],
+                'note' => null,
+            ];
+        }
+
+        if ($breakdown['missing_checkout']['amount'] > 0) {
+            $lines[] = [
+                'type' => PayrollPenaltyDetail::TYPE_MISSING_CHECKOUT,
+                'label' => 'Phạt quên checkout ('.$breakdown['missing_checkout']['session_count'].' buổi)',
+                'amount' => (float) $breakdown['missing_checkout']['amount'],
+                'note' => null,
+            ];
+        }
+
+        if ($breakdown['unpaid_leave_fine'] > 0) {
+            $lines[] = [
+                'type' => PayrollPenaltyDetail::TYPE_UNPAID_LEAVE,
+                'label' => 'Phạt nghỉ không phép / quá phép ('.$this->unpaid_leave_days.' ngày)',
+                'amount' => (float) $breakdown['unpaid_leave_fine'],
+                'note' => null,
+            ];
+        }
+
+        if ($breakdown['other'] != 0) {
+            $lines[] = [
+                'type' => PayrollPenaltyDetail::TYPE_LEGACY,
+                'label' => 'Điều chỉnh khác',
+                'amount' => (float) $breakdown['other'],
+                'note' => null,
+            ];
+        }
+
+        return $lines;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toModalPayload(string $pdfUrl): array
     {
         $breakdown = $this->payslipBreakdown();
-        $latePenalty = $this->latePenaltyBreakdown();
+        $penalties = $this->penaltyDisplayBreakdown();
+        $latePenalty = $penalties['late'];
         $fmt = fn (float $n) => number_format($n, 0, ',', '.');
         $netSalary = $breakdown['net_salary'];
         $isPaid = in_array($this->status, ['paid', 'closed']);
@@ -312,7 +493,24 @@ class Payroll extends Model
             'late_days' => $latePenalty['late_days'],
             'total_late_minutes' => $latePenalty['total_late_minutes'],
             'late_fine' => $fmt($latePenalty['amount']),
-            'unpaid_leave_fine' => $fmt($this->unpaid_leave_days * 300000),
+            'early_days' => $penalties['early']['early_days'],
+            'total_early_minutes' => $penalties['early']['total_early_minutes'],
+            'early_fine' => $fmt($penalties['early']['amount']),
+            'missing_checkout_sessions' => $penalties['missing_checkout']['session_count'],
+            'missing_checkout_fine' => $fmt($penalties['missing_checkout']['amount']),
+            'other_penalty' => $penalties['other'],
+            'other_fine' => $fmt(abs($penalties['other'])),
+            'other_label' => $penalties['other_label'],
+            'penalties' => collect($this->penaltySlipLines())
+                ->map(fn (array $row) => [
+                    'label' => $row['label'],
+                    'note' => $row['note'],
+                    'amount' => $row['amount'],
+                    'amount_formatted' => $fmt(abs($row['amount'])),
+                ])
+                ->values()
+                ->all(),
+            'unpaid_leave_fine' => $fmt($penalties['unpaid_leave_fine']),
             'standard_working_days' => $this->standard_working_days,
             'actual_working_days' => $this->actual_working_days,
             'gross_income' => $fmt($breakdown['gross_income']),

@@ -107,7 +107,7 @@
                     <tbody>
                         @forelse ($payrolls as $payroll)
                             @php
-                                $latePenalty = $payroll->latePenaltyBreakdown();
+                                $penaltyLines = $payroll->penaltySlipLines();
                             @endphp
                             <tr class="border-t border-slate-100 hover:bg-slate-50 transition">
                                 <td class="px-6 py-4 font-medium text-slate-700">
@@ -180,10 +180,12 @@
                                                     'overtime_hours' => $payroll->overtime_hours,
                                                     'overtime_pay' => number_format($payroll->overtime_pay, 0, ',', '.'),
                                                     'deduction' => number_format($payroll->deduction, 0, ',', '.'),
-                                                    'late_days' => $latePenalty['late_days'],
-                                                    'total_late_minutes' => $latePenalty['total_late_minutes'],
-                                                    'late_fine' => number_format($latePenalty['amount'], 0, ',', '.'),
-                                                    'unpaid_leave_fine' => number_format($payroll->unpaid_leave_days * 300000, 0, ',', '.'),
+                                                    'penalties' => collect($penaltyLines)->map(fn ($row) => [
+                                                        'label' => $row['label'],
+                                                        'note' => $row['note'],
+                                                        'amount' => $row['amount'],
+                                                        'amount_formatted' => number_format(abs($row['amount']), 0, ',', '.'),
+                                                    ])->values()->all(),
                                                     'standard_working_days' => $payroll->standard_working_days,
                                                     'actual_working_days' => $payroll->actual_working_days,
                                                     'total_salary' => number_format($payroll->total_salary, 0, ',', '.'),
@@ -358,14 +360,7 @@
                             <span class="text-slate-700 font-bold">Tổng thu nhập:</span>
                             <span class="font-extrabold text-slate-800" id="modalTotalIncome">11,500,000 ₫</span>
                         </div>
-                        <div class="flex justify-between items-center text-rose-500">
-                            <span class="font-medium" id="modalLateLabel">Phạt đi muộn (0 lần):</span>
-                            <span class="font-bold" id="modalLateFine">-0 ₫</span>
-                        </div>
-                        <div class="flex justify-between items-center text-rose-500">
-                            <span class="font-medium" id="modalLeaveLabel">Phạt nghỉ quá phép/không phép (0 ngày):</span>
-                            <span class="font-bold" id="modalLeaveFine">-0 ₫</span>
-                        </div>
+                        <div id="modalPenaltyLines" class="space-y-2"></div>
                         <div class="flex justify-between items-center font-bold text-rose-600 border-t border-slate-200/60 pt-2">
                             <span>Tổng giảm trừ:</span>
                             <span id="modalDeduction">-0 ₫</span>
@@ -436,6 +431,26 @@
     <script>
         let currentTab = 'payment';
 
+        function renderPenaltyLines(rows) {
+            const list = document.getElementById('modalPenaltyLines');
+            if (!list) return;
+            list.replaceChildren();
+            (rows || []).forEach(function (row) {
+                const line = document.createElement('div');
+                line.className = 'flex items-start justify-between gap-3 text-rose-500';
+                const text = document.createElement('span');
+                text.className = 'font-medium';
+                text.textContent = row.note ? row.label + ' — ' + row.note : row.label;
+                const amount = document.createElement('span');
+                amount.className = 'whitespace-nowrap font-bold';
+                const value = Number(row.amount) || 0;
+                amount.textContent = (value < 0 ? '+' : '-') + row.amount_formatted + ' ₫';
+                line.appendChild(text);
+                line.appendChild(amount);
+                list.appendChild(line);
+            });
+        }
+
         function openPayrollModal(data) {
             document.getElementById('modalPayrollCode').innerText = 'PL' + String(data.id).padStart(6, '0');
             document.getElementById('modalEmpName').innerText = data.employee_code + ' - ' + data.full_name;
@@ -473,10 +488,7 @@
             let totalIncome = basic + allowance + bonus + overtime;
             
             document.getElementById('modalTotalIncome').innerText = totalIncome.toLocaleString('vi-VN') + ' ₫';
-            document.getElementById('modalLateLabel').innerText = 'Phạt đi muộn (' + data.late_days + ' lần, ' + data.total_late_minutes + ' phút):';
-            document.getElementById('modalLateFine').innerText = '-' + data.late_fine + ' ₫';
-            document.getElementById('modalLeaveLabel').innerText = 'Phạt nghỉ quá phép (' + data.unpaid_leave_days + ' ngày):';
-            document.getElementById('modalLeaveFine').innerText = '-' + data.unpaid_leave_fine + ' ₫';
+            renderPenaltyLines(data.penalties || []);
             document.getElementById('modalDeduction').innerText = '-' + data.deduction + ' ₫';
             document.getElementById('modalTotalSalary').innerText = data.total_salary + ' ₫';
             document.getElementById('modalPaidSalary').innerText = data.paid_salary + ' ₫';

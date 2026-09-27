@@ -269,11 +269,16 @@
                     <td>Lương tăng ca ({{ $payroll->overtime_hours }} giờ × hệ số 1.5)</td>
                     <td class="text-right">{{ number_format($payroll->overtime_pay, 0, ',', '.') }} ₫</td>
                 </tr>
+                @php
+                    $payslip = $payroll->payslipBreakdown();
+                    $penaltyLines = $payroll->penaltySlipLines();
+                @endphp
+                @foreach ($penaltyLines as $penaltyLine)
                 <tr class="text-red">
-                    <td>Khấu trừ (Đi trễ, vắng mặt không phép)</td>
-                    <td class="text-right">-{{ number_format($payroll->deduction, 0, ',', '.') }} ₫</td>
+                    <td>{{ $penaltyLine['label'] }}{{ $penaltyLine['note'] ? ' — '.$penaltyLine['note'] : '' }}</td>
+                    <td class="text-right">{{ $penaltyLine['amount'] < 0 ? '+' : '-' }}{{ number_format(abs($penaltyLine['amount']), 0, ',', '.') }} ₫</td>
                 </tr>
-                @php $payslip = $payroll->payslipBreakdown(); @endphp
+                @endforeach
                 <tr class="text-red">
                     <td>Bảo hiểm NLĐ (BHXH + BHYT + BHTN)</td>
                     <td class="text-right">-{{ number_format($payslip['insurance'], 0, ',', '.') }} ₫</td>

@@ -2,6 +2,10 @@
 
     <div class="space-y-6">
 
+        @if (session('error'))
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm leading-6 text-rose-800 whitespace-pre-line">{{ session('error') }}</div>
+        @endif
+
         <!-- Header -->
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -150,7 +154,9 @@
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Thưởng (KPI)</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Tăng ca</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Nghỉ phép</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Khấu trừ</th>
+                            <th class="px-4 py-4 text-right text-xs font-bold uppercase text-slate-500 whitespace-nowrap" title="BHXH + BHYT + BHTN, phần người lao động đóng">Bảo hiểm</th>
+                            <th class="px-4 py-4 text-right text-xs font-bold uppercase text-slate-500 whitespace-nowrap" title="Thuế thu nhập cá nhân">Thuế TNCN</th>
+                            <th class="px-4 py-4 text-right text-xs font-bold uppercase text-slate-500 whitespace-nowrap" title="Đi muộn, về sớm, quên checkout, nghỉ không phép và khoản phạt điều chỉnh">Phạt</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase text-slate-500">Thực lĩnh</th>
                             <th class="px-6 py-4 text-center text-xs font-bold uppercase text-slate-500">Hành động</th>
                         </tr>
@@ -192,8 +198,26 @@
                                     <span class="font-semibold text-slate-700" title="Nghỉ phép có phép (hưởng lương)">{{ $payroll->paid_leave_days }}P</span> / 
                                     <span class="font-semibold text-slate-700" title="Nghỉ phép không lương / vắng mặt">{{ $payroll->unpaid_leave_days }}KP</span>
                                 </td>
-                                <td class="px-6 py-4 text-slate-700">
-                                    -{{ number_format($payslip['total_deductions'], 0, ',', '.') }} ₫
+                                <td class="px-4 py-4 text-right whitespace-nowrap text-rose-600" title="BHXH {{ number_format($payslip['bhxh_employee'], 0, ',', '.') }} · BHYT {{ number_format($payslip['bhyt_employee'], 0, ',', '.') }} · BHTN {{ number_format($payslip['bhtn_employee'], 0, ',', '.') }}">
+                                    @if ($payslip['insurance'] > 0)
+                                        -{{ number_format($payslip['insurance'], 0, ',', '.') }} ₫
+                                    @else
+                                        <span class="text-slate-400">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-4 text-right whitespace-nowrap text-rose-600">
+                                    @if ($payslip['pit'] > 0)
+                                        -{{ number_format($payslip['pit'], 0, ',', '.') }} ₫
+                                    @else
+                                        <span class="text-slate-400">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-4 text-right whitespace-nowrap text-rose-600">
+                                    @if ($payslip['penalty'] > 0)
+                                        -{{ number_format($payslip['penalty'], 0, ',', '.') }} ₫
+                                    @else
+                                        <span class="text-slate-400">—</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 font-bold text-slate-950">
                                     {{ number_format($payslip['net_salary'], 0, ',', '.') }} ₫
@@ -208,7 +232,7 @@
                                         </button>
                                         @if($payroll->status === 'calculated' && $payrollPeriod->is_active)
                                             <button type="button"
-                                                onclick="openAdjustModal({{ $payroll->id }}, {{ $payroll->bonus }}, {{ $payroll->deduction }}, '{{ $payroll->employee?->full_name }}')"
+                                                onclick="openAdjustModal({{ $payroll->id }}, {{ $payroll->bonus }}, {{ $payroll->manualPenaltyAmount() }}, '{{ $payroll->employee?->full_name }}')"
                                                 class="inline-flex h-8 min-w-[4.5rem] items-center justify-center whitespace-nowrap rounded-lg bg-orange-50 px-3 text-xs font-semibold text-orange-600 hover:bg-orange-100"
                                                 title="Điều chỉnh">
                                                 Sửa
@@ -231,7 +255,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="px-6 py-10 text-center text-slate-500">
+                                <td colspan="13" class="px-6 py-10 text-center text-slate-500">
                                     Kỳ lương này chưa được tính hoặc chưa có nhân sự nào trong phòng ban này được lập bảng lương.
                                 </td>
                             </tr>
@@ -346,14 +370,7 @@
                             <span class="text-slate-700 font-bold">Tổng thu nhập:</span>
                             <span class="font-extrabold text-slate-800" id="modalTotalIncome">11,500,000 ₫</span>
                         </div>
-                        <div class="flex justify-between items-center text-rose-500">
-                            <span class="font-medium" id="modalLateLabel">Phạt đi muộn (0 lần):</span>
-                            <span class="font-bold" id="modalLateFine">-0 ₫</span>
-                        </div>
-                        <div class="flex justify-between items-center text-rose-500">
-                            <span class="font-medium" id="modalLeaveLabel">Phạt nghỉ quá phép/không phép (0 ngày):</span>
-                            <span class="font-bold" id="modalLeaveFine">-0 ₫</span>
-                        </div>
+                        <div id="modalPenaltyLines" class="space-y-2"></div>
                         <div class="flex justify-between items-center text-rose-500">
                             <span class="font-medium">Bảo hiểm (BHXH + BHYT + BHTN):</span>
                             <span class="font-bold" id="modalInsurance">-0 ₫</span>
@@ -472,8 +489,9 @@
                             <input type="number" name="bonus" id="adjustBonus" min="0" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Tiền phạt / Khấu trừ (VNĐ)</label>
-                            <input type="number" name="deduction" id="adjustDeduction" min="0" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Phạt nhập tay (VNĐ)</label>
+                            <input type="number" name="manual_penalty" id="adjustDeduction" min="0" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition">
+                            <p class="mt-1 text-xs text-slate-500">Cộng thêm vào phạt đi muộn, về sớm, quên checkout và nghỉ không phép. Nhập 0 nếu không phạt tay. Lý do bên dưới được lưu vào ghi chú của dòng này.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Lý do điều chỉnh <span class="text-rose-500">*</span></label>
@@ -582,10 +600,7 @@
             let totalIncome = num(data.gross_income);
             
             document.getElementById('modalTotalIncome').innerText = totalIncome.toLocaleString('vi-VN') + ' ₫';
-            document.getElementById('modalLateLabel').innerText = 'Phạt đi muộn (' + data.late_days + ' lần, ' + data.total_late_minutes + ' phút):';
-            document.getElementById('modalLateFine').innerText = '-' + data.late_fine + ' ₫';
-            document.getElementById('modalLeaveLabel').innerText = 'Phạt nghỉ quá phép (' + data.unpaid_leave_days + ' ngày):';
-            document.getElementById('modalLeaveFine').innerText = '-' + data.unpaid_leave_fine + ' ₫';
+            renderPenaltyLines(data.penalties || []);
             document.getElementById('modalInsurance').innerText = '-' + data.insurance_total + ' ₫';
             document.getElementById('modalBhxh').innerText = data.bhxh_employee + ' ₫';
             document.getElementById('modalBhyt').innerText = data.bhyt_employee + ' ₫';
@@ -640,6 +655,26 @@
                 contentPayment.classList.add('hidden');
                 contentAttendance.classList.remove('hidden');
             }
+        }
+
+        function renderPenaltyLines(rows) {
+            const list = document.getElementById('modalPenaltyLines');
+            if (!list) return;
+            list.replaceChildren();
+            (rows || []).forEach(function (row) {
+                const line = document.createElement('div');
+                line.className = 'flex items-start justify-between gap-3 text-rose-500';
+                const text = document.createElement('span');
+                text.className = 'font-medium';
+                text.textContent = row.note ? row.label + ' — ' + row.note : row.label;
+                const amount = document.createElement('span');
+                amount.className = 'whitespace-nowrap font-bold';
+                const value = Number(row.amount) || 0;
+                amount.textContent = (value < 0 ? '+' : '-') + row.amount_formatted + ' ₫';
+                line.appendChild(text);
+                line.appendChild(amount);
+                list.appendChild(line);
+            });
         }
 
         function openAdjustModal(payrollId, bonus, deduction, employeeName) {

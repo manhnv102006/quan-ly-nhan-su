@@ -248,10 +248,12 @@
                         <span class="text-sm font-bold text-rose-600">-{{ number_format($payslip['total_deductions'], 0, ',', '.') }}đ</span>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 border-t border-dashed border-rose-200 pt-3 text-xs">
-                        <div class="flex items-center justify-between">
-                            <span class="text-rose-500">Phạt đi trễ / nghỉ không phép</span>
-                            <span class="font-semibold text-rose-600">-{{ number_format($payslip['penalty'], 0, ',', '.') }}đ</span>
+                        @foreach ($payroll->penaltySlipLines() as $penaltyLine)
+                        <div class="flex items-center justify-between sm:col-span-2">
+                            <span class="text-rose-500">{{ $penaltyLine['label'] }}{{ $penaltyLine['note'] ? ' — '.$penaltyLine['note'] : '' }}</span>
+                            <span class="font-semibold text-rose-600">{{ $penaltyLine['amount'] < 0 ? '+' : '-' }}{{ number_format(abs($penaltyLine['amount']), 0, ',', '.') }}đ</span>
                         </div>
+                        @endforeach
                         <div class="flex items-center justify-between">
                             <span class="text-rose-500">Bảo hiểm (BHXH+BHYT+BHTN)</span>
                             <span class="font-semibold text-rose-600">-{{ number_format($payslip['insurance'], 0, ',', '.') }}đ</span>

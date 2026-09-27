@@ -191,11 +191,11 @@ class PayrollOctNovDemoSeeder extends Seeder
         match ($scenario) {
             0 => $this->insertPresentDays($employeeId, $days, 0, $total),
             1 => $this->insertPresentDays($employeeId, $days, 0, min(20, $total))
-                + $this->insertAbsentDays($employeeId, array_slice($days, min(20, $total), min(6, $total - min(20, $total)))),
+                + $this->insertAbsentDays($employeeId, array_slice($days, min(20, $total))),
             2 => $this->insertMixedLatePresent($employeeId, $days),
             3 => $this->seedPaidLeaveScenario($employeeId, $days),
             default => $this->insertPresentDays($employeeId, $days, 0, min(22, $total))
-                + $this->insertAbsentDays($employeeId, array_slice($days, min(22, $total), min(4, $total - min(22, $total)))),
+                + $this->insertAbsentDays($employeeId, array_slice($days, min(22, $total))),
         };
     }
 

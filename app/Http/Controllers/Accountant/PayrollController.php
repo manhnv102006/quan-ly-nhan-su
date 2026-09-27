@@ -173,6 +173,7 @@ class PayrollController extends Controller
             'payrollPeriod.approver',
             'payrollPeriod.payer',
             'payrollAllowances',
+            'penaltyDetails',
         ]);
 
         $pdf = Pdf::loadView('admin.payrolls.pdf', compact('payroll'));
@@ -184,7 +185,8 @@ class PayrollController extends Controller
 
     public function exportExcel(Payroll $payroll): Response
     {
-        $payroll->load(['employee.department', 'employee.position', 'payrollPeriod']);
+        $payroll->load(['employee.department', 'employee.position', 'employee.insurance', 'employee.taxProfile', 'payrollPeriod']);
+        $payslip = $payroll->payslipBreakdown();
 
         $rows = [
             ['Phiếu lương', $payroll->payrollPeriod?->name ?? ''],
@@ -193,11 +195,13 @@ class PayrollController extends Controller
             ['Phòng ban', $payroll->employee?->department?->department_name ?? ''],
             ['Chức vụ', $payroll->employee?->position?->position_name ?? ''],
             ['Lương cơ bản', $payroll->basic_salary],
-            ['Phụ cấp', $payroll->allowance],
+            ['Phụ cấp', $payroll->totalAllowance()],
             ['Thưởng KPI', $payroll->bonus],
             ['Tăng ca', $payroll->overtime_pay],
-            ['Khấu trừ', $payroll->deduction],
-            ['Thực lĩnh', $payroll->total_salary],
+            ['Bảo hiểm', $payslip['insurance']],
+            ['Thuế TNCN', $payslip['pit']],
+            ['Phạt', $payslip['penalty']],
+            ['Thực lĩnh', $payslip['net_salary']],
             ['Trạng thái', $payroll->statusLabel()],
         ];
 
@@ -259,10 +263,11 @@ class PayrollController extends Controller
             return back()->with('error', 'Không có phiếu lương nào để xuất Excel.');
         }
 
-        $headers = ['Mã NV', 'Họ tên', 'Phòng ban', 'Lương CB', 'Phụ cấp', 'Thưởng', 'Tăng ca', 'Khấu trừ', 'Thực lĩnh', 'Trạng thái'];
+        $headers = ['Mã NV', 'Họ tên', 'Phòng ban', 'Lương CB', 'Phụ cấp', 'Thưởng', 'Tăng ca', 'Bảo hiểm', 'Thuế TNCN', 'Phạt', 'Thực lĩnh', 'Trạng thái'];
         $csv = "\xEF\xBB\xBF".implode(',', $headers)."\n";
 
         foreach ($payrolls as $payroll) {
+            $payslip = $payroll->payslipBreakdown();
             $row = [
                 $payroll->employee?->employee_code ?? '',
                 $payroll->employee?->full_name ?? '',
@@ -271,8 +276,10 @@ class PayrollController extends Controller
                 $payroll->totalAllowance(),
                 $payroll->bonus,
                 $payroll->overtime_pay,
-                $payroll->deduction,
-                $payroll->total_salary,
+                $payslip['insurance'],
+                $payslip['pit'],
+                $payslip['penalty'],
+                $payslip['net_salary'],
                 $payroll->statusLabel(),
             ];
             $csv .= implode(',', array_map(fn ($v) => '"'.str_replace('"', '""', (string) $v).'"', $row))."\n";
@@ -339,6 +346,7 @@ class PayrollController extends Controller
                 'payrollPeriod.approver',
                 'payrollPeriod.payer',
                 'payrollAllowances',
+                'penaltyDetails',
             ])
             ->where('payroll_period_id', $payrollPeriod->id)
             ->whereHas('employee', fn ($q) => $q->where('department_id', $department->id))

@@ -291,7 +291,7 @@ trait ManagesPayrollPeriods
     {
         $payrolls = $payrollPeriod->payrolls()
             ->whereHas('employee', fn ($q) => $q->where('department_id', $department->id))
-            ->with(['employee.department', 'employee.position', 'employee.insurance', 'employee.taxProfile', 'payrollPeriod', 'salaryAdvanceDeductions'])
+            ->with(['employee.department', 'employee.position', 'employee.insurance', 'employee.taxProfile', 'payrollPeriod', 'salaryAdvanceDeductions', 'penaltyDetails'])
             ->latest()
             ->paginate(10);
 
@@ -342,6 +342,13 @@ trait ManagesPayrollPeriods
         $departmentId = $request->input('department_id');
         $result = $payrollService->calculatePayrollForPeriod($payrollPeriod, $departmentId);
 
+        if ($result === 'incomplete_attendance') {
+            return redirect()->back()->with('error', $payrollService->attendanceCoverageMessage(
+                $payrollService->attendanceCoverageGaps($payrollPeriod, $departmentId ? (int) $departmentId : null),
+                'tính lương'
+            ));
+        }
+
         if ($result === 'already_exists') {
             return redirect()->back()->with('error', 'Kỳ lương này (hoặc phòng ban này) đã được tính lương trước đó.');
         }
@@ -370,6 +377,13 @@ trait ManagesPayrollPeriods
 
         $departmentId = $request->input('department_id');
         $result = $payrollService->recalculatePayrollForPeriod($payrollPeriod, $departmentId);
+
+        if ($result === 'incomplete_attendance') {
+            return redirect()->back()->with('error', $payrollService->attendanceCoverageMessage(
+                $payrollService->attendanceCoverageGaps($payrollPeriod, $departmentId ? (int) $departmentId : null),
+                'tính lương'
+            ));
+        }
 
         if ($result === 'invalid_status') {
             return redirect()->back()->with('error', 'Trạng thái kỳ lương không hợp lệ để tính lại.');
@@ -488,6 +502,15 @@ trait ManagesPayrollPeriods
             return redirect()->back()->with('error', 'Chỉ có thể đóng kỳ lương sau khi đã chi trả lương.');
         }
 
+        $payrollService = app(PayrollService::class);
+        $gaps = $payrollService->attendanceCoverageGaps(
+            $payrollPeriod,
+            $departmentId ? (int) $departmentId : null
+        );
+        if ($gaps !== []) {
+            return redirect()->back()->with('error', $payrollService->attendanceCoverageMessage($gaps, 'đóng kỳ lương'));
+        }
+
         $query->update([
             'status' => 'closed',
         ]);
@@ -520,7 +543,7 @@ trait ManagesPayrollPeriods
 
         $validated = $request->validate([
             'bonus' => 'required|numeric|min:0',
-            'deduction' => 'required|numeric|min:0',
+            'manual_penalty' => 'required|numeric|min:0',
             'reason' => 'required|string|max:1000',
         ]);
 
@@ -528,13 +551,14 @@ trait ManagesPayrollPeriods
         $oldDeduction = $payroll->deduction;
 
         $payroll->bonus = $validated['bonus'];
-        $payroll->deduction = $validated['deduction'];
+        $payroll->replaceManualPenalty((float) $validated['manual_penalty'], $validated['reason']);
 
-        $payroll->total_salary = $payroll->basic_salary
-            + $payroll->allowance
-            + $payroll->bonus
-            + $payroll->overtime_pay
-            - $payroll->deduction;
+        $payroll->total_salary = max(0, (float) $payroll->basic_salary
+            + $payroll->totalAllowance()
+            + (float) $payroll->bonus
+            + (float) $payroll->overtime_pay
+            + (float) ($payroll->complaint_adjustment ?? 0)
+            - (float) $payroll->deduction);
 
         $payroll->save();
 
